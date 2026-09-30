@@ -1,0 +1,1153 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Garuda Aerospace — Event Impact Analysis</title>
+<style>
+/* INSTITUTIONAL QUANTITATIVE INTELLIGENCE DARK THEME */
+:root {
+  --bg: #090a0c;
+  --bg-panel: #111317;
+  --bg-panel-header: #181b22;
+  --bg-subtle: #14171d;
+  --line: #252a34;
+  --line-highlight: #3a4252;
+  --fg: #e2e8f0;
+  --muted: #8b949e;
+  --sub: #b1bac4;
+  --bbg-amber: #ff9900;
+  --bbg-amber-glow: rgba(255, 153, 0, 0.15);
+  --bbg-green: #00e676;
+  --bbg-green-glow: rgba(0, 230, 118, 0.12);
+  --bbg-red: #ff3333;
+  --bbg-red-glow: rgba(255, 51, 51, 0.12);
+  --bbg-cyan: #00d4ff;
+  --bbg-cyan-glow: rgba(0, 212, 255, 0.12);
+  --bbg-yellow: #ffd600;
+  --bbg-purple: #c084fc;
+  --accent: #ff9900;
+  --bench: #768390;
+  --pos: #00e676;
+  --pos-bg: rgba(0, 230, 118, 0.1);
+  --neg: #ff3333;
+  --neg-bg: rgba(255, 51, 51, 0.1);
+  --warn: #ff9900;
+  --warn-bg: rgba(255, 153, 0, 0.1);
+  --warn-br: #ff9900;
+  --plot: #0c0e12;
+  --macro: #c084fc;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+}
+
+* { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: ui-monospace, "SF Mono", "Roboto Mono", "Courier New", Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+.bbg-wrap {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 16px 20px 80px;
+}
+
+/* TOP DASHBOARD NAVIGATION & TELEMETRY STRIP */
+.dashboard-nav-strip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--bg-panel-header);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  margin-bottom: 14px;
+  font-size: 0.76rem;
+  box-shadow: var(--shadow);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.nav-btn-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.nav-link {
+  color: var(--sub);
+  text-decoration: none;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.nav-link:hover, .nav-link.active {
+  background: var(--bg-subtle);
+  color: var(--bbg-amber);
+  border-color: var(--bbg-amber);
+}
+.print-btn {
+  background: var(--bg-subtle);
+  color: var(--bbg-cyan);
+  border: 1px solid var(--bbg-cyan);
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 3px;
+  font-size: 0.72rem;
+  transition: all 0.15s ease;
+}
+.print-btn:hover {
+  background: var(--bbg-cyan);
+  color: #000;
+}
+.filter-btn {
+  background: var(--bg-subtle);
+  border: 1px solid var(--line);
+  color: var(--sub);
+  padding: 4px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  transition: all 0.15s ease;
+}
+.filter-btn:hover, .filter-btn.active {
+  background: var(--bbg-amber-glow);
+  color: var(--bbg-amber);
+  border-color: var(--bbg-amber);
+}
+
+.bbg-prompt {
+  color: var(--bbg-amber);
+  font-weight: 800;
+}
+.bbg-status-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--bbg-green);
+  box-shadow: 0 0 6px var(--bbg-green);
+  margin-right: 6px;
+}
+
+/* TARGET MASTER BANNER */
+.bbg-target-banner {
+  background: var(--bg-panel);
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--bbg-amber);
+  border-radius: 4px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.bbg-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.bbg-company-title {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+.bbg-ticker-pill {
+  background: var(--bbg-amber-glow);
+  color: var(--bbg-amber);
+  border: 1px solid var(--bbg-amber);
+  padding: 3px 8px;
+  border-radius: 3px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  margin-left: 8px;
+}
+.bbg-subtitle {
+  color: var(--muted);
+  font-size: 0.78rem;
+  margin-top: 2px;
+}
+
+/* QUICK KPI BAR */
+.bbg-kpi-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
+  gap: 8px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 10px 14px;
+}
+.bbg-kpi-item {
+  display: flex;
+  flex-direction: column;
+}
+.bbg-kpi-lbl {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.bbg-kpi-val {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #fff;
+  margin-top: 2px;
+}
+.bbg-amber { color: var(--bbg-amber) !important; }
+.bbg-green { color: var(--bbg-green) !important; }
+.bbg-red { color: var(--bbg-red) !important; }
+.bbg-cyan { color: var(--bbg-cyan) !important; }
+
+/* MULTI-COLUMN TERMINAL WINDOW MODULES */
+.bbg-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr));
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.bbg-module {
+  background: var(--bg-panel);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  margin-bottom: 14px;
+}
+:target {
+  border-color: var(--bbg-amber) !important;
+  box-shadow: 0 0 16px var(--bbg-amber-glow);
+}
+.bbg-module-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-panel-header);
+  padding: 7px 14px;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--bbg-amber);
+}
+.bbg-module-header .tag {
+  font-size: 0.66rem;
+  padding: 1px 6px;
+  background: var(--bg);
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+}
+.bbg-module-body {
+  padding: 14px 16px;
+}
+
+h2 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  margin: 0;
+  text-transform: uppercase;
+  color: var(--bbg-amber);
+}
+h3 {
+  font-size: 0.88rem;
+  font-weight: 700;
+  margin: 12px 0 6px;
+  color: #fff;
+  text-transform: uppercase;
+}
+h4, h5 {
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin: 10px 0 4px;
+  color: var(--bbg-amber);
+  text-transform: uppercase;
+}
+p { margin: 0 0 10px; font-size: 0.84rem; }
+
+/* HIGH-DENSITY STAT TILES */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 135px), 1fr));
+  gap: 8px;
+  margin: 10px 0;
+  align-items: stretch;
+}
+.grid-3col {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 130px), 1fr));
+  gap: 8px;
+  margin: 10px 0;
+  align-items: stretch;
+}
+@media (min-width: 768px) {
+  .grid-3col {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+.stat {
+  background: var(--bg-subtle);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 58px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.stat .k {
+  color: var(--muted);
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+  margin-bottom: 3px;
+  overflow-wrap: break-word;
+}
+.stat .v {
+  font-size: 0.98rem;
+  font-weight: 800;
+  margin-top: 2px;
+  color: #fff;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+.stat .v.text-compact {
+  font-size: 0.80rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.stat .v.long {
+  font-size: 0.74rem;
+  font-weight: 500;
+  line-height: 1.30;
+  color: var(--sub);
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+.stat-main {
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: #fff;
+  margin-top: 2px;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.stat-unit {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: none;
+}
+.stat-growth-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 5px;
+}
+.growth-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+.growth-tag.pos {
+  background: var(--bbg-green-glow);
+  color: var(--bbg-green);
+  border: 1px solid rgba(0, 230, 118, 0.3);
+}
+.growth-tag.neg {
+  background: var(--bbg-red-glow);
+  color: var(--bbg-red);
+  border: 1px solid rgba(255, 51, 51, 0.3);
+}
+.growth-tag.neutral {
+  background: var(--bg-panel-header);
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+.print-only { display: none !important; }
+.screen-only { display: block; }
+
+/* TERMINAL DATA TABLES */
+.scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 10px 0;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--bg);
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-highlight) var(--bg-subtle);
+}
+.scroll::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+.scroll::-webkit-scrollbar-track {
+  background: var(--bg-subtle);
+}
+.scroll::-webkit-scrollbar-thumb {
+  background: var(--line-highlight);
+  border-radius: 3px;
+}
+.scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.8rem;
+}
+th, td {
+  padding: 6px 10px;
+  text-align: right;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+th {
+  background: var(--bg-panel-header);
+  font-weight: 700;
+  color: var(--bbg-amber);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+th:first-child, td:first-child { text-align: left; }
+td.txt, th.txt { text-align: left; white-space: normal; }
+td.note, .txt.note {
+  font-size: 0.74rem;
+  color: var(--muted);
+  line-height: 1.35;
+  white-space: normal;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--bg-subtle); }
+tr.flagged { background: var(--warn-bg); font-weight: 700; border-left: 3px solid var(--bbg-amber); }
+
+.pos { color: var(--bbg-green); font-weight: 700; }
+.neg { color: var(--bbg-red); font-weight: 700; }
+.note { color: var(--muted); font-size: 0.78rem; font-style: italic; }
+
+/* SVG TIMELINE & PLOTS */
+.timeline {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+  background: var(--plot);
+  margin: 10px 0;
+}
+.plot-bg { fill: var(--plot); }
+.gridline { stroke: var(--line); stroke-width: 1; }
+.axis-zero { stroke: var(--line-highlight); stroke-width: 1.2; }
+.tick { fill: var(--muted); font-size: 10px; }
+.panel-title { fill: var(--bbg-amber); font-size: 11px; font-weight: 700; letter-spacing: 0.04em; }
+.line-company { fill: none; stroke: var(--bbg-amber); stroke-width: 2.2; stroke-linejoin: round; }
+.line-benchmark { fill: none; stroke: var(--bench); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.incident-rule { stroke: var(--bbg-cyan); stroke-width: 1.2; stroke-dasharray: 3 3; }
+.baseline { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 2 3; opacity: .4; }
+.incident-badge circle { fill: var(--bbg-cyan); stroke: var(--bg); stroke-width: 1.5; }
+.incident-badge text { fill: #000; font-size: 9px; font-weight: 800; }
+.badge-date-bg { fill: var(--bg-panel-header); opacity: .95; }
+.badge-date { fill: var(--bbg-cyan); font-size: 8.5px; font-weight: 800; }
+.real-point { fill: var(--bbg-amber); stroke: var(--bg); stroke-width: 1; }
+.macro-marker path { fill: var(--macro); stroke: var(--bg); stroke-width: 1; }
+.chart-caption { fill: var(--muted); font-size: 9.5px; font-style: italic; }
+.bar-pos { fill: var(--bbg-green); }
+.bar-neg { fill: var(--bbg-red); }
+.bar-incident { stroke: var(--bbg-amber); stroke-width: 1.4; }
+.tone-neg { fill: var(--bbg-red); opacity: .8; }
+.tone-pos { fill: var(--bbg-green); opacity: .8; }
+.tone-neutral { fill: var(--muted); opacity: .5; }
+.hatch-line { stroke: var(--bg); stroke-width: 1.5; opacity: .6; }
+.spark { width: 100px; height: 20px; }
+.spark-neg { fill: none; stroke: var(--bbg-red); stroke-width: 1.5; }
+.spark-pos { fill: none; stroke: var(--bbg-green); stroke-width: 1.5; }
+
+/* INCIDENT THREAT DOSSIERS */
+.incident {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--bbg-amber);
+  border-radius: 3px;
+  padding: 12px 16px;
+  margin: 12px 0;
+  background: var(--bg-subtle);
+}
+.rank {
+  display: inline-block;
+  background: var(--bbg-amber);
+  color: #000;
+  border-radius: 2px;
+  padding: 1px 6px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  margin-right: 6px;
+}
+.src { list-style: none; padding: 0; margin: 10px 0 0; }
+.src li { padding: 6px 0; border-top: 1px solid var(--line); font-size: 0.82rem; }
+.src a { color: var(--bbg-cyan); text-decoration: none; font-weight: 600; }
+.src a:hover { text-decoration: underline; color: #fff; }
+.src-meta { color: var(--muted); font-size: 0.74rem; margin-left: 6px; }
+.src-summary { color: var(--sub); font-size: 0.78rem; margin-top: 2px; line-height: 1.4; }
+
+.osint-badge, .tag {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--bg-subtle);
+  color: var(--sub);
+  border: 1px solid var(--line);
+  text-transform: uppercase;
+  margin-right: 4px;
+}
+.osint-badge-cyan { background: var(--bbg-cyan-glow); color: var(--bbg-cyan); border-color: var(--bbg-cyan); }
+.osint-badge-pos { background: var(--bbg-green-glow); color: var(--bbg-green); border-color: var(--bbg-green); }
+.osint-badge-neg { background: var(--bbg-red-glow); color: var(--bbg-red); border-color: var(--bbg-red); }
+.osint-badge-warn { background: var(--bbg-amber-glow); color: var(--bbg-amber); border-color: var(--bbg-amber); }
+
+.warn {
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-br);
+  border-left: 3px solid var(--warn-br);
+  border-radius: 3px;
+  padding: 10px 14px;
+  margin: 12px 0;
+  font-size: 0.82rem;
+}
+.warn h3 { margin-top: 0; color: var(--warn-br); font-size: 0.88rem; }
+.warn ul { margin: 6px 0 0; padding-left: 18px; }
+.warn li { margin-bottom: 4px; }
+
+.foot {
+  color: var(--muted);
+  font-size: 0.74rem;
+  margin-top: 40px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+}
+
+code {
+  background: var(--bg-panel-header);
+  color: var(--bbg-cyan);
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-size: 0.88em;
+}
+
+.empty { color: var(--muted); font-style: italic; }
+
+/* RESPONSIVE FLUID MEDIA QUERIES */
+@media (max-width: 1024px) {
+  .bbg-wrap { padding: 12px 14px 60px; }
+  .bbg-company-title { font-size: 1.35rem; }
+  .bbg-kpi-val { font-size: 1.05rem; }
+}
+
+@media (max-width: 768px) {
+  body { font-size: 12px; }
+  .bbg-wrap { padding: 8px 10px 40px; }
+  .dashboard-nav-strip { padding: 6px 10px; position: static; }
+  .bbg-company-title { font-size: 1.18rem; }
+  .bbg-ticker-pill { font-size: 0.72rem; padding: 2px 6px; }
+  .bbg-title-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .bbg-kpi-bar { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+  .bbg-grid-2 { grid-template-columns: 1fr; gap: 10px; }
+  .grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+  .stat { padding: 6px 8px; min-height: 48px; }
+  .stat .k { font-size: 0.62rem; }
+  .stat .v { font-size: 0.88rem; }
+  .bbg-module-body { padding: 10px 12px; }
+  .incident { padding: 10px 12px; }
+}
+
+@media (max-width: 480px) {
+  .bbg-kpi-bar { grid-template-columns: 1fr; }
+  .grid { grid-template-columns: 1fr; }
+  .nav-btn-group { gap: 3px; }
+  .nav-link { padding: 3px 5px; font-size: 0.66rem; }
+  .bbg-company-title { font-size: 1.05rem; }
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm 10mm 14mm 10mm;
+    @bottom-right {
+      content: "Page " counter(page);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 7pt;
+      color: #64748b;
+    }
+    @bottom-left {
+      content: "CONFIDENTIAL // FOR INSTITUTIONAL SURVEILLANCE ONLY";
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 7pt;
+      color: #94a3b8;
+    }
+  }
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    box-sizing: border-box !important;
+  }
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    font-size: 8pt !important;
+    line-height: 1.4 !important;
+    font-feature-settings: "tnum", "lnum" !important;
+    font-variant-numeric: tabular-nums !important;
+  }
+  .bbg-wrap {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .dashboard-nav-strip, .filter-btn, .print-btn, #daily-search-input, .screen-only {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .bbg-target-banner {
+    background: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    border-top: 4px solid #1e3a8a !important;
+    padding: 10px 14px !important;
+    margin-bottom: 10px !important;
+    box-shadow: none !important;
+    border-radius: 4px !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  .bbg-company-title {
+    color: #0f172a !important;
+    font-size: 1.35rem !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.02em !important;
+  }
+  .bbg-ticker-pill {
+    background: #e0f2fe !important;
+    color: #0369a1 !important;
+    border: 1px solid #7dd3fc !important;
+    padding: 1px 6px !important;
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    border-radius: 3px !important;
+  }
+  .bbg-subtitle {
+    color: #475569 !important;
+    font-size: 7.2pt !important;
+    font-weight: 500 !important;
+    margin-top: 3px !important;
+  }
+  .bbg-kpi-bar {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    padding: 8px 10px !important;
+    gap: 6px !important;
+    grid-template-columns: repeat(6, 1fr) !important;
+    border-radius: 3px !important;
+    margin-top: 8px !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  .bbg-kpi-item {
+    border-right: 1px solid #f1f5f9;
+    padding-right: 4px;
+  }
+  .bbg-kpi-item:last-child {
+    border-right: none;
+  }
+  .bbg-kpi-lbl {
+    color: #64748b !important;
+    font-size: 6pt !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.05em !important;
+  }
+  .bbg-kpi-val {
+    color: #0f172a !important;
+    font-size: 0.92rem !important;
+    font-weight: 800 !important;
+  }
+  .bbg-amber { color: #b45309 !important; }
+  .bbg-green { color: #15803d !important; }
+  .bbg-red { color: #b91c1c !important; }
+  .bbg-cyan { color: #0369a1 !important; }
+
+  .bbg-grid-2 {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    margin-bottom: 10px !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+  .bbg-grid-2 > .bbg-module {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    margin-bottom: 0 !important;
+  }
+  .bbg-module {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 4px !important;
+    margin-bottom: 10px !important;
+    box-shadow: none !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+  .bbg-module-body {
+    padding: 8px 12px !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+  .bbg-module-header {
+    background: #f8fafc !important;
+    border-bottom: 1.5px solid #cbd5e1 !important;
+    color: #0f172a !important;
+    padding: 5px 12px !important;
+    font-size: 7.5pt !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.04em !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+  .bbg-module-header .tag {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #334155 !important;
+    font-size: 6pt !important;
+    font-weight: 700 !important;
+  }
+
+  h2 {
+    color: #0f172a !important;
+    font-size: 8.5pt !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.02em !important;
+  }
+  h3, h4, h5 {
+    color: #1e293b !important;
+    font-size: 7.5pt !important;
+    font-weight: 700 !important;
+    margin: 6px 0 3px !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+  p {
+    color: #334155 !important;
+    margin: 0 0 6px !important;
+    font-size: 7.5pt !important;
+    line-height: 1.4 !important;
+  }
+
+  .grid {
+    gap: 5px !important;
+    margin: 6px 0 !important;
+  }
+  .stat {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 3px !important;
+    padding: 5px 8px !important;
+    min-height: auto !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  .stat .k {
+    color: #64748b !important;
+    font-size: 6pt !important;
+    font-weight: 700 !important;
+  }
+  .stat .v {
+    color: #0f172a !important;
+    font-size: 0.85rem !important;
+    font-weight: 800 !important;
+  }
+  .stat .v.long {
+    color: #334155 !important;
+    font-size: 6.8pt !important;
+  }
+  .stat-main {
+    color: #0f172a !important;
+    font-size: 0.88rem !important;
+    font-weight: 800 !important;
+  }
+  .stat-unit {
+    color: #64748b !important;
+    font-size: 6.5pt !important;
+    font-weight: 600 !important;
+  }
+  .growth-tag {
+    font-size: 6pt !important;
+    padding: 1px 4px !important;
+    border-radius: 2px !important;
+  }
+  .growth-tag.pos {
+    background: #dcfce7 !important;
+    color: #15803d !important;
+    border: 1px solid #86efac !important;
+  }
+  .growth-tag.neg {
+    background: #fee2e2 !important;
+    color: #b91c1c !important;
+    border: 1px solid #fca5a5 !important;
+  }
+  .growth-tag.neutral {
+    background: #f1f5f9 !important;
+    color: #475569 !important;
+    border: 1px solid #cbd5e1 !important;
+  }
+
+  .scroll {
+    overflow: visible !important;
+    border: none !important;
+    margin: 4px 0 !important;
+    background: transparent !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+    font-size: 7pt !important;
+    border: 1px solid #cbd5e1 !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+  thead {
+    display: table-header-group !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+  tbody {
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+  tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  tr:nth-child(even) td {
+    background: #fcfcfd !important;
+  }
+  th {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    border-bottom: 1.5px solid #94a3b8 !important;
+    padding: 4px 6px !important;
+    font-size: 6.2pt !important;
+    font-weight: 800 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.04em !important;
+  }
+  td {
+    border-bottom: 1px solid #e2e8f0 !important;
+    color: #1e293b !important;
+    padding: 3px 6px !important;
+  }
+  td.txt, th.txt {
+    color: #0f172a !important;
+  }
+  td.note, .txt.note {
+    color: #64748b !important;
+  }
+  tr.flagged {
+    background: #fef3c7 !important;
+    border-left: 3px solid #d97706 !important;
+  }
+  tr.flagged td {
+    background: #fef3c7 !important;
+  }
+
+  .pos { color: #15803d !important; font-weight: 700 !important; }
+  .neg { color: #b91c1c !important; font-weight: 700 !important; }
+  .note { color: #64748b !important; font-size: 6.8pt !important; }
+
+  .timeline {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    margin: 6px 0 !important;
+    max-height: 200px !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  .plot-bg { fill: #f8fafc !important; }
+  .gridline { stroke: #e2e8f0 !important; }
+  .axis-zero { stroke: #94a3b8 !important; }
+  .tick { fill: #475569 !important; font-size: 9px !important; }
+  .panel-title { fill: #0f172a !important; font-weight: 700 !important; }
+  .line-company { stroke: #d97706 !important; stroke-width: 1.8 !important; }
+  .line-benchmark { stroke: #64748b !important; }
+  .chart-caption { fill: #64748b !important; }
+
+  .incident {
+    background: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    border-left: 3.5px solid #d97706 !important;
+    border-radius: 3px !important;
+    padding: 8px 12px !important;
+    margin: 8px 0 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  .rank {
+    background: #d97706 !important;
+    color: #ffffff !important;
+    border-radius: 2px !important;
+    padding: 1px 5px !important;
+    font-size: 6.5pt !important;
+    font-weight: 800 !important;
+  }
+  .src li {
+    border-top: 1px solid #e2e8f0 !important;
+    padding: 3px 0 !important;
+    font-size: 7pt !important;
+  }
+  .src a {
+    color: #0369a1 !important;
+    text-decoration: none !important;
+    font-weight: 600 !important;
+  }
+  .src-meta {
+    color: #64748b !important;
+    font-size: 6.5pt !important;
+  }
+  .src-summary {
+    color: #334155 !important;
+    font-size: 7pt !important;
+  }
+
+  .osint-badge, .tag {
+    background: #f1f5f9 !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #334155 !important;
+    font-size: 6pt !important;
+    padding: 1px 5px !important;
+    border-radius: 2px !important;
+  }
+  .osint-badge-pos {
+    background: #dcfce7 !important;
+    color: #15803d !important;
+    border-color: #86efac !important;
+  }
+  .osint-badge-neg {
+    background: #fee2e2 !important;
+    color: #b91c1c !important;
+    border-color: #fca5a5 !important;
+  }
+  .osint-badge-warn {
+    background: #fef3c7 !important;
+    color: #b45309 !important;
+    border-color: #fde68a !important;
+  }
+  .osint-badge-cyan {
+    background: #e0f2fe !important;
+    color: #0369a1 !important;
+    border-color: #bae6fd !important;
+  }
+
+  .warn {
+    background: #fffbeb !important;
+    border: 1px solid #fde68a !important;
+    border-left: 3.5px solid #d97706 !important;
+    color: #92400e !important;
+    padding: 6px 10px !important;
+    margin: 6px 0 !important;
+    font-size: 7pt !important;
+    border-radius: 3px !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  .warn h3 {
+    color: #b45309 !important;
+  }
+
+  .foot {
+    color: #64748b !important;
+    border-top: 1px solid #cbd5e1 !important;
+    margin-top: 16px !important;
+    padding-top: 8px !important;
+    font-size: 6.8pt !important;
+  }
+
+  code {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    border: 1px solid #e2e8f0 !important;
+    font-size: 7pt !important;
+  }
+}
+</style></head><body><div class="bbg-wrap">
+
+<!-- TOP DASHBOARD NAVIGATION & TELEMETRY STRIP -->
+<div class="dashboard-nav-strip">
+  <div class="nav-btn-group">
+    <span class="bbg-prompt">Garuda Aerospace</span>
+    <span class="osint-badge osint-badge-cyan">PRE-IPO / UNLISTED</span>
+    <span style="color:var(--line-highlight);margin:0 4px;">|</span>
+    <a href="#sec-call" class="nav-link" style="color:var(--bbg-amber);font-weight:800;">🎯 Call &amp; Sizing</a>
+    <a href="#sec-overview" class="nav-link">Overview</a>
+    <a href="#sec-timeline" class="nav-link">Timeline</a>
+    <a href="#sec-macro" class="nav-link">Macro Backdrop</a>
+    <a href="#sec-peers" class="nav-link">Sector Peers</a>
+    <a href="#sec-news" class="nav-link">Dispatches</a>
+    <a href="#sec-moves" class="nav-link">Price Moves</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span class="bbg-status-dot"></span>
+    <span style="color:var(--muted);font-weight:700;">UNLISTED SURVEILLANCE ENGINE</span>
+  </div>
+</div>
+
+<!-- TARGET MASTER BANNER -->
+<div class="bbg-target-banner">
+  <div class="bbg-title-row">
+    <div>
+      <h1 class="bbg-company-title">Garuda Aerospace <span class="bbg-ticker-pill">PRE-IPO / UNLISTED</span></h1>
+      <div class="bbg-subtitle">SOURCE: UNLISTEDZONE &middot; WINDOW: 01-Jan-2026 TO 18-Sep-2026 &middot; GENERATED: 18 September 2026 at 15:43</div>
+    </div>
+  </div>
+
+  <div class="bbg-kpi-bar">
+    <div class="bbg-kpi-item">
+      <span class="bbg-kpi-lbl">CALENDAR DAYS</span>
+      <span class="bbg-kpi-val">261 DAYS</span>
+    </div>
+    <div class="bbg-kpi-item">
+      <span class="bbg-kpi-lbl">PRICE REVISIONS</span>
+      <span class="bbg-kpi-val bbg-amber">22 REVISIONS</span>
+    </div>
+    <div class="bbg-kpi-item">
+      <span class="bbg-kpi-lbl">NOTABLE MOVES</span>
+      <span class="bbg-kpi-val bbg-green">21 MOVES</span>
+    </div>
+    <div class="bbg-kpi-item">
+      <span class="bbg-kpi-lbl">DISPATCHES CAPTURED</span>
+      <span class="bbg-kpi-val bbg-cyan">24 WIRE STORIES</span>
+    </div>
+  </div>
+</div>
+
+<!-- EXECUTIVE DOSSIER NARRATIVE -->
+<div id="sec-overview" class="bbg-module">
+  <div class="bbg-module-header">
+    <h2>Executive Summary & Narrative</h2>
+    <span class="tag">SUMMARY</span>
+  </div>
+  <div class="bbg-module-body">
+    <p class="note">UnlistedZone data is indicative; not a price feed, quote, or offer to deal.</p>
+    <p>This report examines Garuda Aerospace's indicative price on UnlistedZone between 01 January 2026 and 18 September 2026, alongside what the Indian financial press published about the company over that period. It is a structured timeline, not a statistically validated event study: UnlistedZone's own indicative prices are periodically revised estimates, not daily market-quoted closes, so a day without a revision is not evidence the price was actually unchanged that day — only that no new estimate was published.</p><p>Across 261 calendar days in the window, the indicative price was revised 22 times, giving 21 gaps between revisions to examine — roughly one every 12 days on average. Unlike this tool's listed-company reports, no z-score, market-model beta, or permutation-test p-value is computed here: those all assume a daily-moving price to measure unusualness against, which this data does not provide. What follows instead is each revision-to-revision gap, ranked by the size of the change, alongside whatever coverage this run found published in that same window.</p><p>A large move here is not necessarily a market reaction: UnlistedZone's indicative series does not appear to be adjusted for corporate actions such as bonus issues, stock splits, or rights issues, any of which mechanically changes the per-share price without changing what the company is worth. A move that looks unusually large is worth checking against the company's own corporate-action history before reading it as sentiment.</p><p>Across 24 collected items of coverage, the largest single move was +5.20%, between 11 September 2026 and 12 September 2026.</p>
+    <div class="grid"><div class="stat"><div class="k">Observation Days</div><div class="v">261</div></div><div class="stat"><div class="k">Price Revisions</div><div class="v">22</div></div><div class="stat"><div class="k">Notable Moves</div><div class="v">21</div></div><div class="stat"><div class="k">Captured Dispatches</div><div class="v">24</div></div></div>
+  </div>
+</div>
+
+<!-- MODULE 01: INDICATIVE PRICE TIMELINE -->
+<div id="sec-timeline" class="bbg-module">
+  <div class="bbg-module-header">
+    <h2>Timeline</h2>
+    <span class="tag">UNLISTEDZONE DATA</span>
+  </div>
+  <div class="bbg-module-body">
+    <svg viewBox="0 0 960 352" class="timeline" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Indicative price timeline"><text x="62" y="22.0" class="chart-caption">Numbered circles mark the ranked price moves below, each dated underneath. Dots are real revisions — elsewhere the line is flat, not observed.</text><text x="62" y="36.0" class="panel-title">Garuda Aerospace — indicative price (₹)</text><rect x="62" y="44.0" width="880" height="260.0" class="plot-bg"/><line x1="62" y1="286.1" x2="942" y2="286.1" class="gridline"/><text x="54" y="289.6" class="tick" text-anchor="end">425</text><line x1="62" y1="206.0" x2="942" y2="206.0" class="gridline"/><text x="54" y="209.5" class="tick" text-anchor="end">450</text><line x1="62" y1="126.0" x2="942" y2="126.0" class="gridline"/><text x="54" y="129.5" class="tick" text-anchor="end">475</text><line x1="62" y1="45.9" x2="942" y2="45.9" class="gridline"/><text x="54" y="49.4" class="tick" text-anchor="end">500</text><polyline points="64.9,61.9 70.8,61.9 76.7,61.9 82.5,61.9 88.4,61.9 94.3,61.9 100.1,61.9 106.0,94.0 111.9,94.0 117.7,94.0 123.6,94.0 129.5,94.0 135.3,94.0 141.2,94.0 147.1,94.0 152.9,94.0 158.8,94.0 164.7,94.0 170.5,94.0 176.4,94.0 182.3,94.0 188.1,94.0 194.0,94.0 199.9,116.4 205.7,116.4 211.6,116.4 217.5,116.4 223.3,116.4 229.2,116.4 235.1,116.4 240.9,116.4 246.8,148.4 252.7,148.4 258.5,148.4 264.4,148.4 270.3,148.4 276.1,148.4 282.0,148.4 287.9,148.4 293.7,148.4 299.6,148.4 305.5,148.4 311.3,148.4 317.2,174.0 323.1,174.0 328.9,190.0 334.8,212.4 340.7,212.4 346.5,225.2 352.4,225.2 358.3,225.2 364.1,225.2 370.0,225.2 375.9,244.4 381.7,257.3 387.6,257.3 393.5,257.3 399.3,270.1 405.2,270.1 411.1,270.1 416.9,270.1 422.8,270.1 428.7,270.1 434.5,270.1 440.4,286.1 446.3,286.1 452.1,286.1 458.0,286.1 463.9,286.1 469.7,286.1 475.6,286.1 481.5,286.1 487.3,286.1 493.2,286.1 499.1,286.1 504.9,286.1 510.8,286.1 516.7,286.1 522.5,286.1 528.4,286.1 534.3,286.1 540.1,286.1 546.0,286.1 551.9,286.1 557.7,286.1 563.6,286.1 569.5,286.1 575.3,286.1 581.2,286.1 587.1,286.1 592.9,286.1 598.8,286.1 604.7,286.1 610.5,286.1 616.4,286.1 622.3,286.1 628.1,286.1 634.0,286.1 639.9,286.1 645.7,286.1 651.6,286.1 657.5,286.1 663.3,286.1 669.2,286.1 675.1,286.1 680.9,286.1 686.8,286.1 692.7,254.0 698.5,254.0 704.4,254.0 710.3,254.0 716.1,254.0 722.0,254.0 727.9,263.7 733.7,263.7 739.6,263.7 745.5,263.7 751.3,276.5 757.2,276.5 763.1,276.5 768.9,276.5 774.8,276.5 780.7,276.5 786.5,276.5 792.4,276.5 798.3,244.4 804.1,244.4 810.0,244.4 815.9,244.4 821.7,244.4 827.6,244.4 833.5,244.4 839.3,244.4 845.2,222.0 851.1,244.4 856.9,244.4 862.8,244.4 868.7,244.4 874.5,244.4 880.4,244.4 886.3,244.4 892.1,257.3 898.0,231.6 903.9,158.0 909.7,158.0 915.6,225.2 921.5,225.2 927.3,225.2 933.2,225.2 939.1,225.2" class="line-company"/><circle cx="64.9" cy="61.9" r="2.5" class="real-point"><title>10 Apr 2026: ₹495.00 (revised)</title></circle><circle cx="106.0" cy="94.0" r="2.5" class="real-point"><title>18 Apr 2026: ₹485.00 (revised)</title></circle><line x1="106.0" y1="44.0" x2="106.0" y2="304.0" class="incident-rule"/><g class="incident-badge"><circle cx="106.0" cy="59.0" r="9.0"/><text x="106.0" y="62.5" text-anchor="middle">6</text><title>#6 10 Apr 2026 to 18 Apr 2026: -2.02% — see the ranked list below</title></g><rect x="86.8" y="70.0" width="38.4" height="12" rx="2" class="badge-date-bg"/><text x="106.0" y="79.0" text-anchor="middle" class="badge-date">18 Apr</text><circle cx="199.9" cy="116.4" r="2.5" class="real-point"><title>07 May 2026: ₹478.00 (revised)</title></circle><line x1="199.9" y1="44.0" x2="199.9" y2="304.0" class="incident-rule"/><g class="incident-badge"><circle cx="199.9" cy="59.0" r="9.0"/><text x="199.9" y="62.5" text-anchor="middle">12</text><title>#12 18 Apr 2026 to 07 May 2026: -1.44% — see the ranked list below</title></g><rect x="180.7" y="70.0" width="38.4" height="12" rx="2" class="badge-date-bg"/><text x="199.9" y="79.0" text-anchor="middle" class="badge-date">07 May</text><circle cx="246.8" cy="148.4" r="2.5" class="real-point"><title>16 May 2026: ₹468.00 (revised)</title></circle><line x1="246.8" y1="44.0" x2="246.8" y2="304.0" class="incident-rule"/><g class="incident-badge"><circle cx="246.8" cy="59.0" r="9.0"/><text x="246.8" y="62.5" text-anchor="middle">5</text><title>#5 07 May 2026 to 16 May 2026: -2.09% — see the ranked list below</title></g><rect x="227.6" y="70.0" width="38.4" height="12" rx="2" class="badge-date-bg"/><text x="246.8" y="79.0" text-anchor="middle" class="badge-date">16 May</text><circle cx="317.2" cy="174.0" r="2.5" class="real-point"><title>30 May 2026: ₹460.00 (revised)</title></circle><line x1="317.2" y1="44.0" x2="317.2" y2="304.0" class="incident-rule"/><g class="incident-badge"><circle cx="317.2" cy="59.0" r="9.0"/><text x="317.2" y="62.5" text-anchor="middle">8</text><title>#8 16 May 2026 to 30 May 2026: -1.71% — see the ranked list below</title></g><rect x="298.0" y="70.0" width="38.4" height="12" rx="2" class="badge-date-bg"/><text x="317.2" y="79.0" text-anchor="middle" class="badge-date">30 May</text><circle cx="328.9" cy="190.0" r="2.5" class="real-point"><title>02 Jun 2026: ₹455.00 (revised)</title></circle><line x1="328.9" y1="44.0" x2="328.9" y2="304.0" class="incident-rule"/><g class="incident-badge"><circle cx="328.9" cy="59.0" r="9.0"/><text x="328.9" y="62.5" text-anchor="middle">15</text><title>#15 30 May 2026 to 02 Jun 2026: -1.09% — see the ranked list below</title></g><rect x="309.7" y="70.0" width="38.4" height="12" rx="2" class="badge-date-bg"/><text x="328.9" y="79.0" text-anchor="middle" class="badge-date">02 Jun</text><circle cx="334.8" cy="212.4" r="2.5" class="real-point"><title>03 Jun 2026: ₹448.00 (revised)</title></circle><line x1="334.8" y1="44.0" x2="334.8" y2="304.0" class="incident-rule"/><g class="incident-badge"><circle cx="334.8" cy="59.0" r="9.0"/><text x="334.8" y="62.5" text-anchor="middle">11</text><title>#11 02 Jun 2026 to 03 Jun 2026: -1.54% — see the ranked list below</title></g><rect x="315.6" y="70.0" width="38.4" height="12" rx="2" class="badge-date-bg"/><text x="334.8" y="79.0" text-anchor="middle" class="badge-date">03 Jun</text><circle cx="346.5" cy="225.2" r="2.5" class="real-point"><title>05 Jun 2026: ₹444.00 (revised)</title></circle><line x1="346.5" y1="44.0" x2="346.5" y2="304.0" class="incident-rule"/><g class="incident-badge"><circle cx="346.5" cy="59.0" r="9.0"/><text x="346.5" y="62.5" text-anchor="middle">20</text><title>#20 03 Jun 2026 to 05 Jun 2026: -0.89% — see the ranked list below</title></g><rect x="327.3" y="70.0" width="38.4" height="12" rx="2" class="badge-date-bg"/><text x="346.5" y="79.0" text-anchor="middle" class="badge-date">05 Jun</text><circle cx="375.9" cy="244.4" r="2.5" class="real-point"><title>11 Jun 2026: ₹438.00 (revised)</title></circle><line x1="375.9" y1="44.0" x2="375.9" y2="304.0" class="incident-rule"/><g class="incident-badge"><circle cx="375.9" cy="59.0" r="9.0"/><text x="375.9" y="62.5" text-anchor="middle">13</text><title>#13 05 Jun 2026 to 11 Jun 2026: -1.35% — see the ranked list below</title></g><rect x="356.7" y="70.0" width="38.4" height="12" rx="2" class="badge-date-bg"/><text x="375.9" y="79.0" text-anchor="middle" class="badge-date">11 Jun</text><circle cx="381.7" cy="257.3" r="2.5" class="real-point"><title>12 Jun 2026: ₹434.00 (revised)</title></circle><line x1="381.7" y1="44.0" x2="381.7" y2="304.0" class="incident-rule"/><g class="incident-badge"><circle cx="381.7" cy="59.0" r="9.0"/><text x="381.7" y="62.5" text-anchor="middle">18</text><title>#18 11 Jun 2026 to 12 Jun 2026: -0.91% — see the ranked list below</title></g><rect x="362.5" y="70.0" width="38.4" height="12" rx="2" class="badge-date-bg"/><text x="381.7" y="79.0" text-anchor="middle" class="badge-date">12 Jun</text><circle cx="399.3" cy="270.1" r="2.5" class="real-point"><title>16 Jun 2026: ₹430.00 (revised)</title></circle><line x1="399.3" y1="44.0" x2="399.3" y2="304.0" class="incident-rule"/><g class="incident-badge"><circle cx="399.3" cy="59.0" r="9.0"/><text x="399.3" y="62.5" text-anchor="middle">17</text><title>#17 12 Jun 2026 to 16 Jun 2026: -0.92% — see the ranked list below</title></g><rect x="380.1" y="70.0" width="38.4" height="12" rx="2" class="badge-date-bg"/><text x="399.3" y="79.0" text-anchor="middle" class="badge-date">16 Jun</text><circle cx="440.4" cy="286.1" r="2.5" class="real-point"><title>24 Jun 2026: ₹425.00 (revised)</title></circle><line x1="440.4" y1="44.0" x2="440.4" y2="304.0" class="incident-rule"/><g class="incident-badge"><circle cx="440.4" cy="59.0" r="9.0"/><text x="440.4" y="62.5" text-anchor="middle">14</text><title>#14 16 Jun 2026 to 24 Jun 2026: -1.16% — see the ranked list below</title></g><rect x="421.2" y="70.0" width="38.4" height="12" rx="2" class="badge-date-bg"/><text x="440.4" y="79.0" text-anchor="middle" class="badge-date">24 Jun</text><circle cx="692.7" cy="254.0" r="2.5" class="real-point"><title>07 Aug 2026: ₹435.00 (revised)</title></circle><line x1="692.7" y1="44.0" x2="692.7" y2="304.0" class="incident-rule"/><g class="incident-badge"><circle cx="692.7" cy="59.0" r="9.0"/><text x="692.7" y="62.5" text-anchor="middle">3</text><title>#3 24 Jun 2026 to 07 Aug 2026: +2.35% — see the ranked list below</title></g><rect x="673.5" y="70.0" width="38.4" height="12" rx="2" class="badge-date-bg"/><text x="692.7" y="79.0" text-anchor="middle" class="badge-date">07 Aug</text><circle cx="727.9" cy="263.7" r="2.5" class="real-point"><title>13 Aug 2026: ₹432.00 (revised)</title></circle><line x1="727.9" y1="44.0" x2="727.9" y2="304.0" class="incident-rule"/><g class="incident-badge"><circle cx="727.9" cy="59.0" r="9.0"/><text x="727.9" y="62.5" text-anchor="middle">21</text><title>#21 07 Aug 2026 to 13 Aug 2026: -0.69% — see the ranked list below</title></g><rect x="708.7" y="70.0" width="38.4" height="12" rx="2" class="badge-date-bg"/><text x="727.9" y="79.0" text-anchor="middle" class="badge-date">13 Aug</text><circle cx="751.3" cy="276.5" r="2.5" class="real-point"><title>17 Aug 2026: ₹428.00 (revised)</title></circle><line x1="751.3" y1="44.0" x2="751.3" y2="304.0" class="incident-rule"/><g class="incident-badge"><circle cx="751.3" cy="59.0" r="9.0"/><text x="751.3" y="62.5" text-anchor="middle">16</text><title>#16 13 Aug 2026 to 17 Aug 2026: -0.93% — see the ranked list below</title></g><rect x="732.1" y="70.0" width="38.4" height="12" rx="2" class="badge-date-bg"/><text x="751.3" y="79.0" text-anchor="middle" class="badge-date">17 Aug</text><circle cx="798.3" cy="244.4" r="2.5" class="real-point"><title>25 Aug 2026: ₹438.00 (revised)</title></circle><line x1="798.3" y1="44.0" x2="798.3" y2="304.0" class="incident-rule"/><g class="incident-badge"><circle cx="798.3" cy="59.0" r="9.0"/><text x="798.3" y="62.5" text-anchor="middle">4</text><title>#4 17 Aug 2026 to 25 Aug 2026: +2.34% — see the ranked list below</title></g><rect x="779.1" y="70.0" width="38.4" height="12" rx="2" class="badge-date-bg"/><text x="798.3" y="79.0" text-anchor="middle" class="badge-date">25 Aug</text><circle cx="845.2" cy="222.0" r="2.5" class="real-point"><title>02 Sep 2026: ₹445.00 (revised)</title></circle><line x1="845.2" y1="44.0" x2="845.2" y2="304.0" class="incident-rule"/><g class="incident-badge"><circle cx="845.2" cy="59.0" r="9.0"/><text x="845.2" y="62.5" text-anchor="middle">9</text><title>#9 25 Aug 2026 to 02 Sep 2026: +1.60% — see the ranked list below</title></g><rect x="826.0" y="70.0" width="38.4" height="12" rx="2" class="badge-date-bg"/><text x="845.2" y="79.0" text-anchor="middle" class="badge-date">02 Sep</text><circle cx="851.1" cy="244.4" r="2.5" class="real-point"><title>03 Sep 2026: ₹438.00 (revised)</title></circle><line x1="851.1" y1="44.0" x2="851.1" y2="304.0" class="incident-rule"/><g class="incident-badge"><circle cx="851.1" cy="59.0" r="9.0"/><text x="851.1" y="62.5" text-anchor="middle">10</text><title>#10 02 Sep 2026 to 03 Sep 2026: -1.57% — see the ranked list below</title></g><rect x="831.9" y="70.0" width="38.4" height="12" rx="2" class="badge-date-bg"/><text x="851.1" y="79.0" text-anchor="middle" class="badge-date">03 Sep</text><circle cx="892.1" cy="257.3" r="2.5" class="real-point"><title>10 Sep 2026: ₹434.00 (revised)</title></circle><line x1="892.1" y1="44.0" x2="892.1" y2="304.0" class="incident-rule"/><g class="incident-badge"><circle cx="892.1" cy="59.0" r="9.0"/><text x="892.1" y="62.5" text-anchor="middle">19</text><title>#19 03 Sep 2026 to 10 Sep 2026: -0.91% — see the ranked list below</title></g><rect x="872.9" y="70.0" width="38.4" height="12" rx="2" class="badge-date-bg"/><text x="892.1" y="79.0" text-anchor="middle" class="badge-date">10 Sep</text><circle cx="898.0" cy="231.6" r="2.5" class="real-point"><title>11 Sep 2026: ₹442.00 (revised)</title></circle><line x1="898.0" y1="44.0" x2="898.0" y2="304.0" class="incident-rule"/><g class="incident-badge"><circle cx="898.0" cy="59.0" r="9.0"/><text x="898.0" y="62.5" text-anchor="middle">7</text><title>#7 10 Sep 2026 to 11 Sep 2026: +1.84% — see the ranked list below</title></g><rect x="878.8" y="70.0" width="38.4" height="12" rx="2" class="badge-date-bg"/><text x="898.0" y="79.0" text-anchor="middle" class="badge-date">11 Sep</text><circle cx="903.9" cy="158.0" r="2.5" class="real-point"><title>12 Sep 2026: ₹465.00 (revised)</title></circle><line x1="903.9" y1="44.0" x2="903.9" y2="304.0" class="incident-rule"/><g class="incident-badge"><circle cx="903.9" cy="59.0" r="9.0"/><text x="903.9" y="62.5" text-anchor="middle">1</text><title>#1 11 Sep 2026 to 12 Sep 2026: +5.20% — see the ranked list below</title></g><rect x="884.7" y="70.0" width="38.4" height="12" rx="2" class="badge-date-bg"/><text x="903.9" y="79.0" text-anchor="middle" class="badge-date">12 Sep</text><circle cx="915.6" cy="225.2" r="2.5" class="real-point"><title>14 Sep 2026: ₹444.00 (revised)</title></circle><line x1="915.6" y1="44.0" x2="915.6" y2="304.0" class="incident-rule"/><g class="incident-badge"><circle cx="915.6" cy="59.0" r="9.0"/><text x="915.6" y="62.5" text-anchor="middle">2</text><title>#2 12 Sep 2026 to 14 Sep 2026: -4.52% — see the ranked list below</title></g><rect x="896.4" y="70.0" width="38.4" height="12" rx="2" class="badge-date-bg"/><text x="915.6" y="79.0" text-anchor="middle" class="badge-date">14 Sep</text><g transform="translate(0,320.0)"><text x="64.9" y="0" class="tick" text-anchor="middle" transform="rotate(-38 64.9 0)">10 Apr</text><text x="158.8" y="0" class="tick" text-anchor="middle" transform="rotate(-38 158.8 0)">29 Apr</text><text x="252.7" y="0" class="tick" text-anchor="middle" transform="rotate(-38 252.7 0)">18 May</text><text x="346.5" y="0" class="tick" text-anchor="middle" transform="rotate(-38 346.5 0)">05 Jun</text><text x="440.4" y="0" class="tick" text-anchor="middle" transform="rotate(-38 440.4 0)">24 Jun</text><text x="534.3" y="0" class="tick" text-anchor="middle" transform="rotate(-38 534.3 0)">11 Jul</text><text x="628.1" y="0" class="tick" text-anchor="middle" transform="rotate(-38 628.1 0)">27 Jul</text><text x="722.0" y="0" class="tick" text-anchor="middle" transform="rotate(-38 722.0 0)">12 Aug</text><text x="815.9" y="0" class="tick" text-anchor="middle" transform="rotate(-38 815.9 0)">28 Aug</text><text x="909.7" y="0" class="tick" text-anchor="middle" transform="rotate(-38 909.7 0)">13 Sep</text><text x="939.1" y="0" class="tick" text-anchor="middle" transform="rotate(-38 939.1 0)">18 Sep</text></g></svg>
+  </div>
+</div>
+
+
+<div id="sec-macro" class="bbg-module">
+  <div class="bbg-module-header">
+    <h2>Macro-economic backdrop</h2>
+    <span class="tag">RBI / CRUDE / G-SEC</span>
+  </div>
+  <div class="bbg-module-body">
+    
+<div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px;">
+  <div class="stat"><div class="k">Real GDP Growth Rate</div><div class="v">7.80% YoY</div><div style="margin-top:4px;"><span class="note" style="font-size:0.75rem;">first quarter of 2026 &middot; TradingEconomics / MOSPI</span></div></div><div class="stat"><div class="k">CPI Retail Inflation</div><div class="v">4.45% YoY</div><div style="margin-top:4px;"><span class="note" style="font-size:0.75rem;">July 2026 &middot; Inside RBI Target Band</span></div></div><div class="stat"><div class="k">Industrial Production (IIP)</div><div class="v">+7.30% YoY</div><div style="margin-top:4px;"><span class="note" style="font-size:0.75rem;">June of 2026 &middot; Manufacturing, Mining, Electricity</span></div></div><div class="stat"><div class="k">PMI Activity (Mfg / Services)</div><div class="v">Mfg 52.9 / Srv 54.5</div><div style="margin-top:4px;"><span class="note" style="font-size:0.75rem;">Expansionary (&gt; 50.0) &middot; August 2026</span></div></div><div class="stat"><div class="k">RBI Policy Repo Rate</div><div class="v">5.25%</div><div style="margin-top:4px;"><span class="note" style="font-size:0.75rem;">SDF: 5.00% &middot; Stance: Neutral / Withdrawal of Accommodation</span></div></div><div class="stat"><div class="k">10Y G-Sec yield (latest, not window-scoped)</div><div class="v">6.76%</div><div style="margin-top:4px;"><span class="note" style="font-size:0.75rem;">As of August 13, 2026</span></div></div><div class="stat"><div class="k">Sovereign Spread (IN-US 10Y)</div><div class="v">+202 bps</div><div style="margin-top:4px;"><span class="note" style="font-size:0.75rem;">India 6.76% vs US 4.74%</span></div></div><div class="stat"><div class="k">USD / INR Exchange Rate</div><div class="v">₹89.96 → ₹95.73</div><div style="margin-top:4px;"><span class="note" style="font-size:0.75rem;">+6.41% Depreciation in window</span></div></div><div class="stat"><div class="k">Foreign Exchange Reserves</div><div class="v">$716.91 B</div><div style="margin-top:4px;"><span class="note" style="font-size:0.75rem;">~12.1 Mo Import Cover &middot; August 14, 2026</span></div></div><div class="stat"><div class="k">Fiscal deficit (latest budgeted figure, not window-scoped)</div><div class="v">₹15.69 Lakh Cr</div><div style="margin-top:4px;"><span class="note" style="font-size:0.75rem;">4.4% of GDP &middot; FY 2026-27</span></div></div><div class="stat"><div class="k">Brent Crude Oil (Window Move)</div><div class="v">$60.75 → $89.03</div><div style="margin-top:4px;"><span class="note" style="font-size:0.75rem;">+46.55% Window Move &middot; $/bbl</span></div></div>
+</div>
+<p class="empty" style="margin-top:12px;font-size:0.82rem;color:var(--text-muted);">No RBI repo rate adjustments occurred during this observation window (Policy rate held constant by MPC).</p>
+
+
+  </div>
+</div>
+
+
+<!-- MODULE 02: SECTOR PEERS -->
+
+
+<!-- MODULE 03: NEWS RADAR -->
+<div id="sec-news" class="bbg-module">
+  <div class="bbg-module-header">
+    <h2>News coverage</h2>
+    <span class="tag">24 DISPATCHES</span>
+  </div>
+  <div class="bbg-module-body">
+    <p style="font-size:0.8rem;color:var(--sub);margin-top:0;">Top panel: news volume (bar height) and tone (colour) across the observation window.</p>
+    <svg viewBox="0 0 960 204" class="timeline" preserveAspectRatio="xMidYMid meet" role="img" aria-label="News coverage timeline"><defs><pattern id="neg-hatch-news" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="6" class="hatch-line"/></pattern></defs><text x="62" y="18.0" class="panel-title">Garuda Aerospace — news volume (bar height) and tone (colour)</text><rect x="62" y="26.0" width="880" height="130.0" class="plot-bg"/><line x1="62" y1="156.0" x2="942" y2="156.0" class="gridline"/><text x="54" y="159.5" class="tick" text-anchor="end">0</text><line x1="62" y1="112.7" x2="942" y2="112.7" class="gridline"/><text x="54" y="116.2" class="tick" text-anchor="end">1</text><line x1="62" y1="69.3" x2="942" y2="69.3" class="gridline"/><text x="54" y="72.8" class="tick" text-anchor="end">2</text><line x1="62" y1="26.0" x2="942" y2="26.0" class="gridline"/><text x="54" y="29.5" class="tick" text-anchor="end">3</text><rect x="215.6" y="112.7" width="3.6" height="43.3" class="tone-neutral"><title>11 May 2026: 1 item(s), tone +0.00</title></rect><rect x="239.1" y="112.7" width="3.6" height="43.3" class="tone-neutral"><title>15 May 2026: 1 item(s), tone +0.00</title></rect><rect x="250.8" y="112.7" width="3.6" height="43.3" class="tone-neutral"><title>18 May 2026: 1 item(s), tone +0.00</title></rect><rect x="256.7" y="112.7" width="3.6" height="43.3" class="tone-neutral"><title>19 May 2026: 1 item(s), tone +0.00</title></rect><rect x="268.4" y="112.7" width="3.6" height="43.3" class="tone-neutral"><title>21 May 2026: 1 item(s), tone +0.00</title></rect><rect x="397.5" y="112.7" width="3.6" height="43.3" class="tone-neutral"><title>16 Jun 2026: 1 item(s), tone +0.00</title></rect><rect x="426.8" y="26.0" width="3.6" height="130.0" class="tone-neutral"><title>22 Jun 2026: 3 item(s), tone +0.00</title></rect><rect x="432.7" y="112.7" width="3.6" height="43.3" class="tone-neutral"><title>23 Jun 2026: 1 item(s), tone +0.00</title></rect><rect x="485.5" y="112.7" width="3.6" height="43.3" class="tone-neutral"><title>03 Jul 2026: 1 item(s), tone +0.00</title></rect><rect x="509.0" y="112.7" width="3.6" height="43.3" class="tone-neutral"><title>07 Jul 2026: 1 item(s), tone +0.00</title></rect><rect x="643.9" y="69.3" width="3.6" height="86.7" class="tone-neutral"><title>30 Jul 2026: 2 item(s), tone +0.00</title></rect><rect x="649.8" y="112.7" width="3.6" height="43.3" class="tone-neutral"><title>31 Jul 2026: 1 item(s), tone +0.00</title></rect><rect x="655.6" y="112.7" width="3.6" height="43.3" class="tone-neutral"><title>01 Aug 2026: 1 item(s), tone +0.00</title></rect><rect x="685.0" y="112.7" width="3.6" height="43.3" class="tone-neutral"><title>06 Aug 2026: 1 item(s), tone +0.00</title></rect><rect x="690.8" y="112.7" width="3.6" height="43.3" class="tone-neutral"><title>07 Aug 2026: 1 item(s), tone +0.00</title></rect><rect x="708.4" y="112.7" width="3.6" height="43.3" class="tone-neutral"><title>10 Aug 2026: 1 item(s), tone +0.00</title></rect><rect x="714.3" y="112.7" width="3.6" height="43.3" class="tone-neutral"><title>11 Aug 2026: 1 item(s), tone +0.00</title></rect><rect x="767.1" y="112.7" width="3.6" height="43.3" class="tone-neutral"><title>20 Aug 2026: 1 item(s), tone +0.00</title></rect><g transform="translate(0,172.0)"><text x="64.9" y="0" class="tick" text-anchor="middle" transform="rotate(-38 64.9 0)">10 Apr</text><text x="158.8" y="0" class="tick" text-anchor="middle" transform="rotate(-38 158.8 0)">29 Apr</text><text x="252.7" y="0" class="tick" text-anchor="middle" transform="rotate(-38 252.7 0)">18 May</text><text x="346.5" y="0" class="tick" text-anchor="middle" transform="rotate(-38 346.5 0)">05 Jun</text><text x="440.4" y="0" class="tick" text-anchor="middle" transform="rotate(-38 440.4 0)">24 Jun</text><text x="534.3" y="0" class="tick" text-anchor="middle" transform="rotate(-38 534.3 0)">11 Jul</text><text x="628.1" y="0" class="tick" text-anchor="middle" transform="rotate(-38 628.1 0)">27 Jul</text><text x="722.0" y="0" class="tick" text-anchor="middle" transform="rotate(-38 722.0 0)">12 Aug</text><text x="815.9" y="0" class="tick" text-anchor="middle" transform="rotate(-38 815.9 0)">28 Aug</text><text x="909.7" y="0" class="tick" text-anchor="middle" transform="rotate(-38 909.7 0)">13 Sep</text><text x="939.1" y="0" class="tick" text-anchor="middle" transform="rotate(-38 939.1 0)">18 Sep</text></g></svg>
+    <div class="scroll"><table><thead><tr><th>Publication Date</th><th class="txt">Headline & Link</th><th>Source</th><th>Sentiment Tone</th><th>Relevance</th></tr></thead><tbody><tr><td>02 Apr 2026</td><td class="txt"><a href="https://inc42.com/buzz/dronetech-startup-garuda-aerospace-pre-files-draft-papers-%e2%82%b9750-cr-ipo/" target="_blank" rel="noopener noreferrer">Dronetech Startup Garuda Aerospace Pre-Files Draft Papers ₹750 Cr+ IPO</a></td><td>inc42</td><td class=""><strong>— (+0.00)</strong></td><td>0.95</td></tr><tr><td>02 Apr 2026</td><td class="txt"><a href="https://www.financialexpress.com/business/news/garuda-aerospace-files-confidential-drhp-for-rs-1000-crore-ipo/4193299/" target="_blank" rel="noopener noreferrer">Garuda Aerospace files confidential DRHP for Rs 1,000 crore IPO</a></td><td>financial_express</td><td class=""><strong>— (+0.00)</strong></td><td>0.96</td></tr><tr><td>03 Apr 2026</td><td class="txt"><a href="https://entrackr.com/news/garuda-aerospace-opts-for-confidential-route-for-rs-1000-cr-ipo-11448917" target="_blank" rel="noopener noreferrer">Garuda Aerospace opts for confidential route for Rs 1,000 Cr IPO</a></td><td>entrackr</td><td class=""><strong>— (+0.00)</strong></td><td>0.90</td></tr><tr><td>11 May 2026</td><td class="txt"><a href="https://www.thehindubusinessline.com/markets/sebi-proposes-garuda-green-channel-for-faster-aif-scheme-launches/article70965224.ece" target="_blank" rel="noopener noreferrer">SEBI proposes ‘GARUDA’ green-channel for faster AIF scheme launches</a></td><td>business_line</td><td class=""><strong>— (+0.00)</strong></td><td>0.72</td></tr><tr><td>15 May 2026</td><td class="txt"><a href="https://www.moneycontrol.com/news/business/earnings/momentum-stocks-pearl-global-pricol-garuda-construction-rally-up-to-8-on-sheer-momentum-levels-to-watch-13920029.html" target="_blank" rel="noopener noreferrer">Momentum Stocks: Pearl Global, Pricol, Garuda Construction rally up to 8% on sheer momentum; levels to watch</a></td><td>moneycontrol</td><td class=""><strong>— (+0.00)</strong></td><td>0.73</td></tr><tr><td>18 May 2026</td><td class="txt"><a href="https://www.moneycontrol.com/news/business/earnings/garuda-const-consolidated-march-2026-net-sales-at-rs-149-05-crore-up-82-7-y-o-y-13923009.html" target="_blank" rel="noopener noreferrer">Garuda Const Consolidated March 2026 Net Sales at Rs 149.05 crore, up 82.7% Y-o-Y</a></td><td>moneycontrol</td><td class=""><strong>— (+0.00)</strong></td><td>0.82</td></tr><tr><td>19 May 2026</td><td class="txt"><a href="https://www.moneycontrol.com/news/business/earnings/garuda-const-standalone-march-2026-net-sales-at-rs-149-05-crore-up-84-15-y-o-y-13923558.html" target="_blank" rel="noopener noreferrer">Garuda Const Standalone March 2026 Net Sales at Rs 149.05 crore, up 84.15% Y-o-Y</a></td><td>moneycontrol</td><td class=""><strong>— (+0.00)</strong></td><td>0.82</td></tr><tr><td>21 May 2026</td><td class="txt"><a href="https://www.vccircle.com/dronemaker-garuda-aerospace-in-talks-to-raise-pre-ipo-round" target="_blank" rel="noopener noreferrer">Drone maker Garuda Aerospace in talks to raise pre-IPO round</a></td><td>vccircle</td><td class=""><strong>— (+0.00)</strong></td><td>0.82</td></tr><tr><td>16 Jun 2026</td><td class="txt"><a href="https://www.thehindubusinessline.com/news/science/garuda-aerospace-signs-mou-with-extensee-sas-to-deploy-flexrotor-uavs/article71108485.ece" target="_blank" rel="noopener noreferrer">Garuda Aerospace signs MoU with Extensee SAS to deploy Flexrotor UAVs</a></td><td>business_line</td><td class=""><strong>— (+0.00)</strong></td><td>0.95</td></tr><tr><td>22 Jun 2026</td><td class="txt"><a href="https://entrackr.com/news/sebi-approves-garuda-framework-to-speed-up-aif-scheme-launches-12061510" target="_blank" rel="noopener noreferrer">SEBI approves GARUDA framework to speed up AIF scheme launches</a></td><td>entrackr</td><td class=""><strong>— (+0.00)</strong></td><td>0.79</td></tr><tr><td>22 Jun 2026</td><td class="txt"><a href="https://www.vccircle.com/sebicuts-aif-scheme-launch-timeline-to-10-days-under-new-garuda-mechanism" target="_blank" rel="noopener noreferrer">SEBI cuts AIF scheme-launch timeline to 10 days under new GARUDA mechanism</a></td><td>vccircle</td><td class=""><strong>— (+0.00)</strong></td><td>0.55</td></tr><tr><td>22 Jun 2026</td><td class="txt"><a href="https://www.thehindubusinessline.com/markets/sebi-approves-garuda-a-10-day-green-channel-overhaul-for-indian-aifs/article71133976.ece" target="_blank" rel="noopener noreferrer">SEBI approves GARUDA: A 10-day green channel overhaul for Indian AIFs</a></td><td>business_line</td><td class=""><strong>— (+0.00)</strong></td><td>0.73</td></tr><tr><td>23 Jun 2026</td><td class="txt"><a href="https://inc42.com/buzz/sebis-garuda-framework-eases-key-bottlenecks-for-indian-startup-investors/" target="_blank" rel="noopener noreferrer">SEBI&#x27;s ‘GARUDA’ Framework Eases Key Bottlenecks For Indian Startup Investors</a></td><td>inc42</td><td class=""><strong>— (+0.00)</strong></td><td>0.90</td></tr><tr><td>03 Jul 2026</td><td class="txt"><a href="https://www.thehindubusinessline.com/economy/logistics/garuda-aerospace-micron-instruments-sign-mou-to-co-develop-next-gen-defence-solutions/article71178327.ece" target="_blank" rel="noopener noreferrer">Garuda Aerospace, Micron Instruments sign MoU to co-develop next-gen defence solutions</a></td><td>business_line</td><td class=""><strong>— (+0.00)</strong></td><td>0.95</td></tr><tr><td>07 Jul 2026</td><td class="txt"><a href="https://www.moneycontrol.com/news/india/addressing-indonesian-parliament-pm-modi-invokes-ramayana-garuda-and-gujarat-s-maritime-legacy-13968019.html" target="_blank" rel="noopener noreferrer">Addressing Indonesian Parliament, PM Modi invokes Ramayana, Garuda and Gujarat&#x27;s maritime legacy</a></td><td>moneycontrol</td><td class=""><strong>— (+0.00)</strong></td><td>0.55</td></tr><tr><td>30 Jul 2026</td><td class="txt"><a href="https://www.businesstoday.in/personal-finance/investment/story/launching-an-aif-just-got-faster-what-sebis-new-garuda-framework-means-546374-2026-07-30" target="_blank" rel="noopener noreferrer">Launching an AIF just got faster What SEBIamp039s new GARUDA framework means - BusinessToday</a></td><td>business_today</td><td class=""><strong>— (+0.00)</strong></td><td>0.72</td></tr><tr><td>30 Jul 2026</td><td class="txt"><a href="https://www.moneycontrol.com/news/business/markets/sebi-rolls-out-garuda-mechanism-to-fast-track-aif-launches-regular-schemes-can-go-live-after-10-working-days-of-filing-ppm-13989238.html" target="_blank" rel="noopener noreferrer">SEBI rolls out GARUDA mechanism to fast-track AIF launches; regular schemes can go live after 10 working days of filing PPM</a></td><td>moneycontrol</td><td class=""><strong>— (+0.00)</strong></td><td>0.81</td></tr><tr><td>31 Jul 2026</td><td class="txt"><a href="https://inc42.com/buzz/sebi-rolls-out-garuda-framework-to-expedite-fund-launches/" target="_blank" rel="noopener noreferrer">SEBI Rolls Out ‘GARUDA’ Framework To Expedite Fund Launches</a></td><td>inc42</td><td class=""><strong>— (+0.00)</strong></td><td>0.55</td></tr><tr><td>01 Aug 2026</td><td class="txt"><a href="https://www.businesstoday.in/personal-finance/investment/story/what-are-alternative-investment-funds-understanding-sebis-aif-categories-new-garuda-framework-546491-2026-08-01" target="_blank" rel="noopener noreferrer">What are Alternative Investment Funds Understanding SEBIamp039s AIF categories new GARUDA framework - BusinessToday</a></td><td>business_today</td><td class=""><strong>— (+0.00)</strong></td><td>0.70</td></tr><tr><td>06 Aug 2026</td><td class="txt"><a href="https://inc42.com/buzz/dronetech-startup-garuda-aerospace-gets-sebi-nod-for-%e2%82%b9750-cr-ipo/" target="_blank" rel="noopener noreferrer">Dronetech Startup Garuda Aerospace Gets SEBI Nod For ₹750 Cr+ IPO</a></td><td>inc42</td><td class=""><strong>— (+0.00)</strong></td><td>0.95</td></tr><tr><td>07 Aug 2026</td><td class="txt"><a href="https://www.moneycontrol.com/news/business/ipo/garuda-aerospace-naini-papers-adroit-industries-receive-sebi-approval-to-launch-ipos-13998241.html" target="_blank" rel="noopener noreferrer">Garuda Aerospace, Naini Papers, Adroit Industries receive SEBI approval to launch IPOs</a></td><td>moneycontrol</td><td class=""><strong>— (+0.00)</strong></td><td>0.97</td></tr><tr><td>10 Aug 2026</td><td class="txt"><a href="https://www.moneycontrol.com/news/business/markets/garuda-construction-and-engineering-shares-jump-11-as-q1-net-profit-rises-48-13999652.html" target="_blank" rel="noopener noreferrer">Garuda Construction and Engineering shares jump 11% as Q1 net profit rises 48%</a></td><td>moneycontrol</td><td class=""><strong>— (+0.00)</strong></td><td>0.82</td></tr><tr><td>11 Aug 2026</td><td class="txt"><a href="https://www.moneycontrol.com/news/business/earnings/garuda-const-standalone-june-2026-net-sales-at-rs-175-38-crore-up-40-13-y-o-y-14001535.html" target="_blank" rel="noopener noreferrer">Garuda Const Standalone June 2026 Net Sales at Rs 175.38 crore, up 40.13% Y-o-Y</a></td><td>moneycontrol</td><td class=""><strong>— (+0.00)</strong></td><td>0.82</td></tr><tr><td>20 Aug 2026</td><td class="txt"><a href="https://www.moneycontrol.com/news/business/earnings/garuda-const-consolidated-june-2026-net-sales-at-rs-175-38-crore-up-40-13-y-o-y-14011311.html" target="_blank" rel="noopener noreferrer">Garuda Const Consolidated June 2026 Net Sales at Rs 175.38 crore, up 40.13% Y-o-Y</a></td><td>moneycontrol</td><td class=""><strong>— (+0.00)</strong></td><td>0.82</td></tr></tbody></table></div>
+  </div>
+</div>
+
+<!-- MODULE 04: NOTABLE PRICE MOVES -->
+<div id="sec-moves" class="bbg-module">
+  <div class="bbg-module-header">
+    <h2>Notable price moves</h2>
+    <span class="tag">21 MOVES</span>
+  </div>
+  <div class="bbg-module-body">
+    <div class="scroll"><table><thead><tr><th>#</th><th>Date Range</th><th>Start Price</th><th>End Price</th><th>Raw Move</th><th>Dispatches</th></tr></thead><tbody><tr><td>#1</td><td>11 Sep 2026 – 12 Sep 2026</td><td>₹442.00</td><td>₹465.00</td><td class="pos"><strong>+5.20%</strong></td><td>0</td></tr><tr><td>#2</td><td>12 Sep 2026 – 14 Sep 2026</td><td>₹465.00</td><td>₹444.00</td><td class="neg"><strong>-4.52%</strong></td><td>0</td></tr><tr><td>#3</td><td>24 Jun 2026 – 07 Aug 2026</td><td>₹425.00</td><td>₹435.00</td><td class="pos"><strong>+2.35%</strong></td><td>5</td></tr><tr><td>#4</td><td>17 Aug 2026 – 25 Aug 2026</td><td>₹428.00</td><td>₹438.00</td><td class="pos"><strong>+2.34%</strong></td><td>1</td></tr><tr><td>#5</td><td>07 May 2026 – 16 May 2026</td><td>₹478.00</td><td>₹468.00</td><td class="neg"><strong>-2.09%</strong></td><td>2</td></tr><tr><td>#6</td><td>10 Apr 2026 – 18 Apr 2026</td><td>₹495.00</td><td>₹485.00</td><td class="neg"><strong>-2.02%</strong></td><td>0</td></tr><tr><td>#7</td><td>10 Sep 2026 – 11 Sep 2026</td><td>₹434.00</td><td>₹442.00</td><td class="pos"><strong>+1.84%</strong></td><td>0</td></tr><tr><td>#8</td><td>16 May 2026 – 30 May 2026</td><td>₹468.00</td><td>₹460.00</td><td class="neg"><strong>-1.71%</strong></td><td>3</td></tr><tr><td>#9</td><td>25 Aug 2026 – 02 Sep 2026</td><td>₹438.00</td><td>₹445.00</td><td class="pos"><strong>+1.60%</strong></td><td>0</td></tr><tr><td>#10</td><td>02 Sep 2026 – 03 Sep 2026</td><td>₹445.00</td><td>₹438.00</td><td class="neg"><strong>-1.57%</strong></td><td>0</td></tr><tr><td>#11</td><td>02 Jun 2026 – 03 Jun 2026</td><td>₹455.00</td><td>₹448.00</td><td class="neg"><strong>-1.54%</strong></td><td>0</td></tr><tr><td>#12</td><td>18 Apr 2026 – 07 May 2026</td><td>₹485.00</td><td>₹478.00</td><td class="neg"><strong>-1.44%</strong></td><td>0</td></tr><tr><td>#13</td><td>05 Jun 2026 – 11 Jun 2026</td><td>₹444.00</td><td>₹438.00</td><td class="neg"><strong>-1.35%</strong></td><td>0</td></tr><tr><td>#14</td><td>16 Jun 2026 – 24 Jun 2026</td><td>₹430.00</td><td>₹425.00</td><td class="neg"><strong>-1.16%</strong></td><td>4</td></tr><tr><td>#15</td><td>30 May 2026 – 02 Jun 2026</td><td>₹460.00</td><td>₹455.00</td><td class="neg"><strong>-1.09%</strong></td><td>0</td></tr><tr><td>#16</td><td>13 Aug 2026 – 17 Aug 2026</td><td>₹432.00</td><td>₹428.00</td><td class="neg"><strong>-0.93%</strong></td><td>0</td></tr><tr><td>#17</td><td>12 Jun 2026 – 16 Jun 2026</td><td>₹434.00</td><td>₹430.00</td><td class="neg"><strong>-0.92%</strong></td><td>1</td></tr><tr><td>#18</td><td>11 Jun 2026 – 12 Jun 2026</td><td>₹438.00</td><td>₹434.00</td><td class="neg"><strong>-0.91%</strong></td><td>0</td></tr><tr><td>#19</td><td>03 Sep 2026 – 10 Sep 2026</td><td>₹438.00</td><td>₹434.00</td><td class="neg"><strong>-0.91%</strong></td><td>0</td></tr><tr><td>#20</td><td>03 Jun 2026 – 05 Jun 2026</td><td>₹448.00</td><td>₹444.00</td><td class="neg"><strong>-0.89%</strong></td><td>0</td></tr><tr><td>#21</td><td>07 Aug 2026 – 13 Aug 2026</td><td>₹435.00</td><td>₹432.00</td><td class="neg"><strong>-0.69%</strong></td><td>2</td></tr></tbody></table></div>
+    <div class="incident"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;"><h3 style="margin:0;"><span class="rank">MOVE #1</span> 11 Sep 2026 – 12 Sep 2026</h3><div><span class="osint-badge osint-badge-pos">+5.20%</span><span class="osint-badge">0 Dispatches</span></div></div><p>Between 11 September 2026 and 12 September 2026 (1 calendar day), Garuda Aerospace's indicative UnlistedZone price rose from ₹442.00 to ₹465.00, a change of +5.20%. This is the gap between two periodically revised indicative estimates, not a daily market-quoted close, so the change cannot be dated more precisely than this range — it may have happened all at once or built up gradually within it.</p><p>No collected coverage falls inside this window in this run's sources — a gap in what was found, not evidence that nothing happened.</p></div><div class="incident"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;"><h3 style="margin:0;"><span class="rank">MOVE #2</span> 12 Sep 2026 – 14 Sep 2026</h3><div><span class="osint-badge osint-badge-pos">-4.52%</span><span class="osint-badge">0 Dispatches</span></div></div><p>Between 12 September 2026 and 14 September 2026 (2 calendar days), Garuda Aerospace's indicative UnlistedZone price fell from ₹465.00 to ₹444.00, a change of -4.52%. This is the gap between two periodically revised indicative estimates, not a daily market-quoted close, so the change cannot be dated more precisely than this range — it may have happened all at once or built up gradually within it.</p><p>No collected coverage falls inside this window in this run's sources — a gap in what was found, not evidence that nothing happened.</p></div><div class="incident"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;"><h3 style="margin:0;"><span class="rank">MOVE #3</span> 24 Jun 2026 – 07 Aug 2026</h3><div><span class="osint-badge osint-badge-pos">+2.35%</span><span class="osint-badge">5 Dispatches</span></div></div><p>Between 24 June 2026 and 07 August 2026 (44 calendar days), Garuda Aerospace's indicative UnlistedZone price rose from ₹425.00 to ₹435.00, a change of +2.35%. This is the gap between two periodically revised indicative estimates, not a daily market-quoted close, so the change cannot be dated more precisely than this range — it may have happened all at once or built up gradually within it.</p><p>5 distinct items of coverage were published in this window, across 4 outlets, broadly neutral in tone overall. This describes what was published alongside the price change; it is not a test of whether the two are related beyond timing, and — unlike this tool's listed-company reports — no significance test is computed here, because a periodically revised indicative price has no daily baseline to measure unusualness against.</p><h5 style="margin:12px 0 4px;font-size:0.75rem;color:var(--bbg-amber);text-transform:uppercase;">Documented Media Coverage &amp; Evidence Wire</h5><ul class="src"><li><a href="https://www.moneycontrol.com/news/business/ipo/garuda-aerospace-naini-papers-adroit-industries-receive-sebi-approval-to-launch-ipos-13998241.html" target="_blank" rel="noopener noreferrer">Garuda Aerospace, Naini Papers, Adroit Industries receive SEBI approval to launch IPOs</a> <span class="src-meta">[moneycontrol, —, rel=0.97]</span><div class="src-summary">Upcoming IPOs | Chennai-based drone technology company Garuda Aerospace is reportedly looking to raise around Rs 1,000 crore through its IPO, comprising a fresh issue of shares worth Rs 750 crore and an offer-for-sale (OFS) worth Rs 250 crore.</div></li><li><a href="https://www.thehindubusinessline.com/economy/logistics/garuda-aerospace-micron-instruments-sign-mou-to-co-develop-next-gen-defence-solutions/article71178327.ece" target="_blank" rel="noopener noreferrer">Garuda Aerospace, Micron Instruments sign MoU to co-develop next-gen defence solutions</a> <span class="src-meta">[business_line, —, rel=0.95]</span><div class="src-summary">Garuda Aerospace and Micron Instruments partner to develop innovative, next-gen defence solutions combining drone and fuze technologies.</div></li><li><a href="https://inc42.com/buzz/dronetech-startup-garuda-aerospace-gets-sebi-nod-for-%e2%82%b9750-cr-ipo/" target="_blank" rel="noopener noreferrer">Dronetech Startup Garuda Aerospace Gets SEBI Nod For ₹750 Cr+ IPO</a> <span class="src-meta">[inc42, —, rel=0.95]</span><div class="src-summary">Garuda Aerospace has received SEBI’s final observation for its IPO, paving the way for the dronetech startup to launch its public issue.</div></li><li><a href="https://www.moneycontrol.com/news/business/markets/sebi-rolls-out-garuda-mechanism-to-fast-track-aif-launches-regular-schemes-can-go-live-after-10-working-days-of-filing-ppm-13989238.html" target="_blank" rel="noopener noreferrer">SEBI rolls out GARUDA mechanism to fast-track AIF launches; regular schemes can go live after 10 working days of filing PPM</a> <span class="src-meta">[moneycontrol, —, rel=0.81]</span><div class="src-summary">The new framework aims to reduce delays in launching AIF schemes by allowing regular AIF schemes to commence operations after a 10-working-day window from filing of the PPPM with SEBI.</div></li><li><a href="https://www.businesstoday.in/personal-finance/investment/story/launching-an-aif-just-got-faster-what-sebis-new-garuda-framework-means-546374-2026-07-30" target="_blank" rel="noopener noreferrer">Launching an AIF just got faster What SEBIamp039s new GARUDA framework means - BusinessToday</a> <span class="src-meta">[business_today, —, rel=0.72]</span><div class="src-summary">GARUDA, short for Green-Channel: AIF Rollout Upon Document Acknowledgement, is designed to simplify and expedite the processing of Placement Memorandums (PPMs) — the key disclosure document that AIFs file before launching a scheme</div></li></ul></div><div class="incident"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;"><h3 style="margin:0;"><span class="rank">MOVE #4</span> 17 Aug 2026 – 25 Aug 2026</h3><div><span class="osint-badge osint-badge-pos">+2.34%</span><span class="osint-badge">1 Dispatches</span></div></div><p>Between 17 August 2026 and 25 August 2026 (8 calendar days), Garuda Aerospace's indicative UnlistedZone price rose from ₹428.00 to ₹438.00, a change of +2.34%. This is the gap between two periodically revised indicative estimates, not a daily market-quoted close, so the change cannot be dated more precisely than this range — it may have happened all at once or built up gradually within it.</p><p>1 distinct item of coverage was published in this window, across 1 outlet, broadly neutral in tone overall. This describes what was published alongside the price change; it is not a test of whether the two are related beyond timing, and — unlike this tool's listed-company reports — no significance test is computed here, because a periodically revised indicative price has no daily baseline to measure unusualness against.</p><h5 style="margin:12px 0 4px;font-size:0.75rem;color:var(--bbg-amber);text-transform:uppercase;">Documented Media Coverage &amp; Evidence Wire</h5><ul class="src"><li><a href="https://www.moneycontrol.com/news/business/earnings/garuda-const-consolidated-june-2026-net-sales-at-rs-175-38-crore-up-40-13-y-o-y-14011311.html" target="_blank" rel="noopener noreferrer">Garuda Const Consolidated June 2026 Net Sales at Rs 175.38 crore, up 40.13% Y-o-Y</a> <span class="src-meta">[moneycontrol, —, rel=0.82]</span><div class="src-summary">GCE01 Watchlist Portfolio Message Follow NSE/BSE Select NSE LIVE BSE LIVE Day High Day Low Volume (NSE) More × Add to Watchlist Reported Consolidated quarterly numbers for Garuda Construction and Engineering are: Net…</div></li></ul></div><div class="incident"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;"><h3 style="margin:0;"><span class="rank">MOVE #5</span> 07 May 2026 – 16 May 2026</h3><div><span class="osint-badge osint-badge-pos">-2.09%</span><span class="osint-badge">2 Dispatches</span></div></div><p>Between 07 May 2026 and 16 May 2026 (9 calendar days), Garuda Aerospace's indicative UnlistedZone price fell from ₹478.00 to ₹468.00, a change of -2.09%. This is the gap between two periodically revised indicative estimates, not a daily market-quoted close, so the change cannot be dated more precisely than this range — it may have happened all at once or built up gradually within it.</p><p>2 distinct items of coverage were published in this window, across 2 outlets, broadly neutral in tone overall. This describes what was published alongside the price change; it is not a test of whether the two are related beyond timing, and — unlike this tool's listed-company reports — no significance test is computed here, because a periodically revised indicative price has no daily baseline to measure unusualness against.</p><h5 style="margin:12px 0 4px;font-size:0.75rem;color:var(--bbg-amber);text-transform:uppercase;">Documented Media Coverage &amp; Evidence Wire</h5><ul class="src"><li><a href="https://www.moneycontrol.com/news/business/earnings/momentum-stocks-pearl-global-pricol-garuda-construction-rally-up-to-8-on-sheer-momentum-levels-to-watch-13920029.html" target="_blank" rel="noopener noreferrer">Momentum Stocks: Pearl Global, Pricol, Garuda Construction rally up to 8% on sheer momentum; levels to watch</a> <span class="src-meta">[moneycontrol, —, rel=0.73]</span><div class="src-summary">Sai Life Sciences declined 4.7 percent to Rs 977.30 after slipping below its 30-day and 50-day moving averages. EPL fell 4.5 percent to Rs 217.04 and traded below its 30-day moving average, reflecting weakening short-term sentiment.</div></li><li><a href="https://www.thehindubusinessline.com/markets/sebi-proposes-garuda-green-channel-for-faster-aif-scheme-launches/article70965224.ece" target="_blank" rel="noopener noreferrer">SEBI proposes ‘GARUDA’ green-channel for faster AIF scheme launches</a> <span class="src-meta">[business_line, —, rel=0.72]</span><div class="src-summary">Under the proposal, regular AIF schemes would be allowed to launch within 10 working days of filing the PPM with SEBI through a merchant banker, unless the regulator raises objections.</div></li></ul></div><div class="incident"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;"><h3 style="margin:0;"><span class="rank">MOVE #6</span> 10 Apr 2026 – 18 Apr 2026</h3><div><span class="osint-badge osint-badge-pos">-2.02%</span><span class="osint-badge">0 Dispatches</span></div></div><p>Between 10 April 2026 and 18 April 2026 (8 calendar days), Garuda Aerospace's indicative UnlistedZone price fell from ₹495.00 to ₹485.00, a change of -2.02%. This is the gap between two periodically revised indicative estimates, not a daily market-quoted close, so the change cannot be dated more precisely than this range — it may have happened all at once or built up gradually within it.</p><p>No collected coverage falls inside this window in this run's sources — a gap in what was found, not evidence that nothing happened.</p></div><div class="incident"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;"><h3 style="margin:0;"><span class="rank">MOVE #7</span> 10 Sep 2026 – 11 Sep 2026</h3><div><span class="osint-badge osint-badge-pos">+1.84%</span><span class="osint-badge">0 Dispatches</span></div></div><p>Between 10 September 2026 and 11 September 2026 (1 calendar day), Garuda Aerospace's indicative UnlistedZone price rose from ₹434.00 to ₹442.00, a change of +1.84%. This is the gap between two periodically revised indicative estimates, not a daily market-quoted close, so the change cannot be dated more precisely than this range — it may have happened all at once or built up gradually within it.</p><p>No collected coverage falls inside this window in this run's sources — a gap in what was found, not evidence that nothing happened.</p></div><div class="incident"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;"><h3 style="margin:0;"><span class="rank">MOVE #8</span> 16 May 2026 – 30 May 2026</h3><div><span class="osint-badge osint-badge-pos">-1.71%</span><span class="osint-badge">3 Dispatches</span></div></div><p>Between 16 May 2026 and 30 May 2026 (14 calendar days), Garuda Aerospace's indicative UnlistedZone price fell from ₹468.00 to ₹460.00, a change of -1.71%. This is the gap between two periodically revised indicative estimates, not a daily market-quoted close, so the change cannot be dated more precisely than this range — it may have happened all at once or built up gradually within it.</p><p>3 distinct items of coverage were published in this window, across 2 outlets, broadly neutral in tone overall. This describes what was published alongside the price change; it is not a test of whether the two are related beyond timing, and — unlike this tool's listed-company reports — no significance test is computed here, because a periodically revised indicative price has no daily baseline to measure unusualness against.</p><h5 style="margin:12px 0 4px;font-size:0.75rem;color:var(--bbg-amber);text-transform:uppercase;">Documented Media Coverage &amp; Evidence Wire</h5><ul class="src"><li><a href="https://www.moneycontrol.com/news/business/earnings/garuda-const-standalone-march-2026-net-sales-at-rs-149-05-crore-up-84-15-y-o-y-13923558.html" target="_blank" rel="noopener noreferrer">Garuda Const Standalone March 2026 Net Sales at Rs 149.05 crore, up 84.15% Y-o-Y</a> <span class="src-meta">[moneycontrol, —, rel=0.82]</span><div class="src-summary">GCE01 Watchlist Portfolio Message Follow NSE/BSE Select NSE LIVE BSE LIVE Day High Day Low Volume (NSE) More × Add to Watchlist Reported Standalone quarterly numbers for Garuda Construction and Engineering are: Net…</div></li><li><a href="https://www.moneycontrol.com/news/business/earnings/garuda-const-consolidated-march-2026-net-sales-at-rs-149-05-crore-up-82-7-y-o-y-13923009.html" target="_blank" rel="noopener noreferrer">Garuda Const Consolidated March 2026 Net Sales at Rs 149.05 crore, up 82.7% Y-o-Y</a> <span class="src-meta">[moneycontrol, —, rel=0.82]</span><div class="src-summary">GCE01 Watchlist Portfolio Message Follow NSE/BSE Select NSE LIVE BSE LIVE Day High Day Low Volume (NSE) More × Add to Watchlist Reported Consolidated quarterly numbers for Garuda Construction and Engineering are: Net…</div></li><li><a href="https://www.vccircle.com/dronemaker-garuda-aerospace-in-talks-to-raise-pre-ipo-round" target="_blank" rel="noopener noreferrer">Drone maker Garuda Aerospace in talks to raise pre-IPO round</a> <span class="src-meta">[vccircle, —, rel=0.82]</span><div class="src-summary">Drone technology company Garuda Aerospace Ltd, which last month filed draft papers through the confidential route for an initial public offering, is in...</div></li></ul></div><div class="incident"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;"><h3 style="margin:0;"><span class="rank">MOVE #9</span> 25 Aug 2026 – 02 Sep 2026</h3><div><span class="osint-badge osint-badge-pos">+1.60%</span><span class="osint-badge">0 Dispatches</span></div></div><p>Between 25 August 2026 and 02 September 2026 (8 calendar days), Garuda Aerospace's indicative UnlistedZone price rose from ₹438.00 to ₹445.00, a change of +1.60%. This is the gap between two periodically revised indicative estimates, not a daily market-quoted close, so the change cannot be dated more precisely than this range — it may have happened all at once or built up gradually within it.</p><p>No collected coverage falls inside this window in this run's sources — a gap in what was found, not evidence that nothing happened.</p></div><div class="incident"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;"><h3 style="margin:0;"><span class="rank">MOVE #10</span> 02 Sep 2026 – 03 Sep 2026</h3><div><span class="osint-badge osint-badge-pos">-1.57%</span><span class="osint-badge">0 Dispatches</span></div></div><p>Between 02 September 2026 and 03 September 2026 (1 calendar day), Garuda Aerospace's indicative UnlistedZone price fell from ₹445.00 to ₹438.00, a change of -1.57%. This is the gap between two periodically revised indicative estimates, not a daily market-quoted close, so the change cannot be dated more precisely than this range — it may have happened all at once or built up gradually within it.</p><p>No collected coverage falls inside this window in this run's sources — a gap in what was found, not evidence that nothing happened.</p></div><div class="incident"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;"><h3 style="margin:0;"><span class="rank">MOVE #11</span> 02 Jun 2026 – 03 Jun 2026</h3><div><span class="osint-badge osint-badge-pos">-1.54%</span><span class="osint-badge">0 Dispatches</span></div></div><p>Between 02 June 2026 and 03 June 2026 (1 calendar day), Garuda Aerospace's indicative UnlistedZone price fell from ₹455.00 to ₹448.00, a change of -1.54%. This is the gap between two periodically revised indicative estimates, not a daily market-quoted close, so the change cannot be dated more precisely than this range — it may have happened all at once or built up gradually within it.</p><p>No collected coverage falls inside this window in this run's sources — a gap in what was found, not evidence that nothing happened.</p></div><div class="incident"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;"><h3 style="margin:0;"><span class="rank">MOVE #12</span> 18 Apr 2026 – 07 May 2026</h3><div><span class="osint-badge osint-badge-pos">-1.44%</span><span class="osint-badge">0 Dispatches</span></div></div><p>Between 18 April 2026 and 07 May 2026 (19 calendar days), Garuda Aerospace's indicative UnlistedZone price fell from ₹485.00 to ₹478.00, a change of -1.44%. This is the gap between two periodically revised indicative estimates, not a daily market-quoted close, so the change cannot be dated more precisely than this range — it may have happened all at once or built up gradually within it.</p><p>No collected coverage falls inside this window in this run's sources — a gap in what was found, not evidence that nothing happened.</p></div><div class="incident"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;"><h3 style="margin:0;"><span class="rank">MOVE #13</span> 05 Jun 2026 – 11 Jun 2026</h3><div><span class="osint-badge osint-badge-pos">-1.35%</span><span class="osint-badge">0 Dispatches</span></div></div><p>Between 05 June 2026 and 11 June 2026 (6 calendar days), Garuda Aerospace's indicative UnlistedZone price fell from ₹444.00 to ₹438.00, a change of -1.35%. This is the gap between two periodically revised indicative estimates, not a daily market-quoted close, so the change cannot be dated more precisely than this range — it may have happened all at once or built up gradually within it.</p><p>No collected coverage falls inside this window in this run's sources — a gap in what was found, not evidence that nothing happened.</p></div><div class="incident"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;"><h3 style="margin:0;"><span class="rank">MOVE #14</span> 16 Jun 2026 – 24 Jun 2026</h3><div><span class="osint-badge osint-badge-pos">-1.16%</span><span class="osint-badge">4 Dispatches</span></div></div><p>Between 16 June 2026 and 24 June 2026 (8 calendar days), Garuda Aerospace's indicative UnlistedZone price fell from ₹430.00 to ₹425.00, a change of -1.16%. This is the gap between two periodically revised indicative estimates, not a daily market-quoted close, so the change cannot be dated more precisely than this range — it may have happened all at once or built up gradually within it.</p><p>4 distinct items of coverage were published in this window, across 4 outlets, broadly neutral in tone overall. This describes what was published alongside the price change; it is not a test of whether the two are related beyond timing, and — unlike this tool's listed-company reports — no significance test is computed here, because a periodically revised indicative price has no daily baseline to measure unusualness against.</p><h5 style="margin:12px 0 4px;font-size:0.75rem;color:var(--bbg-amber);text-transform:uppercase;">Documented Media Coverage &amp; Evidence Wire</h5><ul class="src"><li><a href="https://inc42.com/buzz/sebis-garuda-framework-eases-key-bottlenecks-for-indian-startup-investors/" target="_blank" rel="noopener noreferrer">SEBI&#x27;s ‘GARUDA’ Framework Eases Key Bottlenecks For Indian Startup Investors</a> <span class="src-meta">[inc42, —, rel=0.90]</span><div class="src-summary">Industry stakeholders expect GARUDA to accelerate capital deployment, improve investor participation and help VC and PE funds invest in startups more quickly</div></li><li><a href="https://entrackr.com/news/sebi-approves-garuda-framework-to-speed-up-aif-scheme-launches-12061510" target="_blank" rel="noopener noreferrer">SEBI approves GARUDA framework to speed up AIF scheme launches</a> <span class="src-meta">[entrackr, —, rel=0.79]</span><div class="src-summary">The Securities and Exchange Board of India (SEBI) has approved the GARUDA framework, which aims at speeding up the launch of Alternative Investment Fund (AIF) schemes</div></li><li><a href="https://www.thehindubusinessline.com/markets/sebi-approves-garuda-a-10-day-green-channel-overhaul-for-indian-aifs/article71133976.ece" target="_blank" rel="noopener noreferrer">SEBI approves GARUDA: A 10-day green channel overhaul for Indian AIFs</a> <span class="src-meta">[business_line, —, rel=0.73]</span><div class="src-summary">SEBI&#x27;s GARUDA initiative streamlines AIF approvals, enhancing capital deployment efficiency for sophisticated investors in India.</div></li><li><a href="https://www.vccircle.com/sebicuts-aif-scheme-launch-timeline-to-10-days-under-new-garuda-mechanism" target="_blank" rel="noopener noreferrer">SEBI cuts AIF scheme-launch timeline to 10 days under new GARUDA mechanism</a> <span class="src-meta">[vccircle, —, rel=0.55]</span><div class="src-summary">The Securities and Exchange Board of India (SEBI) has further reduced the timeline for alternative investment funds (AIFs) to launch new schemes to 10...</div></li></ul></div><div class="incident"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;"><h3 style="margin:0;"><span class="rank">MOVE #15</span> 30 May 2026 – 02 Jun 2026</h3><div><span class="osint-badge osint-badge-pos">-1.09%</span><span class="osint-badge">0 Dispatches</span></div></div><p>Between 30 May 2026 and 02 June 2026 (3 calendar days), Garuda Aerospace's indicative UnlistedZone price fell from ₹460.00 to ₹455.00, a change of -1.09%. This is the gap between two periodically revised indicative estimates, not a daily market-quoted close, so the change cannot be dated more precisely than this range — it may have happened all at once or built up gradually within it.</p><p>No collected coverage falls inside this window in this run's sources — a gap in what was found, not evidence that nothing happened.</p></div><div class="incident"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;"><h3 style="margin:0;"><span class="rank">MOVE #16</span> 13 Aug 2026 – 17 Aug 2026</h3><div><span class="osint-badge osint-badge-pos">-0.93%</span><span class="osint-badge">0 Dispatches</span></div></div><p>Between 13 August 2026 and 17 August 2026 (4 calendar days), Garuda Aerospace's indicative UnlistedZone price fell from ₹432.00 to ₹428.00, a change of -0.93%. This is the gap between two periodically revised indicative estimates, not a daily market-quoted close, so the change cannot be dated more precisely than this range — it may have happened all at once or built up gradually within it.</p><p>No collected coverage falls inside this window in this run's sources — a gap in what was found, not evidence that nothing happened.</p></div><div class="incident"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;"><h3 style="margin:0;"><span class="rank">MOVE #17</span> 12 Jun 2026 – 16 Jun 2026</h3><div><span class="osint-badge osint-badge-pos">-0.92%</span><span class="osint-badge">1 Dispatches</span></div></div><p>Between 12 June 2026 and 16 June 2026 (4 calendar days), Garuda Aerospace's indicative UnlistedZone price fell from ₹434.00 to ₹430.00, a change of -0.92%. This is the gap between two periodically revised indicative estimates, not a daily market-quoted close, so the change cannot be dated more precisely than this range — it may have happened all at once or built up gradually within it.</p><p>1 distinct item of coverage was published in this window, across 1 outlet, broadly neutral in tone overall. This describes what was published alongside the price change; it is not a test of whether the two are related beyond timing, and — unlike this tool's listed-company reports — no significance test is computed here, because a periodically revised indicative price has no daily baseline to measure unusualness against.</p><h5 style="margin:12px 0 4px;font-size:0.75rem;color:var(--bbg-amber);text-transform:uppercase;">Documented Media Coverage &amp; Evidence Wire</h5><ul class="src"><li><a href="https://www.thehindubusinessline.com/news/science/garuda-aerospace-signs-mou-with-extensee-sas-to-deploy-flexrotor-uavs/article71108485.ece" target="_blank" rel="noopener noreferrer">Garuda Aerospace signs MoU with Extensee SAS to deploy Flexrotor UAVs</a> <span class="src-meta">[business_line, —, rel=0.95]</span><div class="src-summary">They will leverage Extensee’s end-to-end operational capabilities, including mission management, flight authorizations, qualified operators and pilots with Garuda’s drone technology expertise</div></li></ul></div><div class="incident"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;"><h3 style="margin:0;"><span class="rank">MOVE #18</span> 11 Jun 2026 – 12 Jun 2026</h3><div><span class="osint-badge osint-badge-pos">-0.91%</span><span class="osint-badge">0 Dispatches</span></div></div><p>Between 11 June 2026 and 12 June 2026 (1 calendar day), Garuda Aerospace's indicative UnlistedZone price fell from ₹438.00 to ₹434.00, a change of -0.91%. This is the gap between two periodically revised indicative estimates, not a daily market-quoted close, so the change cannot be dated more precisely than this range — it may have happened all at once or built up gradually within it.</p><p>No collected coverage falls inside this window in this run's sources — a gap in what was found, not evidence that nothing happened.</p></div><div class="incident"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;"><h3 style="margin:0;"><span class="rank">MOVE #19</span> 03 Sep 2026 – 10 Sep 2026</h3><div><span class="osint-badge osint-badge-pos">-0.91%</span><span class="osint-badge">0 Dispatches</span></div></div><p>Between 03 September 2026 and 10 September 2026 (7 calendar days), Garuda Aerospace's indicative UnlistedZone price fell from ₹438.00 to ₹434.00, a change of -0.91%. This is the gap between two periodically revised indicative estimates, not a daily market-quoted close, so the change cannot be dated more precisely than this range — it may have happened all at once or built up gradually within it.</p><p>No collected coverage falls inside this window in this run's sources — a gap in what was found, not evidence that nothing happened.</p></div><div class="incident"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;"><h3 style="margin:0;"><span class="rank">MOVE #20</span> 03 Jun 2026 – 05 Jun 2026</h3><div><span class="osint-badge osint-badge-pos">-0.89%</span><span class="osint-badge">0 Dispatches</span></div></div><p>Between 03 June 2026 and 05 June 2026 (2 calendar days), Garuda Aerospace's indicative UnlistedZone price fell from ₹448.00 to ₹444.00, a change of -0.89%. This is the gap between two periodically revised indicative estimates, not a daily market-quoted close, so the change cannot be dated more precisely than this range — it may have happened all at once or built up gradually within it.</p><p>No collected coverage falls inside this window in this run's sources — a gap in what was found, not evidence that nothing happened.</p></div><div class="incident"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;"><h3 style="margin:0;"><span class="rank">MOVE #21</span> 07 Aug 2026 – 13 Aug 2026</h3><div><span class="osint-badge osint-badge-pos">-0.69%</span><span class="osint-badge">2 Dispatches</span></div></div><p>Between 07 August 2026 and 13 August 2026 (6 calendar days), Garuda Aerospace's indicative UnlistedZone price fell from ₹435.00 to ₹432.00, a change of -0.69%. This is the gap between two periodically revised indicative estimates, not a daily market-quoted close, so the change cannot be dated more precisely than this range — it may have happened all at once or built up gradually within it.</p><p>2 distinct items of coverage were published in this window, across 1 outlet, broadly neutral in tone overall. This describes what was published alongside the price change; it is not a test of whether the two are related beyond timing, and — unlike this tool's listed-company reports — no significance test is computed here, because a periodically revised indicative price has no daily baseline to measure unusualness against.</p><h5 style="margin:12px 0 4px;font-size:0.75rem;color:var(--bbg-amber);text-transform:uppercase;">Documented Media Coverage &amp; Evidence Wire</h5><ul class="src"><li><a href="https://www.moneycontrol.com/news/business/earnings/garuda-const-standalone-june-2026-net-sales-at-rs-175-38-crore-up-40-13-y-o-y-14001535.html" target="_blank" rel="noopener noreferrer">Garuda Const Standalone June 2026 Net Sales at Rs 175.38 crore, up 40.13% Y-o-Y</a> <span class="src-meta">[moneycontrol, —, rel=0.82]</span><div class="src-summary">GCE01 Watchlist Portfolio Message Follow NSE/BSE Select NSE LIVE BSE LIVE Day High Day Low Volume (NSE) More × Add to Watchlist Reported Standalone quarterly numbers for Garuda Construction and Engineering are: Net…</div></li><li><a href="https://www.moneycontrol.com/news/business/markets/garuda-construction-and-engineering-shares-jump-11-as-q1-net-profit-rises-48-13999652.html" target="_blank" rel="noopener noreferrer">Garuda Construction and Engineering shares jump 11% as Q1 net profit rises 48%</a> <span class="src-meta">[moneycontrol, —, rel=0.82]</span><div class="src-summary">Garuda Construction and Engineering&#x27;s net profit rose 48 percent to Rs 41.5 crore in the June quarter of FY27.</div></li></ul></div>
+  </div>
+</div>
+
+
+
+<div class="foot">
+  CONFIDENTIAL // INSTITUTIONAL UNLISTED SURVEILLANCE &middot; CEIA 7.0 ENGINE
+</div>
+
+</div></body></html>

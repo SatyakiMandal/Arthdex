@@ -1,0 +1,402 @@
+"""Turn a date range into candidate article URLs, per source.
+
+Every source here is driven through its ``robots.txt``-declared sitemaps rather
+than a search page, because Financial Express, Business Line and Moneycontrol
+all disallow their search paths for every user agent (Phase 0). The sitemaps
+are partitioned by date anyway, which is the axis this tool actually needs.
+
+Each strategy yields :class:`Candidate` records carrying whatever date the
+sitemap asserts. That date is a *hint* for narrowing the fetch set only — the
+authoritative publish time always comes from the article page itself, since
+sitemap ``lastmod`` is a modification time and can sit hours after publication.
+"""
+
+from __future__ import annotations
+
+import logging
+import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
+from datetime import date, datetime, timedelta
+
+from .fetcher import Fetcher, RobotsDisallowed
+
+log = logging.getLogger(__name__)
+
+# Some sites (Business Today, e.g.) wrap <loc>/<lastmod> content in CDATA -
+# <loc><![CDATA[ https://... ]]></loc> - which the bare [^<\s]+ capture can't
+# see past, since a CDATA opener starts with '<'. Verified as a real, not
+# hypothetical, bug: it silently matched zero URLs for Business Today rather
+# than erroring, which would have looked exactly like "no coverage that day"
+# instead of "the parser can't read this sitemap's shape". Both the CDATA
+# wrapper and its absence match with the optional non-capturing groups below.
+_LOC_RE = re.compile(r"<loc>\s*(?:<!\[CDATA\[)?\s*([^<\s]+)\s*(?:\]\]>)?\s*</loc>", re.I)
+_URL_BLOCK_RE = re.compile(r"<url>(.*?)</url>", re.S | re.I)
+_LASTMOD_RE = re.compile(
+    r"<lastmod>\s*(?:<!\[CDATA\[)?\s*([^<\s]+)\s*(?:\]\]>)?\s*</lastmod>", re.I)
+
+# Excel-style serial used by the Economic Times archive: days since 1899-12-30.
+_ET_EPOCH = date(1899, 12, 30)
+
+
+@dataclass
+class Candidate:
+    url: str
+    source: str
+    hint_date: date | None = None
+
+
+def _unescape(url: str) -> str:
+    return (url.replace("&amp;", "&").replace("&lt;", "<")
+               .replace("&gt;", ">").replace("&quot;", '"'))
+
+
+def _fetch_xml(fetcher: Fetcher, url: str) -> str | None:
+    try:
+        response = fetcher.get(url)
+    except RobotsDisallowed as exc:
+        log.warning("skipping (robots): %s", exc)
+        return None
+    except Exception as exc:
+        log.warning("could not fetch %s: %s", url, exc)
+        return None
+    if response.status != 200:
+        log.warning("%s returned %s", url, response.status)
+        return None
+    return response.text
+
+
+def _locs(xml: str) -> list[str]:
+    return [_unescape(u) for u in _LOC_RE.findall(xml)]
+
+
+def _loc_lastmod_pairs(xml: str) -> list[tuple[str, date | None]]:
+    """Pull (url, lastmod) pairs so a month sitemap can be filtered by day."""
+    pairs = []
+    for block in _URL_BLOCK_RE.findall(xml):
+        loc = _LOC_RE.search(block)
+        if not loc:
+            continue
+        stamp = _LASTMOD_RE.search(block)
+        when = None
+        if stamp:
+            try:
+                when = datetime.fromisoformat(stamp.group(1).replace("Z", "+00:00")).date()
+            except ValueError:
+                when = None
+        pairs.append((_unescape(loc.group(1)), when))
+    return pairs or [(u, None) for u in _locs(xml)]
+
+
+def _days(start: date, end: date):
+    current = start
+    while current <= end:
+        yield current
+        current += timedelta(days=1)
+
+
+def _months(start: date, end: date):
+    current = date(start.year, start.month, 1)
+    while current <= end:
+        yield current.year, current.month
+        current = date(current.year + (current.month == 12),
+                       current.month % 12 + 1, 1)
+
+
+# --------------------------------------------------------------- strategies
+
+def economic_times(fetcher: Fetcher, start: date, end: date) -> list[Candidate]:
+    """Month sitemaps, split into parts capped at 10k URLs each."""
+    index = _fetch_xml(
+        fetcher,
+        "https://economictimes.indiatimes.com/etstatic/sitemaps/et/news/sitemap-index.xml",
+    )
+    if not index:
+        return []
+    wanted = {f"{date(y, m, 1):%Y-%B}" for y, m in _months(start, end)}
+    out: list[Candidate] = []
+    for part in _locs(index):
+        stem = re.search(r"/(\d{4}-[A-Za-z]+)-\d+\.xml$", part)
+        if not stem or stem.group(1) not in wanted:
+            continue
+        xml = _fetch_xml(fetcher, part)
+        if not xml:
+            continue
+        for url, when in _loc_lastmod_pairs(xml):
+            # lastmod can trail publication into the next day, so keep a
+            # one-day margin and let the article page settle the real date.
+            if when and not (start - timedelta(days=1) <= when <= end + timedelta(days=1)):
+                continue
+            out.append(Candidate(url, "economic_times", when))
+    return out
+
+
+def financial_express(fetcher: Fetcher, start: date, end: date) -> list[Candidate]:
+    """Day sitemaps. Dated URLs resolve well beyond the index's ~92-day window."""
+    out: list[Candidate] = []
+    days = list(_days(start, end))
+    log.info("financial_express: scanning %d day(s) of sitemaps", len(days))
+    for i, day in enumerate(days, 1):
+        xml = _fetch_xml(
+            fetcher,
+            f"https://www.financialexpress.com/sitemap.xml"
+            f"?yyyy={day.year}&mm={day.month:02d}&dd={day.day:02d}",
+        )
+        if not xml:
+            continue
+        out.extend(Candidate(url, "financial_express", day) for url in _locs(xml))
+        # One request per day, each spaced by the rate limit, so a wide window
+        # can run minutes with no other output - a line per day makes that
+        # visible progress rather than an apparent hang.
+        if i % 5 == 0 or i == len(days):
+            log.info("financial_express: %d/%d days done, %d URLs so far", i, len(days), len(out))
+    return out
+
+
+def business_line(fetcher: Fetcher, start: date, end: date) -> list[Candidate]:
+    """Day sitemaps at /sitemap/archive/all/YYYYMMDD_N.xml, back to Dec 2010."""
+    out: list[Candidate] = []
+    days = list(_days(start, end))
+    log.info("business_line: scanning %d day(s) of sitemaps", len(days))
+    for i, day in enumerate(days, 1):
+        # Days occasionally spill into a second part; stop at the first gap.
+        for part in range(1, 4):
+            xml = _fetch_xml(
+                fetcher,
+                f"https://www.thehindubusinessline.com/sitemap/archive/all/"
+                f"{day:%Y%m%d}_{part}.xml",
+            )
+            if not xml:
+                break
+            urls = _locs(xml)
+            if not urls:
+                break
+            out.extend(Candidate(url, "business_line", day) for url in urls)
+        if i % 5 == 0 or i == len(days):
+            log.info("business_line: %d/%d days done, %d URLs so far", i, len(days), len(out))
+    return out
+
+
+def moneycontrol(fetcher: Fetcher, start: date, end: date) -> list[Candidate]:
+    """Year index -> month sitemaps (sitemap-post-YYYY-MM.xml)."""
+    out: list[Candidate] = []
+    wanted = {f"{y:04d}-{m:02d}" for y, m in _months(start, end)}
+    for year in range(start.year, end.year + 1):
+        index = _fetch_xml(
+            fetcher, f"https://www.moneycontrol.com/news/index-sitemap-{year}.xml"
+        )
+        if not index:
+            continue
+        for month_url in _locs(index):
+            stem = re.search(r"sitemap-post-(\d{4}-\d{2})\.xml$", month_url)
+            if not stem or stem.group(1) not in wanted:
+                continue
+            xml = _fetch_xml(fetcher, month_url)
+            if not xml:
+                continue
+            for url, when in _loc_lastmod_pairs(xml):
+                if when and not (start - timedelta(days=1) <= when <= end + timedelta(days=1)):
+                    continue
+                out.append(Candidate(url, "moneycontrol", when))
+    return out
+
+
+def business_today(fetcher: Fetcher, start: date, end: date) -> list[Candidate]:
+    """Day sitemaps at /rssfeeds/date-wise-story-sitemap.xml?yyyy=&mm=&dd=.
+
+    Same query-string shape as Financial Express's day sitemap. Its edge
+    (Akamai, same as Business Standard and NDTV Profit) occasionally returns
+    an "Access Denied" HTML page in place of the real sitemap for no
+    reproducible reason - verified as intermittent, not a real block: the
+    same date retried moments later, and every date in a five-request burst
+    with no delay at all, both came back 200 with real content. Treated the
+    same as any other single-day fetch failure - skipped, logged, the run
+    continues - rather than disabling the whole source over a transient
+    edge hiccup.
+    """
+    out: list[Candidate] = []
+    days = list(_days(start, end))
+    log.info("business_today: scanning %d day(s) of sitemaps", len(days))
+    for i, day in enumerate(days, 1):
+        xml = _fetch_xml(
+            fetcher,
+            "https://www.businesstoday.in/rssfeeds/date-wise-story-sitemap.xml"
+            f"?yyyy={day.year}&mm={day.month:02d}&dd={day.day:02d}",
+        )
+        if not xml:
+            continue
+        for url, when in _loc_lastmod_pairs(xml):
+            if when and not (start - timedelta(days=1) <= when <= end + timedelta(days=1)):
+                continue
+            out.append(Candidate(url, "business_today", when))
+        if i % 5 == 0 or i == len(days):
+            log.info("business_today: %d/%d days done, %d URLs so far", i, len(days), len(out))
+    return out
+
+
+def entrackr(fetcher: Fetcher, start: date, end: date) -> list[Candidate]:
+    """Day sitemaps at /sitemap_YYYY-MM-DD.xml, verified back to 2017-05-29 -
+    same direct-URL-construction shape as financial_express/business_today,
+    guessed rather than walked through the declared index sitemap."""
+    out: list[Candidate] = []
+    days = list(_days(start, end))
+    log.info("entrackr: scanning %d day(s) of sitemaps", len(days))
+    for i, day in enumerate(days, 1):
+        xml = _fetch_xml(fetcher, f"https://entrackr.com/sitemap_{day:%Y-%m-%d}.xml")
+        if not xml:
+            continue
+        out.extend(Candidate(url, "entrackr", day) for url in _locs(xml))
+        if i % 5 == 0 or i == len(days):
+            log.info("entrackr: %d/%d days done, %d URLs so far", i, len(days), len(out))
+    return out
+
+
+def vccircle(fetcher: Fetcher, start: date, end: date, max_files: int = 200) -> list[Candidate]:
+    """Numbered article-sitemap-N.xml files, reverse chronological - file 1 is
+    the newest window, file 66 reached back to 2008 when checked. Neither the
+    filename nor the sitemap-index's own <lastmod> encode a per-file date (the
+    index just stamps every entry with the last site rebuild), so the file(s)
+    covering the wanted window are found by walking forward from the newest
+    file, using each file's *own* per-URL dates, until a file's entire content
+    is older than the window.
+    """
+    out: list[Candidate] = []
+    n = 1
+    margin_start = start - timedelta(days=1)
+    while n <= max_files:
+        xml = _fetch_xml(
+            fetcher, f"https://www.vccircle.com/sitemap/article-sitemap-{n}.xml")
+        if not xml:
+            break
+        pairs = _loc_lastmod_pairs(xml)
+        dated = [when for _, when in pairs if when is not None]
+        if not dated:
+            break
+        newest, oldest = max(dated), min(dated)
+        if newest >= margin_start:
+            out.extend(
+                Candidate(url, "vccircle", when) for url, when in pairs
+                if when and margin_start <= when <= end + timedelta(days=1)
+            )
+        if oldest < margin_start:
+            break
+        n += 1
+    log.info("vccircle: scanned %d sitemap file(s), %d URLs in window", n, len(out))
+    return out
+
+
+_SITEMAP_BLOCK_RE = re.compile(r"<sitemap>(.*?)</sitemap>", re.S | re.I)
+
+
+def _sitemap_index_pairs(xml: str) -> list[tuple[str, date | None]]:
+    """Like _loc_lastmod_pairs, but for a <sitemapindex> of <sitemap> entries
+    rather than a <urlset> of <url> entries - the wrapper tag is the only
+    difference in shape."""
+    pairs = []
+    for block in _SITEMAP_BLOCK_RE.findall(xml):
+        loc = _LOC_RE.search(block)
+        if not loc:
+            continue
+        stamp = _LASTMOD_RE.search(block)
+        when = None
+        if stamp:
+            try:
+                when = datetime.fromisoformat(
+                    stamp.group(1).replace("Z", "+00:00")).date()
+            except ValueError:
+                when = None
+        pairs.append((_unescape(loc.group(1)), when))
+    return pairs
+
+
+def inc42(fetcher: Fetcher, start: date, end: date) -> list[Candidate]:
+    """WordPress Yoast archive: sitemap_index.xml's numbered post-sitemapN.xml
+    files run oldest to newest, each internally per-URL <lastmod>-dated - a
+    file's own index-level lastmod marks its *last* (newest) article, so a
+    file is worth fetching whenever that boundary reaches into the wanted
+    window or beyond it. The unnumbered post-sitemap.xml (no digits, so the
+    regex below skips it) duplicates the newest numbered file - fetching it
+    too would just double the newest window's candidates.
+    """
+    index = _fetch_xml(fetcher, "https://inc42.com/sitemap_index.xml")
+    if not index:
+        return []
+    margin_start = start - timedelta(days=1)
+    numbered = [
+        (url, when) for url, when in _sitemap_index_pairs(index)
+        if re.search(r"/post-sitemap\d+\.xml$", url)
+    ]
+    out: list[Candidate] = []
+    for url, when in numbered:
+        if when is not None and when < margin_start:
+            continue
+        xml = _fetch_xml(fetcher, url)
+        if not xml:
+            continue
+        for article_url, article_when in _loc_lastmod_pairs(xml):
+            if article_when and not (margin_start <= article_when <= end + timedelta(days=1)):
+                continue
+            out.append(Candidate(article_url, "inc42", article_when))
+    log.info("inc42: %d URLs in window", len(out))
+    return out
+
+
+STRATEGIES = {
+    "economic_times": economic_times,
+    "financial_express": financial_express,
+    "business_line": business_line,
+    "moneycontrol": moneycontrol,
+    "business_today": business_today,
+    "entrackr": entrackr,
+    "vccircle": vccircle,
+    "inc42": inc42,
+}
+
+
+def discover(
+    fetcher: Fetcher,
+    sources: list[str],
+    start: date,
+    end: date,
+    max_workers: int = 4,
+) -> tuple[list[Candidate], dict[str, str]]:
+    """Collect candidates across sources, one worker thread per source.
+
+    Returns the candidates plus a per-source status map. A source that blocks
+    us or changes layout degrades to an error string instead of killing the
+    run, and the report states which sources were unavailable (Section 10).
+
+    Running sources concurrently is safe and does not make the crawl any less
+    polite: each source is a different origin, and ``Fetcher`` serialises
+    requests *within* an origin via its own lock regardless of how many
+    threads call it (see ``fetcher.py``). What changes is wall-clock time -
+    financial_express and business_line fetch one sitemap per day and were
+    the dominant cost on a wide date range (a full year took ~35 minutes
+    combined, sequentially); run concurrently with the two fast month-based
+    sources, total discovery time drops toward whichever single source is
+    slowest, not the sum of all four.
+    """
+    runnable = [key for key in sources if key in STRATEGIES]
+    status: dict[str, str] = {
+        key: "unknown source" for key in sources if key not in STRATEGIES
+    }
+    candidates: list[Candidate] = []
+    if not runnable:
+        return candidates, status
+
+    with ThreadPoolExecutor(max_workers=max(1, min(max_workers, len(runnable)))) as executor:
+        future_to_key = {
+            executor.submit(STRATEGIES[key], fetcher, start, end): key
+            for key in runnable
+        }
+        for future in as_completed(future_to_key):
+            key = future_to_key[future]
+            try:
+                found = future.result()
+            except Exception as exc:
+                status[key] = f"failed: {type(exc).__name__}: {exc}"
+                log.exception("discovery failed for %s", key)
+                continue
+            candidates.extend(found)
+            status[key] = f"ok: {len(found)} candidate URLs" if found else "no URLs returned"
+    return candidates, status

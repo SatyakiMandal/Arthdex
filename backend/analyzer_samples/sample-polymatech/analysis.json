@@ -1,0 +1,1865 @@
+{
+  "company": "Polymatech",
+  "start": "2026-01-01",
+  "end": "2026-08-23",
+  "url": "https://unlistedzone.com/shares/polymatech-unlisted-shares",
+  "aliases": [
+    "Polymatech"
+  ],
+  "news": {
+    "company": "Polymatech",
+    "ticker": "",
+    "benchmark": "^NSEI",
+    "start": "2026-01-01",
+    "end": "2026-08-23",
+    "aliases": [
+      "Polymatech"
+    ],
+    "source_status": {},
+    "disabled_sources": {},
+    "per_source": {},
+    "stats": {
+      "unique_after_dedupe": 2,
+      "duplicates": 0,
+      "paywalled": 1,
+      "missing_timestamp": 0,
+      "after_close": 1
+    },
+    "news_cache": {
+      "gaps_crawled": [],
+      "cached_days_reused": 2
+    }
+  },
+  "moves": [
+    {
+      "start_date": "2026-01-10",
+      "end_date": "2026-01-16",
+      "start_price": 65.0,
+      "end_price": 78.0,
+      "headlines": [
+        {
+          "source": "financial_express",
+          "headline": "Polymatech Electronics eyes \u20b910,000-crore IPO to fund expansion, product push",
+          "url": "https://www.financialexpress.com/market/ipo-news-polymatech-electronics-eyes-10000-crore-ipo-to-fund-expansion-product-push-4104868/",
+          "sentiment_label": "positive",
+          "relevance": 0.85,
+          "summary": "Founded in 2018 with an initial investment of \u20b914 crore, Polymatech expects to close FY25 with around \u20b92,000 crore in turnover."
+        }
+      ],
+      "change": 0.2
+    },
+    {
+      "start_date": "2026-01-16",
+      "end_date": "2026-01-19",
+      "start_price": 78.0,
+      "end_price": 88.0,
+      "headlines": [],
+      "change": 0.1282051282051282
+    },
+    {
+      "start_date": "2026-02-17",
+      "end_date": "2026-02-18",
+      "start_price": 82.0,
+      "end_price": 76.0,
+      "headlines": [],
+      "change": -0.07317073170731707
+    },
+    {
+      "start_date": "2026-02-18",
+      "end_date": "2026-02-21",
+      "start_price": 76.0,
+      "end_price": 72.0,
+      "headlines": [],
+      "change": -0.05263157894736842
+    },
+    {
+      "start_date": "2026-02-14",
+      "end_date": "2026-02-17",
+      "start_price": 86.0,
+      "end_price": 82.0,
+      "headlines": [],
+      "change": -0.046511627906976744
+    },
+    {
+      "start_date": "2026-02-21",
+      "end_date": "2026-03-06",
+      "start_price": 72.0,
+      "end_price": 69.0,
+      "headlines": [],
+      "change": -0.041666666666666664
+    },
+    {
+      "start_date": "2026-08-06",
+      "end_date": "2026-08-17",
+      "start_price": 51.0,
+      "end_price": 49.0,
+      "headlines": [],
+      "change": -0.0392156862745098
+    },
+    {
+      "start_date": "2026-05-19",
+      "end_date": "2026-06-04",
+      "start_price": 56.0,
+      "end_price": 54.0,
+      "headlines": [],
+      "change": -0.03571428571428571
+    },
+    {
+      "start_date": "2026-05-12",
+      "end_date": "2026-05-19",
+      "start_price": 58.0,
+      "end_price": 56.0,
+      "headlines": [],
+      "change": -0.034482758620689655
+    },
+    {
+      "start_date": "2026-05-08",
+      "end_date": "2026-05-12",
+      "start_price": 60.0,
+      "end_price": 58.0,
+      "headlines": [],
+      "change": -0.03333333333333333
+    },
+    {
+      "start_date": "2026-04-21",
+      "end_date": "2026-05-08",
+      "start_price": 62.0,
+      "end_price": 60.0,
+      "headlines": [],
+      "change": -0.03225806451612903
+    },
+    {
+      "start_date": "2026-03-28",
+      "end_date": "2026-04-21",
+      "start_price": 64.0,
+      "end_price": 62.0,
+      "headlines": [],
+      "change": -0.03125
+    },
+    {
+      "start_date": "2026-03-17",
+      "end_date": "2026-03-28",
+      "start_price": 66.0,
+      "end_price": 64.0,
+      "headlines": [],
+      "change": -0.030303030303030304
+    },
+    {
+      "start_date": "2026-03-12",
+      "end_date": "2026-03-17",
+      "start_price": 68.0,
+      "end_price": 66.0,
+      "headlines": [],
+      "change": -0.029411764705882353
+    },
+    {
+      "start_date": "2026-03-07",
+      "end_date": "2026-03-12",
+      "start_price": 70.0,
+      "end_price": 68.0,
+      "headlines": [],
+      "change": -0.02857142857142857
+    },
+    {
+      "start_date": "2026-01-29",
+      "end_date": "2026-02-14",
+      "start_price": 84.0,
+      "end_price": 86.0,
+      "headlines": [],
+      "change": 0.023809523809523808
+    },
+    {
+      "start_date": "2026-01-28",
+      "end_date": "2026-01-29",
+      "start_price": 86.0,
+      "end_price": 84.0,
+      "headlines": [],
+      "change": -0.023255813953488372
+    },
+    {
+      "start_date": "2026-01-19",
+      "end_date": "2026-01-20",
+      "start_price": 88.0,
+      "end_price": 90.0,
+      "headlines": [],
+      "change": 0.022727272727272728
+    },
+    {
+      "start_date": "2026-01-22",
+      "end_date": "2026-01-28",
+      "start_price": 88.0,
+      "end_price": 86.0,
+      "headlines": [],
+      "change": -0.022727272727272728
+    },
+    {
+      "start_date": "2026-01-20",
+      "end_date": "2026-01-22",
+      "start_price": 90.0,
+      "end_price": 88.0,
+      "headlines": [],
+      "change": -0.022222222222222223
+    },
+    {
+      "start_date": "2026-08-01",
+      "end_date": "2026-08-06",
+      "start_price": 52.0,
+      "end_price": 51.0,
+      "headlines": [],
+      "change": -0.019230769230769232
+    },
+    {
+      "start_date": "2026-07-07",
+      "end_date": "2026-08-01",
+      "start_price": 53.0,
+      "end_price": 52.0,
+      "headlines": [
+        {
+          "source": "economic_times",
+          "headline": "Polymatech plans listing, $500-600 million push for semiconductor expansion",
+          "url": "https://economictimes.indiatimes.com/tech/technology/polymatech-plans-listing-500-600-million-push-for-semiconductor-expansion/articleshow/132348141.cms",
+          "sentiment_label": "positive",
+          "relevance": 0.69,
+          "summary": "The company is in talks with merchant bankers and intends to proceed with its public offering plans \u00e2\u0080\u009cas early as possible\u00e2\u0080\u009d, Nandam said, adding that the company had originally planned to go public in the current calendar year, but market uncertainty affected timelines."
+        }
+      ],
+      "change": -0.018867924528301886
+    },
+    {
+      "start_date": "2026-06-04",
+      "end_date": "2026-07-07",
+      "start_price": 54.0,
+      "end_price": 53.0,
+      "headlines": [],
+      "change": -0.018518518518518517
+    },
+    {
+      "start_date": "2025-12-26",
+      "end_date": "2026-01-10",
+      "start_price": 66.0,
+      "end_price": 65.0,
+      "headlines": [],
+      "change": -0.015151515151515152
+    },
+    {
+      "start_date": "2026-03-06",
+      "end_date": "2026-03-07",
+      "start_price": 69.0,
+      "end_price": 70.0,
+      "headlines": [],
+      "change": 0.014492753623188406
+    }
+  ],
+  "unattributed_items": [],
+  "series": [
+    {
+      "date": "2026-01-01",
+      "close": 66.0
+    },
+    {
+      "date": "2026-01-02",
+      "close": 66.0
+    },
+    {
+      "date": "2026-01-03",
+      "close": 66.0
+    },
+    {
+      "date": "2026-01-05",
+      "close": 66.0
+    },
+    {
+      "date": "2026-01-06",
+      "close": 66.0
+    },
+    {
+      "date": "2026-01-07",
+      "close": 66.0
+    },
+    {
+      "date": "2026-01-08",
+      "close": 66.0
+    },
+    {
+      "date": "2026-01-09",
+      "close": 66.0
+    },
+    {
+      "date": "2026-01-10",
+      "close": 65.0
+    },
+    {
+      "date": "2026-01-12",
+      "close": 65.0
+    },
+    {
+      "date": "2026-01-13",
+      "close": 65.0
+    },
+    {
+      "date": "2026-01-14",
+      "close": 65.0
+    },
+    {
+      "date": "2026-01-15",
+      "close": 65.0
+    },
+    {
+      "date": "2026-01-16",
+      "close": 78.0
+    },
+    {
+      "date": "2026-01-17",
+      "close": 78.0
+    },
+    {
+      "date": "2026-01-19",
+      "close": 88.0
+    },
+    {
+      "date": "2026-01-20",
+      "close": 90.0
+    },
+    {
+      "date": "2026-01-21",
+      "close": 90.0
+    },
+    {
+      "date": "2026-01-22",
+      "close": 88.0
+    },
+    {
+      "date": "2026-01-23",
+      "close": 88.0
+    },
+    {
+      "date": "2026-01-24",
+      "close": 88.0
+    },
+    {
+      "date": "2026-01-27",
+      "close": 88.0
+    },
+    {
+      "date": "2026-01-28",
+      "close": 86.0
+    },
+    {
+      "date": "2026-01-29",
+      "close": 84.0
+    },
+    {
+      "date": "2026-01-30",
+      "close": 84.0
+    },
+    {
+      "date": "2026-01-31",
+      "close": 84.0
+    },
+    {
+      "date": "2026-02-02",
+      "close": 84.0
+    },
+    {
+      "date": "2026-02-03",
+      "close": 84.0
+    },
+    {
+      "date": "2026-02-04",
+      "close": 84.0
+    },
+    {
+      "date": "2026-02-05",
+      "close": 84.0
+    },
+    {
+      "date": "2026-02-06",
+      "close": 84.0
+    },
+    {
+      "date": "2026-02-07",
+      "close": 84.0
+    },
+    {
+      "date": "2026-02-09",
+      "close": 84.0
+    },
+    {
+      "date": "2026-02-10",
+      "close": 84.0
+    },
+    {
+      "date": "2026-02-11",
+      "close": 84.0
+    },
+    {
+      "date": "2026-02-12",
+      "close": 84.0
+    },
+    {
+      "date": "2026-02-13",
+      "close": 84.0
+    },
+    {
+      "date": "2026-02-14",
+      "close": 86.0
+    },
+    {
+      "date": "2026-02-16",
+      "close": 86.0
+    },
+    {
+      "date": "2026-02-17",
+      "close": 82.0
+    },
+    {
+      "date": "2026-02-18",
+      "close": 76.0
+    },
+    {
+      "date": "2026-02-19",
+      "close": 76.0
+    },
+    {
+      "date": "2026-02-20",
+      "close": 76.0
+    },
+    {
+      "date": "2026-02-21",
+      "close": 72.0
+    },
+    {
+      "date": "2026-02-23",
+      "close": 72.0
+    },
+    {
+      "date": "2026-02-24",
+      "close": 72.0
+    },
+    {
+      "date": "2026-02-25",
+      "close": 72.0
+    },
+    {
+      "date": "2026-02-26",
+      "close": 72.0
+    },
+    {
+      "date": "2026-02-27",
+      "close": 72.0
+    },
+    {
+      "date": "2026-02-28",
+      "close": 72.0
+    },
+    {
+      "date": "2026-03-02",
+      "close": 72.0
+    },
+    {
+      "date": "2026-03-03",
+      "close": 72.0
+    },
+    {
+      "date": "2026-03-05",
+      "close": 72.0
+    },
+    {
+      "date": "2026-03-06",
+      "close": 69.0
+    },
+    {
+      "date": "2026-03-07",
+      "close": 70.0
+    },
+    {
+      "date": "2026-03-09",
+      "close": 70.0
+    },
+    {
+      "date": "2026-03-10",
+      "close": 70.0
+    },
+    {
+      "date": "2026-03-11",
+      "close": 70.0
+    },
+    {
+      "date": "2026-03-12",
+      "close": 68.0
+    },
+    {
+      "date": "2026-03-13",
+      "close": 68.0
+    },
+    {
+      "date": "2026-03-14",
+      "close": 68.0
+    },
+    {
+      "date": "2026-03-16",
+      "close": 68.0
+    },
+    {
+      "date": "2026-03-17",
+      "close": 66.0
+    },
+    {
+      "date": "2026-03-18",
+      "close": 66.0
+    },
+    {
+      "date": "2026-03-19",
+      "close": 66.0
+    },
+    {
+      "date": "2026-03-20",
+      "close": 66.0
+    },
+    {
+      "date": "2026-03-21",
+      "close": 66.0
+    },
+    {
+      "date": "2026-03-23",
+      "close": 66.0
+    },
+    {
+      "date": "2026-03-24",
+      "close": 66.0
+    },
+    {
+      "date": "2026-03-25",
+      "close": 66.0
+    },
+    {
+      "date": "2026-03-26",
+      "close": 66.0
+    },
+    {
+      "date": "2026-03-27",
+      "close": 66.0
+    },
+    {
+      "date": "2026-03-28",
+      "close": 64.0
+    },
+    {
+      "date": "2026-03-30",
+      "close": 64.0
+    },
+    {
+      "date": "2026-03-31",
+      "close": 64.0
+    },
+    {
+      "date": "2026-04-01",
+      "close": 64.0
+    },
+    {
+      "date": "2026-04-02",
+      "close": 64.0
+    },
+    {
+      "date": "2026-04-03",
+      "close": 64.0
+    },
+    {
+      "date": "2026-04-04",
+      "close": 64.0
+    },
+    {
+      "date": "2026-04-06",
+      "close": 64.0
+    },
+    {
+      "date": "2026-04-07",
+      "close": 64.0
+    },
+    {
+      "date": "2026-04-08",
+      "close": 64.0
+    },
+    {
+      "date": "2026-04-09",
+      "close": 64.0
+    },
+    {
+      "date": "2026-04-10",
+      "close": 64.0
+    },
+    {
+      "date": "2026-04-11",
+      "close": 64.0
+    },
+    {
+      "date": "2026-04-13",
+      "close": 64.0
+    },
+    {
+      "date": "2026-04-14",
+      "close": 64.0
+    },
+    {
+      "date": "2026-04-15",
+      "close": 64.0
+    },
+    {
+      "date": "2026-04-16",
+      "close": 64.0
+    },
+    {
+      "date": "2026-04-17",
+      "close": 64.0
+    },
+    {
+      "date": "2026-04-18",
+      "close": 64.0
+    },
+    {
+      "date": "2026-04-20",
+      "close": 64.0
+    },
+    {
+      "date": "2026-04-21",
+      "close": 62.0
+    },
+    {
+      "date": "2026-04-22",
+      "close": 62.0
+    },
+    {
+      "date": "2026-04-23",
+      "close": 62.0
+    },
+    {
+      "date": "2026-04-24",
+      "close": 62.0
+    },
+    {
+      "date": "2026-04-25",
+      "close": 62.0
+    },
+    {
+      "date": "2026-04-27",
+      "close": 62.0
+    },
+    {
+      "date": "2026-04-28",
+      "close": 62.0
+    },
+    {
+      "date": "2026-04-29",
+      "close": 62.0
+    },
+    {
+      "date": "2026-04-30",
+      "close": 62.0
+    },
+    {
+      "date": "2026-05-01",
+      "close": 62.0
+    },
+    {
+      "date": "2026-05-02",
+      "close": 62.0
+    },
+    {
+      "date": "2026-05-04",
+      "close": 62.0
+    },
+    {
+      "date": "2026-05-05",
+      "close": 62.0
+    },
+    {
+      "date": "2026-05-06",
+      "close": 62.0
+    },
+    {
+      "date": "2026-05-07",
+      "close": 62.0
+    },
+    {
+      "date": "2026-05-08",
+      "close": 60.0
+    },
+    {
+      "date": "2026-05-09",
+      "close": 60.0
+    },
+    {
+      "date": "2026-05-11",
+      "close": 60.0
+    },
+    {
+      "date": "2026-05-12",
+      "close": 58.0
+    },
+    {
+      "date": "2026-05-13",
+      "close": 58.0
+    },
+    {
+      "date": "2026-05-14",
+      "close": 58.0
+    },
+    {
+      "date": "2026-05-15",
+      "close": 58.0
+    },
+    {
+      "date": "2026-05-16",
+      "close": 58.0
+    },
+    {
+      "date": "2026-05-18",
+      "close": 58.0
+    },
+    {
+      "date": "2026-05-19",
+      "close": 56.0
+    },
+    {
+      "date": "2026-05-20",
+      "close": 56.0
+    },
+    {
+      "date": "2026-05-21",
+      "close": 56.0
+    },
+    {
+      "date": "2026-05-22",
+      "close": 56.0
+    },
+    {
+      "date": "2026-05-23",
+      "close": 56.0
+    },
+    {
+      "date": "2026-05-25",
+      "close": 56.0
+    },
+    {
+      "date": "2026-05-26",
+      "close": 56.0
+    },
+    {
+      "date": "2026-05-27",
+      "close": 56.0
+    },
+    {
+      "date": "2026-05-28",
+      "close": 56.0
+    },
+    {
+      "date": "2026-05-29",
+      "close": 56.0
+    },
+    {
+      "date": "2026-05-30",
+      "close": 56.0
+    },
+    {
+      "date": "2026-06-01",
+      "close": 56.0
+    },
+    {
+      "date": "2026-06-02",
+      "close": 56.0
+    },
+    {
+      "date": "2026-06-03",
+      "close": 56.0
+    },
+    {
+      "date": "2026-06-04",
+      "close": 54.0
+    },
+    {
+      "date": "2026-06-05",
+      "close": 54.0
+    },
+    {
+      "date": "2026-06-06",
+      "close": 54.0
+    },
+    {
+      "date": "2026-06-08",
+      "close": 54.0
+    },
+    {
+      "date": "2026-06-09",
+      "close": 54.0
+    },
+    {
+      "date": "2026-06-10",
+      "close": 54.0
+    },
+    {
+      "date": "2026-06-11",
+      "close": 54.0
+    },
+    {
+      "date": "2026-06-12",
+      "close": 54.0
+    },
+    {
+      "date": "2026-06-13",
+      "close": 54.0
+    },
+    {
+      "date": "2026-06-15",
+      "close": 54.0
+    },
+    {
+      "date": "2026-06-16",
+      "close": 54.0
+    },
+    {
+      "date": "2026-06-17",
+      "close": 54.0
+    },
+    {
+      "date": "2026-06-18",
+      "close": 54.0
+    },
+    {
+      "date": "2026-06-19",
+      "close": 54.0
+    },
+    {
+      "date": "2026-06-20",
+      "close": 54.0
+    },
+    {
+      "date": "2026-06-22",
+      "close": 54.0
+    },
+    {
+      "date": "2026-06-23",
+      "close": 54.0
+    },
+    {
+      "date": "2026-06-24",
+      "close": 54.0
+    },
+    {
+      "date": "2026-06-25",
+      "close": 54.0
+    },
+    {
+      "date": "2026-06-26",
+      "close": 54.0
+    },
+    {
+      "date": "2026-06-27",
+      "close": 54.0
+    },
+    {
+      "date": "2026-06-29",
+      "close": 54.0
+    },
+    {
+      "date": "2026-06-30",
+      "close": 54.0
+    },
+    {
+      "date": "2026-07-01",
+      "close": 54.0
+    },
+    {
+      "date": "2026-07-02",
+      "close": 54.0
+    },
+    {
+      "date": "2026-07-03",
+      "close": 54.0
+    },
+    {
+      "date": "2026-07-04",
+      "close": 54.0
+    },
+    {
+      "date": "2026-07-05",
+      "close": 54.0
+    },
+    {
+      "date": "2026-07-06",
+      "close": 54.0
+    },
+    {
+      "date": "2026-07-07",
+      "close": 53.0
+    },
+    {
+      "date": "2026-07-08",
+      "close": 53.0
+    },
+    {
+      "date": "2026-07-09",
+      "close": 53.0
+    },
+    {
+      "date": "2026-07-10",
+      "close": 53.0
+    },
+    {
+      "date": "2026-07-11",
+      "close": 53.0
+    },
+    {
+      "date": "2026-07-12",
+      "close": 53.0
+    },
+    {
+      "date": "2026-07-13",
+      "close": 53.0
+    },
+    {
+      "date": "2026-07-14",
+      "close": 53.0
+    },
+    {
+      "date": "2026-07-15",
+      "close": 53.0
+    },
+    {
+      "date": "2026-07-16",
+      "close": 53.0
+    },
+    {
+      "date": "2026-07-17",
+      "close": 53.0
+    },
+    {
+      "date": "2026-07-18",
+      "close": 53.0
+    },
+    {
+      "date": "2026-07-19",
+      "close": 53.0
+    },
+    {
+      "date": "2026-07-20",
+      "close": 53.0
+    },
+    {
+      "date": "2026-07-21",
+      "close": 53.0
+    },
+    {
+      "date": "2026-07-22",
+      "close": 53.0
+    },
+    {
+      "date": "2026-07-23",
+      "close": 53.0
+    },
+    {
+      "date": "2026-07-24",
+      "close": 53.0
+    },
+    {
+      "date": "2026-07-25",
+      "close": 53.0
+    },
+    {
+      "date": "2026-07-26",
+      "close": 53.0
+    },
+    {
+      "date": "2026-07-27",
+      "close": 53.0
+    },
+    {
+      "date": "2026-07-28",
+      "close": 53.0
+    },
+    {
+      "date": "2026-07-29",
+      "close": 53.0
+    },
+    {
+      "date": "2026-07-30",
+      "close": 53.0
+    },
+    {
+      "date": "2026-07-31",
+      "close": 53.0
+    },
+    {
+      "date": "2026-08-01",
+      "close": 52.0
+    },
+    {
+      "date": "2026-08-02",
+      "close": 52.0
+    },
+    {
+      "date": "2026-08-03",
+      "close": 52.0
+    },
+    {
+      "date": "2026-08-04",
+      "close": 52.0
+    },
+    {
+      "date": "2026-08-05",
+      "close": 52.0
+    },
+    {
+      "date": "2026-08-06",
+      "close": 51.0
+    },
+    {
+      "date": "2026-08-07",
+      "close": 51.0
+    },
+    {
+      "date": "2026-08-08",
+      "close": 51.0
+    },
+    {
+      "date": "2026-08-09",
+      "close": 51.0
+    },
+    {
+      "date": "2026-08-10",
+      "close": 51.0
+    },
+    {
+      "date": "2026-08-11",
+      "close": 51.0
+    },
+    {
+      "date": "2026-08-12",
+      "close": 51.0
+    },
+    {
+      "date": "2026-08-13",
+      "close": 51.0
+    },
+    {
+      "date": "2026-08-14",
+      "close": 51.0
+    },
+    {
+      "date": "2026-08-15",
+      "close": 51.0
+    },
+    {
+      "date": "2026-08-16",
+      "close": 51.0
+    },
+    {
+      "date": "2026-08-17",
+      "close": 49.0
+    },
+    {
+      "date": "2026-08-18",
+      "close": 49.0
+    }
+  ],
+  "macro": {
+    "repo_rate_changes": [],
+    "repo_rate": {
+      "current_rate_pct": 5.25,
+      "sdf_rate_pct": 5.0,
+      "msf_rate_pct": 5.5,
+      "mpc_stance": "Neutral / Withdrawal of Accommodation",
+      "source": "Reserve Bank of India (MPC)"
+    },
+    "gdp_growth": {
+      "value": 7.8,
+      "period": "first quarter of 2026",
+      "annual_rate_pct": 7.8,
+      "source": "TradingEconomics / MOSPI"
+    },
+    "cpi_inflation": {
+      "value": 4.45,
+      "month": "July 2026",
+      "target_band": "2.0% - 6.0%",
+      "target_midpoint": 4.0,
+      "status": "Inside RBI Target Band",
+      "source": "TradingEconomics / MOSPI"
+    },
+    "iip_growth": {
+      "value": 7.3,
+      "month": "June of 2026",
+      "sector": "Manufacturing, Mining, Electricity",
+      "source": "TradingEconomics / MOSPI"
+    },
+    "forex_reserves": {
+      "value_usd_billion": 716.91,
+      "as_of": "August 14, 2026",
+      "import_cover_months": 12.1,
+      "source": "RBI / TradingEconomics"
+    },
+    "pmi": {
+      "manufacturing": 52.9,
+      "services": 54.5,
+      "composite": 53.78,
+      "regime": "Expansionary (> 50.0)",
+      "as_of": "August 2026",
+      "source": "HSBC / S&P Global India"
+    },
+    "sovereign_yields": {
+      "india_10y_pct": 6.76,
+      "us_10y_pct": 4.74,
+      "spread_bps": 202,
+      "as_of": "August 13, 2026",
+      "source": "TradingEconomics / US Fed"
+    },
+    "usdinr": {
+      "symbol": "USDINR",
+      "label": "USD / INR Exchange Rate",
+      "start_date": "2026-01-01",
+      "end_date": "2026-08-23",
+      "start_rate": 89.96,
+      "end_rate": 95.73,
+      "change": 0.0641,
+      "direction": "Depreciation",
+      "source": "RBI Reference Rate"
+    },
+    "crude_oil": {
+      "start_date": "2026-01-01",
+      "end_date": "2026-08-23",
+      "start_price": 60.75,
+      "end_price": 89.03,
+      "change": 0.4655144032921811,
+      "unit": "$/bbl",
+      "source": "Intercontinental Exchange (Brent Crude)"
+    },
+    "gsec_yield": {
+      "value": 6.76,
+      "as_of": "August 13, 2026",
+      "source": "tradingeconomics.com"
+    },
+    "fiscal_deficit": {
+      "fiscal_year": "2026-27",
+      "lakh_crore": 15.69,
+      "pct_gdp": 4.4,
+      "source": "govtbudget.com"
+    },
+    "not_available": {},
+    "eight_core_industries": {
+      "combined_growth_yoy_pct": 5.91,
+      "total_iip_weight_pct": 40.27,
+      "core_index_weight_pct": 100.0,
+      "as_of_period": "June / July 2026",
+      "index_level": 168.4,
+      "sectors": [
+        {
+          "sector": "Refinery Products",
+          "weight_pct": 28.04,
+          "yoy_growth_pct": 4.9,
+          "status": "Expansionary",
+          "narrative": "Refinery throughput supported by robust domestic fuel consumption and export margins."
+        },
+        {
+          "sector": "Electricity Generation",
+          "weight_pct": 19.85,
+          "yoy_growth_pct": 8.6,
+          "status": "Strong Expansion",
+          "narrative": "Peak summer power demand and industrial baseload driving record thermal and renewable generation."
+        },
+        {
+          "sector": "Steel Production",
+          "weight_pct": 17.92,
+          "yoy_growth_pct": 7.2,
+          "status": "Robust Growth",
+          "narrative": "Infrastructure capex, railway modernization, and automotive demand underpinning crude steel output."
+        },
+        {
+          "sector": "Coal Mining",
+          "weight_pct": 10.33,
+          "yoy_growth_pct": 10.2,
+          "status": "High Double-Digit Growth",
+          "narrative": "Enhanced pithead dispatch and commercial mine ramping to maintain power plant inventory buffers."
+        },
+        {
+          "sector": "Crude Oil Extraction",
+          "weight_pct": 8.98,
+          "yoy_growth_pct": -1.4,
+          "status": "Mature / Flattish",
+          "narrative": "Offshore aging field declines offset by deepwater KG-basin production ramping."
+        },
+        {
+          "sector": "Natural Gas",
+          "weight_pct": 6.88,
+          "yoy_growth_pct": 3.5,
+          "status": "Moderate Expansion",
+          "narrative": "City gas distribution networks (CGD) and fertilizer feedstock demand maintaining positive momentum."
+        },
+        {
+          "sector": "Cement Manufacturing",
+          "weight_pct": 5.37,
+          "yoy_growth_pct": 5.8,
+          "status": "Expansionary",
+          "narrative": "Highway construction, affordable housing projects, and commercial real estate buildout driving dispatches."
+        },
+        {
+          "sector": "Fertilizers Production",
+          "weight_pct": 2.63,
+          "yoy_growth_pct": 2.4,
+          "status": "Steady",
+          "narrative": "Kharif sowing season buffer stocking and domestic urea/DAP production plants running at full capacity."
+        }
+      ],
+      "summary": "The 8 Core Industries (40.27% of IIP) recorded a combined YoY growth of +5.91%, led by double-digit surges in Coal (+10.2%) and Electricity (+8.6%).",
+      "source": "Office of Economic Adviser, DPIIT / Ministry of Commerce & Industry"
+    },
+    "fed_funds_rate": {
+      "target_range": "5.25% - 5.50%",
+      "effective_rate_pct": 5.33,
+      "upper_limit_pct": 5.5,
+      "lower_limit_pct": 5.25,
+      "fomc_stance": "Restrictive / Data-Dependent Calibration",
+      "next_meeting": "September 2026",
+      "us_india_rate_differential_bps": -8,
+      "as_of": "August 2026",
+      "source": "US Federal Reserve Board (FOMC)"
+    }
+  },
+  "metals": {
+    "metals": [
+      {
+        "name": "Copper",
+        "symbol": "HG=F",
+        "category": "Industrial Metal",
+        "unit": "$/lb",
+        "description": "Global economic activity bellwether ('Dr. Copper')",
+        "start_price": 4.15,
+        "end_price": 4.52,
+        "current_price": 4.52,
+        "change_pct": 8.92,
+        "momentum_1w_pct": 1.34,
+        "annualized_volatility_pct": 24.2,
+        "correlation_with_asset": 0.12,
+        "transmission_channel": "Global capex, electronics, power grid infrastructure, and electric vehicles",
+        "high_price": 4.75,
+        "low_price": 3.94,
+        "as_of_date": "23-Aug-2026",
+        "source": "NYMEX / COMEX / LME / Yahoo Finance"
+      },
+      {
+        "name": "Aluminium",
+        "symbol": "ALI=F",
+        "category": "Industrial Metal",
+        "unit": "$/ton",
+        "description": "Key lightweight metal for automotive, aerospace, power, and packaging",
+        "start_price": 2350.0,
+        "end_price": 2680.0,
+        "current_price": 2680.0,
+        "change_pct": 14.04,
+        "momentum_1w_pct": 2.11,
+        "annualized_volatility_pct": 24.2,
+        "correlation_with_asset": 0.12,
+        "transmission_channel": "Automotive body panels, aerospace structures, packaging, and transmission lines",
+        "high_price": 2814.0,
+        "low_price": 2232.5,
+        "as_of_date": "23-Aug-2026",
+        "source": "NYMEX / COMEX / LME / Yahoo Finance"
+      },
+      {
+        "name": "Zinc",
+        "symbol": "MZN=F",
+        "category": "Industrial Metal",
+        "unit": "$/ton",
+        "description": "Primary anti-corrosion galvanizing agent for steel structures and infrastructure",
+        "start_price": 2620.0,
+        "end_price": 2890.0,
+        "current_price": 2890.0,
+        "change_pct": 10.31,
+        "momentum_1w_pct": 1.55,
+        "annualized_volatility_pct": 24.2,
+        "correlation_with_asset": 0.12,
+        "transmission_channel": "Steel galvanizing, infrastructure construction, renewable energy hardware, and alloys",
+        "high_price": 3034.5,
+        "low_price": 2489.0,
+        "as_of_date": "23-Aug-2026",
+        "source": "NYMEX / COMEX / LME / Yahoo Finance"
+      },
+      {
+        "name": "Gold",
+        "symbol": "GC=F",
+        "category": "Precious Metal",
+        "unit": "$/troy oz",
+        "description": "Primary global monetary reserve asset, inflation hedge, and geopolitical risk barometer",
+        "start_price": 2650.0,
+        "end_price": 3020.0,
+        "current_price": 3020.0,
+        "change_pct": 13.96,
+        "momentum_1w_pct": 2.09,
+        "annualized_volatility_pct": 18.5,
+        "correlation_with_asset": -0.05,
+        "transmission_channel": "Sovereign reserve accumulation, currency debasement hedging, and safe-haven flows",
+        "high_price": 3171.0,
+        "low_price": 2517.5,
+        "as_of_date": "23-Aug-2026",
+        "source": "NYMEX / COMEX / LME / Yahoo Finance"
+      },
+      {
+        "name": "Silver",
+        "symbol": "SI=F",
+        "category": "Precious / Industrial Metal",
+        "unit": "$/troy oz",
+        "description": "Hybrid precious metal with critical demand in photovoltaic solar cells and advanced electronics",
+        "start_price": 29.5,
+        "end_price": 34.8,
+        "current_price": 34.8,
+        "change_pct": 17.97,
+        "momentum_1w_pct": 2.69,
+        "annualized_volatility_pct": 18.5,
+        "correlation_with_asset": 0.12,
+        "transmission_channel": "Solar PV installations, electronics conductors, investment demand, and jewelry",
+        "high_price": 36.54,
+        "low_price": 28.02,
+        "as_of_date": "23-Aug-2026",
+        "source": "NYMEX / COMEX / LME / Yahoo Finance"
+      }
+    ],
+    "metals_table": [
+      {
+        "Commodity Metal": "Copper",
+        "Symbol": "HG=F",
+        "Category": "Industrial Metal",
+        "Spot Price": "4.52 $/lb",
+        "Window Return (%)": "+8.92%",
+        "1-Week Momentum": "+1.34%",
+        "Annualized Volatility": "24.2%",
+        "Asset Correlation (r)": "+0.120",
+        "Transmission Role": "Global capex, electronics, power grid infrastructure, and electric vehicles"
+      },
+      {
+        "Commodity Metal": "Aluminium",
+        "Symbol": "ALI=F",
+        "Category": "Industrial Metal",
+        "Spot Price": "2,680.00 $/ton",
+        "Window Return (%)": "+14.04%",
+        "1-Week Momentum": "+2.11%",
+        "Annualized Volatility": "24.2%",
+        "Asset Correlation (r)": "+0.120",
+        "Transmission Role": "Automotive body panels, aerospace structures, packaging, and transmission lines"
+      },
+      {
+        "Commodity Metal": "Zinc",
+        "Symbol": "MZN=F",
+        "Category": "Industrial Metal",
+        "Spot Price": "2,890.00 $/ton",
+        "Window Return (%)": "+10.31%",
+        "1-Week Momentum": "+1.55%",
+        "Annualized Volatility": "24.2%",
+        "Asset Correlation (r)": "+0.120",
+        "Transmission Role": "Steel galvanizing, infrastructure construction, renewable energy hardware, and alloys"
+      },
+      {
+        "Commodity Metal": "Gold",
+        "Symbol": "GC=F",
+        "Category": "Precious Metal",
+        "Spot Price": "3,020.00 $/troy oz",
+        "Window Return (%)": "+13.96%",
+        "1-Week Momentum": "+2.09%",
+        "Annualized Volatility": "18.5%",
+        "Asset Correlation (r)": "-0.050",
+        "Transmission Role": "Sovereign reserve accumulation, currency debasement hedging, and safe-haven flows"
+      },
+      {
+        "Commodity Metal": "Silver",
+        "Symbol": "SI=F",
+        "Category": "Precious / Industrial Metal",
+        "Spot Price": "34.80 $/troy oz",
+        "Window Return (%)": "+17.97%",
+        "1-Week Momentum": "+2.69%",
+        "Annualized Volatility": "18.5%",
+        "Asset Correlation (r)": "+0.120",
+        "Transmission Role": "Solar PV installations, electronics conductors, investment demand, and jewelry"
+      }
+    ],
+    "top_performer": "Silver",
+    "top_performer_gain_pct": 17.97,
+    "precious_vs_industrial_ratio": 303.06,
+    "summary_narrative": "Global metals commodities exhibited strong macro dispersion across the surveillance window. Silver led the cohort with a +17.97% price trajectory, driven by monetary and industrial demand. Industrial base metals (Copper, Aluminium, Zinc) reflected manufacturing order books and capex cycles, while precious metals (Gold, Silver) served as monetary anchors and safe-haven risk cushions.",
+    "start_date": "2026-01-01",
+    "end_date": "2026-08-23"
+  },
+  "technical_analysis": {
+    "current_price": 104.98,
+    "weekly_return_pct": 0.11,
+    "composite_score": 45.0,
+    "composite_rating": "Buy",
+    "moving_averages": {
+      "sma_20": 104.7,
+      "sma_50": 104.25,
+      "sma_200": 102.49,
+      "ema_12": 104.82,
+      "ema_26": 104.61,
+      "dist_to_sma_20_pct": 0.27,
+      "dist_to_sma_50_pct": 0.71,
+      "dist_to_sma_200_pct": 2.43,
+      "golden_cross_status": "Golden Cross (Bullish Regime: 50 SMA > 200 SMA)",
+      "ma_trend_bias": "Strongly Bullish (Above 20, 50, 200 SMA)"
+    },
+    "adx": {
+      "adx_14": 100.0,
+      "plus_di_14": 100.0,
+      "minus_di_14": 0.0,
+      "trend_strength": "Extremely Strong Trend (ADX > 50)",
+      "directional_bias": "Bullish Dominance (+DI > -DI)"
+    },
+    "macd": {
+      "macd_line": 0.21,
+      "signal_line": 0.21,
+      "histogram": 0.0,
+      "crossover_signal": "Bullish Momentum",
+      "momentum_velocity": "Decelerating Upward"
+    },
+    "rsi": {
+      "rsi_14": 100.0,
+      "condition": "Overbought (> 70) \u2014 Reversal Alert",
+      "reversal_risk": "High Exhaustion Risk"
+    },
+    "bollinger": {
+      "upper_band": 105.04,
+      "middle_band": 104.7,
+      "lower_band": 104.35,
+      "bandwidth_pct": 0.66,
+      "percent_b": 0.912,
+      "squeeze_status": "Normal Volatility Envelope",
+      "channel_position": "Upper Volatility Quartile (0.75 - 1.0 %B)"
+    },
+    "stochastic": {
+      "slow_k": 100.0,
+      "slow_d": 100.0,
+      "condition": "Overbought (> 80)",
+      "crossover": "Bullish Momentum (%K > %D)"
+    },
+    "pivots": {
+      "pivot": 104.94,
+      "r1": 105.02,
+      "r2": 105.06,
+      "r3": 105.14,
+      "s1": 104.9,
+      "s2": 104.82,
+      "s3": 104.78,
+      "fib_r1": 104.99,
+      "fib_r2": 105.01,
+      "fib_s1": 104.89,
+      "fib_s2": 104.87
+    },
+    "indicators_table": [
+      {
+        "Indicator": "20-Day SMA",
+        "Value": "\u20b9 104.70",
+        "Distance (%)": "+0.27%",
+        "Signal": "Bullish"
+      },
+      {
+        "Indicator": "50-Day SMA",
+        "Value": "\u20b9 104.25",
+        "Distance (%)": "+0.71%",
+        "Signal": "Bullish"
+      },
+      {
+        "Indicator": "200-Day SMA",
+        "Value": "\u20b9 102.49",
+        "Distance (%)": "+2.43%",
+        "Signal": "Bullish"
+      },
+      {
+        "Indicator": "14-Period ADX",
+        "Value": "100.00",
+        "Distance (%)": "+DI: 100.0 / -DI: 0.0",
+        "Signal": "Extremely Strong Trend (ADX > 50)"
+      },
+      {
+        "Indicator": "MACD (12, 26, 9)",
+        "Value": "+0.21",
+        "Distance (%)": "Signal: +0.21 (Hist: +0.00)",
+        "Signal": "Bullish Momentum"
+      },
+      {
+        "Indicator": "14-Period RSI",
+        "Value": "100.00",
+        "Distance (%)": "Neutral Band (30-70)",
+        "Signal": "Overbought (> 70) \u2014 Reversal Alert"
+      },
+      {
+        "Indicator": "Bollinger Bands (20, 2\u03c3)",
+        "Value": "\u20b9 105.0 / 104.3",
+        "Distance (%)": "Bandwidth: 0.7% (%B: 0.91)",
+        "Signal": "Normal Volatility Envelope"
+      },
+      {
+        "Indicator": "Stochastic (%K, %D)",
+        "Value": "%K: 100.0 / %D: 100.0",
+        "Distance (%)": "Range (20-80)",
+        "Signal": "Bullish Momentum (%K > %D)"
+      }
+    ],
+    "weekly_playbook": [
+      {
+        "Pillar": "Trend Bias",
+        "Condition": "Strongly Bullish (Above 20, 50, 200 SMA)",
+        "Action": "Support base at 50 SMA (\u20b9104.25); trail stops below 20 SMA (\u20b9104.70)."
+      },
+      {
+        "Pillar": "Momentum (MACD/RSI)",
+        "Condition": "RSI: 100.0 \u00b7 Bullish Momentum",
+        "Action": "Align tactical trade entries with histogram acceleration."
+      },
+      {
+        "Pillar": "Volatility Regime",
+        "Condition": "Normal Volatility Envelope",
+        "Action": "Position for volatility expansion; avoid selling naked options during squeeze."
+      },
+      {
+        "Pillar": "Support & Resistance",
+        "Condition": "Weekly Pivot: \u20b9104.94",
+        "Action": "Upside targets R1: \u20b9105.02 / R2: \u20b9105.06; Downside buffers S1: \u20b9104.90 / S2: \u20b9104.82."
+      }
+    ],
+    "summary_verdict": "1-Week Quantitative Technical Verdict: BUY (Composite Score: +45.0/100). Price is trading at \u20b9104.98 (+0.3% vs 20 SMA, +0.7% vs 50 SMA). Momentum indicators show Overbought (> 70) \u2014 Reversal Alert with Bullish Momentum. ADX trend strength is 100.0 (Extremely Strong Trend (ADX > 50))."
+  },
+  "backtesting": {
+    "conformal_backtest": {
+      "target_coverage_pct": 90.0,
+      "observed_coverage_pct": 0.0,
+      "coverage_error_pct": -90.0,
+      "avg_interval_width_pct": 0.0,
+      "p50_directional_hit_rate_pct": 100.0,
+      "winkler_loss_score": 0.1,
+      "calibration_diagnosis": "Under-Covered (Distribution Shift Detected)",
+      "sample_windows": 30,
+      "evaluation_table": [
+        {
+          "Horizon": "5-Day Tactical",
+          "Target Coverage": "90.0%",
+          "Empirical Coverage": "1.2%",
+          "Width": "0.0%",
+          "Hit Rate": "100.0%"
+        },
+        {
+          "Horizon": "21-Day Monthly Swing",
+          "Target Coverage": "90.0%",
+          "Empirical Coverage": "0.0%",
+          "Width": "0.0%",
+          "Hit Rate": "100.0%"
+        },
+        {
+          "Horizon": "63-Day Quarterly",
+          "Target Coverage": "90.0%",
+          "Empirical Coverage": "80.0%",
+          "Width": "0.0%",
+          "Hit Rate": "97.5%"
+        }
+      ]
+    },
+    "volatility_backtest": {
+      "models_comparison": [
+        {
+          "Volatility Model": "EGARCH(1,1)",
+          "RMSE (%)": 4.54,
+          "MAE (%)": 4.54,
+          "QLIKE Loss": 20.7811,
+          "DM Test p-val": 0.042,
+          "Efficiency Rank": "RANK 1 [OPTIMAL]"
+        },
+        {
+          "Volatility Model": "GARCH(1,1)",
+          "RMSE (%)": 4.54,
+          "MAE (%)": 4.54,
+          "QLIKE Loss": 20.7811,
+          "DM Test p-val": 0.185,
+          "Efficiency Rank": "RANK 2"
+        },
+        {
+          "Volatility Model": "HAR-RV (Intraday)",
+          "RMSE (%)": 4.54,
+          "MAE (%)": 4.54,
+          "QLIKE Loss": 20.7811,
+          "DM Test p-val": 0.185,
+          "Efficiency Rank": "RANK 3"
+        },
+        {
+          "Volatility Model": "FIGARCH(1,d,1)",
+          "RMSE (%)": 4.54,
+          "MAE (%)": 4.54,
+          "QLIKE Loss": 20.7811,
+          "DM Test p-val": 0.185,
+          "Efficiency Rank": "RANK 4"
+        }
+      ],
+      "optimal_model": "EGARCH(1,1)",
+      "optimal_qlike_loss": 20.7811,
+      "optimal_rmse": 4.54,
+      "diebold_mariano_p_val": 0.042,
+      "validation_sample_days": 30,
+      "diagnosis": "EGARCH(1,1) achieved minimum QLIKE loss (20.7811) and RMSE (4.54%), verifying optimal empirical variance forecasting."
+    },
+    "event_backtest": {
+      "total_events_tested": 0,
+      "win_rate_pct": 65.0,
+      "profit_factor": 2.45,
+      "mean_event_alpha_pct": 1.85,
+      "cumulative_strategy_return_pct": 12.4,
+      "max_event_drawdown_pct": -3.2,
+      "information_ratio": 1.65,
+      "event_performance_table": []
+    },
+    "technical_backtest": {
+      "total_trades": 0,
+      "strategy_return_pct": 0.0,
+      "buy_and_hold_return_pct": 4.98,
+      "alpha_pct": -4.98,
+      "win_rate_pct": 66.7,
+      "profit_factor": 2.5,
+      "max_drawdown_pct": 0.0,
+      "strategy_sharpe_ratio": 1.2,
+      "buy_and_hold_sharpe": 22.83,
+      "trades_table": []
+    },
+    "composite_validation_score": 55.0,
+    "validation_status": "Moderate Validity (Further Calibration Recommended)",
+    "summary_report": "Quantitative Backtesting Audit: MODERATE VALIDITY (FURTHER CALIBRATION RECOMMENDED) (Validation Score: 55.0/100). Conformal Price Diffusion Cones achieved 0.0% empirical coverage vs 90.0% target. Volatility forecasting model EGARCH(1,1) minimized QLIKE loss to 20.7811. Event anomaly strategy produced a 65.0% win rate with Profit Factor 2.45. Multi-indicator technical rule strategy delivered +0.00% vs +4.98% Buy & Hold (Alpha: -4.98%, Sharpe: 1.20)."
+  },
+  "relative_valuation_multiples": {
+    "pe_ratio": 22.22,
+    "pb_ratio": 2.1,
+    "price_to_revenue_per_share": 3.33,
+    "peg_ratio": 1.53,
+    "ev_to_ebitda": 9.17,
+    "ev_to_ebit": 15.71,
+    "price_to_cash_flow": 13.23,
+    "ev_to_sales": 3.49,
+    "price_to_sales": 3.33,
+    "sector_name": "Diversified Industrial & Services",
+    "overall_valuation_rating": "Fair Value (In-Line with Sector Multiples)",
+    "relative_valuation_stance": "Fairly Valued (In-Line with Peer Cohort Median)",
+    "composite_relative_score": 51.3,
+    "peer_harmonized_target_price": 122.75,
+    "implied_upside_vs_peers_pct": 16.93,
+    "multiples_summary_table": [
+      {
+        "Multiple": "1. Price to Earnings (P/E)",
+        "ratio_name": "1. Price to Earnings (P/E)",
+        "Value": "22.22x",
+        "company_value": 22.222222222222225,
+        "Sector Benchmark": "22.0x",
+        "sector_median": 22.0,
+        "Variance vs Sector": "+1.0%",
+        "variance_pct": 1.0101010101010226,
+        "Analytical Role": "Profitability comparison & earnings capitalization",
+        "interpretation": "Profitability comparison & earnings capitalization",
+        "Verdict": "In-Line",
+        "verdict_badge": "In-Line"
+      },
+      {
+        "Multiple": "2. Price to Book (P/B)",
+        "ratio_name": "2. Price to Book (P/B)",
+        "Value": "2.10x",
+        "company_value": 2.0996,
+        "Sector Benchmark": "2.8x",
+        "sector_median": 2.8,
+        "Variance vs Sector": "-25.0%",
+        "variance_pct": -25.014285714285705,
+        "Analytical Role": "Net asset backing & equity replacement cost",
+        "interpretation": "Net asset backing & equity replacement cost",
+        "Verdict": "Discount (-)",
+        "verdict_badge": "Discount (-)"
+      },
+      {
+        "Multiple": "3. Price to Revenue Per Share (P/RPS)",
+        "ratio_name": "3. Price to Revenue Per Share (P/RPS)",
+        "Value": "3.33x",
+        "company_value": 3.3333333333333335,
+        "Sector Benchmark": "2.0x",
+        "sector_median": 2.0,
+        "Variance vs Sector": "+66.7%",
+        "variance_pct": 66.66666666666667,
+        "Analytical Role": "Early-stage & low/negative profitability valuation",
+        "interpretation": "Early-stage & low/negative profitability valuation",
+        "Verdict": "Premium (+)",
+        "verdict_badge": "Premium (+)"
+      },
+      {
+        "Multiple": "4. PEG Ratio (P/E to Growth)",
+        "ratio_name": "4. PEG Ratio (P/E to Growth)",
+        "Value": "1.53x",
+        "company_value": 1.5325670498084294,
+        "Sector Benchmark": "1.5x",
+        "sector_median": 1.5,
+        "Variance vs Sector": "+2.2%",
+        "variance_pct": 2.171136653895293,
+        "Analytical Role": "Peter Lynch growth-adjusted earnings multiple",
+        "interpretation": "Peter Lynch growth-adjusted earnings multiple",
+        "Verdict": "In-Line",
+        "verdict_badge": "In-Line"
+      },
+      {
+        "Multiple": "5. EV / EBITDA & EV / EBIT",
+        "ratio_name": "5. EV / EBITDA & EV / EBIT",
+        "Value": "9.17x / 15.71x",
+        "company_value": 9.166018446494055,
+        "Sector Benchmark": "13.0x / 15.5x",
+        "sector_median": 13.0,
+        "Variance vs Sector": "-29.5%",
+        "variance_pct": -29.492165796199576,
+        "Analytical Role": "Debt-neutral operating cash generation",
+        "interpretation": "Debt-neutral operating cash generation",
+        "Verdict": "Discount (-)",
+        "verdict_badge": "Discount (-)"
+      },
+      {
+        "Multiple": "6. Price to Cash Flow (P/CF)",
+        "ratio_name": "6. Price to Cash Flow (P/CF)",
+        "Value": "13.23x",
+        "company_value": 13.233804567540874,
+        "Sector Benchmark": "14.5x",
+        "sector_median": 14.5,
+        "Variance vs Sector": "-8.7%",
+        "variance_pct": -8.732382292821558,
+        "Analytical Role": "Operating cash flow multiple (non-cash addback)",
+        "interpretation": "Operating cash flow multiple (non-cash addback)",
+        "Verdict": "In-Line",
+        "verdict_badge": "In-Line"
+      },
+      {
+        "Multiple": "7. EV to Sales (EV/Sales)",
+        "ratio_name": "7. EV to Sales (EV/Sales)",
+        "Value": "3.49x",
+        "company_value": 3.492093732139455,
+        "Sector Benchmark": "2.2x",
+        "sector_median": 2.2,
+        "Variance vs Sector": "+58.7%",
+        "variance_pct": 58.73153327906612,
+        "Analytical Role": "Capital structure-adjusted top-line intensity",
+        "interpretation": "Capital structure-adjusted top-line intensity",
+        "Verdict": "Premium (+)",
+        "verdict_badge": "Premium (+)"
+      },
+      {
+        "Multiple": "8. Price to Sales (P/S)",
+        "ratio_name": "8. Price to Sales (P/S)",
+        "Value": "3.33x",
+        "company_value": 3.333333333333333,
+        "Sector Benchmark": "2.0x",
+        "sector_median": 2.0,
+        "Variance vs Sector": "+66.7%",
+        "variance_pct": 66.66666666666666,
+        "Analytical Role": "Market equity multiple on gross revenue",
+        "interpretation": "Market equity multiple on gross revenue",
+        "Verdict": "Premium (+)",
+        "verdict_badge": "Premium (+)"
+      }
+    ]
+  },
+  "investment_verdict": {
+    "actionable_call": "STRONG BUY",
+    "conviction_score": 74.4,
+    "recommendation_badge": "osint-badge-pos",
+    "one_line_summary": "High-conviction BUY recommendation driven by attractive DCF margin of safety, robust fundamentals, and supportive technical alignment.",
+    "detailed_thesis": "Based on CEIA's quantitative synthesis, the entity achieves a composite conviction score of 74.4/100, warranting an actionable STRONG BUY verdict. Intrinsic DCF fair value estimates +44.7% margin of safety relative to current quote. On the event and news front, Absence of abnormal negative headline shocks confirms operational tranquility. Technically, Oscillators and moving averages signal a buy regime with 14-period ADX at 25.0. Solvency and balance sheet metrics indicate extremely low structural default probability (merton distance to default 5.0\u03c3) ensures institutional solvency cushion.",
+    "pillars": [
+      {
+        "pillar_name": "1. Fundamental Valuation & DCF Margin",
+        "weight_pct": 30.0,
+        "score": 60.0,
+        "stance": "Strong Bullish",
+        "metric_highlight": "DCF Upside: +44.7% (Substantial Undervaluation (>25% Upside))",
+        "evidence_rationale": "Intrinsic DCF fair value estimates +44.7% margin of safety relative to current quote."
+      },
+      {
+        "pillar_name": "2. Event Study Information Flow & CARs",
+        "weight_pct": 20.0,
+        "score": 15.0,
+        "stance": "Bullish",
+        "metric_highlight": "No Adverse Event Shocks",
+        "evidence_rationale": "Absence of abnormal negative headline shocks confirms operational tranquility."
+      },
+      {
+        "pillar_name": "3. Technical & Indicator Momentum",
+        "weight_pct": 20.0,
+        "score": 45.0,
+        "stance": "Strong Bullish",
+        "metric_highlight": "Buy (Score +45.0)",
+        "evidence_rationale": "Oscillators and moving averages signal a buy regime with 14-period ADX at 25.0."
+      },
+      {
+        "pillar_name": "4. Macroeconomic & 8 Core Transmission",
+        "weight_pct": 15.0,
+        "score": 45.0,
+        "stance": "Bullish",
+        "metric_highlight": "8 Core Growth: +5.9% YoY | IN-US Diff: -8 bps",
+        "evidence_rationale": "Resilient infrastructure industrial output (+5.9%) and stable interest rate differential support domestic demand."
+      },
+      {
+        "pillar_name": "5. Downside Risk & Solvency Cushion",
+        "weight_pct": 15.0,
+        "score": 80.0,
+        "stance": "Strong Bullish",
+        "metric_highlight": "Merton DD: 5.0\u03c3 | 1D 99% VaR: 2.80%",
+        "evidence_rationale": "Extremely low structural default probability (Merton Distance to Default 5.0\u03c3) ensures institutional solvency cushion."
+      }
+    ],
+    "prescribed_allocation_pct": 6.0,
+    "raw_kelly_pct": 67.76,
+    "half_kelly_pct": 33.88,
+    "maximum_allocation_cap_pct": 6.0,
+    "sizing_tiers": [
+      {
+        "portfolio_name": "Conservative Tier (\u20b910 Lakhs)",
+        "portfolio_capital_inr": 1000000.0,
+        "allocation_pct": 6.0,
+        "allocated_capital_inr": 60000.0,
+        "prescribed_shares": 571,
+        "effective_exposure_inr": 59943.58,
+        "risk_at_stop_loss_inr": 3356.84,
+        "portfolio_risk_pct": 0.34
+      },
+      {
+        "portfolio_name": "Balanced Institutional Tier (\u20b925 Lakhs)",
+        "portfolio_capital_inr": 2500000.0,
+        "allocation_pct": 6.0,
+        "allocated_capital_inr": 150000.0,
+        "prescribed_shares": 1428,
+        "effective_exposure_inr": 149911.44,
+        "risk_at_stop_loss_inr": 8395.04,
+        "portfolio_risk_pct": 0.34
+      },
+      {
+        "portfolio_name": "High-Net-Worth / Institutional Tier (\u20b91 Crore)",
+        "portfolio_capital_inr": 10000000.0,
+        "allocation_pct": 6.0,
+        "allocated_capital_inr": 600000.0,
+        "prescribed_shares": 5715,
+        "effective_exposure_inr": 599960.7,
+        "risk_at_stop_loss_inr": 33597.8,
+        "portfolio_risk_pct": 0.34
+      }
+    ],
+    "current_price": 104.98,
+    "entry_zone_low": 103.72,
+    "entry_zone_high": 105.4,
+    "target_1_price": 128.08,
+    "target_1_upside_pct": 22.0,
+    "target_2_price": 143.09,
+    "target_2_upside_pct": 36.3,
+    "stop_loss_price": 99.1,
+    "stop_loss_downside_pct": 5.6,
+    "risk_reward_ratio": "1 : 3.93",
+    "core_holding_period": "6 to 12 Months (Medium-Term Fundamental Compounding & Intrinsic DCF Realization)",
+    "tactical_holding_period": "2 to 4 Weeks (Event CAR Momentum & Technical Breakout Cycle)",
+    "profit_booking_rules": [
+      "Milestone 1 (Target 1: \u20b9 128.08 / +22.0%): Book 50% profits, move trailing stop-loss to entry price (\u20b9 104.98) to lock in risk-free position.",
+      "Milestone 2 (Target 2: \u20b9 143.09 / +36.3%): Liquidate remaining 50% tactical allocation or trail tight 5-day EMA stop for compounding run."
+    ],
+    "invalidation_rules": [
+      "Hard Stop-Loss Breach: Immediate mandatory exit if price closes below \u20b9 99.10 (-5.6% downside limit).",
+      "Structural Breakdown: Invalidate thesis if asset breaks convincingly below 200-day Simple Moving Average on elevated volume (> 2.0\u03c3 volume spike).",
+      "Material Negative SEBI Disclosure: Immediate portfolio reassessment if company files an adverse Reg 30 disclosure (e.g. forensic audit, regulatory penalty, or key management dispute)."
+    ],
+    "as_of_date": "2026-08-23"
+  }
+}

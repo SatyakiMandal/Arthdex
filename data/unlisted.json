@@ -1,0 +1,185 @@
+{
+  "_readme": "Manually maintained unlisted-equity data. Arthdex cannot fetch this automatically: no exchange publishes unlisted prices, and UnlistedZone's Terms of Use prohibit automated access and systematic data extraction. Replace these records with figures from a source you are entitled to use, and set `source` and `lastUpdated` honestly. Both are rendered in the UI, and any record still marked illustrative shows a warning banner.",
+  "companies": {
+    "pixel-vision": {
+      "id": "pixel-vision",
+      "name": "Pixel Vision Technologies",
+      "sector": "Industrials",
+      "industry": "Defence Electronics",
+      "lastDealPrice": 486,
+      "impliedValuationCr": 2284,
+      "impliedPe": 28.4,
+      "impliedEvToEbitda": 18.6,
+      "metrics": {
+        "revenueCagr3yPct": 42.8,
+        "ebitdaCagr3yPct": 51.4,
+        "operatingCashFlowCr": 118.4,
+        "freeCashFlowCr": 74.2,
+        "totalOrderBookCr": 1860,
+        "orderBookToRevenue": 2.84
+      },
+      "governanceFlags": [
+        {
+          "id": "pv-flag-1",
+          "severity": "watch",
+          "category": "audit-remark",
+          "title": "Emphasis of matter on revenue recognition",
+          "detail": "Statutory auditor flagged percentage-of-completion estimates on two long-gestation defence contracts. No qualification issued; management has since disclosed the underlying cost-to-complete assumptions.",
+          "source": "FY26 Annual Report, Independent Auditor's Report",
+          "reportedOn": "2026-07-18"
+        },
+        {
+          "id": "pv-flag-2",
+          "severity": "info",
+          "category": "related-party",
+          "title": "Related-party lease with promoter entity",
+          "detail": "Manufacturing facility at Pune leased from a promoter-controlled entity at ₹2.4 Cr per annum. Independent valuation obtained; terms within arm's-length range.",
+          "source": "FY26 Annual Report, Note 38",
+          "reportedOn": "2026-07-18"
+        },
+        {
+          "id": "pv-flag-3",
+          "severity": "info",
+          "category": "statutory",
+          "title": "All statutory filings current",
+          "detail": "No pending ROC filings. GST and provident-fund remittances current as at 30 June 2026.",
+          "source": "MCA filing history",
+          "reportedOn": "2026-08-02"
+        }
+      ],
+      "milestones": [
+        {
+          "id": "pv-ms-1",
+          "kind": "order-book",
+          "title": "₹640 Cr electro-optic sighting systems order",
+          "detail": "Five-year supply contract for thermal imaging sights, with an option for a further two years.",
+          "valueCr": 640,
+          "occurredOn": "2026-08-21"
+        },
+        {
+          "id": "pv-ms-2",
+          "kind": "client-win",
+          "title": "First export order to a South-East Asian navy",
+          "detail": "Maiden export win; establishes an offshore reference customer outside the domestic programme.",
+          "valueCr": 84,
+          "occurredOn": "2026-05-14"
+        },
+        {
+          "id": "pv-ms-3",
+          "kind": "key-hire",
+          "title": "CFO appointed from a listed defence peer",
+          "detail": "Hire brings listed-company reporting experience, commonly read as pre-IPO preparation.",
+          "occurredOn": "2026-03-09"
+        },
+        {
+          "id": "pv-ms-4",
+          "kind": "certification",
+          "title": "AS9100D aerospace quality certification",
+          "detail": "Opens tier-1 aerospace supply opportunities alongside the existing defence base.",
+          "occurredOn": "2025-11-26"
+        }
+      ],
+      "listedPeerSymbols": [
+        "BEL",
+        "BDL",
+        "HAL"
+      ],
+      "source": "Illustrative sample data, not from a live or licensed feed",
+      "lastUpdated": "2026-09-30"
+    },
+    "droneacharya": {
+      "id": "droneacharya",
+      "name": "Droneacharya Aerial Innovations",
+      "sector": "Industrials",
+      "industry": "UAV Services",
+      "lastDealPrice": 128,
+      "impliedValuationCr": 684,
+      "impliedPe": 46.2,
+      "impliedEvToEbitda": 29.8,
+      "metrics": {
+        "revenueCagr3yPct": 64.2,
+        "ebitdaCagr3yPct": 38.6,
+        "operatingCashFlowCr": 21.8,
+        "freeCashFlowCr": -6.4,
+        "totalOrderBookCr": 412,
+        "orderBookToRevenue": 3.16
+      },
+      "governanceFlags": [
+        {
+          "id": "da-flag-1",
+          "severity": "red-flag",
+          "category": "litigation",
+          "title": "Commercial dispute with a state survey agency",
+          "detail": "₹38 Cr claim contested over alleged non-performance on a photogrammetry mandate. Matter is at the arbitration stage; an adverse award would absorb roughly 9% of the current order book.",
+          "source": "Arbitration filing, Maharashtra",
+          "reportedOn": "2026-06-30"
+        },
+        {
+          "id": "da-flag-2",
+          "severity": "watch",
+          "category": "audit-remark",
+          "title": "Qualified opinion on trade-receivable ageing",
+          "detail": "Auditor qualified the FY26 opinion over ₹24 Cr of receivables outstanding beyond 365 days, against which no provision has been recognised.",
+          "source": "FY26 Annual Report, Independent Auditor's Report",
+          "reportedOn": "2026-07-04"
+        },
+        {
+          "id": "da-flag-3",
+          "severity": "watch",
+          "category": "statutory",
+          "title": "Delayed ROC annual return filing",
+          "detail": "AOC-4 for FY26 filed 41 days past the statutory due date with additional fees paid.",
+          "source": "MCA filing history",
+          "reportedOn": "2026-09-11"
+        },
+        {
+          "id": "da-flag-4",
+          "severity": "info",
+          "category": "related-party",
+          "title": "Promoter advance repaid in full",
+          "detail": "₹6.2 Cr unsecured advance outstanding at FY25 close was repaid during FY26.",
+          "source": "FY26 Annual Report, Note 31",
+          "reportedOn": "2026-07-04"
+        }
+      ],
+      "milestones": [
+        {
+          "id": "da-ms-1",
+          "kind": "order-book",
+          "title": "₹96 Cr state land-records digitisation mandate",
+          "detail": "Three-year drone survey programme spanning 14 districts.",
+          "valueCr": 96,
+          "occurredOn": "2026-09-02"
+        },
+        {
+          "id": "da-ms-2",
+          "kind": "funding",
+          "title": "₹120 Cr pre-IPO placement",
+          "detail": "Placement with two domestic alternative investment funds at ₹128 per share.",
+          "valueCr": 120,
+          "occurredOn": "2026-06-18"
+        },
+        {
+          "id": "da-ms-3",
+          "kind": "certification",
+          "title": "DGCA Type Certification for the in-house airframe",
+          "detail": "Removes dependence on imported airframes for survey-class missions.",
+          "occurredOn": "2026-02-27"
+        },
+        {
+          "id": "da-ms-4",
+          "kind": "key-hire",
+          "title": "Head of Regulatory Affairs hired from a civil aviation body",
+          "detail": "Appointment follows two consecutive certification delays in FY25.",
+          "occurredOn": "2025-10-08"
+        }
+      ],
+      "listedPeerSymbols": [
+        "BEL",
+        "BDL"
+      ],
+      "source": "Illustrative sample data, not from a live or licensed feed",
+      "lastUpdated": "2026-09-30"
+    }
+  }
+}

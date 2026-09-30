@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: ui-monospace, "JetBrains Mono", "SFMono-Regular", Menlo, monospace;
+
+    --radius: 0.75rem;
+
+    /* Light theme — paper-white desk with cool neutrals */
+    --background: 0 0% 100%;
+    --foreground: 222 25% 12%;
+
+    --surface: 0 0% 100%;
+    --surface-muted: 220 20% 97%;
+    --surface-raised: 220 24% 99%;
+
+    --muted: 220 16% 94%;
+    --muted-foreground: 220 10% 44%;
+
+    --border: 220 16% 89%;
+    --input: 220 16% 89%;
+    --ring: 221 83% 53%;
+
+    --accent: 221 83% 53%;
+    --accent-foreground: 0 0% 100%;
+
+    --up: 152 62% 33%;
+    --down: 348 72% 46%;
+    --flat: 38 92% 42%;
+  }
+
+  .dark {
+    /* Dark theme — terminal slate, tuned for long-session density */
+    --background: 224 33% 6%;
+    --foreground: 210 20% 94%;
+
+    --surface: 224 28% 9%;
+    --surface-muted: 224 26% 12%;
+    --surface-raised: 224 24% 14%;
+
+    --muted: 224 22% 16%;
+    --muted-foreground: 218 12% 62%;
+
+    --border: 224 20% 18%;
+    --input: 224 20% 18%;
+    --ring: 213 94% 68%;
+
+    --accent: 213 94% 68%;
+    --accent-foreground: 224 33% 6%;
+
+    --up: 152 60% 52%;
+    --down: 350 82% 64%;
+    --flat: 38 94% 58%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Tabular numerics everywhere a figure is rendered in mono */
+  .font-mono {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply border border-border/60 bg-surface/70 backdrop-blur-xl;
+  }
+}
