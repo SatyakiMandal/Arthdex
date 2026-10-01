@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Loader2, RefreshCw } from "lucide-react";
+import { ChevronDown, Loader2, Minus, Plus, RefreshCw } from "lucide-react";
 import { CellBar } from "@/components/ui/cell-bar";
 import { DeskAnalysis } from "@/components/ui/desk-analysis";
 import { SegmentedControl } from "@/components/ui/segmented-control";
@@ -64,42 +64,81 @@ export function MacdScreener() {
   }, [direction, interval, within, index, tick]);
 
   const maxHist = Math.max(...(data?.results.map((r) => Math.abs(r.hist ?? 0)) ?? [0]), 0.001);
-  const select = "h-9 rounded-lg border border-border bg-surface px-2 text-sm";
+  const label = "mb-1.5 block text-2xs font-medium uppercase tracking-wide text-muted-foreground";
+  const unit = interval === "1d" ? "days" : "bars";
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
-        <SegmentedControl options={DIRECTIONS} value={direction} onChange={setDirection} layoutGroupId="macd-direction" />
-        <SegmentedControl options={INTERVALS} value={interval} onChange={setInterval} layoutGroupId="macd-interval" />
-        <label className="text-2xs uppercase tracking-wide text-muted-foreground">
-          Within last
-          <span className="mt-1 flex items-center gap-2">
+      <div className="flex flex-wrap items-end gap-x-5 gap-y-4 rounded-2xl border border-border bg-surface/70 p-4 backdrop-blur">
+        <div>
+          <span className={label}>Signal</span>
+          <SegmentedControl options={DIRECTIONS} value={direction} onChange={setDirection} layoutGroupId="macd-direction" />
+        </div>
+        <div>
+          <span className={label}>Bar size</span>
+          <SegmentedControl options={INTERVALS} value={interval} onChange={setInterval} layoutGroupId="macd-interval" />
+        </div>
+
+        <div>
+          <span className={label}>Within last</span>
+          <div className="flex h-9 items-center rounded-lg border border-border bg-surface-muted p-0.5">
+            <button
+              type="button"
+              aria-label="Fewer bars"
+              disabled={within <= 1}
+              onClick={() => setWithin((w) => Math.max(1, w - 1))}
+              className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-all hover:bg-surface hover:text-foreground active:scale-90 disabled:opacity-40"
+            >
+              <Minus className="h-3.5 w-3.5" />
+            </button>
             <input
               type="number"
               min={1}
               max={50}
+              aria-label="Number of bars to look back"
               value={within}
               onChange={(e) => setWithin(Math.min(50, Math.max(1, Number(e.target.value) || 1)))}
-              className={cn(select, "w-16 font-mono")}
+              className="w-9 bg-transparent text-center font-mono text-sm tabular-nums outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
-            <span className="normal-case text-muted-foreground">{interval === "1d" ? "days" : "bars"}</span>
-          </span>
-        </label>
-        <label className="text-2xs uppercase tracking-wide text-muted-foreground">
-          Universe
-          <select value={index} onChange={(e) => setIndex(e.target.value)} className={cn(select, "mt-1 block")}>
-            {INDICES.map((i) => (
-              <option key={i.id} value={i.id}>
-                {i.label}
-              </option>
-            ))}
-          </select>
-        </label>
+            <span className="pr-1 text-xs text-muted-foreground">{unit}</span>
+            <button
+              type="button"
+              aria-label="More bars"
+              disabled={within >= 50}
+              onClick={() => setWithin((w) => Math.min(50, w + 1))}
+              className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-all hover:bg-surface hover:text-foreground active:scale-90 disabled:opacity-40"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label htmlFor="macd-universe" className={label}>
+            Universe
+          </label>
+          <div className="relative">
+            <select
+              id="macd-universe"
+              value={index}
+              onChange={(e) => setIndex(e.target.value)}
+              className="h-9 appearance-none rounded-lg border border-border bg-surface-muted pl-3 pr-9 text-sm transition-colors hover:border-accent/50"
+            >
+              {INDICES.map((i) => (
+                <option key={i.id} value={i.id}>
+                  {i.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          </div>
+        </div>
+
         <button
           type="button"
           onClick={() => setTick((t) => t + 1)}
           disabled={loading}
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-sm hover:bg-surface-muted disabled:opacity-50"
+          className="btn-primary ml-auto h-9 px-4 py-0 active:scale-[0.98] disabled:opacity-60"
         >
           <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} /> Refresh
         </button>

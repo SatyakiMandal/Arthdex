@@ -3,11 +3,11 @@ import { ArrowRight } from "lucide-react";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { Hero } from "@/components/landing/hero";
-import { BentoGrid } from "@/components/landing/bento-grid";
 import { Methodology } from "@/components/landing/methodology";
 import { MoversPreview } from "@/components/market/movers-preview";
 import { GlobalSentiment } from "@/components/macro/global-sentiment";
 import { NewsFeed } from "@/components/macro/news-feed";
+import { Reveal } from "@/components/landing/motion";
 import { DataUnavailable } from "@/components/ui/data-provenance";
 import { getNews } from "@/lib/api/endpoints";
 
@@ -20,13 +20,12 @@ export default async function Home() {
 
       <main>
         <Hero />
-        <BentoGrid />
         <Methodology />
         <MoversPreview />
         <GlobalSentiment />
 
-        <section className="mx-auto max-w-[1600px] px-4 pb-16 sm:px-6">
-          <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <section className="mx-auto max-w-[1600px] px-4 pb-20 pt-8 sm:px-6">
+          <Reveal className="mb-6 flex flex-wrap items-end justify-between gap-4">
             <div>
               <h2 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
                 Latest filings
@@ -39,7 +38,7 @@ export default async function Home() {
               All news &amp; filings
               <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
             </Link>
-          </div>
+          </Reveal>
 
           {news.ok ? (
             <NewsFeed items={news.data.items} title="Latest Filings & Coverage" />

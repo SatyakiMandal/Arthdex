@@ -80,7 +80,7 @@ export function HeaderBar() {
                     transition={{ type: "spring", stiffness: 420, damping: 34 }}
                   />
                 ) : null}
-                <Icon className={cn("relative hidden h-3.5 w-3.5 xl:block", !active && "opacity-70 transition-opacity group-hover/nav:opacity-100")} />
+                <Icon className={cn("relative hidden h-3.5 w-3.5 2xl:block", !active && "opacity-70 transition-opacity group-hover/nav:opacity-100")} />
                 <span className="relative">{item.label}</span>
               </Link>
             );
@@ -88,7 +88,7 @@ export function HeaderBar() {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
-          <UniversalSearch className="hidden md:block" />
+          <UniversalSearch className="hidden md:block lg:hidden xl:block" />
           <ThemeToggle />
           <button
             type="button"

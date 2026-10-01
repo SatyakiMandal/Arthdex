@@ -1,4 +1,5 @@
 import { Database, Layers3, Scale } from "lucide-react";
+import { Reveal, SpotlightCard, Stagger, StaggerItem } from "./motion";
 
 const STEPS = [
   {
@@ -20,29 +21,36 @@ const STEPS = [
 
 export function Methodology() {
   return (
-    <section id="methodology" className="mx-auto max-w-[1600px] scroll-mt-28 px-4 pb-16 sm:px-6">
-      <h2 className="text-gradient text-balance text-3xl font-semibold tracking-tight sm:text-4xl">How an analysis is built</h2>
-      <p className="mt-3 max-w-2xl text-muted-foreground">
-        The same three steps sit behind every dossier the analyzer produces.
-      </p>
-      <ol className="mt-8 grid gap-4 md:grid-cols-3">
+    <section id="methodology" className="mx-auto max-w-[1600px] scroll-mt-28 px-4 py-16 sm:px-6 lg:py-24">
+      <Reveal>
+        <h2 className="text-gradient max-w-2xl text-balance text-3xl font-semibold tracking-tight sm:text-4xl">How an analysis is built</h2>
+        <p className="mt-3 max-w-2xl text-muted-foreground">The same three steps sit behind every dossier the analyzer produces.</p>
+      </Reveal>
+
+      <Stagger className="relative mt-10 grid gap-4 md:grid-cols-3" gap={0.12}>
+        {/* Connector running behind the step badges on desktop */}
+        <div
+          className="pointer-events-none absolute left-[8%] right-[8%] top-[2.75rem] hidden h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent md:block"
+          aria-hidden
+        />
         {STEPS.map((step, i) => {
           const Icon = step.icon;
           return (
-            <li key={step.title} className="relative overflow-hidden rounded-xl border border-border bg-surface p-5 transition-all duration-300 hover:-translate-y-1 hover:border-accent/40">
-              <span className="pointer-events-none absolute -right-2 -top-4 select-none font-mono text-7xl font-bold text-accent/[0.07]">{i + 1}</span>
-              <div className="flex items-center gap-3">
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-accent/25 bg-gradient-to-br from-accent/20 to-accent/5 text-accent">
-                  <Icon className="h-4 w-4" />
+            <StaggerItem key={step.title} className="relative">
+              <SpotlightCard className="group h-full rounded-2xl border border-border bg-surface p-6 transition-all duration-300 hover:-translate-y-1 hover:border-accent/40 hover:shadow-[0_24px_48px_-32px_hsl(var(--accent)/0.6)]">
+                <span className="pointer-events-none absolute -right-1 -top-5 select-none font-mono text-8xl font-bold text-accent/[0.06] transition-colors duration-300 group-hover:text-accent/[0.12]">
+                  {i + 1}
                 </span>
-                <span className="font-mono text-2xs uppercase tracking-widest text-muted-foreground">Step {i + 1}</span>
-              </div>
-              <h3 className="mt-4 text-base font-semibold tracking-tight">{step.title}</h3>
-              <p className="mt-2 text-sm text-muted-foreground">{step.body}</p>
-            </li>
+                <span className="relative inline-flex h-11 w-11 items-center justify-center rounded-xl border border-accent/25 bg-gradient-to-br from-accent/25 to-accent/5 text-accent transition-transform duration-300 group-hover:-rotate-3 group-hover:scale-110">
+                  <Icon className="h-5 w-5" />
+                </span>
+                <h3 className="mt-5 text-lg font-semibold tracking-tight">{step.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.body}</p>
+              </SpotlightCard>
+            </StaggerItem>
           );
         })}
-      </ol>
+      </Stagger>
     </section>
   );
 }

@@ -128,7 +128,7 @@ export function UniversalSearch({ className }: { className?: string }) {
       ref={containerRef}
       className={cn(
         "relative transition-[width] duration-300 ease-out",
-        open ? "w-full md:w-[22rem]" : "w-full md:w-64",
+        open ? "w-full md:w-[22rem]" : "w-full md:w-52 2xl:w-64",
         className,
       )}
     >
