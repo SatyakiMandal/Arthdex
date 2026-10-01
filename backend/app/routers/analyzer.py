@@ -12,13 +12,13 @@ from pydantic import BaseModel, Field
 from ..cache import CACHE
 from ..providers import universe as universe_provider
 from ..services import analyzer as svc
+from ..services import unlisted as unlisted_service
 from .search import load_universe
 
 router = APIRouter(prefix="/api/v1/analyzer", tags=["analyzer"])
 
 MIN_SPAN_DAYS = 45
 MAX_SPAN_DAYS = 800
-UNLISTED_DIRECTORY_TTL = 6 * 3600
 
 
 class RunRequest(BaseModel):
@@ -30,54 +30,48 @@ class RunRequest(BaseModel):
     end: date
 
 
-def _unlisted_directory() -> list[tuple[str, str]]:
-    from ceia.fetcher import Fetcher
-    from ceia.unlisted import _fetch_directory
-
-    def fetch():
-        svc.DATA_DIR.mkdir(parents=True, exist_ok=True)
-        return _fetch_directory(Fetcher(cache_dir=str(svc.DATA_DIR / "cache")))
-
-    data, _age = CACHE.get_or_fetch("analyzer:unlisted-directory", UNLISTED_DIRECTORY_TTL, fetch)
-    return data
-
-
 @router.get("/search")
-def search(q: str = Query("", max_length=60), kind: Literal["listed", "unlisted"] = "listed", limit: int = Query(10, ge=1, le=25)):
-    """Autocomplete for the analyzer: NSE equities, or UnlistedZone's directory."""
+def search(q: str = Query("", max_length=60), kind: Literal["any", "listed", "unlisted"] = "any", limit: int = Query(10, ge=1, le=25)):
+    """Autocomplete for the analyzer across NSE equities and the unlisted directory."""
     query = q.strip()
     if not query:
-        return {"kind": kind, "results": []}
+        return {"kind": kind, "results": [], "unlistedReady": True}
 
-    if kind == "listed":
+    results: list[dict] = []
+    if kind in ("any", "listed"):
         try:
             rows, _ = load_universe()
         except Exception as exc:
-            raise HTTPException(503, f"Listed universe unavailable: {exc}") from exc
-        hits = universe_provider.search(rows, query, limit)
-        return {
-            "kind": kind,
-            "results": [
-                {"name": h["name"], "ticker": f"{h['symbol']}.NS", "symbol": h["symbol"], "url": None}
-                for h in hits
-            ],
-        }
+            if kind == "listed":
+                raise HTTPException(503, f"Listed universe unavailable: {exc}") from exc
+            rows = []
+        for h in universe_provider.search(rows, query, limit):
+            results.append(
+                {"kind": "listed", "name": h["name"], "ticker": f"{h['symbol']}.NS", "symbol": h["symbol"], "url": None, "sector": None}
+            )
 
-    try:
-        directory = _unlisted_directory()
-    except Exception as exc:
-        raise HTTPException(503, f"UnlistedZone directory unavailable: {exc}") from exc
-    needle = query.lower()
-    scored = []
-    for name, url in directory:
-        low = name.lower()
-        if needle in low:
-            scored.append((0 if low.startswith(needle) else 1, len(name), name, url))
-    scored.sort()
-    return {
-        "kind": kind,
-        "results": [{"name": n, "ticker": None, "symbol": None, "url": u} for _, _, n, u in scored[:limit]],
-    }
+    ready = True
+    if kind in ("any", "unlisted"):
+        directory = unlisted_service.cached_directory()
+        ready = directory is not None
+        for c in unlisted_service.search_directory(directory or [], query, limit):
+            results.append(
+                {
+                    "kind": "unlisted",
+                    "name": c["name"],
+                    "ticker": None,
+                    "symbol": None,
+                    "url": f"https://unlistedzone.com/shares/{c['id']}",
+                    "sector": c["sector"],
+                }
+            )
+
+    # Listed first (they rank by symbol and name), but never let them crowd out every unlisted match
+    listed_hits = [r for r in results if r["kind"] == "listed"]
+    unlisted_hits = [r for r in results if r["kind"] == "unlisted"]
+    keep_unlisted = min(len(unlisted_hits), max(3, limit - len(listed_hits)))
+    merged = listed_hits[: limit - keep_unlisted] + unlisted_hits[:keep_unlisted]
+    return {"kind": kind, "results": merged, "unlistedReady": ready}
 
 
 @router.post("/runs", status_code=202)

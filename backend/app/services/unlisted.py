@@ -30,12 +30,16 @@ from html import unescape
 from pathlib import Path
 from typing import Any
 
+from ..cache import CACHE
 from ceia.fetcher import Fetcher
 from ceia.unlisted import _SERIES_POINT_RE
 
 ORIGIN = "https://unlistedzone.com"
 DIRECTORY_URL = f"{ORIGIN}/shares"
 CACHE_DIR = Path(__file__).resolve().parents[2] / "cache" / "unlisted"
+
+DIRECTORY_KEY = "unlisted:directory"
+DIRECTORY_TTL = 6 * 3600
 
 SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]{2,200}$")
 
@@ -234,3 +238,67 @@ def _iso_date(text: str) -> str | None:
         except ValueError:
             continue
     return None
+
+
+# -- non-blocking access for search -------------------------------------------
+#
+# A cold directory is about a dozen rate-limited fetches (30 to 55 seconds), far too
+# slow to hold a search keystroke on. Search therefore uses whatever is already
+# cached and kicks a background build when nothing is, so unlisted names appear as
+# soon as the build finishes instead of every query waiting on it.
+
+_warm_lock = threading.Lock()
+_warming = False
+
+
+def ensure_warm() -> None:
+    global _warming
+    with _warm_lock:
+        if _warming:
+            return
+        _warming = True
+
+    def run() -> None:
+        global _warming
+        try:
+            CACHE.get_or_fetch(DIRECTORY_KEY, DIRECTORY_TTL, build_directory)
+        except Exception:
+            pass
+        finally:
+            with _warm_lock:
+                _warming = False
+
+    threading.Thread(target=run, name="unlisted-warmup", daemon=True).start()
+
+
+def cached_directory() -> list[dict[str, Any]] | None:
+    """The directory if it has been built, else None (and a build is started)."""
+    entry = CACHE.get_entry(DIRECTORY_KEY)
+    if entry is None:
+        ensure_warm()
+        return None
+    age = CACHE.age(DIRECTORY_KEY) or 0
+    if age > DIRECTORY_TTL:
+        ensure_warm()  # refresh in the background; the stale list is still good for search
+    return entry.value["companies"]
+
+
+def search_directory(companies: list[dict[str, Any]], query: str, limit: int = 8) -> list[dict[str, Any]]:
+    needle = re.sub(r"[^\w\s]", " ", query.lower())
+    needle = " ".join(needle.split())
+    if len(needle) < 2:
+        return []
+    scored: list[tuple[int, int, dict[str, Any]]] = []
+    for c in companies:
+        name = " ".join(re.sub(r"[^\w\s]", " ", c["name"].lower()).split())
+        if name.startswith(needle):
+            rank = 0
+        elif f" {needle}" in name:
+            rank = 1
+        elif needle in name:
+            rank = 2
+        else:
+            continue
+        scored.append((rank, len(name), c))
+    scored.sort(key=lambda t: (t[0], t[1]))
+    return [c for _, _, c in scored[:limit]]

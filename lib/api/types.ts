@@ -285,7 +285,7 @@ export interface ApiSearchResult {
   name: string;
   series: string;
   isin: string | null;
-  kind: "listed";
+  kind: "listed" | "unlisted";
   href: string;
 }
 

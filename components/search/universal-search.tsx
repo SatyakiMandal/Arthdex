@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Loader2, Search, TrendingUp, X } from "lucide-react";
+import { Building2, Loader2, Search, TrendingUp, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SearchHit {
@@ -12,11 +12,12 @@ interface SearchHit {
   name: string;
   series: string;
   isin: string | null;
+  kind: "listed" | "unlisted";
   href: string;
 }
 
 /**
- * Search across every equity listed on NSE (~2,600 companies).
+ * Search across every equity listed on NSE (~2,600 companies) and the unlisted / pre-IPO directory.
  *
  * Queries are debounced and in-flight requests are aborted when superseded, so
  * a fast typist cannot have an older response overwrite a newer one.
@@ -152,7 +153,7 @@ export function UniversalSearch({ className }: { className?: string }) {
           }}
           onFocus={() => setOpen(true)}
           onKeyDown={onInputKeyDown}
-          placeholder="Search any listed company…"
+          placeholder="Search any company…"
           aria-label="Search companies"
           role="combobox"
           aria-expanded={showPanel}
@@ -194,7 +195,7 @@ export function UniversalSearch({ className }: { className?: string }) {
               <p className="px-3 py-4 text-2xs text-down">{error}</p>
             ) : results.length === 0 ? (
               <p className="px-3 py-4 text-sm text-muted-foreground">
-                {loading ? "Searching…" : `No listed company matches “${trimmed}”.`}
+                {loading ? "Searching…" : `No listed or unlisted company matches “${trimmed}”.`}
               </p>
             ) : (
               <ul className="max-h-80 overflow-y-auto py-1">
@@ -211,13 +212,31 @@ export function UniversalSearch({ className }: { className?: string }) {
                         index === activeIndex ? "bg-surface-muted" : "hover:bg-surface-muted",
                       )}
                     >
-                      <TrendingUp className="h-3.5 w-3.5 shrink-0 text-accent" />
+                      {hit.kind === "unlisted" ? (
+                        <Building2 className="h-3.5 w-3.5 shrink-0 text-flat" />
+                      ) : (
+                        <TrendingUp className="h-3.5 w-3.5 shrink-0 text-accent" />
+                      )}
                       <span className="min-w-0 flex-1">
-                        <span className="block font-mono text-xs font-semibold">{hit.symbol}</span>
-                        <span className="block truncate text-2xs text-muted-foreground">{hit.name}</span>
+                        {hit.kind === "unlisted" ? (
+                          <>
+                            <span className="block truncate text-sm font-medium">{hit.name}</span>
+                            <span className="block truncate text-2xs text-muted-foreground">{hit.series}</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="block font-mono text-xs font-semibold">{hit.symbol}</span>
+                            <span className="block truncate text-2xs text-muted-foreground">{hit.name}</span>
+                          </>
+                        )}
                       </span>
-                      <span className="shrink-0 rounded border border-border px-1.5 py-0.5 font-mono text-2xs uppercase tracking-wide text-muted-foreground">
-                        {hit.series || "NSE"}
+                      <span
+                        className={cn(
+                          "shrink-0 rounded border px-1.5 py-0.5 font-mono text-2xs uppercase tracking-wide",
+                          hit.kind === "unlisted" ? "border-flat/40 bg-flat/10 text-flat" : "border-border text-muted-foreground",
+                        )}
+                      >
+                        {hit.kind === "unlisted" ? "Unlisted" : hit.series || "NSE"}
                       </span>
                     </button>
                   </li>

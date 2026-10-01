@@ -32,6 +32,8 @@ export interface AnalyzerProgress {
 }
 
 export interface AnalyzerSearchHit {
+  kind: AnalyzerKind;
+  sector: string | null;
   name: string;
   ticker: string | null;
   symbol: string | null;

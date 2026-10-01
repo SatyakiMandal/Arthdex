@@ -3,14 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Play, Search } from "lucide-react";
-import { SegmentedControl } from "@/components/ui/segmented-control";
 import { cn } from "@/lib/utils";
-import type { AnalyzerKind, AnalyzerRun, AnalyzerSearchHit } from "@/types/analyzer";
-
-const KINDS = [
-  { id: "listed" as const, label: "Listed (NSE)" },
-  { id: "unlisted" as const, label: "Unlisted" },
-];
+import type { AnalyzerRun, AnalyzerSearchHit } from "@/types/analyzer";
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 const daysAgo = (n: number) => iso(new Date(Date.now() - n * 86_400_000));
@@ -25,13 +19,13 @@ const TICKER_LIKE = /^[A-Za-z0-9&.^-]{1,20}$/;
 
 export function Launcher() {
   const router = useRouter();
-  const [kind, setKind] = useState<AnalyzerKind>("listed");
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<AnalyzerSearchHit[]>([]);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
   const [picked, setPicked] = useState<AnalyzerSearchHit | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [unlistedReady, setUnlistedReady] = useState(true);
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -45,13 +39,6 @@ export function Launcher() {
   }, []);
 
   useEffect(() => {
-    setPicked(null);
-    setHits([]);
-    setQuery("");
-    setError(null);
-  }, [kind]);
-
-  useEffect(() => {
     const q = query.trim();
     if (picked || q.length < 2) {
       setHits([]);
@@ -60,7 +47,7 @@ export function Launcher() {
     const mine = ++seq.current;
     const t = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/analyzer/search?kind=${kind}&q=${encodeURIComponent(q)}`);
+        const res = await fetch(`/api/analyzer/search?q=${encodeURIComponent(q)}`);
         if (mine !== seq.current) return;
         if (!res.ok) {
           setSearchError("Search is unavailable right now.");
@@ -68,15 +55,16 @@ export function Launcher() {
           return;
         }
         setSearchError(null);
-        const body = (await res.json()) as { results: AnalyzerSearchHit[] };
+        const body = (await res.json()) as { results: AnalyzerSearchHit[]; unlistedReady?: boolean };
         setHits(body.results);
+        setUnlistedReady(body.unlistedReady !== false);
         setActive(-1);
       } catch {
         if (mine === seq.current) setSearchError("Search is unavailable right now.");
       }
     }, 220);
     return () => clearTimeout(t);
-  }, [query, kind, picked]);
+  }, [query, picked]);
 
   const span = useMemo(() => {
     if (!start || !end) return null;
@@ -91,12 +79,11 @@ export function Launcher() {
   }
 
   // A raw ticker is accepted for listed names the NSE list may not carry (e.g. BSE-only).
-  const rawTicker = kind === "listed" && !picked && TICKER_LIKE.test(query.trim());
-  // Unlisted runs resolve a typed name against the directory server-side.
-  const typedUnlisted = kind === "unlisted" && !picked && query.trim().length >= 2;
+  // Unlisted companies must be picked, since the run needs the exact directory page.
+  const rawTicker = !picked && TICKER_LIKE.test(query.trim());
+  const kind = picked?.kind ?? "listed";
 
-  const ready =
-    !!start && !!end && !submitting && (picked !== null || rawTicker || typedUnlisted);
+  const ready = !!start && !!end && !submitting && (picked !== null || rawTicker);
 
   async function submit() {
     setError(null);
@@ -152,18 +139,12 @@ export function Launcher() {
     <div className="rounded-xl border border-border bg-surface p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-sm font-semibold tracking-tight">Run a new analysis</h2>
-        <SegmentedControl
-          options={KINDS}
-          value={kind}
-          onChange={setKind}
-          layoutGroupId="analyzer-kind"
-        />
       </div>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <div className="relative">
           <label htmlFor="an-company" className="text-2xs uppercase tracking-wider text-muted-foreground">
-            {kind === "listed" ? "Company or NSE symbol" : "Unlisted company"}
+            Listed or unlisted company
           </label>
           <div className="relative mt-1.5">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -175,7 +156,7 @@ export function Launcher() {
               aria-autocomplete="list"
               autoComplete="off"
               value={query}
-              placeholder={kind === "listed" ? "e.g. Tata Consultancy, GRSE" : "e.g. Garuda Aerospace"}
+              placeholder="e.g. Tata Consultancy, GRSE, Garuda Aerospace"
               onChange={(e) => {
                 setQuery(e.target.value);
                 setPicked(null);
@@ -209,10 +190,17 @@ export function Launcher() {
                     i === active ? "bg-surface-muted" : "",
                   )}
                 >
-                  <span className="truncate">{h.name}</span>
-                  {h.symbol ? (
+                  <span className="min-w-0">
+                    <span className="block truncate">{h.name}</span>
+                    {h.sector ? <span className="block truncate text-2xs text-muted-foreground">{h.sector}</span> : null}
+                  </span>
+                  {h.kind === "unlisted" ? (
+                    <span className="shrink-0 rounded border border-flat/40 bg-flat/10 px-1.5 py-0.5 font-mono text-2xs uppercase tracking-wide text-flat">
+                      Unlisted
+                    </span>
+                  ) : (
                     <span className="shrink-0 font-mono text-2xs text-muted-foreground">{h.symbol}</span>
-                  ) : null}
+                  )}
                 </li>
               ))}
             </ul>
@@ -225,16 +213,14 @@ export function Launcher() {
               kind === "listed" ? (
                 <>Will analyse <span className="font-mono">{picked.ticker}</span> against Nifty 50.</>
               ) : (
-                "Matched in the UnlistedZone directory."
+                "Unlisted company. Price history comes from indicative dealer quotes, so the analysis reports revisions rather than a daily event study."
               )
             ) : rawTicker ? (
               <>No match picked. Will use <span className="font-mono">{query.trim().toUpperCase()}</span> as the ticker (add .NS or .BO if needed).</>
-            ) : typedUnlisted ? (
-              "Not picked from the list. The engine will fuzzy-match this name against the directory and stop if it isn't confident."
-            ) : kind === "listed" ? (
-              "Searches all NSE-listed equities. Analysed against the Nifty 50."
+            ) : !unlistedReady && query.trim().length >= 2 ? (
+              "Unlisted companies are still loading. Listed matches are shown; search again in a moment for unlisted ones."
             ) : (
-              "Searches UnlistedZone’s directory. Price history comes from dealer quotes there."
+              "Searches all NSE-listed equities and the unlisted / pre-IPO directory."
             )}
           </p>
         </div>
