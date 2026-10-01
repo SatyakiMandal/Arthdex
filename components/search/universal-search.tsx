@@ -130,14 +130,19 @@ export function UniversalSearch({ className }: { className?: string }) {
       className={cn(
         "relative transition-[width] duration-300 ease-out",
         open ? "w-full md:w-[22rem]" : "w-full md:w-52 2xl:w-64",
+        // Between lg and xl the nav leaves no room, so the box collapses to an icon
+        // that opens as an overlay instead of pushing the nav around.
+        "lg:max-xl:h-9 lg:max-xl:!w-10",
         className,
       )}
     >
       <div
         className={cn(
-          "flex w-full items-center gap-2 rounded-lg border bg-surface-muted px-2.5 transition-colors",
-          open ? "border-accent/60 shadow-sm shadow-accent/10" : "border-border",
+          "flex w-full items-center gap-2 rounded-lg border bg-surface-muted px-2.5 transition-[width,colors] duration-300",
+          "lg:max-xl:absolute lg:max-xl:overflow-hidden lg:max-xl:right-0 lg:max-xl:top-0 lg:max-xl:z-50 lg:max-xl:cursor-text",
+          open ? "border-accent/60 shadow-sm shadow-accent/10 lg:max-xl:!w-80" : "border-border lg:max-xl:!w-10",
         )}
+        onClick={() => inputRef.current?.focus()}
       >
         {loading ? (
           <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-accent" />
@@ -159,7 +164,10 @@ export function UniversalSearch({ className }: { className?: string }) {
           aria-expanded={showPanel}
           aria-controls="universal-search-results"
           aria-autocomplete="list"
-          className="h-9 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground/70"
+          className={cn(
+            "h-9 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground/70",
+            !open && "lg:max-xl:w-0 lg:max-xl:min-w-0",
+          )}
         />
         {query ? (
           <button
@@ -174,7 +182,7 @@ export function UniversalSearch({ className }: { className?: string }) {
             <X className="h-3.5 w-3.5" />
           </button>
         ) : (
-          <kbd className="hidden shrink-0 rounded border border-border px-1.5 py-0.5 font-mono text-2xs text-muted-foreground sm:inline">
+          <kbd className="hidden shrink-0 lg:max-xl:hidden rounded border border-border px-1.5 py-0.5 font-mono text-2xs text-muted-foreground sm:inline">
             ⌘K
           </kbd>
         )}
@@ -189,7 +197,7 @@ export function UniversalSearch({ className }: { className?: string }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
             transition={{ duration: 0.15 }}
-            className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 overflow-hidden rounded-lg border border-border bg-surface-raised shadow-xl"
+            className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 lg:max-xl:left-auto lg:max-xl:w-80 overflow-hidden rounded-lg border border-border bg-surface-raised shadow-xl"
           >
             {error ? (
               <p className="px-3 py-4 text-2xs text-down">{error}</p>

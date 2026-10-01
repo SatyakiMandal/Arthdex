@@ -88,7 +88,7 @@ export function HeaderBar() {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
-          <UniversalSearch className="hidden md:block lg:hidden xl:block" />
+          <UniversalSearch className="hidden md:block" />
           <ThemeToggle />
           <button
             type="button"
