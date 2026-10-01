@@ -45,11 +45,10 @@ The log is scanned for markers to find the furthest of six steps: Finding news, 
 
 ## 2. Launching a run (`launcher.tsx`)
 
-1. Choose **Listed (NSE)** or **Unlisted**.
-2. Type a name. Listed searches the NSE universe; unlisted searches UnlistedZone's directory (6-hour cache). Debounced 220 ms.
-3. A raw ticker is accepted for listed names the NSE list may not carry (for example BSE-only); an unlisted name typed without picking is resolved server-side against the directory.
-4. Choose dates (default last ~6 months; presets 3M/6M/1Y). The UI enforces 45 days minimum; the API enforces 45 to 800.
-5. Submit: `POST /api/analyzer/runs`, then navigate to `/analyzer/{id}`.
+1. Type a name. There is no listed/unlisted toggle: one search covers NSE equities and the unlisted directory, and the kind of the picked result decides the run type. Debounced 220 ms. While the unlisted directory is still being built the search says so (`unlistedReady: false`) and shows listed hits only.
+2. A raw ticker is accepted for listed names the NSE list may not carry (for example BSE-only). Unlisted companies must be picked from the results, because the run needs the exact UnlistedZone page URL.
+3. Choose dates (default last ~6 months; presets 3M/6M/1Y). The UI enforces 45 days minimum; the API enforces 45 to 800.
+4. Submit: `POST /api/analyzer/runs`, then navigate to `/analyzer/{id}`.
 
 ## 3. The run page (`run-view.tsx`)
 

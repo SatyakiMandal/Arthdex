@@ -11,7 +11,7 @@ providers/  Raw upstream access (yahoo, nse, rss, universe, constituents, fundam
 cache.py    In-process TTL cache        schemas.py  envelope()        config.py  Settings
 ```
 
-`main.py` wires ten routers (health, market, company, quant, ipo, news, search, screener, analyzer, bhavcopy), enables CORS for `http://localhost:3000` and `http://127.0.0.1:3000` (methods GET and POST), and on startup creates `analyzer_data/runs`, marks interrupted analyzer runs failed, and seeds the sample reports. A background thread also pre-builds the IPO pipeline at import time, since the first build takes about a minute of upstream calls.
+`main.py` wires eleven routers (health, market, company, quant, ipo, news, search, screener, analyzer, bhavcopy, unlisted), enables CORS for `http://localhost:3000` and `http://127.0.0.1:3000` (methods GET and POST), and on startup creates `analyzer_data/runs`, marks interrupted analyzer runs failed, and seeds the sample reports. A second startup hook starts building the unlisted directory in a background thread (a cold build is a dozen or so rate-limited fetches, roughly 30 to 55 seconds). A background thread also pre-builds the IPO pipeline at import time, since the first build takes about a minute of upstream calls.
 
 ## 2. Conventions
 
@@ -88,8 +88,8 @@ The factor and mover screens share one cached batch download per index (`screene
 ### Search
 | Route | Description |
 |---|---|
-| `GET /search?q=&limit=` | Autocomplete over the NSE equity master (about 2,600 rows; cached 24 h). Ranking: exact symbol, symbol prefix, name prefix, substring |
-| `GET /universe/stats` | `{total, bySeries}` |
+| `GET /search?q=&limit=` | Autocomplete over the NSE equity master (about 2,600 rows; cached 24 h) **plus** the unlisted directory. Listed ranking: exact symbol, symbol prefix, name prefix, substring. Unlisted hits (`kind: "unlisted"`, `href: /unlisted/{id}`) are added only if the directory is already built; otherwise the call returns listed hits immediately and a background build is started, so a keystroke never waits on it. Each result carries `kind` (`listed` or `unlisted`) |
+| `GET /universe/stats` | `{total, bySeries}` (listed only) |
 
 ### IPO
 | Route | Description |
@@ -107,12 +107,14 @@ The factor and mover screens share one cached batch download per index (`screene
 | Route | Description |
 |---|---|
 | `GET /unlisted` | Every tracked unlisted company: id, name, sector, indicative price (cached 6 h, warmed at startup) |
-| `GET /unlisted/{id}` | Price, 6M move, ISIN/CIN, the source's ratios, revision series and revision table (cached 3 h) |
+| `GET /unlisted/{id}` | Price, 6M move, ISIN/CIN, the source's ratios, revision series and revision table (cached 3 h). 404 for an unknown id (ids must match `^[a-z0-9][a-z0-9-]{2,200}$`) |
+
+The unlisted service reuses `ceia.fetcher.Fetcher` (honest user agent, robots.txt checks, 2 s minimum spacing per origin, on-disk cache and provenance log under `backend/cache/unlisted`). Directory pages are parsed with regular expressions over UnlistedZone's HTML, so a markup change on that site will break parsing.
 
 ### Analyzer (not enveloped)
 | Route | Description |
 |---|---|
-| `GET /analyzer/search?q=&kind=listed\|unlisted&limit=` | Listed: NSE universe. Unlisted: UnlistedZone directory (cached 6 h) |
+| `GET /analyzer/search?q=&kind=any\|listed\|unlisted&limit=` | `kind` defaults to `any`: NSE equities plus the unlisted directory, merged so listed hits cannot crowd out unlisted ones (at least 3 unlisted slots are kept). Returns `unlistedReady: false` while the directory is still being built |
 | `POST /analyzer/runs` (202) | Body `{kind, company, ticker?, url?, start, end}`. See validation below |
 | `GET /analyzer/runs?origin=run\|sample&limit=` | Newest first |
 | `GET /analyzer/runs/{id}` | Status, stage, log tail, progress |

@@ -2,7 +2,7 @@
 
 Arthdex is a quantitative market-intelligence website for Indian equities. It combines live (delayed) NSE and Yahoo Finance data with statistical models fitted on real return series, and shows where every figure came from.
 
-> **How this was written.** These documents were produced by reading the source at commit `db39922` (branch `main`, 2026-10-01). Nothing here was confirmed by running the site. Commands are taken from `package.json`, `backend/README.md` and the code; check them on your machine before relying on them. `PROJECT_PROGRESS.md` is a historical build log and is partly out of date (see [Documentation drift](data-integrity-and-limitations.md#documentation-drift)); where it disagrees with the code, these docs follow the code.
+> **How this was written.** These documents were produced by reading the source at commit `9034491` (branch `main`, 2026-10-01). Nothing here was confirmed by running the site. Commands are taken from `package.json`, `backend/README.md` and the code; check them on your machine before relying on them. `PROJECT_PROGRESS.md` is a historical build log and is partly out of date (see [Documentation drift](data-integrity-and-limitations.md#documentation-drift)); where it disagrees with the code, these docs follow the code.
 
 ## Contents
 
@@ -57,7 +57,7 @@ Arthdex is a quantitative market-intelligence website for Indian equities. It co
  Upstreams (free, unofficial, rate-limited):
    Yahoo Finance (yfinance) · nseindia.com JSON · nsearchives.nseindia.com CSVs ·
    Moneycontrol / Economic Times / Livemint RSS · screener.in · Indian news sites (analyzer) ·
-   UnlistedZone (analyzer, unlisted mode)
+   UnlistedZone (Unlisted pages and analyzer unlisted mode)
 ```
 
 Key design points:
@@ -92,7 +92,7 @@ components/
   analyzer/             launcher, run-list, run-view, run-progress, summary-view, dossier/* (12 tabs)
   ui/                   data-card, data-provenance, desk-analysis, segmented-control, swap-panel, cell-bar, gauge, tip, skeleton, …
 lib/api/                client.ts (envelope-aware fetch), endpoints.ts, analyzer.ts, types.ts
-types/                  Shared TypeScript contracts (analyzer.ts, unlisted.ts, …)
+types/                  Shared TypeScript contracts (analyzer.ts, market.ts, quant.ts, …)
 backend/
   app/                  FastAPI service: main.py, config.py, cache.py, schemas.py, routers/, providers/, services/
   ceia/                 Vendored event-impact engine (57 Python files)

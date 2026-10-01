@@ -10,7 +10,7 @@ Arthdex's central promise is that a reader can tell where a figure came from, ho
 | `FreshnessBadge` | Beside live figures | "15m delayed · 8s ago"; turns amber when cache age exceeds 15 minutes |
 | `SourceLine` | Foot of panels | Source, delay and the response note |
 | `PageStamp` + refresh control | Page-level | "Data 3m ago"; click to expire caches and refetch |
-| `IllustrativeBanner` | Unlisted, IPO gaps, microstructure | The numbers below are not observations |
+| `IllustrativeBanner` | IPO gaps, microstructure | The numbers below are not observations |
 | `DataUnavailable` | On any failed fetch | The error is shown; no placeholder data is substituted |
 | `—` for null | Tables and tiles | "Not reported" is a different claim from zero |
 | `method` / footnotes | `DeskAnalysis`, cards | How a reading was computed and where it is weak |
@@ -51,7 +51,7 @@ These come from reading the code and repository; none has been reproduced by run
 
 | # | Finding | Severity | Detail |
 |---|---|---|---|
-| 1 | **Analyzer scrapes UnlistedZone against the project's own finding** | Compliance | Phase 12 of the build log records that UnlistedZone's Terms of Use prohibit bots, scrapers and systematic extraction, and that no scraper was therefore built for the Unlisted pages. But `ceia/unlisted.py` crawls UnlistedZone's directory (`https://unlistedzone.com/shares`, up to 20 pages) and fetches each product page's price series, through a fetcher that honours `robots.txt` (which the log says is permissive). `robots.txt` compliance does not satisfy the Terms. Decide whether to obtain authorisation, restrict the unlisted mode, or remove it |
+| 1 | **UnlistedZone is scraped despite the project's own finding about its terms** | Compliance | Phase 12 of `PROJECT_PROGRESS.md` records that UnlistedZone's Terms of Use prohibit bots, scrapers and systematic extraction, and that `robots.txt` is permissive. At that point no scraper was built for the Unlisted pages. Commit `e2cebcd` then replaced the hand-maintained data with live fetches (`backend/app/services/unlisted.py`: the whole directory, then each company page, on a 2 s spacing), on top of the analyzer's own crawl in `ceia/unlisted.py`. The fetcher is polite and honours `robots.txt`, but that does not satisfy the Terms, and the build log's finding was not withdrawn. Decide whether to obtain authorisation, switch to a licensed feed, or restrict it. The parser also depends on UnlistedZone's HTML structure and will break silently if it changes |
 | 3 | No authentication or rate limiting | Security | Backend routes are open; the Next.js proxy forwards analyzer POST/DELETE. Anyone reaching the site can queue runs (cap 8), cancel or delete user-started runs, download artefacts, and invoke `POST /cache/refresh` through the UI |
 | 4 | Multi-worker deployment hazard | Reliability | See [operations.md](operations.md#5-deployment-guidance); orphan recovery and concurrency are per process |
 | 5 | Third-party scraping beyond UnlistedZone | Compliance | The shareholding tab and the analyzer's fundamentals scrape screener.in; the analyzer crawls news sites and NSE JSON that is undocumented and unversioned. No terms-of-use review for these is recorded in the repository |
@@ -71,6 +71,7 @@ These come from reading the code and repository; none has been reproduced by run
 
 - It still describes mock data (`lib/mock-data/`), 49 static routes, `/ipo/[id]`, `QuantCard`, `peer-matrix`, `microstructure-xai`, Shapley waterfall and Recharts in places. Those were removed or replaced in the live-data rebuild (Phases 7 to 12).
 - It uses "Phase 7" twice (backend live data, and later the Analyzer tab), and its phase table stops at Phase 6.
+- Its Phase 12 describes hand-maintained unlisted data in `data/unlisted.json`, governance flags, milestones and peer comparison. That was removed in `e2cebcd`; the Unlisted pages now show live indicative prices only.
 - It states the footer says "all figures are mock"; the footer now carries the research/not-advice disclaimer instead.
 - It says ensemble weights "can now come from AIC"; the implemented method is inverse out-of-sample MSE (see [analytics-methods.md](analytics-methods.md)).
 - `backend/README.md` documents roughly half of the current endpoints. [backend-api.md](backend-api.md) is more complete.

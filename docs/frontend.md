@@ -19,7 +19,7 @@ Next.js 15 App Router, React 19, TypeScript (strict), Tailwind 3.4. Path alias `
 
 | Route | Used by | Notes |
 |---|---|---|
-| `GET /api/search?q=` | `UniversalSearch` | Calls `searchCompanies(q, 10)`; returns `{results}` or 503 with an error message |
+| `GET /api/search?q=` | `UniversalSearch` | Calls `searchCompanies(q, 10)` (listed and unlisted); returns `{results}` or 503 with an error message |
 | `GET /api/candles?symbol=&period=` | `PriceChart` | Period switching without a page reload |
 | `GET /api/metric?symbol=&metric=` | `AlertsWorkbench` | Metric `cmp`, `peRatio`, `pbRatio`; returns `{value}` |
 | `GET /api/technicals?symbol=&interval=` | `TechnicalWorkbench` | Symbol validated against `^[A-Za-z0-9&_-]{1,20}$` |
@@ -47,7 +47,7 @@ Every page composes `<SiteHeader/> … <SiteFooter/>` itself.
 | `SiteHeader` | server | Sticky; stacks `MarketTicker` over `HeaderBar` |
 | `MarketTicker` | server | Marquee of every NSE index returned by `/market/indices` (level and % change). Pauses on hover; no animation under reduced motion. On failure shows "Index feed unavailable" |
 | `HeaderBar` | client | Logo, 9 nav items (Market Watch, Commodities, Screener, Bhavcopy, IPO, News, Alerts, Unlisted, Analyzer) with a sliding active indicator, `UniversalSearch`, theme toggle, mobile drawer under `lg` |
-| `UniversalSearch` | client | Debounced (180 ms) autocomplete over about 2,600 NSE equities, aborts superseded requests, keyboard navigation, Ctrl/⌘-K shortcut |
+| `UniversalSearch` | client | Debounced (180 ms) autocomplete over about 2,600 NSE equities and the unlisted directory (unlisted hits show a building icon and an "Unlisted" tag and link to `/unlisted/{id}`), aborts superseded requests, keyboard navigation, Ctrl/⌘-K shortcut. Hidden below `md` in the bar (the mobile drawer has its own copy); between `lg` and `xl` it collapses to an icon that expands as an overlay |
 | `SiteFooter` | server | Link columns plus the standing disclaimer |
 | 404s | | `app/not-found.tsx` (root) and `app/company/not-found.tsx` ("Symbol not found"). The company one sits at `app/company/` and not beside `[symbol]/layout.tsx` because `notFound()` thrown from a layout is caught by the parent segment |
 

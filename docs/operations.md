@@ -42,7 +42,7 @@ Use `GET /api/v1/cache` to see keys and ages when diagnosing staleness.
 | `backend/analyzer_data/data/news_cache/` | Per-company scraped-news cache shared by runs | ignored |
 | `backend/analyzer_data/cache/` | HTTP/price cache used by analyzer subprocesses | ignored |
 | `backend/analyzer_samples/` | 19 bundled sample reports plus `index.json` (about 17 MB) | tracked |
-| `backend/cache/` | `http/` JSON responses (tradingeconomics, screener.in, govtbudget), `prices_day/*.pkl`, `provenance.jsonl` (about 4 MB) | ignored (`/cache/` in `backend/.gitignore`). They look like by-products of engine code run with `backend/` as the working directory (for example the price preflight) |
+| `backend/cache/` | `http/` JSON responses (tradingeconomics, screener.in, govtbudget), `prices_day/*.pkl`, `unlisted/` (UnlistedZone pages fetched by the unlisted service), `provenance.jsonl` | ignored (`/cache/` in `backend/.gitignore`). They look like by-products of engine code run with `backend/` as the working directory (for example the price preflight) |
 
 Back up `analyzer_data/runs` if finished reports matter; it is the only durable state in the system.
 
@@ -64,6 +64,7 @@ The repository contains no Dockerfile, CI configuration or deployment manifests 
 |---|---|
 | Every panel shows "Cannot reach the data service" | Backend not running or `ARTHDEX_API_URL` wrong. Check `GET /api/v1/health` |
 | Ticker bar, movers or IPO fail with 503 | NSE cookies expired or the IP is throttled. `nse_get` already retries three times with backoff. Wait and use the refresh control |
+| `/unlisted` slow or unavailable right after the backend starts | The directory is built by a background thread started at startup (roughly 30 to 55 seconds). Until it finishes, a request to `/unlisted` that finds no cached directory builds one itself inside the request (the backend does not coordinate it with the warm-up thread), so it can take that long, and search returns listed hits only |
 | IPO page empty or slow on first load | The first pipeline build takes about a minute; the backend pre-warms it in a thread at startup. Later calls hit the cache |
 | `__webpack_modules__[moduleId] is not a function` in dev | `next build` ran over a live dev server. Stop dev, delete `.next`, restart |
 | Corrected backend data still looks old | Next fetch cache (see section 3) |
