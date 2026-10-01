@@ -14,6 +14,8 @@ const SEG = "[A-Za-z0-9._-]+";
 const ALLOWED = [
   new RegExp(`^search$`),
   new RegExp(`^runs$`),
+  new RegExp(`^runs/clear-unsuccessful$`),
+  new RegExp(`^snapshots/${SEG}$`),
   new RegExp(`^runs/${SEG}$`),
   new RegExp(`^runs/${SEG}/(cancel|summary|report)$`),
   new RegExp(`^runs/${SEG}/download/${SEG}$`),
@@ -21,7 +23,7 @@ const ALLOWED = [
 
 type Ctx = { params: Promise<{ path: string[] }> };
 
-async function forward(request: Request, ctx: Ctx, method: "GET" | "POST") {
+async function forward(request: Request, ctx: Ctx, method: "GET" | "POST" | "DELETE") {
   const { path } = await ctx.params;
   const joined = path.join("/");
   if (!ALLOWED.some((re) => re.test(joined))) {
@@ -63,4 +65,5 @@ async function forward(request: Request, ctx: Ctx, method: "GET" | "POST") {
 }
 
 export const GET = (request: Request, ctx: Ctx) => forward(request, ctx, "GET");
+export const DELETE = (request: Request, ctx: Ctx) => forward(request, ctx, "DELETE");
 export const POST = (request: Request, ctx: Ctx) => forward(request, ctx, "POST");

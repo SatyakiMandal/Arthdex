@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, Download, ExternalLink, FileSpreadsheet, Loader2, RotateCcw, XCircle } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { ArrowLeft, Download, ExternalLink, FileSpreadsheet, RotateCcw, XCircle } from "lucide-react";
 import { ListedSummaryView, UnlistedSummaryView } from "@/components/analyzer/summary-view";
+import { RunProgress } from "@/components/analyzer/run-progress";
 import { RunStatusPill } from "@/components/analyzer/run-list";
 import type { AnalyzerRun, AnalyzerSummary } from "@/types/analyzer";
 
@@ -25,7 +26,6 @@ export function RunView({ initial }: { initial: AnalyzerRun }) {
   const [summaryError, setSummaryError] = useState<string | null>(null);
   const [pollError, setPollError] = useState(false);
   const [now, setNow] = useState(() => Date.now());
-  const logRef = useRef<HTMLPreElement>(null);
   const id = run.id;
 
   const loadSummary = useCallback(async () => {
@@ -57,11 +57,6 @@ export function RunView({ initial }: { initial: AnalyzerRun }) {
     }, POLL_MS);
     return () => clearInterval(t);
   }, [id, run.status]);
-
-  useEffect(() => {
-    const el = logRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [run.log]);
 
   async function cancel() {
     await fetch(`/api/analyzer/runs/${id}/cancel`, { method: "POST", body: "{}" });
@@ -112,43 +107,7 @@ export function RunView({ initial }: { initial: AnalyzerRun }) {
         </div>
       </div>
 
-      {active ? (
-        <section className="mt-8 rounded-xl border border-border bg-surface p-5" aria-live="polite">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <Loader2 className="h-5 w-5 animate-spin text-accent" />
-              <div>
-                <p className="text-sm font-semibold">{run.stage ?? "Working"}…</p>
-                <p className="text-2xs text-muted-foreground">
-                  Elapsed {elapsed(run.startedAt ?? run.createdAt, now)}. A full run usually takes several
-                  minutes; the first ever run also downloads the sentiment models.
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={cancel}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-sm text-muted-foreground hover:bg-surface-muted hover:text-foreground"
-            >
-              <XCircle className="h-3.5 w-3.5" /> Cancel
-            </button>
-          </div>
-          {pollError ? (
-            <p className="mt-3 text-2xs text-flat">
-              Lost contact with the service; still trying. The run continues in the background.
-            </p>
-          ) : null}
-          <pre
-            ref={logRef}
-            className="mt-4 h-64 overflow-auto whitespace-pre-wrap break-all rounded-lg border border-border bg-background p-3 font-mono text-2xs leading-relaxed text-muted-foreground"
-          >
-            {log.length ? log.join("\n") : "Waiting for the engine to start…"}
-          </pre>
-          <p className="mt-2 text-2xs text-muted-foreground">
-            You can leave this page. The run keeps going, and the result will be under Your analyses.
-          </p>
-        </section>
-      ) : null}
+      {active ? <RunProgress progress={run.progress} elapsed={elapsed(run.startedAt ?? run.createdAt, now)} logs={log} onCancel={cancel} pollError={pollError} /> : null}
 
       {run.status === "FAILED" || run.status === "CANCELLED" ? (
         <section className="mt-8 rounded-xl border border-down/40 bg-down/10 p-5">
@@ -184,22 +143,6 @@ export function RunView({ initial }: { initial: AnalyzerRun }) {
             <UnlistedSummaryView s={summary} />
           )}
 
-          {run.hasReport ? (
-            <section>
-              <h2 className="text-sm font-semibold tracking-tight">Full report</h2>
-              <p className="mt-1 text-2xs text-muted-foreground">
-                The complete document as the engine wrote it, with every table and chart. It keeps its own
-                dark styling.
-              </p>
-              <iframe
-                title={`${run.company} full report`}
-                src={`/api/analyzer/runs/${id}/report`}
-                sandbox="allow-scripts allow-popups"
-                loading="lazy"
-                className="mt-4 h-[80vh] w-full rounded-xl border border-border bg-background"
-              />
-            </section>
-          ) : null}
         </div>
       ) : null}
     </div>

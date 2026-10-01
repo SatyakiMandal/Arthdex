@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 
 /** Pulsing placeholder used while a server component streams in. */
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn("animate-pulse rounded-md bg-muted", className)} />;
+  return <div className={cn("animate-shimmer rounded-md bg-[linear-gradient(90deg,hsl(var(--muted))_25%,hsl(var(--surface-raised))_50%,hsl(var(--muted))_75%)] bg-[length:200%_100%]", className)} />;
 }
 
 /** Panel-shaped placeholder matching the DataCard footprint. */

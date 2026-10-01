@@ -1,5 +1,8 @@
+import { PageStamp } from "@/components/layout/refresh-control";
 import type { Metadata } from "next";
 import { Rocket } from "lucide-react";
+import { DeskAnalysis } from "@/components/ui/desk-analysis";
+import { Eyebrow } from "@/components/ui/eyebrow";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { DataCard, StatusPill } from "@/components/ui/data-card";
@@ -117,10 +120,8 @@ export default async function IpoPage({ searchParams }: PageProps) {
       <main className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="max-w-2xl">
-            <p className="font-mono text-2xs uppercase tracking-[0.2em] text-accent">
-              Primary markets
-            </p>
-            <h1 className="mt-3 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
+            <Eyebrow icon={Rocket}>Primary markets</Eyebrow>
+            <h1 className="text-gradient mt-4 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
               IPO intelligence
             </h1>
             <p className="mt-3 text-muted-foreground">
@@ -160,6 +161,8 @@ export default async function IpoPage({ searchParams }: PageProps) {
             </div>
           ))}
         </dl>
+
+        <DeskAnalysis insights={result.data.insights} title="Primary-market analysis" className="mt-6" />
 
         <div className="mt-6 space-y-4">
           {sections.map((section) => (
@@ -203,6 +206,7 @@ export default async function IpoPage({ searchParams }: PageProps) {
             title="Planning / DRHP stage is not tracked"
             detail={result.data.unavailable.planning}
           />
+<PageStamp meta={result.meta} />
           <SourceLine meta={result.meta} />
         </div>
       </main>

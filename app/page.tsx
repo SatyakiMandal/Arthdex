@@ -4,6 +4,7 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { Hero } from "@/components/landing/hero";
 import { BentoGrid } from "@/components/landing/bento-grid";
+import { Methodology } from "@/components/landing/methodology";
 import { MoversPreview } from "@/components/market/movers-preview";
 import { GlobalSentiment } from "@/components/macro/global-sentiment";
 import { NewsFeed } from "@/components/macro/news-feed";
@@ -20,6 +21,7 @@ export default async function Home() {
       <main>
         <Hero />
         <BentoGrid />
+        <Methodology />
         <MoversPreview />
         <GlobalSentiment />
 

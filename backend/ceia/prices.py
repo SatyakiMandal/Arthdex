@@ -50,10 +50,14 @@ class PriceProvider(ABC):
         """Return a frame indexed by naive trading date with a ``close`` column."""
 
 
-def _as_frame(index, close, volume=None) -> pd.DataFrame:
+def _as_frame(index, close, volume=None, high=None, low=None) -> pd.DataFrame:
     frame = pd.DataFrame({"close": close}, index=pd.DatetimeIndex(index).normalize())
     if volume is not None:
         frame["volume"] = volume
+    # Session highs and lows, needed by range-based indicators (ADX, stochastic, ATR, pivots)
+    if high is not None and low is not None:
+        frame["high"] = high
+        frame["low"] = low
     frame.index.name = "date"
     frame = frame[~frame.index.duplicated(keep="last")].sort_index()
     return frame.dropna(subset=["close"])
@@ -68,7 +72,7 @@ class YahooChartProvider(PriceProvider):
 
     name = "yahoo-chart"
 
-    def __init__(self, cache_dir: Path | str = "cache/prices", max_retries: int = 6) -> None:
+    def __init__(self, cache_dir: Path | str = "cache/prices", max_retries: int = 3) -> None:
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.max_retries = max_retries
@@ -108,7 +112,7 @@ class YahooChartProvider(PriceProvider):
                 )
             except requests.RequestException as exc:
                 last = str(exc)
-                time.sleep(2**attempt)
+                time.sleep(1 + attempt)
                 continue
             if resp.status_code == 200:
                 result = resp.json().get("chart", {}).get("result")
@@ -116,8 +120,11 @@ class YahooChartProvider(PriceProvider):
                     raise PriceError(f"{symbol}: empty chart result")
                 return result[0]
             last = f"HTTP {resp.status_code}"
-            if resp.status_code in (429, 500, 502, 503):
-                time.sleep(2 ** (attempt + 1))
+            # A 429 means this egress IP is rate-limited. Backing off for seconds does not
+            # lift it within a run, and an engine that touches ~25 series would spend
+            # minutes asleep; fail fast and let the next provider or the caller degrade.
+            if resp.status_code in (500, 502, 503) and attempt + 1 < self.max_retries:
+                time.sleep(1 + attempt)
                 continue
             break
         raise PriceError(f"{symbol}: {last}")
@@ -149,8 +156,35 @@ class YFinanceProvider(PriceProvider):
         volume = frame.get("Volume")
         if isinstance(volume, pd.DataFrame):
             volume = volume.iloc[:, 0]
+        high, low = frame.get("High"), frame.get("Low")
+        if isinstance(high, pd.DataFrame):
+            high = high.iloc[:, 0]
+        if isinstance(low, pd.DataFrame):
+            low = low.iloc[:, 0]
         return _as_frame(frame.index, close.to_numpy(),
-                         volume.to_numpy() if volume is not None else None)
+                         volume.to_numpy() if volume is not None else None,
+                         high.to_numpy() if high is not None else None,
+                         low.to_numpy() if low is not None else None)
+
+
+class FastYahooProvider(PriceProvider):
+    """yfinance first (browser-impersonating, rarely rate-limited), then the raw chart API.
+
+    For callers that used to talk to the chart API alone (metals, crude oil): that
+    endpoint is the one Yahoo throttles, yfinance is the one that keeps working.
+    """
+
+    name = "yahoo"
+
+    def __init__(self) -> None:
+        self._primary = YFinanceProvider()
+        self._fallback = YahooChartProvider()
+
+    def history(self, symbol: str, start: date, end: date) -> pd.DataFrame:
+        try:
+            return self._primary.history(symbol, start, end)
+        except PriceError:
+            return self._fallback.history(symbol, start, end)
 
 
 class AlphaVantageProvider(PriceProvider):
@@ -247,6 +281,18 @@ def load_prices(
     providers: list[PriceProvider] | None = None,
 ) -> tuple[pd.DataFrame, str]:
     """Try each provider in order; return the first success and its name."""
+    # Index, FX and commodity series are the same for every company, and every company
+    # run asks for identical dates. Reuse them for the rest of the day, across processes.
+    day_cache = None
+    if providers is None:
+        day_cache = Path("cache/prices_day") / (
+            f"{symbol.replace('^', '_idx_').replace('=', '_')}_{start}_{end}_{date.today()}.pkl")
+        if day_cache.exists():
+            try:
+                frame, name = pd.read_pickle(day_cache)
+                return frame, name
+            except Exception:
+                pass
     providers = providers or [YFinanceProvider(), YahooChartProvider(),
                               AlphaVantageProvider(), CsvProvider()]
     errors = []
@@ -255,6 +301,12 @@ def load_prices(
             frame = provider.history(symbol, start, end)
             if not frame.empty:
                 log.info("prices for %s via %s (%d rows)", symbol, provider.name, len(frame))
+                if day_cache is not None:
+                    try:
+                        day_cache.parent.mkdir(parents=True, exist_ok=True)
+                        pd.to_pickle((frame, provider.name), day_cache)
+                    except Exception:
+                        pass
                 return frame, provider.name
             errors.append(f"{provider.name}: empty")
         except Exception as exc:

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Gauge, Globe2, Sigma, Building2 } from "lucide-react";
 import { IndexChart } from "./index-chart";
 import { DataUnavailable } from "@/components/ui/data-provenance";
 import { getCandles, getIndices, getUniverseStats } from "@/lib/api/endpoints";
@@ -32,8 +32,12 @@ export async function Hero() {
   const universeCount = universe?.data.total ?? null;
 
   return (
-    <section className="border-b border-border">
-      <div className="mx-auto grid max-w-[1600px] items-center gap-10 px-4 pb-16 pt-16 sm:px-6 lg:grid-cols-[1fr_1.1fr] lg:gap-14 lg:pb-20 lg:pt-20">
+    <section className="relative overflow-hidden border-b border-border">
+      {/* Backdrop: a masked grid and two soft colour glows */}
+      <div className="bg-grid pointer-events-none absolute inset-0" aria-hidden />
+      <div className="pointer-events-none absolute -left-32 -top-32 h-[28rem] w-[28rem] rounded-full bg-accent/15 blur-[110px]" aria-hidden />
+      <div className="pointer-events-none absolute -right-24 top-10 h-[24rem] w-[24rem] rounded-full bg-up/10 blur-[110px]" aria-hidden />
+      <div className="relative mx-auto grid max-w-[1600px] items-center gap-10 px-4 pb-16 pt-16 sm:px-6 lg:grid-cols-[1fr_1.1fr] lg:gap-14 lg:pb-20 lg:pt-20">
         <div>
           {/* Live index strip: functional content, not a decorative eyebrow */}
           {headline.length > 0 ? (
@@ -54,8 +58,16 @@ export async function Hero() {
             </dl>
           ) : null}
 
-          <h1 className="mt-6 text-balance text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl">
-            Indian market analytics, computed from source
+          <p className="mt-6 inline-flex items-center gap-2 rounded-full border border-accent/25 bg-accent/10 px-3 py-1 text-2xs font-medium text-accent">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-60" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent" />
+            </span>
+            Live NSE data · every figure shows its source
+          </p>
+
+          <h1 className="mt-4 text-balance text-4xl font-semibold leading-[1.08] tracking-tight sm:text-6xl">
+            Indian market analytics, <span className="text-gradient">computed from source</span>
           </h1>
 
           <p className="mt-5 max-w-lg text-pretty text-base text-muted-foreground">
@@ -64,38 +76,33 @@ export async function Hero() {
           </p>
 
           <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Link
-              href="/market-watch"
-              className="group inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            >
+            <Link href="/market-watch" className="btn-primary group">
               Open market watch
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
-            <Link
-              href="/company/RELIANCE"
-              className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface-muted px-4 py-2.5 text-sm font-medium transition-colors hover:border-accent/50"
-            >
+            <Link href="/company/RELIANCE" className="btn-ghost">
               See a company page
             </Link>
           </div>
 
-          <dl className="mt-10 grid grid-cols-2 gap-x-8 gap-y-5 border-t border-border pt-6 sm:grid-cols-4">
+          <dl className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
-              {
-                label: "Listed equities",
-                value: universeCount ? universeCount.toLocaleString("en-IN") : "—",
-              },
-              { label: "Volatility models", value: "4" },
-              { label: "Benchmarks", value: "8" },
-              { label: "Horizons", value: "1D / 1W / 1M" },
-            ].map((stat) => (
-              <div key={stat.label}>
-                <dt className="text-2xs uppercase tracking-wide text-muted-foreground">
-                  {stat.label}
-                </dt>
-                <dd className="mt-1 font-mono text-lg font-semibold tabular-nums">{stat.value}</dd>
-              </div>
-            ))}
+              { label: "Listed equities", value: universeCount ? universeCount.toLocaleString("en-IN") : "—", icon: Building2 },
+              { label: "Volatility models", value: "4", icon: Sigma },
+              { label: "Benchmarks", value: "8", icon: Globe2 },
+              { label: "Horizons", value: "1D·1W·1M", icon: Gauge },
+            ].map((stat) => {
+              const Icon = stat.icon;
+              return (
+                <div key={stat.label} className="group rounded-xl border border-border bg-surface/70 p-3 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40">
+                  <dt className="flex items-start gap-1.5 text-2xs uppercase tracking-wide text-muted-foreground">
+                    <Icon className="mt-px h-3 w-3 shrink-0 text-accent" />
+                    {stat.label}
+                  </dt>
+                  <dd className="mt-1 whitespace-nowrap font-mono text-lg font-semibold tabular-nums">{stat.value}</dd>
+                </div>
+              );
+            })}
           </dl>
         </div>
 

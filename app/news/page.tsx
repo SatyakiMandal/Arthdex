@@ -1,4 +1,7 @@
+import { PageStamp } from "@/components/layout/refresh-control";
 import type { Metadata } from "next";
+import { Newspaper } from "lucide-react";
+import { Eyebrow } from "@/components/ui/eyebrow";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { NewsFeed } from "@/components/macro/news-feed";
@@ -39,8 +42,8 @@ export default async function NewsPage({ searchParams }: PageProps) {
       <main className="mx-auto max-w-[1100px] px-4 py-10 sm:px-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="max-w-2xl">
-            <p className="font-mono text-2xs uppercase tracking-[0.2em] text-accent">News</p>
-            <h1 className="mt-3 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
+            <Eyebrow icon={Newspaper}>News</Eyebrow>
+            <h1 className="text-gradient mt-4 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
               Filings &amp; market coverage
             </h1>
             <p className="mt-3 text-muted-foreground">
@@ -97,6 +100,7 @@ export default async function NewsPage({ searchParams }: PageProps) {
               />
 
               <div className="mt-3">
+<PageStamp meta={result.meta} />
                 <SourceLine meta={result.meta} />
               </div>
 

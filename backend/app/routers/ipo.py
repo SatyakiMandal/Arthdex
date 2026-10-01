@@ -7,6 +7,7 @@ from fastapi import APIRouter, HTTPException, Query
 from ..cache import CACHE
 from ..config import SETTINGS
 from ..schemas import envelope
+from ..services.insights import ipo_insights
 from ..services import ipo as ipo_service
 
 router = APIRouter(prefix="/api/v1/ipo", tags=["ipo"])
@@ -32,7 +33,7 @@ def get_pipeline(
         issues = [i for i in issues if i["status"] == status]
 
     return envelope(
-        {**data, "issues": issues},
+        {**data, "issues": issues, "insights": ipo_insights(data["issues"])},
         age,
         source="NSE IPO desk; listing performance from Yahoo Finance",
         delayed_minutes=SETTINGS.quote_delay_minutes,

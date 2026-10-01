@@ -203,22 +203,23 @@ class KeyFinancialRatiosResult:
 
 @dataclass
 class RelativeValuationMultiplesResult:
-    pe_ratio: float
-    pb_ratio: float
-    price_to_revenue_per_share: float
-    peg_ratio: float
-    ev_to_ebitda: float
-    ev_to_ebit: float
-    price_to_cash_flow: float
-    ev_to_sales: float
-    price_to_sales: float
+    pe_ratio: float | None
+    pb_ratio: float | None
+    price_to_revenue_per_share: float | None
+    peg_ratio: float | None
+    ev_to_ebitda: float | None
+    ev_to_ebit: float | None
+    price_to_cash_flow: float | None
+    ev_to_sales: float | None
+    price_to_sales: float | None
     sector_name: str
     overall_valuation_rating: str
     relative_valuation_stance: str = "Fair Value"
-    composite_relative_score: float = 50.0
-    peer_harmonized_target_price: float = 0.0
-    implied_upside_vs_peers_pct: float = 0.0
+    composite_relative_score: float | None = 50.0
+    peer_harmonized_target_price: float | None = 0.0
+    implied_upside_vs_peers_pct: float | None = 0.0
     multiples_summary_table: list[dict[str, Any]] = field(default_factory=list)
+    notes: list[str] = field(default_factory=list)
 
     @property
     def multiples(self) -> list[dict[str, Any]]:
@@ -1180,6 +1181,82 @@ def compute_key_financial_ratios(financials: dict[str, Any]) -> KeyFinancialRati
     )
 
 
+_PEER_CACHE: dict[str, dict[str, float | None]] = {}
+
+
+def _yahoo_info(symbol: str) -> dict[str, Any]:
+    import yfinance as yf
+
+    try:
+        return yf.Ticker(symbol).info or {}
+    except Exception:
+        return {}
+
+
+def _positive(v: Any) -> float | None:
+    try:
+        x = float(v)
+    except (TypeError, ValueError):
+        return None
+    return x if x == x and x > 0 and x != float("inf") else None
+
+
+def peer_benchmarks(peers: list[Any], exclude: str = "") -> tuple[dict[str, float | None], int]:
+    """Median trailing multiples of the company's screener.in peer group, read from Yahoo Finance.
+
+    A median is only reported when at least three peers supply that multiple; below that it
+    is not a benchmark, so the metric is left without one rather than filled with a guess.
+    """
+    from concurrent.futures import ThreadPoolExecutor
+
+    symbols = []
+    for p in peers or []:
+        sym = p[1] if isinstance(p, (list, tuple)) and len(p) > 1 else None
+        if sym and sym.upper() != exclude.upper() and sym not in symbols:
+            symbols.append(sym)
+    symbols = symbols[:8]
+
+    def one(sym: str) -> dict[str, float | None]:
+        if sym in _PEER_CACHE:
+            return _PEER_CACHE[sym]
+        info = _yahoo_info(sym)
+        row = {
+            "pe": _positive(info.get("trailingPE")),
+            "pb": _positive(info.get("priceToBook")),
+            "ev_ebitda": _positive(info.get("enterpriseToEbitda")),
+            "ps": _positive(info.get("priceToSalesTrailing12Months")),
+            "ev_sales": _positive(info.get("enterpriseToRevenue")),
+        }
+        if any(v is not None for v in row.values()):
+            _PEER_CACHE[sym] = row
+        return row
+
+    if not symbols:
+        return {}, 0
+    with ThreadPoolExecutor(max_workers=min(8, len(symbols))) as pool:
+        rows = list(pool.map(one, symbols))
+    out: dict[str, float | None] = {}
+    for key in ("pe", "pb", "ev_ebitda", "ps", "ev_sales"):
+        vals = [r[key] for r in rows if r.get(key) is not None]
+        out[key] = float(np.median(vals)) if len(vals) >= 3 else None
+    return out, sum(1 for r in rows if any(v is not None for v in r.values()))
+
+
+def _ttm_or_annualised(fin: dict[str, Any], key: str, latest_row: Any) -> tuple[float | None, str]:
+    """Trailing-twelve-month figure; the latest quarter x4 only if four quarters are unavailable."""
+    ttm = (fin.get("ttm") or {}).get(key)
+    if ttm is not None:
+        return float(ttm), "TTM"
+    latest = latest_row.get("latest") if isinstance(latest_row, dict) else None
+    if latest is not None:
+        return float(latest) * 4.0, "latest quarter x4"
+    return None, ""
+
+
+def _fmt(v: float | None, suffix: str = "x") -> str:
+    return f"{v:.2f}{suffix}" if v is not None else "n/a"
+
+
 def compute_relative_valuation_multiples(
     financials: dict[str, Any],
     market_cap: float | None = None,
@@ -1188,294 +1265,258 @@ def compute_relative_valuation_multiples(
     total_debt: float | None = None,
     cash: float | None = None,
     ticker: str = "",
+    benchmarks: dict[str, float | None] | None = None,
+    n_peers: int | None = None,
     **kwargs: Any,
 ) -> RelativeValuationMultiplesResult:
-    """Compute complete 8-factor Relative Valuation multiples suite:
-    1. Price to Earnings (P/E) (Profitability comparison)
-    2. Price to Book (P/B)
-    3. Price to Revenue Per Share (P/RPS) (for early-stage / low profitability firms)
-    4. PEG Ratio (Price to Earnings / 3-Year EPS Growth Rate)
-    5. EV/EBITDA and EV/EBIT (Capital structure-neutral enterprise multiples)
-    6. Price to Cash Flow (P/CF)
-    7. EV to Sales (EV/Sales)
-    8. Price to Sales (P/S)
+    """Trailing multiples from reported filings, compared with the company's own peer group.
+
+    Every input is a reported figure: earnings, sales and operating profit are the sum of the
+    last four quarters, cash flow is the latest financial year, growth is the 3-year
+    compounded rate. Nothing is defaulted. A multiple whose input is missing is omitted, and
+    a benchmark is used only when at least three peers supply it.
     """
-    if not isinstance(financials, dict):
-        financials = {}
+    fin = financials if isinstance(financials, dict) else {}
+    top = fin.get("top_ratios") if isinstance(fin.get("top_ratios"), dict) else {}
+    bs = fin.get("balance_sheet") if isinstance(fin.get("balance_sheet"), dict) else {}
 
-    top_ratios = financials.get("top_ratios") if isinstance(financials.get("top_ratios"), dict) else {}
-    bs = financials.get("balance_sheet") if isinstance(financials.get("balance_sheet"), dict) else {}
-    net_inc_dict = financials.get("net_profit") if isinstance(financials.get("net_profit"), dict) else {}
+    price = _positive(current_price) or _positive(fin.get("current_price")) or _positive(top.get("Current Price"))
+    shares = _positive(shares_outstanding) or _positive(fin.get("shares_outstanding"))  # crore shares
+    notes: list[str] = []
+    if not price or not shares:
+        return RelativeValuationMultiplesResult(
+            pe_ratio=None, pb_ratio=None, price_to_revenue_per_share=None, peg_ratio=None, ev_to_ebitda=None,
+            ev_to_ebit=None, price_to_cash_flow=None, ev_to_sales=None, price_to_sales=None,
+            sector_name="Not assessed", overall_valuation_rating="Not assessed: price or share count unavailable",
+            relative_valuation_stance="Not assessed: price or share count unavailable", composite_relative_score=None,
+            peer_harmonized_target_price=None, implied_upside_vs_peers_pct=None,
+        )
+    mcap = price * shares  # crore rupees
 
-    mcap = max(100.0, float(market_cap or top_ratios.get("Market Cap") or financials.get("market_cap") or 1000.0))
-    curr_p = max(1.0, float(current_price or top_ratios.get("Current Price") or financials.get("current_price") or 100.0))
-    shares_raw = shares_outstanding or financials.get("shares_outstanding")
-    shares = float(shares_raw) if shares_raw and float(shares_raw) > 0 else (mcap / curr_p if curr_p > 0 else 10.0)
+    is_bank = is_financial_institution(fin, ticker)
+    np_ttm, np_basis = _ttm_or_annualised(fin, "net_profit", fin.get("net_profit"))
+    rev_ttm, _ = _ttm_or_annualised(fin, "revenue", fin.get("revenue"))
+    op_ttm, _ = _ttm_or_annualised(fin, "operating_income", fin.get("operating_income"))
+    dep_ttm, _ = _ttm_or_annualised(fin, "depreciation", fin.get("depreciation"))
+    if np_basis == "latest quarter x4":
+        notes.append("Earnings annualised from the latest quarter (fewer than four quarters available).")
 
-    debt_raw = total_debt if total_debt is not None else (bs.get("total_debt") if bs.get("total_debt") is not None else bs.get("borrowings"))
-    debt = max(0.0, float(debt_raw) if debt_raw is not None else 100.0)
-    cash_raw = cash if cash is not None else (bs.get("cash_and_equivalents") if bs.get("cash_and_equivalents") is not None else bs.get("investments"))
-    cash = max(0.0, float(cash_raw) if cash_raw is not None else 50.0)
+    equity = _positive(bs.get("total_equity")) or (
+        (_positive(bs.get("equity_capital")) or 0.0) + (_positive(bs.get("reserves")) or 0.0) or None
+    )
+    debt = total_debt if total_debt is not None else (bs.get("total_debt") if bs.get("total_debt") is not None else bs.get("borrowings"))
+    debt = float(debt) if debt is not None else None
 
-    eq_cap = float(bs.get("equity_capital") or 50.0)
-    reserves = float(bs.get("reserves") or 450.0)
-    book_equity = eq_cap + reserves if (eq_cap + reserves) > 0 else max(100.0, mcap * 0.4)
+    cash_cr = cash
+    if cash_cr is None and ticker:
+        info = _yahoo_info(ticker)
+        raw = _positive(info.get("totalCash"))
+        cash_cr = raw / 1e7 if raw else None  # Yahoo reports rupees; filings are in crore
+    ev = None
+    if not is_bank and debt is not None:
+        ev = mcap + debt - (cash_cr or 0.0)
+        if cash_cr is None:
+            notes.append("Cash was not available, so enterprise value is not reduced by cash.")
 
-    nopat_raw = financials.get("nopat")
-    nopat = float(nopat_raw) if nopat_raw is not None and float(nopat_raw) > 0 else max(10.0, mcap * 0.05)
-    net_inc_raw = net_inc_dict.get("latest") if isinstance(net_inc_dict, dict) else None
-    net_inc = float(net_inc_raw) if net_inc_raw is not None else (nopat * 0.9)
+    eps = (np_ttm / shares) if (np_ttm and np_ttm > 0) else None
+    pe = price / eps if eps else None
+    pb = mcap / equity if equity else None
+    p_sales = mcap / rev_ttm if (rev_ttm and rev_ttm > 0) else None
+    cagr = fin.get("profit_cagr_3y_pct")
+    peg = pe / cagr if (pe and cagr and cagr > 0) else None
+    ev_ebitda = ev / op_ttm if (ev and op_ttm and op_ttm > 0) else None
+    ebit = (op_ttm - dep_ttm) if (op_ttm is not None and dep_ttm is not None) else None
+    ev_ebit = ev / ebit if (ev and ebit and ebit > 0) else None
+    cfo = _positive(fin.get("cfo_annual"))
+    p_cf = mcap / cfo if cfo else None
+    ev_sales = ev / rev_ttm if (ev and rev_ttm and rev_ttm > 0) else None
 
-    rev_dict = financials.get("revenue") if isinstance(financials.get("revenue"), dict) else {}
-    rev_raw = rev_dict.get("latest") if isinstance(rev_dict, dict) else None
-    revenue = max(1.0, float(rev_raw) if rev_raw is not None else (nopat * 6.0))
+    if benchmarks is None:
+        benchmarks, n_peers = peer_benchmarks(fin.get("peers") or [], exclude=ticker)
+    bm = benchmarks or {}
+    sector = f"Median of {n_peers} screener.in peers" if n_peers else "No peer benchmark available"
 
-    ebit_raw = financials.get("operating_profit", {}).get("latest") if isinstance(financials.get("operating_profit"), dict) else None
-    ebit = float(ebit_raw) if ebit_raw is not None else (nopat / 0.75)
-    ebitda = max(ebit * 1.18, ebit + 50.0)
+    def var(val: float | None, key: str) -> float | None:
+        b = bm.get(key)
+        return ((val - b) / b) * 100.0 if (val is not None and b) else None
 
-    # 1. Price to Earnings (P/E)
-    eps = net_inc / shares if shares > 0 else 1.0
-    pe = (curr_p / eps) if eps > 0 else (mcap / max(1.0, net_inc))
+    def verdict(v: float | None) -> str:
+        if v is None:
+            return "No benchmark"
+        return "Premium (+)" if v > 15.0 else ("Discount (-)" if v < -15.0 else "In-Line")
 
-    # 2. Price to Book (P/B)
-    bvps = book_equity / shares if shares > 0 else 1.0
-    pb = (curr_p / bvps) if bvps > 0 else (mcap / max(1.0, book_equity))
-
-    # 3. Price to Revenue Per Share (P/RPS) (for early-stage / low profitability)
-    rps = revenue / shares if shares > 0 else 1.0
-    p_rps = (curr_p / rps) if rps > 0 else (mcap / max(1.0, revenue))
-
-    # 4. PEG Ratio (P/E divided by 3-Yr EPS Growth Rate %)
-    eps_growth = max(4.0, min(45.0, float(financials.get("eps_growth_pct") or 14.5)))
-    peg = (pe / eps_growth) if (pe > 0 and eps_growth > 0) else 1.25
-
-    # 5. EV / EBITDA and EV / EBIT
-    ev = max(100.0, mcap + debt - cash)
-    ev_ebitda = (ev / ebitda) if ebitda > 0 else 12.0
-    ev_ebit = (ev / ebit) if ebit > 0 else 15.0
-
-    # 6. Price to Cash Flow (P/CF)
-    cf_ops = max(1.0, net_inc * 1.15 + (book_equity * 0.05))
-    p_cf = (mcap / cf_ops) if cf_ops > 0 else 14.0
-
-    # 7. EV to Sales (EV/Sales)
-    ev_sales = (ev / revenue) if revenue > 0 else 2.5
-
-    # 8. Price to Sales (P/S)
-    p_sales = (mcap / revenue) if revenue > 0 else 2.2
-
-    # Sector Benchmark determination
-    t_up = ticker.upper()
-    if any(k in t_up for k in ["TCS", "SONAT", "INFY", "WIPRO", "HCL"]):
-        sector = "Information Technology"
-        sec_pe, sec_pb, sec_prps, sec_peg, sec_evebitda, sec_evebit, sec_pcf, sec_evsales, sec_ps = 28.5, 8.2, 4.5, 1.8, 18.0, 21.0, 22.0, 4.8, 4.5
-    elif any(k in t_up for k in ["BANK", "PFC", "RECLTD", "FIN"]):
-        sector = "Banking & Financial Institutions"
-        sec_pe, sec_pb, sec_prps, sec_peg, sec_evebitda, sec_evebit, sec_pcf, sec_evsales, sec_ps = 14.5, 1.8, 2.2, 1.2, 10.5, 12.0, 11.0, 2.5, 2.2
-    elif any(k in t_up for k in ["STEEL", "ALUM", "METALS", "MINING", "LLOYDS"]):
-        sector = "Metals & Mining"
-        sec_pe, sec_pb, sec_prps, sec_peg, sec_evebitda, sec_evebit, sec_pcf, sec_evsales, sec_ps = 12.0, 1.5, 1.1, 1.1, 6.5, 8.0, 7.5, 1.2, 1.1
-    elif any(k in t_up for k in ["GRSE", "GOA", "DEFENCE", "SHIP"]):
-        sector = "Defence & Marine Engineering"
-        sec_pe, sec_pb, sec_prps, sec_peg, sec_evebitda, sec_evebit, sec_pcf, sec_evsales, sec_ps = 24.0, 4.5, 2.8, 1.4, 16.0, 18.5, 18.0, 2.9, 2.8
-    elif any(k in t_up for k in ["CONSUM", "FMCG", "NESTLE", "BRITANNIA"]):
-        sector = "Consumer & FMCG"
-        sec_pe, sec_pb, sec_prps, sec_peg, sec_evebitda, sec_evebit, sec_pcf, sec_evsales, sec_ps = 45.0, 6.5, 3.5, 2.2, 24.0, 28.0, 30.0, 3.6, 3.5
-    elif any(k in t_up for k in ["MOTOR", "TMCV", "TMPV", "AUTO"]):
-        sector = "Automotive & Mobility"
-        sec_pe, sec_pb, sec_prps, sec_peg, sec_evebitda, sec_evebit, sec_pcf, sec_evsales, sec_ps = 18.0, 3.2, 1.2, 1.3, 9.5, 12.0, 10.5, 1.3, 1.2
-    elif any(k in t_up for k in ["ZYDUS", "PHARMA", "LIFE", "DRREDDY"]):
-        sector = "Pharmaceuticals & Healthcare"
-        sec_pe, sec_pb, sec_prps, sec_peg, sec_evebitda, sec_evebit, sec_pcf, sec_evsales, sec_ps = 26.0, 4.0, 3.8, 1.5, 15.5, 18.0, 19.0, 3.9, 3.8
-    else:
-        sector = "Diversified Industrial & Services"
-        sec_pe, sec_pb, sec_prps, sec_peg, sec_evebitda, sec_evebit, sec_pcf, sec_evsales, sec_ps = 22.0, 2.8, 2.0, 1.5, 13.0, 15.5, 14.5, 2.2, 2.0
-
-    def diff_str(val: float, bench: float) -> tuple[str, str]:
-        diff = ((val - bench) / bench) * 100.0
-        sign = "+" if diff > 0 else ""
-        verdict = "Premium (+)" if diff > 15.0 else ("Discount (-)" if diff < -15.0 else "In-Line")
-        return f"{sign}{diff:.1f}%", verdict
-
-    diff_pe, verd_pe = diff_str(pe, sec_pe)
-    diff_pb, verd_pb = diff_str(pb, sec_pb)
-    diff_prps, verd_prps = diff_str(p_rps, sec_prps)
-    diff_peg, verd_peg = diff_str(peg, sec_peg)
-    diff_evebitda, verd_evebitda = diff_str(ev_ebitda, sec_evebitda)
-    diff_evebit, verd_evebit = diff_str(ev_ebit, sec_evebit)
-    diff_pcf, verd_pcf = diff_str(p_cf, sec_pcf)
-    diff_evsales, verd_evsales = diff_str(ev_sales, sec_evsales)
-    diff_ps, verd_ps = diff_str(p_sales, sec_ps)
-
-    premium_count = sum(1 for v in [verd_pe, verd_pb, verd_evebitda, verd_ps] if "Premium" in v)
-    discount_count = sum(1 for v in [verd_pe, verd_pb, verd_evebitda, verd_ps] if "Discount" in v)
-
-    # Average Variance % vs Sector Median
-    variances = [
-        ((pe - sec_pe) / sec_pe) * 100.0 if sec_pe else 0.0,
-        ((pb - sec_pb) / sec_pb) * 100.0 if sec_pb else 0.0,
-        ((ev_ebitda - sec_evebitda) / sec_evebitda) * 100.0 if sec_evebitda else 0.0,
-        ((p_sales - sec_ps) / sec_ps) * 100.0 if sec_ps else 0.0,
+    rows_spec = [
+        ("1. Price to Earnings (P/E)", pe, "pe", "Earnings capitalisation (TTM)", "x"),
+        ("2. Price to Book (P/B)", pb, "pb", "Net asset backing", "x"),
+        ("3. Price to Sales (P/S)", p_sales, "ps", "Market value on TTM revenue", "x"),
+        ("4. PEG Ratio (P/E to 3-year profit growth)", peg, None, "Growth-adjusted earnings multiple", "x"),
+        ("5. EV / EBITDA", ev_ebitda, "ev_ebitda", "Debt-neutral operating earnings (operating profit as EBITDA)", "x"),
+        ("6. EV / EBIT", ev_ebit, None, "Debt-neutral profit after depreciation", "x"),
+        ("7. Price to Cash Flow (P/CF)", p_cf, None, "Market value on latest-year operating cash flow", "x"),
+        ("8. EV to Sales", ev_sales, "ev_sales", "Enterprise value on TTM revenue", "x"),
     ]
-    mean_var_pct = float(np.mean(variances))
-    comp_score = float(np.clip(50.0 + (mean_var_pct * 0.4), 0.0, 100.0))
+    table: list[dict[str, Any]] = []
+    for name, val, key, role, _ in rows_spec:
+        if val is None:
+            continue
+        b = bm.get(key) if key else None
+        v = var(val, key) if key else None
+        vd = verdict(v)
+        table.append(
+            {
+                "Multiple": name,
+                "ratio_name": name,
+                "Value": _fmt(val),
+                "company_value": val,
+                "Sector Benchmark": _fmt(b) if b else "n/a",
+                "sector_median": b,
+                "Variance vs Sector": f"{v:+.1f}%" if v is not None else "n/a",
+                "variance_pct": v,
+                "Analytical Role": role,
+                "interpretation": role,
+                "Verdict": vd,
+                "verdict_badge": vd,
+            }
+        )
 
-    if mean_var_pct < -25.0:
-        rel_stance = "Substantially Undervalued vs Peer Group (>25% Multiple Discount)"
-        overall_rating = "Substantially Undervalued (High Margin of Safety)"
-    elif mean_var_pct < -8.0:
-        rel_stance = "Modestly Undervalued vs Peer Group (Discounted Multiples)"
-        overall_rating = "Modestly Undervalued (Attractive Entry Point)"
-    elif mean_var_pct <= 8.0:
-        rel_stance = "Fairly Valued (In-Line with Peer Cohort Median)"
-        overall_rating = "Fair Value (In-Line with Sector Multiples)"
-    elif mean_var_pct <= 25.0:
-        rel_stance = "Modestly Overvalued vs Peer Group (Trading at Sector Premium)"
-        overall_rating = "Modestly Overvalued (Growth Premium Priced In)"
+    variances = [x for x in (var(pe, "pe"), var(pb, "pb"), var(ev_ebitda, "ev_ebitda"), var(p_sales, "ps")) if x is not None]
+    if variances:
+        mean_var = float(np.mean(variances))
+        comp_score = float(np.clip(50.0 + mean_var * 0.4, 0.0, 100.0))
+        if mean_var < -25.0:
+            rel_stance, overall = "Substantially Undervalued vs Peer Group (>25% Multiple Discount)", "Substantially Undervalued (High Margin of Safety)"
+        elif mean_var < -8.0:
+            rel_stance, overall = "Modestly Undervalued vs Peer Group (Discounted Multiples)", "Modestly Undervalued (Attractive Entry Point)"
+        elif mean_var <= 8.0:
+            rel_stance, overall = "Fairly Valued (In-Line with Peer Cohort Median)", "Fair Value (In-Line with Peer Multiples)"
+        elif mean_var <= 25.0:
+            rel_stance, overall = "Modestly Overvalued vs Peer Group (Trading at Peer Premium)", "Modestly Overvalued (Growth Premium Priced In)"
+        else:
+            rel_stance, overall = "Substantially Overvalued vs Peer Group (>25% Multiple Premium)", "Substantially Overvalued (Elevated Valuation Risk)"
+        notes.append(f"Average variance vs peer median across {len(variances)} multiples: {mean_var:+.1f}%.")
     else:
-        rel_stance = "Substantially Overvalued vs Peer Group (>25% Multiple Premium)"
-        overall_rating = "Substantially Overvalued (Elevated Valuation Risk)"
+        comp_score = None
+        rel_stance = "Not assessed: no peer benchmark available"
+        overall = "Not assessed: no peer benchmark available"
 
-    # Peer Harmonized Target Price
-    p_from_pe = (eps * sec_pe) if eps > 0 else curr_p
-    p_from_ev = max(1.0, ((ebitda * sec_evebitda) - debt + cash) / max(1.0, shares))
-    peer_target = round((p_from_pe * 0.6 + p_from_ev * 0.4), 2)
-    implied_upside = round(((peer_target - curr_p) / curr_p) * 100.0, 2)
+    # Price implied by applying peer-median multiples to this company's own earnings
+    implied: list[float] = []
+    if eps and bm.get("pe"):
+        implied.append(eps * bm["pe"])
+    if op_ttm and op_ttm > 0 and bm.get("ev_ebitda") and debt is not None and not is_bank:
+        implied.append((op_ttm * bm["ev_ebitda"] - debt + (cash_cr or 0.0)) / shares)
+    peer_target = round(float(np.mean(implied)), 2) if implied else None
+    upside = round((peer_target / price - 1) * 100.0, 2) if peer_target else None
 
-    table = [
-        {
-            "Multiple": "1. Price to Earnings (P/E)",
-            "ratio_name": "1. Price to Earnings (P/E)",
-            "Value": f"{pe:.2f}x",
-            "company_value": pe,
-            "Sector Benchmark": f"{sec_pe:.1f}x",
-            "sector_median": sec_pe,
-            "Variance vs Sector": diff_pe,
-            "variance_pct": ((pe - sec_pe) / sec_pe) * 100.0 if sec_pe else 0.0,
-            "Analytical Role": "Profitability comparison & earnings capitalization",
-            "interpretation": "Profitability comparison & earnings capitalization",
-            "Verdict": verd_pe,
-            "verdict_badge": verd_pe,
-        },
-        {
-            "Multiple": "2. Price to Book (P/B)",
-            "ratio_name": "2. Price to Book (P/B)",
-            "Value": f"{pb:.2f}x",
-            "company_value": pb,
-            "Sector Benchmark": f"{sec_pb:.1f}x",
-            "sector_median": sec_pb,
-            "Variance vs Sector": diff_pb,
-            "variance_pct": ((pb - sec_pb) / sec_pb) * 100.0 if sec_pb else 0.0,
-            "Analytical Role": "Net asset backing & equity replacement cost",
-            "interpretation": "Net asset backing & equity replacement cost",
-            "Verdict": verd_pb,
-            "verdict_badge": verd_pb,
-        },
-        {
-            "Multiple": "3. Price to Revenue Per Share (P/RPS)",
-            "ratio_name": "3. Price to Revenue Per Share (P/RPS)",
-            "Value": f"{p_rps:.2f}x",
-            "company_value": p_rps,
-            "Sector Benchmark": f"{sec_prps:.1f}x",
-            "sector_median": sec_prps,
-            "Variance vs Sector": diff_prps,
-            "variance_pct": ((p_rps - sec_prps) / sec_prps) * 100.0 if sec_prps else 0.0,
-            "Analytical Role": "Early-stage & low/negative profitability valuation",
-            "interpretation": "Early-stage & low/negative profitability valuation",
-            "Verdict": verd_prps,
-            "verdict_badge": verd_prps,
-        },
-        {
-            "Multiple": "4. PEG Ratio (P/E to Growth)",
-            "ratio_name": "4. PEG Ratio (P/E to Growth)",
-            "Value": f"{peg:.2f}x",
-            "company_value": peg,
-            "Sector Benchmark": f"{sec_peg:.1f}x",
-            "sector_median": sec_peg,
-            "Variance vs Sector": diff_peg,
-            "variance_pct": ((peg - sec_peg) / sec_peg) * 100.0 if sec_peg else 0.0,
-            "Analytical Role": "Peter Lynch growth-adjusted earnings multiple",
-            "interpretation": "Peter Lynch growth-adjusted earnings multiple",
-            "Verdict": verd_peg,
-            "verdict_badge": verd_peg,
-        },
-        {
-            "Multiple": "5. EV / EBITDA & EV / EBIT",
-            "ratio_name": "5. EV / EBITDA & EV / EBIT",
-            "Value": f"{ev_ebitda:.2f}x / {ev_ebit:.2f}x",
-            "company_value": ev_ebitda,
-            "Sector Benchmark": f"{sec_evebitda:.1f}x / {sec_evebit:.1f}x",
-            "sector_median": sec_evebitda,
-            "Variance vs Sector": diff_evebitda,
-            "variance_pct": ((ev_ebitda - sec_evebitda) / sec_evebitda) * 100.0 if sec_evebitda else 0.0,
-            "Analytical Role": "Debt-neutral operating cash generation",
-            "interpretation": "Debt-neutral operating cash generation",
-            "Verdict": verd_evebitda,
-            "verdict_badge": verd_evebitda,
-        },
-        {
-            "Multiple": "6. Price to Cash Flow (P/CF)",
-            "ratio_name": "6. Price to Cash Flow (P/CF)",
-            "Value": f"{p_cf:.2f}x",
-            "company_value": p_cf,
-            "Sector Benchmark": f"{sec_pcf:.1f}x",
-            "sector_median": sec_pcf,
-            "Variance vs Sector": diff_pcf,
-            "variance_pct": ((p_cf - sec_pcf) / sec_pcf) * 100.0 if sec_pcf else 0.0,
-            "Analytical Role": "Operating cash flow multiple (non-cash addback)",
-            "interpretation": "Operating cash flow multiple (non-cash addback)",
-            "Verdict": verd_pcf,
-            "verdict_badge": verd_pcf,
-        },
-        {
-            "Multiple": "7. EV to Sales (EV/Sales)",
-            "ratio_name": "7. EV to Sales (EV/Sales)",
-            "Value": f"{ev_sales:.2f}x",
-            "company_value": ev_sales,
-            "Sector Benchmark": f"{sec_evsales:.1f}x",
-            "sector_median": sec_evsales,
-            "Variance vs Sector": diff_evsales,
-            "variance_pct": ((ev_sales - sec_evsales) / sec_evsales) * 100.0 if sec_evsales else 0.0,
-            "Analytical Role": "Capital structure-adjusted top-line intensity",
-            "interpretation": "Capital structure-adjusted top-line intensity",
-            "Verdict": verd_evsales,
-            "verdict_badge": verd_evsales,
-        },
-        {
-            "Multiple": "8. Price to Sales (P/S)",
-            "ratio_name": "8. Price to Sales (P/S)",
-            "Value": f"{p_sales:.2f}x",
-            "company_value": p_sales,
-            "Sector Benchmark": f"{sec_ps:.1f}x",
-            "sector_median": sec_ps,
-            "Variance vs Sector": diff_ps,
-            "variance_pct": ((p_sales - sec_ps) / sec_ps) * 100.0 if sec_ps else 0.0,
-            "Analytical Role": "Market equity multiple on gross revenue",
-            "interpretation": "Market equity multiple on gross revenue",
-            "Verdict": verd_ps,
-            "verdict_badge": verd_ps,
-        },
-    ]
+    def r(v: float | None) -> float | None:
+        return round(v, 2) if v is not None else None
 
-    return RelativeValuationMultiplesResult(
-        pe_ratio=round(pe, 2),
-        pb_ratio=round(pb, 2),
-        price_to_revenue_per_share=round(p_rps, 2),
-        peg_ratio=round(peg, 2),
-        ev_to_ebitda=round(ev_ebitda, 2),
-        ev_to_ebit=round(ev_ebit, 2),
-        price_to_cash_flow=round(p_cf, 2),
-        ev_to_sales=round(ev_sales, 2),
-        price_to_sales=round(p_sales, 2),
+    result = RelativeValuationMultiplesResult(
+        pe_ratio=r(pe),
+        pb_ratio=r(pb),
+        price_to_revenue_per_share=r(p_sales),
+        peg_ratio=r(peg),
+        ev_to_ebitda=r(ev_ebitda),
+        ev_to_ebit=r(ev_ebit),
+        price_to_cash_flow=r(p_cf),
+        ev_to_sales=r(ev_sales),
+        price_to_sales=r(p_sales),
         sector_name=sector,
-        overall_valuation_rating=overall_rating,
+        overall_valuation_rating=overall,
         relative_valuation_stance=rel_stance,
-        composite_relative_score=round(comp_score, 1),
+        composite_relative_score=r(comp_score),
         peer_harmonized_target_price=peer_target,
-        implied_upside_vs_peers_pct=implied_upside,
+        implied_upside_vs_peers_pct=upside,
         multiples_summary_table=table,
     )
+    result.notes = notes
+    return result
+
+
+def reported_cash(fin: dict[str, Any], ticker: str = "") -> float:
+    """Cash and equivalents in crore rupees from Yahoo Finance; 0 when it cannot be read.
+
+    The screener.in balance sheet has no cash line (its "Investments" is not cash), so the
+    reports no longer stand that in or invent a default.
+    """
+    sym = ticker or (fin.get("ticker") if isinstance(fin, dict) else "") or ""
+    raw = _positive(_yahoo_info(sym).get("totalCash")) if sym else None
+    return raw / 1e7 if raw else 0.0
+
+
+def reported_nopat(fin: dict[str, Any]) -> float:
+    """Trailing-twelve-month operating profit after tax (latest quarter x4 only as a fallback)."""
+    op, _ = _ttm_or_annualised(fin, "operating_income", fin.get("operating_income"))
+    if op is None:
+        return 0.0
+    tax = fin.get("tax_rate_pct")
+    return op * (1.0 - (float(tax) / 100.0 if tax is not None else 0.25))
+
+
+def reported_net_income(fin: dict[str, Any]) -> float:
+    np_, _ = _ttm_or_annualised(fin, "net_profit", fin.get("net_profit"))
+    return np_ if np_ is not None else 0.0
+
+
+def run_valuation_suite(fin: dict[str, Any], price: float, beta: float, ticker: str = "") -> dict[str, Any] | None:
+    """The one valuation every part of the report shares: WACC, DCF (or residual income for
+    banks), scenarios, Monte Carlo, DuPont and peer-relative multiples.
+
+    Operating profit is the trailing-twelve-month figure, taxed at the reported rate, so the
+    DCF and the multiples rest on the same earnings base.
+    """
+    shares = _positive(fin.get("shares_outstanding"))
+    if not fin or not price or not shares:
+        return None
+    bs = fin.get("balance_sheet") or {}
+    mcap = shares * price
+    debt = float(bs.get("total_debt") if bs.get("total_debt") is not None else (bs.get("borrowings") or 0.0))
+    info = _yahoo_info(ticker) if ticker else {}
+    raw_cash = _positive(info.get("totalCash"))
+    cash = raw_cash / 1e7 if raw_cash else 0.0
+
+    op_ttm, basis = _ttm_or_annualised(fin, "operating_income", fin.get("operating_income"))
+    if op_ttm is None:
+        return None
+    tax = fin.get("tax_rate_pct")
+    tax = float(tax) / 100.0 if tax is not None else 0.25
+    base_nopat = op_ttm * (1.0 - tax)
+    equity = float((bs.get("equity_capital") or 0.0) + (bs.get("reserves") or 0.0))
+    if equity <= 0:
+        equity = _positive(bs.get("total_equity")) or max(100.0, mcap * 0.4)
+    np_ttm, _ = _ttm_or_annualised(fin, "net_profit", fin.get("net_profit"))
+    net_income = np_ttm if np_ttm is not None else mcap * 0.06
+    is_bank = is_financial_institution(fin, ticker)
+
+    np.random.seed(42)  # reproducible Monte Carlo
+    wacc = compute_wacc(market_cap=mcap, total_debt=debt, beta=beta, risk_free_rate=0.068)
+    if is_bank:
+        core = compute_residual_income_valuation(
+            current_price=price, shares_outstanding=shares, book_value_equity=equity,
+            latest_net_income=net_income, beta=beta, risk_free_rate=0.068,
+        )
+    else:
+        core = compute_dcf_valuation(
+            current_price=price, shares_outstanding=shares, nopat=base_nopat,
+            total_debt=debt, cash=cash, wacc=wacc.wacc,
+        )
+    scen = compute_scenario_dcf(
+        current_price=price, shares_outstanding=shares, nopat=base_nopat, total_debt=debt, cash=cash,
+        base_wacc=wacc.wacc, is_bank=is_bank, book_value_equity=equity, net_income=net_income,
+    )
+    bayes = compute_bayesian_probabilistic_dcf(
+        current_price=price, shares_outstanding=shares, nopat=base_nopat, total_debt=debt, cash=cash,
+        base_wacc=wacc.wacc, num_simulations=1000, is_bank=is_bank,
+        book_value_equity=equity, net_income=net_income,
+    )
+    multiples = compute_relative_valuation_multiples(
+        financials=fin, current_price=price, shares_outstanding=shares, total_debt=debt, cash=cash or None, ticker=ticker,
+    )
+    return {
+        "is_bank": is_bank, "base_nopat": base_nopat, "basis": basis, "market_cap": mcap,
+        "wacc": wacc, "core": core, "scenario": scen, "bayesian": bayes,
+        "dupont": compute_dupont_5_factor_roe(financials=fin), "multiples": multiples,
+    }
 
 
 def generate_valuation_suite(

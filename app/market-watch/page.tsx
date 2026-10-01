@@ -1,5 +1,7 @@
+import { PageStamp } from "@/components/layout/refresh-control";
 import type { Metadata } from "next";
-import { TrendingDown, TrendingUp } from "lucide-react";
+import { CandlestickChart, TrendingDown, TrendingUp } from "lucide-react";
+import { Eyebrow } from "@/components/ui/eyebrow";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { MoversTable } from "@/components/market/movers-table";
@@ -16,7 +18,7 @@ export const metadata: Metadata = {
 };
 
 interface PageProps {
-  searchParams: Promise<{ universe?: string; window?: string }>;
+  searchParams: Promise<{ universe?: string; window?: string; price?: string }>;
 }
 
 const WINDOWS = [
@@ -34,8 +36,20 @@ const UNIVERSES = [
   { id: "all", label: "All" },
 ];
 
+/** Price bands applied to the CMP of each mover. */
+const PRICE_BANDS = [
+  { id: "all", label: "All prices", test: () => true },
+  { id: "penny", label: "Penny < ₹50", test: (p: number) => p < 50 },
+  { id: "small", label: "₹50 – 500", test: (p: number) => p >= 50 && p <= 500 },
+  { id: "mid", label: "₹500 – 2,000", test: (p: number) => p > 500 && p <= 2000 },
+  { id: "large", label: "Above ₹2,000", test: (p: number) => p > 2000 },
+];
+
 export default async function MarketWatchPage({ searchParams }: PageProps) {
-  const { universe: requested, window: requestedWindow } = await searchParams;
+  const { universe: requested, window: requestedWindow, price: requestedPrice } = await searchParams;
+  const band = PRICE_BANDS.find((b) => b.id === requestedPrice) ?? PRICE_BANDS[0];
+  const href = (o: { universe?: string; window?: string; price?: string }) =>
+    `/market-watch?universe=${o.universe ?? universe}&window=${o.window ?? activeWindow}&price=${o.price ?? band.id}`;
   const universe = UNIVERSES.some((u) => u.id === requested) ? requested! : "gt20";
   const universeLabel = UNIVERSES.find((u) => u.id === universe)?.label ?? universe;
   const activeWindow = WINDOWS.some((w) => w.id === requestedWindow) ? requestedWindow! : "daily";
@@ -43,8 +57,8 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
   // Daily comes straight from NSE's live variation feed; weekly and monthly are
   // computed from index-constituent history, because NSE publishes daily only.
   const [gainers, losers, indices, windowed, factors] = await Promise.all([
-    getMovers("gainers", universe, 15),
-    getMovers("losers", universe, 15),
+    getMovers("gainers", universe, band.id === "all" ? 15 : 50),
+    getMovers("losers", universe, band.id === "all" ? 15 : 50),
     getIndices(),
     activeWindow === "daily" ? Promise.resolve(null) : getWindowedMovers(activeWindow),
     getFactorScreens("nifty100", 8),
@@ -68,8 +82,8 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
       <main className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="max-w-2xl">
-            <p className="font-mono text-2xs uppercase tracking-[0.2em] text-accent">Market watch</p>
-            <h1 className="mt-3 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
+            <Eyebrow icon={CandlestickChart}>Market watch</Eyebrow>
+            <h1 className="text-gradient mt-4 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
               Top gainers &amp; losers
             </h1>
             <p className="mt-3 text-muted-foreground">
@@ -85,7 +99,7 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
           {UNIVERSES.map((option) => (
             <a
               key={option.id}
-              href={`/market-watch?universe=${option.id}`}
+              href={href({ universe: option.id })}
               className={cn(
                 "rounded-lg border px-3 py-1.5 text-xs transition-colors",
                 option.id === universe
@@ -103,10 +117,28 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
           {WINDOWS.map((option) => (
             <a
               key={option.id}
-              href={`/market-watch?universe=${universe}&window=${option.id}`}
+              href={href({ window: option.id })}
               className={cn(
                 "rounded-lg border px-3 py-1.5 text-xs transition-colors",
                 option.id === activeWindow
+                  ? "border-accent/50 bg-accent/10 text-accent"
+                  : "border-border bg-surface-muted text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {option.label}
+            </a>
+          ))}
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="text-2xs uppercase tracking-wide text-muted-foreground">Price</span>
+          {PRICE_BANDS.map((option) => (
+            <a
+              key={option.id}
+              href={href({ price: option.id })}
+              className={cn(
+                "rounded-lg border px-3 py-1.5 text-xs transition-colors",
+                option.id === band.id
                   ? "border-accent/50 bg-accent/10 text-accent"
                   : "border-border bg-surface-muted text-muted-foreground hover:text-foreground",
               )}
@@ -149,7 +181,7 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
           <DataCard title="Top Gainers" subtitle={`Universe: ${universeLabel}`} icon={TrendingUp}>
             {gainers.ok ? (
               <div className="p-2">
-                <MoversTable rows={gainers.data} tone="up" />
+                <MoversTable rows={gainers.data.filter((r) => band.test(r.cmp)).slice(0, 15)} tone="up" />
               </div>
             ) : (
               <div className="p-4">
@@ -161,7 +193,7 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
           <DataCard title="Top Losers" subtitle={`Universe: ${universeLabel}`} icon={TrendingDown}>
             {losers.ok ? (
               <div className="p-2">
-                <MoversTable rows={losers.data} tone="down" />
+                <MoversTable rows={losers.data.filter((r) => band.test(r.cmp)).slice(0, 15)} tone="down" />
               </div>
             ) : (
               <div className="p-4">
@@ -179,7 +211,7 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
             </header>
 
             <div className="overflow-x-auto p-2">
-              <table className="w-full min-w-[820px] border-collapse text-sm">
+              <table className="data-table w-full min-w-[820px] border-collapse text-sm">
                 <thead>
                   <tr className="border-b border-border text-2xs uppercase tracking-wide text-muted-foreground">
                     <th className="px-3 py-2 text-left font-medium">Index</th>
@@ -246,6 +278,7 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
             </div>
 
             <div className="border-t border-border px-4 py-2">
+<PageStamp meta={indices.meta} />
               <SourceLine meta={indices.meta} />
             </div>
           </section>

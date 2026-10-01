@@ -63,6 +63,12 @@ class TTLCache:
         self.set(key, value)
         return value, 0.0
 
+    def expire(self, key: str) -> None:
+        """Mark an entry stale so the next read refetches, keeping the value as a fallback."""
+        with self._lock:
+            if key in self._data:
+                self._data[key].stored_at = 0.0
+
     def clear(self) -> None:
         with self._lock:
             self._data.clear()

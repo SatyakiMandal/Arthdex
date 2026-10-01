@@ -23,7 +23,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from .prices import PriceError, PriceProvider, YahooChartProvider
+from .prices import FastYahooProvider, PriceError, PriceProvider, YahooChartProvider
 
 log = logging.getLogger(__name__)
 
@@ -55,7 +55,7 @@ METALS_SPECIFICATIONS = [
         "transmission_channel": "Automotive body panels, aerospace structures, packaging, and transmission lines",
     },
     {
-        "symbol": "MZN=F",
+        "symbol": "ZNC=F",
         "alt_symbols": ["ZINC=F", "ZN=F"],
         "name": "Zinc",
         "category": "Industrial Metal",
@@ -124,7 +124,7 @@ class MetalsSummary:
     metals_table: list[dict[str, Any]] = field(default_factory=list)
     top_performer: str = ""
     top_performer_gain_pct: float = 0.0
-    precious_vs_industrial_ratio: float = 0.0
+    precious_vs_industrial_ratio: float | None = None
     summary_narrative: str = ""
     start_date: str = ""
     end_date: str = ""
@@ -135,7 +135,7 @@ class MetalsSummary:
             "metals_table": self.metals_table,
             "top_performer": self.top_performer,
             "top_performer_gain_pct": round(self.top_performer_gain_pct, 2),
-            "precious_vs_industrial_ratio": round(self.precious_vs_industrial_ratio, 2),
+            "precious_vs_industrial_ratio": (round(self.precious_vs_industrial_ratio, 2) if self.precious_vs_industrial_ratio is not None else None),
             "summary_narrative": self.summary_narrative,
             "start_date": self.start_date,
             "end_date": self.end_date,
@@ -162,7 +162,7 @@ def fetch_metal_price_series(
         except Exception:
             pass
 
-    provider = provider or YahooChartProvider()
+    provider = provider or FastYahooProvider()
     symbols_to_try = [symbol] + (alt_symbols or [])
 
     for sym in symbols_to_try:
@@ -188,6 +188,7 @@ def compute_metals_summary(
 ) -> MetalsSummary:
     """Compile comprehensive surveillance across Zinc, Copper, Gold, Silver, and Aluminium."""
     metals_list: list[MetalCommodity] = []
+    unavailable: list[str] = []
     metals_table_rows: list[dict[str, Any]] = []
 
     for spec in METALS_SPECIFICATIONS:
@@ -233,17 +234,9 @@ def compute_metals_summary(
                     val = float(r1.corr(r2))
                     corr_val = val if not np.isnan(val) else 0.0
         else:
-            # Deterministic reference calibration
-            p_start = bench_start
-            p_end = bench_end
-            p_curr = bench_end
-            p_high = bench_end * 1.05
-            p_low = bench_start * 0.95
-            as_of = end.strftime("%d-%b-%Y")
-            pct_change = ((p_end - p_start) / p_start) * 100.0
-            mom_1w = pct_change * 0.15
-            ann_vol = 18.5 if "Precious" in cat else 24.2
-            corr_val = 0.12 if "Industrial" in cat else -0.05
+            # No live series: report the metal as unavailable rather than invent one
+            unavailable.append(name)
+            continue
 
         metal_obj = MetalCommodity(
             name=name,
@@ -277,22 +270,25 @@ def compute_metals_summary(
             "Transmission Role": channel,
         })
 
-    # Identify top performing metal
     top_metal = max(metals_list, key=lambda m: m.change_pct) if metals_list else None
-    top_name = top_metal.name if top_metal else "Gold"
+    bottom_metal = min(metals_list, key=lambda m: m.change_pct) if metals_list else None
+    top_name = top_metal.name if top_metal else ""
     top_gain = top_metal.change_pct if top_metal else 0.0
 
-    # Gold/Silver Ratio or Precious/Industrial Dynamics
+    # Gold / copper ratio on the conventional basis: dollars per ounce of gold over dollars per pound of copper
     gold_obj = next((m for m in metals_list if m.name == "Gold"), None)
     copper_obj = next((m for m in metals_list if m.name == "Copper"), None)
-    ratio = (gold_obj.current_price / (copper_obj.current_price * 2204.62)) * 1000.0 if (gold_obj and copper_obj and copper_obj.current_price > 0) else 0.68
+    ratio = (gold_obj.current_price / copper_obj.current_price) if (gold_obj and copper_obj and copper_obj.current_price > 0) else None
 
-    narrative = (
-        f"Global metals commodities exhibited strong macro dispersion across the surveillance window. "
-        f"{top_name} led the cohort with a {top_gain:+.2f}% price trajectory, driven by monetary and industrial demand. "
-        f"Industrial base metals (Copper, Aluminium, Zinc) reflected manufacturing order books and capex cycles, "
-        f"while precious metals (Gold, Silver) served as monetary anchors and safe-haven risk cushions."
-    )
+    if metals_list:
+        narrative = (
+            f"Over the window, {top_name} was the best performer at {top_gain:+.2f}% and "
+            f"{bottom_metal.name} the weakest at {bottom_metal.change_pct:+.2f}%."
+        )
+        if unavailable:
+            narrative += f" No live price series was available for: {', '.join(unavailable)}."
+    else:
+        narrative = "No live metal price series was available for this window."
 
     return MetalsSummary(
         metals=metals_list,

@@ -171,7 +171,9 @@ def compute_technical_analysis(
     # -------------------------------------------------------------------------
     sma_20 = float(prices.rolling(window=min(20, n), min_periods=1).mean().iloc[-1])
     sma_50 = float(prices.rolling(window=min(50, n), min_periods=1).mean().iloc[-1])
+    # With fewer than 200 bars the long average is not a 200-day average; say so in the status
     sma_200 = float(prices.rolling(window=min(200, n), min_periods=1).mean().iloc[-1])
+    short_history = n < 200
 
     ema_12 = float(prices.ewm(span=min(12, n), adjust=False).mean().iloc[-1])
     ema_26 = float(prices.ewm(span=min(26, n), adjust=False).mean().iloc[-1])
@@ -181,7 +183,9 @@ def compute_technical_analysis(
     d_200 = ((curr_p - sma_200) / sma_200) * 100.0 if sma_200 > 0 else 0.0
 
     golden_status = "Neutral"
-    if n >= 50:
+    if short_history:
+        golden_status = f"Not assessed: only {n} bars of history, fewer than the 200 a 200-day average needs"
+    elif n >= 50:
         if sma_50 > sma_200:
             golden_status = "Golden Cross (Bullish Regime: 50 SMA > 200 SMA)"
         elif sma_50 < sma_200:

@@ -30,6 +30,7 @@ _REVENUE_LABELS = ["Sales", "Revenue", "Interest Income"]
 _OPERATING_INCOME_LABELS = ["Operating Profit", "Financing Profit"]
 _EXPENSE_LABELS = ["Expenses", "Interest Expended"]
 _TAX_LABELS = ["Tax %"]
+_DEPRECIATION_LABELS = ["Depreciation"]
 _NET_PROFIT_LABELS = ["Net Profit", "Profit after tax"]
 
 ORDER_BOOK_NOT_APPLICABLE = (
@@ -94,6 +95,47 @@ class FinancialSummary:
     balance_sheet: dict[str, float | None] = field(default_factory=dict)
     annual_ratios: dict[str, float | None] = field(default_factory=dict)
     peers: list[tuple[str, str]] = field(default_factory=list)
+    depreciation: QuarterlyRow | None = None
+    # Trailing-twelve-month sums of the last four reported quarters (None if fewer than four)
+    ttm: dict[str, float | None] = field(default_factory=dict)
+    cfo_annual: float | None = None
+    profit_cagr_3y_pct: float | None = None
+    sales_cagr_3y_pct: float | None = None
+
+
+def _ttm(row: "QuarterlyRow | None") -> float | None:
+    """Sum of the last four quarters, only when all four are present."""
+    if row is None or len(row.values) < 4:
+        return None
+    last = row.values[-4:]
+    return sum(last) if all(v is not None for v in last) else None
+
+
+def _parse_cfo(soup) -> float | None:
+    """Latest annual cash from operating activity (screener.in #cash-flow)."""
+    sec = soup.select_one("#cash-flow")
+    table = sec.select_one("table") if sec else None
+    if table is None:
+        return None
+    for tr in table.select("tbody tr"):
+        cells = tr.find_all("td")
+        if cells and cells[0].get_text(strip=True).rstrip("+").strip().startswith("Cash from Operating"):
+            vals = [_parse_number(c.get_text(strip=True)) for c in cells[1:]]
+            vals = [v for v in vals if v is not None]
+            return vals[-1] if vals else None
+    return None
+
+
+def _parse_cagr(soup, heading: str, years: int = 3) -> float | None:
+    """A compounded-growth figure from the ranges tables on the profit-and-loss card."""
+    for th in soup.find_all("th"):
+        if th.get_text(strip=True).startswith(heading):
+            table = th.find_parent("table")
+            for tr in table.select("tr"):
+                tds = [c.get_text(" ", strip=True) for c in tr.find_all(["td", "th"])]
+                if tds and tds[0].startswith(f"{years} Years"):
+                    return _parse_number(tds[-1])
+    return None
 
 
 def _screener_symbol(ticker: str) -> str:
@@ -383,7 +425,11 @@ def fetch_financials(ticker: str, fetcher: Fetcher | None = None) -> FinancialSu
             operating_income = _row_by_label(table, _OPERATING_INCOME_LABELS, dates)
             tax_rate = _row_by_label(table, _TAX_LABELS, dates)
             net_profit = _row_by_label(table, _NET_PROFIT_LABELS, dates)
+            depreciation = _row_by_label(table, _DEPRECIATION_LABELS, dates)
             order_book, order_book_note = _order_book_status(soup)
+            if revenue is None and net_profit is None and operating_income is None:
+                # Some consolidated pages are empty shells; the standalone page has the figures
+                raise RuntimeError("statement carries no quarterly figures")
 
             top_ratios = _parse_top_ratios(soup)
             balance_sheet = _parse_balance_sheet_table(soup)
@@ -432,6 +478,17 @@ def fetch_financials(ticker: str, fetcher: Fetcher | None = None) -> FinancialSu
             shares_outstanding=shares_outstanding,
             top_ratios=top_ratios, balance_sheet=balance_sheet,
             annual_ratios=annual_ratios, peers=peers,
+            depreciation=depreciation,
+            ttm={
+                "revenue": _ttm(revenue),
+                "expenses": _ttm(expenses),
+                "operating_income": _ttm(operating_income),
+                "net_profit": _ttm(net_profit),
+                "depreciation": _ttm(depreciation),
+            },
+            cfo_annual=_parse_cfo(soup),
+            profit_cagr_3y_pct=_parse_cagr(soup, "Compounded Profit Growth"),
+            sales_cagr_3y_pct=_parse_cagr(soup, "Compounded Sales Growth"),
         )
 
     raise FinancialsError(f"could not load financials for {ticker}: {last_error}")
@@ -700,6 +757,11 @@ def financials_summary(ticker: str, fetcher: Fetcher | None = None) -> dict:
         "balance_sheet": summary.balance_sheet,
         "ratios": ratios,
         "peers": summary.peers,
+        "depreciation": _row_dict(summary.depreciation),
+        "ttm": summary.ttm,
+        "cfo_annual": summary.cfo_annual,
+        "profit_cagr_3y_pct": summary.profit_cagr_3y_pct,
+        "sales_cagr_3y_pct": summary.sales_cagr_3y_pct,
         "surprise_diagnostics": surprise,
         "governance_risk": gov_risk,
         "note": "",

@@ -32,7 +32,38 @@ export interface UnlistedScaleMetrics {
   orderBookToRevenue: number;
 }
 
+export type HolderType = "promoter" | "institutional" | "angel" | "employee" | "strategic" | "other";
+
+export interface UnlistedHolder {
+  name: string;
+  type: HolderType;
+  /** Fully diluted ownership, in percent. */
+  stakePct: number;
+  note?: string;
+}
+
+export interface UnlistedFundingRound {
+  date: ISODate;
+  round: string;
+  amountCr: number;
+  postMoneyCr?: number;
+  pricePerShare?: number;
+  investors: string[];
+}
+
+/** Cap-table data, entered by hand from filings the operator is entitled to use. */
+export interface UnlistedShareholding {
+  asOf: ISODate;
+  /** Where the figures came from; rendered verbatim. */
+  source: string;
+  holders: UnlistedHolder[];
+  rounds?: UnlistedFundingRound[];
+  esopPoolPct?: number;
+}
+
 export interface UnlistedCompany {
+  /** Optional: absent until someone enters cap-table data. */
+  shareholding?: UnlistedShareholding;
   id: string;
   name: string;
   sector: string;

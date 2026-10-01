@@ -21,6 +21,14 @@ export interface AnalyzerRun {
   hasWorkbook: boolean;
   /** Present on the single-run endpoint only. */
   log?: string[];
+  progress?: AnalyzerProgress;
+}
+
+export interface AnalyzerProgress {
+  steps: string[];
+  step: number;
+  fraction: number;
+  detail: string | null;
 }
 
 export interface AnalyzerSearchHit {
@@ -136,6 +144,172 @@ export interface ListedSummary {
     conformalCoveragePct: number | null;
   };
   caveats: string[];
+  detail: ListedDetail;
+}
+
+/**
+ * Pass-through engine blocks. Field names are the engine's own snake_case;
+ * blocks whose shape varies by run (regime, XAI, macro) stay loosely typed and
+ * are read defensively in the dossier tabs.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type Blk = Record<string, any>;
+
+export interface SizingTier {
+  portfolio_name: string;
+  portfolio_capital_inr: number;
+  allocation_pct: number;
+  allocated_capital_inr: number;
+  prescribed_shares: number;
+  risk_at_stop_loss_inr: number;
+  portfolio_risk_pct: number;
+}
+
+export interface IncidentHeadline {
+  source: string | null;
+  headline: string | null;
+  url: string | null;
+  sentiment_label: string | null;
+  summary: string | null;
+  published: string | null;
+}
+
+export interface IncidentDetail {
+  day: string;
+  abnormal_return: number | null;
+  abnormal_return_z: number | null;
+  coverage_z: number | null;
+  volume_z: number | null;
+  item_count: number | null;
+  mean_sentiment: number | null;
+  dominant_event: string | null;
+  dominant_emotion: string | null;
+  direction_agrees: boolean | null;
+  trajectory_type: string | null;
+  car: number | null;
+  car_days: number | null;
+  t_stat: number | null;
+  p_value: number | null;
+  headlines: IncidentHeadline[];
+}
+
+export interface TimelineData {
+  benchmark: string | null;
+  dates: string[];
+  price: (number | null)[];
+  priceRebased: (number | null)[];
+  benchRebased: (number | null)[];
+  abnormal: (number | null)[];
+  volume: (number | null)[];
+  hurdle: number | null;
+}
+
+export interface ListedDetail {
+  timeline: TimelineData | null;
+  valuation: Blk | null;
+  factor?: Blk;
+  execution?: Blk;
+  forecast: { horizons: Blk | null; har: Blk | null; sixSigma: Blk | null; macroRidge: Blk | null };
+  var_six_sigma: Blk | null;
+  portfolio: Blk | null;
+  spillover: Blk | null;
+  backtests: { conformal: Blk | null; volatility: Blk | null; technical: Blk | null; trades: Blk[]; score: number | null; status: string | null; summary: string | null };
+  sizing: {
+    tiers: SizingTier[];
+    prescribed_pct: number | null;
+    raw_kelly_pct: number | null;
+    half_kelly_pct: number | null;
+    cap_pct: number | null;
+  };
+  holding: {
+    core: string | null;
+    tactical: string | null;
+    profit_booking: string[];
+    invalidation: string[];
+  };
+  pillar_rationales: (string | null)[];
+  event_study: {
+    incidents: IncidentDetail[];
+    robustness: {
+      note: string | null;
+      multipliers: number[] | null;
+      combos: number | null;
+      days: { day: string; flagged_in: number | null; of: number | null; fraction: number | null }[];
+    };
+    diagnostics: Blk | null;
+    unattributed: { source: string | null; headline: string | null; url: string | null; reason: string | null }[];
+    sentiment_return: Blk | null;
+    emotion_return: Blk | null;
+  };
+  technical: {
+    moving_averages?: Blk;
+    adx?: Blk;
+    macd?: Blk;
+    rsi?: Blk;
+    bollinger?: Blk;
+    stochastic?: Blk;
+    pivots?: Blk;
+    indicators_table?: Blk[];
+    weekly_playbook?: Blk[];
+    backtest: Blk;
+  };
+  fundamental: {
+    statement_kind: string | null;
+    unit: string | null;
+    as_of: string | null;
+    screener_url: string | null;
+    lines: Record<string, { label: string; latest: number | null; qoq_change: number | null; yoy_change: number | null } | null>;
+    tax_rate_pct: number | null;
+    nopat: number | null;
+    nopat_note: string | null;
+    order_book: Blk | null;
+    order_book_note: string | null;
+    balance_sheet: Blk | null;
+    ratios: Blk | null;
+    surprise: Blk | null;
+    peers: [string, string][];
+  };
+  quant: {
+    conformal: Blk | null;
+    volatility: Blk | null;
+    distance_to_default: Blk | null;
+    var: Blk | null;
+    microstructure: Blk | null;
+    regime: Blk | null;
+    xai: Blk | null;
+  };
+  macro: {
+    backdrop: Blk | null;
+    metals: {
+      name: string;
+      symbol: string;
+      unit: string;
+      current_price: number | null;
+      change_pct: number | null;
+      momentum_1w_pct: number | null;
+      annualized_volatility_pct: number | null;
+      transmission_channel: string | null;
+    }[];
+    metals_summary: string | null;
+    nifty: Record<string, { ticker: string; window_return: number | null; beta: number | null; r_squared: number | null; note: string | null }>;
+    global: Record<string, { ticker: string; window_return: number | null; note: string | null }>;
+  };
+  peers: {
+    sector: string | null;
+    rating: string | null;
+    stance: string | null;
+    composite_score: number | null;
+    target_price: number | null;
+    implied_upside_pct: number | null;
+    table: {
+      multiple: string | null;
+      value: number | null;
+      sector_median: number | null;
+      variance_pct: number | null;
+      verdict: string | null;
+      role: string | null;
+    }[];
+  };
 }
 
 export interface UnlistedSummary {

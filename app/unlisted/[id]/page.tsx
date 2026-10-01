@@ -5,6 +5,7 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { UnlistedHeader } from "@/components/unlisted/unlisted-header";
 import { ScaleMetrics } from "@/components/unlisted/scale-metrics";
 import { GovernanceTracker } from "@/components/unlisted/governance-tracker";
+import { ShareholderAnalysis } from "@/components/unlisted/shareholder-analysis";
 import { MilestoneTimeline } from "@/components/unlisted/milestone-timeline";
 import { PeerComparison, type ComparisonPeer } from "@/components/unlisted/peer-comparison";
 import { IllustrativeBanner } from "@/components/ui/data-provenance";
@@ -93,6 +94,10 @@ export default async function UnlistedCompanyPage({ params }: PageProps) {
             <GovernanceTracker company={company} />
             <MilestoneTimeline company={company} />
           </div>
+        </div>
+
+        <div className="mt-4">
+          <ShareholderAnalysis company={company} />
         </div>
       </main>
 

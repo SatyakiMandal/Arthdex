@@ -146,6 +146,7 @@ def compute_investment_verdict(
     distance_to_default: dict[str, Any] | None = None,
     backtest_data: dict[str, Any] | None = None,
     as_of: date | str | None = None,
+    news_available: bool = True,
 ) -> InvestmentVerdict:
     """Synthesize multi-dimensional quant intelligence into an actionable Investment Verdict & Allocation Playbook."""
     curr_p = max(0.1, float(current_price))
@@ -168,13 +169,15 @@ def compute_investment_verdict(
     if dcf_res is not None:
         upside_pct = getattr(dcf_res, "upside_downside_pct", 0.0)
         dcf_tier = getattr(dcf_res, "valuation_tier", "Fair Value")
-        if upside_pct > 20.0:
+        # Within +/-10% the DCF tier itself reads "fair value": that gap is inside the model's own
+        # sensitivity, so it earns no score in either direction.
+        if upside_pct > 25.0:
             val_score += 50.0
-        elif upside_pct > 5.0:
+        elif upside_pct > 10.0:
             val_score += 30.0
-        elif upside_pct < -20.0:
+        elif upside_pct < -25.0:
             val_score -= 40.0
-        elif upside_pct < -5.0:
+        elif upside_pct < -10.0:
             val_score -= 20.0
         val_highlight = f"DCF Upside: {upside_pct:+.1f}% ({dcf_tier})"
         val_evidence = f"Intrinsic DCF fair value estimates {upside_pct:+.1f}% margin of safety relative to current quote."
@@ -218,23 +221,36 @@ def compute_investment_verdict(
     if ev_count > 0:
         mean_car /= ev_count
         agree_ratio = agreed_count / ev_count
-        if agree_ratio >= 0.70:
-            event_score += 35.0
-        elif agree_ratio < 0.40:
-            event_score -= 25.0
+        # Direction first: a run of negative abnormal returns is bearish whatever the news tone did.
+        # Agreement between tone and price only says how much weight the direction deserves.
+        signs = []
+        for inc in inc_list:
+            ar = getattr(inc, "abnormal_return", None)
+            if ar is None and isinstance(inc, dict):
+                ar = inc.get("abnormal_return")
+            if ar is not None:
+                signs.append(1.0 if ar > 0 else -1.0 if ar < 0 else 0.0)
+        net_direction = float(np.mean(signs)) if signs else 0.0
+        event_score += 35.0 * net_direction * (0.5 + 0.5 * agree_ratio)
         if mean_car > 0.02:
             event_score += 40.0
         elif mean_car < -0.02:
             event_score -= 40.0
         event_highlight = f"{ev_count} Event Anomalies | CAR: {mean_car*100:+.2f}%"
         event_evidence = f"{agreed_count}/{ev_count} incident days demonstrated directional agreement between media dispatches and stock price repricing."
+    elif not news_available:
+        # No news was analysed at all, so there is nothing to score. Treating silence as
+        # good news would add a bullish vote the evidence does not support.
+        event_score = 0.0
+        event_highlight = "Not assessed: no news analysed"
+        event_evidence = "no news was collected for this view, so the event pillar is left out and its weight is shared across the other four pillars."
     else:
-        event_score = 15.0
-        event_highlight = "No Adverse Event Shocks"
-        event_evidence = "Absence of abnormal negative headline shocks confirms operational tranquility."
+        event_score = 0.0
+        event_highlight = "No flagged event days"
+        event_evidence = "no day in the window combined unusual news coverage with an unusual price move, so the event study adds no signal either way."
 
     event_score = np.clip(event_score, -100.0, 100.0)
-    event_stance = "Strong Bullish" if event_score >= 40 else "Bullish" if event_score >= 15 else "Neutral" if event_score >= -15 else "Bearish" if event_score >= -40 else "Strong Bearish"
+    event_stance = "Not assessed" if not news_available else "Strong Bullish" if event_score >= 40 else "Bullish" if event_score >= 15 else "Neutral" if event_score >= -15 else "Bearish" if event_score >= -40 else "Strong Bearish"
 
     # Pillar 3: 1-Week & Multi-Timeframe Technical Alignment (Weight 20%)
     tech_score = 0.0
@@ -259,21 +275,44 @@ def compute_investment_verdict(
     tech_score = np.clip(tech_score, -100.0, 100.0)
     tech_stance = "Strong Bullish" if tech_score >= 40 else "Bullish" if tech_score >= 15 else "Neutral" if tech_score >= -15 else "Bearish" if tech_score >= -40 else "Strong Bearish"
 
-    # Pillar 4: Macroeconomic & 8 Core Commodities Transmission (Weight 15%)
-    macro_score = 25.0 # Positive baseline for India growth
-    core_info = macro.get("eight_core_industries") or {}
-    core_growth = core_info.get("combined_growth_yoy_pct", 6.4)
-    fed_diff = macro.get("fed_funds_rate", {}).get("us_india_rate_differential_bps", -8)
-    
-    if core_growth > 5.0:
-        macro_score += 20.0
-    elif core_growth < 2.0:
-        macro_score -= 20.0
-        
-    macro_highlight = f"8 Core Growth: +{core_growth:.1f}% YoY | IN-US Diff: {fed_diff:+} bps"
-    macro_evidence = f"Resilient infrastructure industrial output (+{core_growth:.1f}%) and stable interest rate differential support domestic demand."
-    macro_score = np.clip(macro_score, -100.0, 100.0)
-    macro_stance = "Bullish" if macro_score >= 25 else "Neutral" if macro_score >= -15 else "Bearish"
+    # Pillar 4: Macroeconomic backdrop (Weight 15%). Scored only from indicators that were
+    # actually retrieved; nothing is assumed, and with none available the pillar is left out.
+    macro_score = 0.0
+    parts: list[str] = []
+    notes: list[str] = []
+
+    pmi = ((macro.get("pmi") or {}).get("composite"))
+    if pmi is not None:
+        macro_score += 20.0 if pmi >= 52 else 10.0 if pmi >= 50 else -20.0
+        parts.append(f"PMI {pmi:.1f}")
+        notes.append("activity indicators are expanding" if pmi >= 50 else "activity indicators are contracting")
+    cpi = ((macro.get("cpi_inflation") or {}).get("value"))
+    if cpi is not None:
+        macro_score += 10.0 if 2.0 <= cpi <= 6.0 else (-15.0 if cpi > 6.0 else -5.0)
+        parts.append(f"CPI {cpi:.1f}%")
+        notes.append("inflation is inside the RBI band" if 2.0 <= cpi <= 6.0 else "inflation is outside the RBI band")
+    iip = ((macro.get("iip_growth") or {}).get("value"))
+    if iip is not None:
+        macro_score += 10.0 if iip > 4.0 else (-10.0 if iip < 0.0 else 0.0)
+        parts.append(f"IIP {iip:+.1f}%")
+    core = ((macro.get("eight_core_industries") or {}).get("combined_growth_yoy_pct"))
+    if core is not None:
+        macro_score += 10.0 if core > 5.0 else (-10.0 if core < 2.0 else 0.0)
+        parts.append(f"8 Core {core:+.1f}%")
+    fed_diff = ((macro.get("fed_funds_rate") or {}).get("us_india_rate_differential_bps"))
+    if fed_diff is not None:
+        macro_score += 5.0 if fed_diff >= 0 else (-10.0 if fed_diff < -150 else 0.0)
+        parts.append(f"IN-US policy rate gap {fed_diff:+d} bps")
+
+    if parts:
+        macro_highlight = " | ".join(parts)
+        macro_evidence = ("Macro read from live releases: " + "; ".join(notes) + ".") if notes else "Macro read from the indicators listed above."
+        macro_stance = "Strong Bullish" if macro_score >= 40 else "Bullish" if macro_score >= 15 else "Neutral" if macro_score >= -15 else "Bearish" if macro_score >= -40 else "Strong Bearish"
+    else:
+        macro_highlight = "Not assessed: no macro indicator retrieved"
+        macro_evidence = "no macro indicator could be retrieved, so this pillar is left out and its weight is shared across the others."
+        macro_stance = "Not assessed"
+    macro_score = float(np.clip(macro_score, -100.0, 100.0))
 
     # Pillar 5: Downside Protection & Volatility Cushion (Weight 15%)
     risk_score = 20.0
@@ -303,6 +342,11 @@ def compute_investment_verdict(
         InvestmentThesisPillar("4. Macroeconomic & 8 Core Transmission", 15.0, macro_score, macro_stance, macro_highlight, macro_evidence),
         InvestmentThesisPillar("5. Downside Risk & Solvency Cushion", 15.0, risk_score, risk_stance, risk_highlight, risk_evidence),
     ]
+    excluded = {i for i, p in enumerate(pillars) if p.stance == "Not assessed"}
+    if excluded:
+        rest = sum(p.weight_pct for i, p in enumerate(pillars) if i not in excluded)
+        for i, p in enumerate(pillars):
+            p.weight_pct = 0.0 if i in excluded else round(p.weight_pct * 100.0 / rest, 2)
 
     # -------------------------------------------------------------------------
     # 2. COMPOSITE CONVICTION SCORE & ACTIONABLE CALL

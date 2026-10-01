@@ -120,6 +120,38 @@ def get_run(run_id: str):
     return run
 
 
+@router.post("/snapshots/{symbol}")
+def ensure_snapshot(symbol: str):
+    """Start (or reuse) the no-news research snapshot for a listed company."""
+    sym = symbol.strip().upper()
+    try:
+        rows, _ = load_universe()
+    except Exception as exc:
+        raise HTTPException(503, f"Listed universe unavailable: {exc}") from exc
+    match = next((r for r in rows if r.get("symbol") == sym), None)
+    if match is None:
+        raise HTTPException(404, f"{sym} is not in the NSE equity universe.")
+    return svc.ensure_snapshot(sym, match["name"])
+
+
+@router.delete("/runs/{run_id}")
+def delete_run(run_id: str):
+    """Delete a finished, failed or cancelled run. Shared news caches are kept."""
+    outcome = svc.delete_run(run_id)
+    if outcome == "missing":
+        raise HTTPException(404, "Run not found")
+    if outcome == "sample":
+        raise HTTPException(403, "Bundled sample reports cannot be deleted.")
+    if outcome == "active":
+        raise HTTPException(409, "This run is still in progress. Cancel it first.")
+    return {"ok": True}
+
+
+@router.post("/runs/clear-unsuccessful")
+def clear_unsuccessful():
+    return {"deleted": svc.clear_unsuccessful()}
+
+
 @router.post("/runs/{run_id}/cancel")
 def cancel_run(run_id: str):
     if not svc.cancel(run_id):

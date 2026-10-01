@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CellBar } from "@/components/ui/cell-bar";
 import { TrendingDown, TrendingUp } from "lucide-react";
 import type { ApiScreenRow, ApiWindowedMovers } from "@/lib/api/types";
 import { DataCard } from "@/components/ui/data-card";
@@ -24,9 +25,11 @@ function WindowTable({
     return <p className="px-4 py-6 text-sm text-muted-foreground">No constituents qualified.</p>;
   }
 
+  const maxChg = Math.max(...rows.map((r) => Math.abs(r.changePct[window] ?? 0)), 1);
+
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[640px] border-collapse text-sm">
+      <table className="data-table w-full min-w-[640px] border-collapse text-sm">
         <thead>
           <tr className="border-b border-border text-2xs uppercase tracking-wide text-muted-foreground">
             <th className="px-3 py-2 text-left font-medium">Scrip</th>
@@ -57,15 +60,10 @@ function WindowTable({
                 <td className="px-3 py-2 text-right font-mono tabular-nums">
                   {formatINR(row.cmp)}
                 </td>
-                <td className="px-3 py-2 text-right">
-                  <span
-                    className={cn(
-                      "inline-block rounded px-1.5 py-0.5 font-mono text-xs font-medium tabular-nums",
-                      tone === "up" ? "bg-up/10 text-up" : "bg-down/10 text-down",
-                    )}
-                  >
-                    {formatPct(change)}
-                  </span>
+                <td className="px-3 py-1 text-right">
+                  <CellBar value={change} max={maxChg} tone={tone}>
+                    <span className={cn("text-xs font-medium", tone === "up" ? "text-up" : "text-down")}>{formatPct(change)}</span>
+                  </CellBar>
                 </td>
                 <td className="px-3 py-2 text-right font-mono tabular-nums text-muted-foreground">
                   {formatINR(row.high52w, 0)}

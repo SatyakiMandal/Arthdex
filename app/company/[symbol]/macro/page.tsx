@@ -1,3 +1,4 @@
+import { PageStamp } from "@/components/layout/refresh-control";
 import type { Metadata } from "next";
 import { BenchmarkSensitivityPanel } from "@/components/macro/benchmark-sensitivity";
 import { NewsFeed } from "@/components/macro/news-feed";
@@ -27,6 +28,7 @@ export default async function CompanyMacroPage({ params }: PageProps) {
       {sensitivity ? (
         <>
           <BenchmarkSensitivityPanel sensitivity={sensitivity.data} />
+<PageStamp meta={sensitivity.meta} />
           <SourceLine meta={sensitivity.meta} className="px-1" />
         </>
       ) : (

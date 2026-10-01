@@ -7,6 +7,7 @@ from fastapi import APIRouter, HTTPException, Query
 from ..cache import CACHE
 from ..config import SETTINGS
 from ..providers import nse, yahoo
+from ..services import bhavcopy, commodities
 from ..schemas import envelope
 
 router = APIRouter(prefix="/api/v1/market", tags=["market"])
@@ -64,8 +65,19 @@ def get_movers(
         key=lambda r: r["change"]["percent"],
         reverse=direction == "gainers",
     )
+    rows = ordered[:limit]
+    # Delivery is only published after the close, so this is the last completed session
+    try:
+        session = bhavcopy.latest_session()
+        deliv = bhavcopy.delivery_map(session) if session else {}
+    except Exception:
+        session, deliv = None, {}
+    rows = [
+        {**r, "deliveryPct": deliv.get(r["symbol"]), "deliveryDate": session.isoformat() if session else None}
+        for r in rows
+    ]
     return envelope(
-        ordered[:limit],
+        rows,
         age,
         source="NSE live analysis",
         delayed_minutes=1,
@@ -83,3 +95,19 @@ def get_global_indices():
     except Exception as exc:
         raise HTTPException(status_code=503, detail=f"Global indices unavailable: {exc}") from exc
     return envelope(data, age, source="Yahoo Finance", delayed_minutes=15)
+
+
+@router.get("/commodities")
+def get_commodities():
+    """Metals, energy and agricultural futures with multi-horizon changes."""
+    try:
+        data, age = CACHE.get_or_fetch("market:commodities", 600, commodities.fetch)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Commodities unavailable: {exc}") from exc
+    return envelope(
+        data,
+        age,
+        source="Yahoo Finance (front-month futures)",
+        delayed_minutes=15,
+        note="US-dollar futures from COMEX, NYMEX, CBOT and ICE, not MCX prices. Rupee equivalents exclude duty, GST and premiums.",
+    )

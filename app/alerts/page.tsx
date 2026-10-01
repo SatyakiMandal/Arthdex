@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { Bell } from "lucide-react";
+import { Eyebrow } from "@/components/ui/eyebrow";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { AlertsWorkbench } from "@/components/alerts/alerts-workbench";
@@ -32,8 +34,8 @@ export default async function AlertsPage() {
 
       <main className="mx-auto max-w-[1100px] px-4 py-10 sm:px-6">
         <div className="max-w-2xl">
-          <p className="font-mono text-2xs uppercase tracking-[0.2em] text-accent">Alerts</p>
-          <h1 className="mt-3 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
+          <Eyebrow icon={Bell}>Alerts</Eyebrow>
+          <h1 className="text-gradient mt-4 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
             Thresholds &amp; important results
           </h1>
           <p className="mt-3 text-muted-foreground">

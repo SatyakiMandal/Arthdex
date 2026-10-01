@@ -12,7 +12,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import SETTINGS
-from .routers import analyzer, company, health, ipo, market, news, quant, screener, search
+from .routers import analyzer, bhavcopy, company, health, ipo, market, news, quant, screener, search
 from .services import analyzer as analyzer_service
 
 app = FastAPI(
@@ -41,6 +41,7 @@ app.include_router(news.router)
 app.include_router(search.router)
 app.include_router(screener.router)
 app.include_router(analyzer.router)
+app.include_router(bhavcopy.router)
 
 
 @app.on_event("startup")
@@ -57,3 +58,23 @@ def root():
         "docs": "/docs",
         "health": "/api/v1/health",
     }
+
+
+def _prewarm() -> None:
+    """Build the IPO pipeline in the background: it needs ~a minute of upstream calls the first time."""
+    import threading
+
+    from .cache import CACHE
+    from .config import SETTINGS
+    from .services import ipo as ipo_service
+
+    def run() -> None:
+        try:
+            CACHE.get_or_fetch("ipo:pipeline", SETTINGS.ipo_ttl, ipo_service.build_pipeline)
+        except Exception:
+            pass
+
+    threading.Thread(target=run, name="prewarm-ipo", daemon=True).start()
+
+
+_prewarm()

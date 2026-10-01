@@ -1,3 +1,4 @@
+import { PageStamp } from "@/components/layout/refresh-control";
 import type { Metadata } from "next";
 import { PriceChart } from "@/components/company/price-chart";
 import {
@@ -39,6 +40,7 @@ export default async function CompanyOverviewPage({ params }: PageProps) {
       {candles.ok ? (
         <>
           <PriceChart symbol={upper} initialCandles={candles.data.candles} initialPeriod="1Y" />
+<PageStamp meta={candles.meta} />
           <SourceLine meta={candles.meta} className="px-1" />
         </>
       ) : (

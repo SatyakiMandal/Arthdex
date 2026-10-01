@@ -43,6 +43,7 @@ from .valuation_model import (
     compute_wacc,
     is_financial_institution,
 )
+from .valuation_model import reported_cash as _rep_cash, reported_net_income as _rep_ni, reported_nopat as _rep_nopat
 
 # Standard industry peer fallback dictionary
 SECTOR_PEER_FALLBACKS: dict[str, list[tuple[str, str, str, str, str, str, str]]] = {
@@ -738,22 +739,22 @@ def build_pdf_document_html(analysis: Any) -> str:
 
     bs = fin.get("balance_sheet") if isinstance(fin.get("balance_sheet"), dict) else {}
     debt_raw = bs.get("total_debt") if bs.get("total_debt") is not None else bs.get("borrowings")
-    debt = float(debt_raw) if debt_raw is not None else 100.0
+    debt = float(debt_raw) if debt_raw is not None else 0.0
 
     cash_raw = bs.get("cash_and_equivalents") if bs.get("cash_and_equivalents") is not None else bs.get("investments")
-    cash = float(cash_raw) if cash_raw is not None else 50.0
+    cash = _rep_cash(fin)
 
     op_inc = fin.get("operating_income")
     op_latest = getattr(op_inc, "latest", None) if not isinstance(op_inc, dict) else op_inc.get("latest")
-    base_nopat = float(op_latest * 0.75 * 4) if op_latest is not None else (market_cap * 0.08)
+    base_nopat = _rep_nopat(fin)
 
-    eq_cap = float(bs.get("equity_capital") or 50.0)
-    reserves = float(bs.get("reserves") or 450.0)
-    book_equity = eq_cap + reserves if (eq_cap + reserves) > 0 else max(100.0, market_cap * 0.4)
+    eq_cap = float(bs.get("equity_capital") or 0.0)
+    reserves = float(bs.get("reserves") or 0.0)
+    book_equity = eq_cap + reserves if (eq_cap + reserves) > 0 else float(bs.get("total_equity") or 0.0)
 
     net_inc_dict = fin.get("net_profit") if isinstance(fin.get("net_profit"), dict) else {}
     net_inc_raw = getattr(net_inc_dict, "latest", None) if not isinstance(net_inc_dict, dict) else net_inc_dict.get("latest")
-    net_income = float(net_inc_raw) if net_inc_raw is not None else (market_cap * 0.06)
+    net_income = _rep_ni(fin)
 
     beta_val = float(model_meta.get("beta", 1.0))
     is_bank = is_financial_institution(fin, ticker)

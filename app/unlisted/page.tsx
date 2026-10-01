@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Building2 } from "lucide-react";
+import { Eyebrow } from "@/components/ui/eyebrow";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { StatusPill } from "@/components/ui/data-card";
@@ -23,8 +24,8 @@ export default function UnlistedIndexPage() {
 
       <main className="mx-auto max-w-[1600px] px-4 py-12 sm:px-6">
         <div className="max-w-2xl">
-          <p className="font-mono text-2xs uppercase tracking-[0.2em] text-accent">Unlisted space</p>
-          <h1 className="mt-3 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
+          <Eyebrow icon={Building2}>Unlisted space</Eyebrow>
+          <h1 className="text-gradient mt-4 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
             Private-market coverage
           </h1>
           <p className="mt-3 text-muted-foreground">

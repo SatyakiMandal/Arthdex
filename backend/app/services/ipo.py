@@ -141,7 +141,24 @@ def fetch_listing_performance(symbol: str, listing_date: str | None) -> dict[str
     }
 
 
-def build_pipeline(with_performance: int = 12) -> dict[str, Any]:
+def fetch_final_subscription(symbol: str, segment: str) -> float | None:
+    """Total subscription multiple of a closed issue, on the same basis as the live feed."""
+    for series in (("SME", "SM") if segment == "sme" else ("EQ", "BE")):
+        try:
+            d = nse.nse_get(f"/api/ipo-detail?symbol={symbol}&series={series}")
+        except Exception:
+            continue
+        for row in (d or {}).get("bidDetails", []) if isinstance(d, dict) else []:
+            if str(row.get("category", "")).startswith("Total"):
+                try:
+                    v = float(row.get("noOfTime"))
+                except (TypeError, ValueError):
+                    continue
+                return round(v, 2)
+    return None
+
+
+def build_pipeline(with_performance: int = 45) -> dict[str, Any]:
     """
     The full pipeline: ongoing, upcoming, closed and listed.
 
@@ -184,26 +201,41 @@ def build_pipeline(with_performance: int = 12) -> dict[str, Any]:
     except Exception as exc:
         errors.append(f"past: {type(exc).__name__}")
 
-    # Enrich only the most recent listings — each needs its own price request
-    enriched = 0
-    for issue in listed:
-        if issue["status"] != "listed" or enriched >= with_performance:
-            continue
-        perf = fetch_listing_performance(issue["symbol"], issue["listingDate"])
-        if not perf:
-            continue
-        enriched += 1
+    # Enrich the most recent listings: price history and final subscription are separate upstream
+    # calls per issue, so they run in parallel and are bounded.
+    from concurrent.futures import ThreadPoolExecutor
 
-        issue_price = issue.get("priceBandHigh")
-        issue.update(perf)
-        if issue_price:
-            issue["listingGainPct"] = round(
-                ((perf["listingClose"] - issue_price) / issue_price) * 100, 2
-            )
-            issue["cmpVsIssuePct"] = round(((perf["cmp"] - issue_price) / issue_price) * 100, 2)
-            issue["sinceListingPct"] = round(
-                ((perf["cmp"] - perf["listingClose"]) / perf["listingClose"]) * 100, 2
-            )
+    candidates = [i for i in listed if i["status"] == "listed"][:with_performance]
+
+    def enrich(issue: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any] | None, float | None]:
+        perf = None
+        sub = None
+        try:
+            perf = fetch_listing_performance(issue["symbol"], issue["listingDate"])
+        except Exception:
+            perf = None
+        try:
+            sub = fetch_final_subscription(issue["symbol"], issue["segment"])
+        except Exception:
+            sub = None
+        return issue, perf, sub
+
+    enriched = 0
+    if candidates:
+        with ThreadPoolExecutor(max_workers=5) as pool:
+            results = list(pool.map(enrich, candidates))
+        for issue, perf, sub in results:
+            if sub is not None:
+                issue["subscriptionTimes"] = sub
+            if not perf:
+                continue
+            enriched += 1
+            issue_price = issue.get("priceBandHigh")
+            issue.update(perf)
+            if issue_price:
+                issue["listingGainPct"] = round(((perf["listingClose"] - issue_price) / issue_price) * 100, 2)
+                issue["cmpVsIssuePct"] = round(((perf["cmp"] - issue_price) / issue_price) * 100, 2)
+                issue["sinceListingPct"] = round(((perf["cmp"] - perf["listingClose"]) / perf["listingClose"]) * 100, 2)
 
     issues.extend(listed)
 

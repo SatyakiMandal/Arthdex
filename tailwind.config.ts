@@ -40,6 +40,8 @@ const config: Config = {
       },
       fontFamily: {
         sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "ui-sans-serif", "system-ui", "sans-serif"],
+        deva: ["var(--font-deva)", "Noto Sans Devanagari", "sans-serif"],
         mono: ["var(--font-mono)", "ui-monospace", "SFMono-Regular", "monospace"],
       },
       fontSize: {
@@ -50,6 +52,14 @@ const config: Config = {
           from: { transform: "translateX(0)" },
           to: { transform: "translateX(-50%)" },
         },
+        "fade-up": {
+          from: { opacity: "0", transform: "translateY(8px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        shimmer: {
+          from: { backgroundPosition: "200% 0" },
+          to: { backgroundPosition: "-200% 0" },
+        },
         "pulse-glow": {
           "0%, 100%": { opacity: "0.35" },
           "50%": { opacity: "0.8" },
@@ -58,6 +68,8 @@ const config: Config = {
       animation: {
         marquee: "marquee 60s linear infinite",
         "pulse-glow": "pulse-glow 4s ease-in-out infinite",
+        "fade-up": "fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both",
+        shimmer: "shimmer 2.2s linear infinite",
       },
     },
   },

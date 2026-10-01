@@ -86,6 +86,9 @@ export interface ApiMover {
   turnoverLakh: number | null;
   bucket: string;
   universe: string;
+  /** Delivered share of traded quantity in the last completed session. */
+  deliveryPct?: number | null;
+  deliveryDate?: string | null;
 }
 
 export interface GlobalIndexCard {
@@ -314,6 +317,7 @@ export interface ApiIpoIssue {
 }
 
 export interface ApiIpoPipeline {
+  insights?: DeskInsights | null;
   issues: ApiIpoIssue[];
   counts: Record<string, number>;
   segments: Record<string, number>;
@@ -377,4 +381,254 @@ export interface ApiWindowedMovers {
   universeCovered: number;
   index: string;
   indexLabel: string;
+}
+
+export interface BhavRow {
+  symbol: string;
+  close: number | null;
+  changePct: number | null;
+  turnoverCr: number | null;
+  volume: number | null;
+  deliveryPct: number | null;
+  volumeMultiple?: number;
+  band?: number;
+}
+
+export interface ApiBhavcopy {
+  insights?: DeskInsights | null;
+  date: string;
+  kpis: {
+    securities: number;
+    advances: number;
+    declines: number;
+    unchanged: number;
+    advanceDeclineRatio: number | null;
+    turnoverCr: number;
+    weightedDeliveryPct: number | null;
+    averageDeliveryPct: number | null;
+  };
+  narrative: string;
+  accumulation: BhavRow[];
+  volumeAnomalies: BhavRow[];
+  bandMoves: { upper: BhavRow[]; lower: BhavRow[] };
+  criteria: {
+    minTurnoverCr: number;
+    accumulationDeliveryPct: number;
+    anomalyVolumeMultiple: number;
+    baselineSessions: number;
+  };
+}
+
+export type TechInterval = "5m" | "15m" | "1h" | "1d";
+
+export interface TechSignal {
+  label: string;
+  tone: "up" | "down" | "flat";
+  detail: string;
+}
+
+export interface ApiTechnicals {
+  symbol: string;
+  interval: TechInterval;
+  intervalLabel: string;
+  intraday: boolean;
+  barsAvailable: number;
+  lastClose: number;
+  asOf: string;
+  bars: { t: string; o: number; h: number; l: number; c: number; v: number }[];
+  series: Record<string, (number | null)[]>;
+  levels: { support: { price: number; touches: number }[]; resistance: { price: number; touches: number }[] };
+  signals: Record<string, TechSignal>;
+  tally: { bullish: number; bearish: number; neutral: number };
+  lastCrossover: { direction: "above" | "below"; at: string; barsAgo: number } | null;
+}
+
+export interface MacdScreenRow {
+  symbol: string;
+  name: string;
+  industry: string;
+  price: number | null;
+  changePct: number | null;
+  crossedAt: string;
+  barsAgo: number;
+  macd: number | null;
+  signal: number | null;
+  hist: number | null;
+  rsi: number | null;
+  adx?: number | null;
+  score?: number;
+}
+
+export interface ApiMacdScreen {
+  insights?: DeskInsights | null;
+  interval: TechInterval;
+  intervalLabel: string;
+  direction: "above" | "below";
+  within: number;
+  scanned: number;
+  universeSize: number;
+  asOf: string | null;
+  index: string;
+  results: MacdScreenRow[];
+}
+
+export interface ApiCommodity {
+  id: string;
+  symbol: string;
+  name: string;
+  unit: string;
+  group: string;
+  driver: string;
+  price: number;
+  change: Record<"1D" | "1W" | "1M" | "3M" | "1Y", number | null>;
+  high52w: number | null;
+  low52w: number | null;
+  rangePosition: number | null;
+  spark: (number | null)[];
+  asOf: string;
+}
+
+export interface ApiCommodities {
+  insights?: DeskInsights | null;
+  rows: ApiCommodity[];
+  usdinr: number | null;
+  indicativeInr: { goldPer10g?: number; silverPerKg?: number };
+}
+
+export interface ShareholdingTable {
+  labels: string[];
+  promoters?: (number | null)[];
+  fiis?: (number | null)[];
+  diis?: (number | null)[];
+  government?: (number | null)[];
+  public?: (number | null)[];
+  shareholders?: (number | null)[];
+}
+
+export interface ShareholdingCategory {
+  key: "promoters" | "fiis" | "diis" | "government" | "public";
+  label: string;
+  latest: number | null;
+  qoq: number | null;
+  yoy: number | null;
+  signal: "increasing" | "decreasing" | "stable" | "unknown";
+  yoySignal: "increasing" | "decreasing" | "stable" | "unknown";
+  streak: number;
+  high: number | null;
+  low: number | null;
+}
+
+export interface ApiShareholding {
+  symbol: string;
+  pattern: { quarterly: ShareholdingTable; yearly: ShareholdingTable; url: string } | null;
+  pledge: { asOf: string | null; pledgedPct: number | null; promoterPct: number | null; sharesPledged: number | null; totalShares: number | null } | null;
+  largeHolders: {
+    name: string | null;
+    action: "Acquired" | "Sold";
+    period: string | null;
+    shares: number | null;
+    pctChange: number | null;
+    sharesAfter: number | null;
+    pctAfter: number | null;
+    promoterGroup: boolean;
+    mode: string | null;
+    regulation: string | null;
+    filedOn: string | null;
+  }[];
+  insiders: {
+    name: string | null;
+    category: string | null;
+    action: string;
+    mode: string | null;
+    securities: number | null;
+    valueInr: number | null;
+    afterPct: number | null;
+    tradedOn: string | null;
+    filedOn: string | null;
+  }[];
+  yahoo: { insidersPct: number | null; institutionsPct: number | null; institutionsOfFloatPct: number | null } | null;
+  analytics: {
+    asOf: string | null;
+    categories: ShareholdingCategory[];
+    institutionalPct: number;
+    institutionalYoy: number;
+    freeFloatPct: number;
+    shareholderCount?: { latest: number; yoyPct: number | null };
+    pledgeTier?: string;
+    insiderFlow?: { buyValueInr: number; sellValueInr: number; net: string; count: number; window: string };
+    notes: string[];
+  } | null;
+  notes: string[];
+}
+
+export interface DeskInsights {
+  headline: string;
+  metrics: { label: string; value: string; sub: string | null; tone: "up" | "down" | "flat" | "info" }[];
+  findings: { tone: "up" | "down" | "flat" | "info"; title: string; text: string }[];
+  tables: { title: string; columns: string[]; rows: (string | number | null)[][] }[];
+  method: string;
+}
+
+// -- Yahoo Finance company sections ------------------------------------------
+
+type N = number | null;
+
+export interface ApiYStats {
+  symbol: string;
+  about: {
+    name: string | null; summary: string | null; sector: string | null; industry: string | null; website: string | null;
+    city: string | null; state: string | null; country: string | null; address: string | null; phone: string | null; employees: N;
+  };
+  officers: { name: string | null; title: string | null; age: N; pay: N; yearBorn: N }[];
+  valuation: Record<"marketCap" | "enterpriseValue" | "trailingPE" | "forwardPE" | "pegRatio" | "priceToSales" | "priceToBook" | "evToRevenue" | "evToEbitda", N>;
+  highlights: Record<
+    "profitMargin" | "operatingMargin" | "grossMargin" | "returnOnAssets" | "returnOnEquity" | "revenue" | "revenueGrowth" | "grossProfit" | "ebitda" | "netIncome" | "eps" | "forwardEps" | "earningsGrowth" | "cash" | "debt" | "debtToEquity" | "currentRatio" | "bookValue" | "operatingCashflow" | "freeCashflow",
+    N
+  >;
+  trading: Record<"beta" | "high52w" | "low52w" | "change52w" | "ma50" | "ma200" | "avgVolume" | "avgVolume10d" | "sharesOutstanding" | "floatShares" | "heldByInsiders" | "heldByInstitutions" | "shortRatio", N>;
+  dividends: {
+    rate: N; yieldPct: N; payoutRatio: N; fiveYearAvgYieldPct: N; exDividendDate: string | null; lastValue: N; lastDate: string | null;
+    lastSplitFactor: string | null; lastSplitDate: string | null;
+    byYear: { year: number; amount: number }[]; recent: { date: string; amount: number }[]; splits: { date: string; ratio: number }[];
+  };
+  calendar: { earningsDates: string[]; exDividendDate: string | null; dividendDate: string | null };
+}
+
+export interface YStatementFrame {
+  dates: string[];
+  rows: { label: string; values: N[]; perShare: boolean }[];
+}
+export interface ApiYStatements {
+  income: { annual: YStatementFrame | null; quarterly: YStatementFrame | null };
+  balance: { annual: YStatementFrame | null; quarterly: YStatementFrame | null };
+  cashflow: { annual: YStatementFrame | null; quarterly: YStatementFrame | null };
+}
+
+export type YEstimateRow = { period: string; key: string } & Record<string, string | number | null>;
+export interface ApiYAnalysts {
+  symbol: string;
+  currentPrice: N;
+  targets: { mean: N; median: N; high: N; low: N; analysts: N; key: string | null; meanRating: N };
+  recommendations: { period: string; strongBuy?: N; buy?: N; hold?: N; sell?: N; strongSell?: N }[];
+  earningsEstimate: YEstimateRow[];
+  revenueEstimate: YEstimateRow[];
+  epsTrend: YEstimateRow[];
+  epsRevisions: YEstimateRow[];
+  growthEstimates: YEstimateRow[];
+  earningsHistory: { date: string; estimate: N; actual: N; surprisePct: N }[];
+  nextEarnings: { date: string; epsEstimate: N } | null;
+}
+
+export interface ApiYHistory {
+  symbol: string;
+  range: string;
+  interval: string;
+  rows: { date: string; open: N; high: N; low: N; close: number; adjClose: N; volume: N; dividend: N; split: N }[];
+}
+
+export interface ApiYCompare {
+  symbol: string;
+  period: string;
+  dates: string[];
+  series: { key: string; label: string; values: N[]; returnPct: number }[];
 }

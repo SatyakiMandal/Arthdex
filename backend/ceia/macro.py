@@ -6,6 +6,7 @@ spread, Foreign Exchange Reserves, Manufacturing/Services PMI, and Fiscal Defici
 from __future__ import annotations
 
 import json
+import time
 import logging
 import re
 from dataclasses import dataclass
@@ -17,9 +18,53 @@ import pandas as pd
 from bs4 import BeautifulSoup
 
 from .fetcher import Fetcher
-from .prices import PriceError, PriceProvider, YahooChartProvider
+from .prices import FastYahooProvider, PriceError, PriceProvider, YahooChartProvider
 
 log = logging.getLogger(__name__)
+
+_INFRA_URL = "https://tradingeconomics.com/india/infrastructure-output"
+_REPO_URL = "https://tradingeconomics.com/india/interest-rate"
+
+
+_FRED_DOWN = False
+
+
+def _fred_latest(series_id: str) -> tuple[str, float] | None:
+    """Most recent observation of a FRED series (public CSV, no key), cached for the day."""
+    import requests
+
+    cache = Path(f"data/macro_cache/fred_{series_id}_{date.today()}.json")
+    if cache.exists():
+        try:
+            d = json.loads(cache.read_text(encoding="utf-8"))
+            return d["date"], float(d["value"])
+        except Exception:
+            pass
+    global _FRED_DOWN
+    if _FRED_DOWN:
+        raise RuntimeError("FRED unreachable earlier in this run")
+    last_exc: Exception | None = None
+    for attempt in range(2):
+        try:
+            res = requests.get(
+                f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}",
+                headers={"User-Agent": "Mozilla/5.0"}, timeout=10,
+            )
+            res.raise_for_status()
+            for line in reversed(res.text.strip().splitlines()[1:]):
+                day, _, val = line.partition(",")
+                if val and val != ".":
+                    cache.parent.mkdir(parents=True, exist_ok=True)
+                    cache.write_text(json.dumps({"date": day, "value": float(val)}), encoding="utf-8")
+                    return day, float(val)
+            return None
+        except Exception as exc:  # transient network failures are common here
+            last_exc = exc
+            time.sleep(1.0)
+    # One dead host should cost one timeout per run, not one per series
+    _FRED_DOWN = True
+    raise last_exc if last_exc else RuntimeError("FRED unavailable")
+
 
 _GSEC_URL = "https://tradingeconomics.com/india/government-bond-yield"
 _US10Y_URL = "https://tradingeconomics.com/united-states/government-bond-yield"
@@ -144,13 +189,7 @@ def gdp_growth(fetcher: Fetcher | None = None) -> tuple[dict | None, str]:
     except Exception as exc:
         log.debug("GDP fetch error: %s", exc)
 
-    # Fallback to curated consensus
-    return {
-        "value": 7.80,
-        "period": "Q1 2026",
-        "annual_rate_pct": 7.80,
-        "source": "MOSPI National Accounts",
-    }, ""
+    return None, "GDP growth unavailable: live source did not return a figure"
 
 
 def cpi_inflation(fetcher: Fetcher | None = None) -> tuple[dict | None, str]:
@@ -179,14 +218,7 @@ def cpi_inflation(fetcher: Fetcher | None = None) -> tuple[dict | None, str]:
     except Exception as exc:
         log.debug("CPI fetch error: %s", exc)
 
-    return {
-        "value": 4.45,
-        "month": "July 2026",
-        "target_band": "2.0% - 6.0%",
-        "target_midpoint": 4.0,
-        "status": "Inside RBI Target Band",
-        "source": "MOSPI Consumer Price Index",
-    }, ""
+    return None, "CPI inflation unavailable: live source did not return a figure"
 
 
 def iip_growth(fetcher: Fetcher | None = None) -> tuple[dict | None, str]:
@@ -238,12 +270,7 @@ def forex_reserves(fetcher: Fetcher | None = None) -> tuple[dict | None, str]:
     except Exception as exc:
         log.debug("Forex fetch error: %s", exc)
 
-    return {
-        "value_usd_billion": 716.91,
-        "as_of": "August 14, 2026",
-        "import_cover_months": 12.1,
-        "source": "Reserve Bank of India (RBI)",
-    }, ""
+    return None, "Forex reserves unavailable: live source did not return a figure"
 
 
 def pmi_indicators(fetcher: Fetcher | None = None) -> tuple[dict | None, str]:
@@ -251,9 +278,9 @@ def pmi_indicators(fetcher: Fetcher | None = None) -> tuple[dict | None, str]:
     if isinstance(fetcher, SkippedFetcher):
         return None, "PMI unavailable: skipped (--skip-macro-prices)"
     fetcher = fetcher or Fetcher()
-    mfg_pmi = 52.90
-    srv_pmi = 54.50
-    as_of = "August 2026"
+    mfg_pmi: float | None = None
+    srv_pmi: float | None = None
+    as_of = ""
 
     try:
         resp_mfg = fetcher.get(_MFG_PMI_URL)
@@ -261,7 +288,7 @@ def pmi_indicators(fetcher: Fetcher | None = None) -> tuple[dict | None, str]:
         m = re.search(r'Manufacturing PMI.*to ([\d.]+)\s+points in ([A-Za-z]+)', desc_mfg, re.I)
         if m:
             mfg_pmi = float(m.group(1))
-            as_of = f"{m.group(2)} 2026"
+            as_of = f"{m.group(2)} {date.today().year}"
     except Exception:
         pass
 
@@ -274,7 +301,9 @@ def pmi_indicators(fetcher: Fetcher | None = None) -> tuple[dict | None, str]:
     except Exception:
         pass
 
-    comp_pmi = round((mfg_pmi * 0.45) + (srv_pmi * 0.55), 2)
+    if mfg_pmi is None and srv_pmi is None:
+        return None, "PMI unavailable: live source did not return a figure"
+    comp_pmi = round((mfg_pmi * 0.45) + (srv_pmi * 0.55), 2) if mfg_pmi is not None and srv_pmi is not None else (mfg_pmi if mfg_pmi is not None else srv_pmi)
     return {
         "manufacturing": mfg_pmi,
         "services": srv_pmi,
@@ -308,121 +337,88 @@ def gsec_yield(fetcher: Fetcher | None = None) -> tuple[dict | None, str]:
 
 
 def us_10y_yield(fetcher: Fetcher | None = None) -> tuple[dict | None, str]:
-    """US 10-Year Treasury Yield."""
+    """US 10-Year Treasury Yield (FRED series DGS10, the Federal Reserve's own H.15 data)."""
     if isinstance(fetcher, SkippedFetcher):
         return None, "US 10Y yield unavailable: skipped (--skip-macro-prices)"
-    fetcher = fetcher or Fetcher()
     try:
+        got = _fred_latest("DGS10")
+        if got:
+            return {"value": got[1], "as_of": got[0], "source": "FRED (Federal Reserve H.15)"}, ""
+    except Exception as exc:
+        log.debug("FRED DGS10 error: %s", exc)
+    try:
+        import yfinance as yf
+
+        h = yf.Ticker("^TNX").history(period="5d")
+        if h is not None and not h.empty:
+            return {"value": round(float(h["Close"].iloc[-1]), 2), "as_of": h.index[-1].strftime("%Y-%m-%d"), "source": "Yahoo Finance (^TNX)"}, ""
+    except Exception as exc:
+        log.debug("TNX error: %s", exc)
+    try:
+        fetcher = fetcher or Fetcher()
         response = fetcher.get(_US10Y_URL)
         desc = _extract_meta_description(response.text)
         m = _US10Y_RE.search(desc) if desc else None
         if not m:
             m = _US10Y_RE.search(response.text)
-        if not m:
-            m = re.search(r'([\d.]+)%\s+on\s+([A-Za-z]+ \d{1,2}, \d{4})', response.text)
         if m:
             return {"value": float(m.group(1)), "as_of": m.group(2), "source": "tradingeconomics.com"}, ""
     except Exception:
         pass
-    return {"value": 4.74, "as_of": "August 2026", "source": "US Federal Reserve"}, ""
+    return None, "US 10Y yield unavailable: no live source responded"
 
 
 def fed_funds_rate(fetcher: Fetcher | None = None) -> tuple[dict | None, str]:
-    """US Federal Reserve Effective Federal Funds Rate & FOMC Target Corridor."""
+    """US effective federal funds rate and target range, from FRED (Federal Reserve data)."""
     if isinstance(fetcher, SkippedFetcher):
         return None, "Fed funds rate unavailable: skipped (--skip-macro-prices)"
-    
-    # Official Fed Funds Target & Effective Data
-    return {
-        "target_range": "5.25% - 5.50%",
-        "effective_rate_pct": 5.33,
-        "upper_limit_pct": 5.50,
-        "lower_limit_pct": 5.25,
-        "fomc_stance": "Restrictive / Data-Dependent Calibration",
-        "next_meeting": "September 2026",
-        "us_india_rate_differential_bps": -8, # India Repo (5.25%) - US Fed (5.33%)
-        "as_of": "August 2026",
-        "source": "US Federal Reserve Board (FOMC)",
-    }, ""
+    try:
+        eff = _fred_latest("DFF")
+        if not eff:
+            return None, "Fed funds rate unavailable: FRED returned no observation"
+        out: dict = {
+            "effective_rate_pct": eff[1],
+            "as_of": eff[0],
+            "source": "FRED (Federal Reserve Board, series DFF)",
+        }
+        try:
+            up, lo = _fred_latest("DFEDTARU"), _fred_latest("DFEDTARL")
+            if up and lo:
+                out.update(upper_limit_pct=up[1], lower_limit_pct=lo[1], target_range=f"{lo[1]:.2f}% - {up[1]:.2f}%")
+        except Exception:
+            pass
+        return out, ""
+    except Exception as exc:
+        return None, f"Fed funds rate unavailable: {exc}"
 
 
 def eight_core_industries(fetcher: Fetcher | None = None) -> tuple[dict | None, str]:
-    """India's 8 Core Industries Economic Output Breakdown (40.27% of IIP weight)."""
+    """Combined output growth of India's eight core industries (headline only).
+
+    The per-industry split is published as a PDF press release with no machine-readable
+    feed, so it is left out rather than typed in by hand.
+    """
     if isinstance(fetcher, SkippedFetcher):
         return None, "8 Core Industries unavailable: skipped (--skip-macro-prices)"
-    
-    sectors = [
-        {
-            "sector": "Refinery Products",
-            "weight_pct": 28.04,
-            "yoy_growth_pct": +4.9,
-            "status": "Expansionary",
-            "narrative": "Refinery throughput supported by robust domestic fuel consumption and export margins.",
-        },
-        {
-            "sector": "Electricity Generation",
-            "weight_pct": 19.85,
-            "yoy_growth_pct": +8.6,
-            "status": "Strong Expansion",
-            "narrative": "Peak summer power demand and industrial baseload driving record thermal and renewable generation.",
-        },
-        {
-            "sector": "Steel Production",
-            "weight_pct": 17.92,
-            "yoy_growth_pct": +7.2,
-            "status": "Robust Growth",
-            "narrative": "Infrastructure capex, railway modernization, and automotive demand underpinning crude steel output.",
-        },
-        {
-            "sector": "Coal Mining",
-            "weight_pct": 10.33,
-            "yoy_growth_pct": +10.2,
-            "status": "High Double-Digit Growth",
-            "narrative": "Enhanced pithead dispatch and commercial mine ramping to maintain power plant inventory buffers.",
-        },
-        {
-            "sector": "Crude Oil Extraction",
-            "weight_pct": 8.98,
-            "yoy_growth_pct": -1.4,
-            "status": "Mature / Flattish",
-            "narrative": "Offshore aging field declines offset by deepwater KG-basin production ramping.",
-        },
-        {
-            "sector": "Natural Gas",
-            "weight_pct": 6.88,
-            "yoy_growth_pct": +3.5,
-            "status": "Moderate Expansion",
-            "narrative": "City gas distribution networks (CGD) and fertilizer feedstock demand maintaining positive momentum.",
-        },
-        {
-            "sector": "Cement Manufacturing",
-            "weight_pct": 5.37,
-            "yoy_growth_pct": +5.8,
-            "status": "Expansionary",
-            "narrative": "Highway construction, affordable housing projects, and commercial real estate buildout driving dispatches.",
-        },
-        {
-            "sector": "Fertilizers Production",
-            "weight_pct": 2.63,
-            "yoy_growth_pct": +2.4,
-            "status": "Steady",
-            "narrative": "Kharif sowing season buffer stocking and domestic urea/DAP production plants running at full capacity.",
-        },
-    ]
-
-    total_weight = sum(s["weight_pct"] for s in sectors)
-    composite_growth = sum(s["weight_pct"] * s["yoy_growth_pct"] for s in sectors) / total_weight
-
-    return {
-        "combined_growth_yoy_pct": round(composite_growth, 2),
-        "total_iip_weight_pct": 40.27,
-        "core_index_weight_pct": round(total_weight, 2),
-        "as_of_period": "June / July 2026",
-        "index_level": 168.4,
-        "sectors": sectors,
-        "summary": f"The 8 Core Industries (40.27% of IIP) recorded a combined YoY growth of +{composite_growth:.2f}%, led by double-digit surges in Coal (+10.2%) and Electricity (+8.6%).",
-        "source": "Office of Economic Adviser, DPIIT / Ministry of Commerce & Industry",
-    }, ""
+    fetcher = fetcher or Fetcher()
+    try:
+        resp = fetcher.get(_INFRA_URL)
+        desc = _extract_meta_description(resp.text)
+        m = re.search(r'(?:increased|decreased|expanded|contracted|rose|fell|was)\s+(?:by\s+)?(-?[\d.]+)\s+percent in ([A-Za-z]+ of \d{4}|[A-Za-z]+ \d{4})', desc, re.I)
+        if m:
+            val = float(m.group(1))
+            if re.search(r"decreased|contracted|fell", desc[: m.start() + 12], re.I) and val > 0:
+                val = -val
+            return {
+                "combined_growth_yoy_pct": val,
+                "as_of_period": m.group(2),
+                "sectors": [],
+                "note": "Headline growth only; the industry-by-industry split has no live feed.",
+                "source": "TradingEconomics / Office of Economic Adviser, DPIIT",
+            }, ""
+    except Exception as exc:
+        log.debug("Core industries fetch error: %s", exc)
+    return None, "8 Core Industries unavailable: live source did not return a figure"
 
 
 def fiscal_deficit(fetcher: Fetcher | None = None) -> tuple[dict | None, str]:
@@ -477,7 +473,7 @@ def crude_oil_series(
             pass
 
     # 2. Try YahooChartProvider or yfinance for BZ=F and CL=F
-    provider = provider or YahooChartProvider()
+    provider = provider or FastYahooProvider()
     for sym in ["BZ=F", "CL=F"]:
         try:
             frame = provider.history(sym, start, end)
@@ -500,11 +496,7 @@ def crude_oil_series(
         except PriceError as exc:
             log.debug("Crude %s error: %s", sym, exc)
 
-    # 3. Resilient benchmark quote fallback
-    days = pd.to_datetime([start.isoformat(), end.isoformat()])
-    df = pd.DataFrame({"close": [60.75, 89.03]}, index=days)
-    df.index.name = "date"
-    return df, ""
+    return None, "crude oil price unavailable: no live source returned data"
 
 
 def usdinr_series(
@@ -521,16 +513,9 @@ def usdinr_series(
             pass
 
     if isinstance(provider, SkippedPriceProvider):
-        return {
-            "symbol": "USDINR",
-            "start_rate": 89.96,
-            "end_rate": 95.73,
-            "change": 0.0641,
-            "direction": "Depreciation",
-            "source": "RBI / Interbank FX",
-        }
+        return {"note": "USD/INR unavailable: skipped (--skip-macro-prices)"}
 
-    provider = provider or YahooChartProvider()
+    provider = provider or FastYahooProvider()
     try:
         frame = provider.history("INR=X", start, end)
         if frame is not None and not frame.empty:
@@ -553,17 +538,7 @@ def usdinr_series(
     except Exception as exc:
         log.debug("USDINR error: %s", exc)
 
-    return {
-        "symbol": "USDINR",
-        "label": "USD / INR Exchange Rate",
-        "start_date": start.isoformat(),
-        "end_date": end.isoformat(),
-        "start_rate": 89.96,
-        "end_rate": 95.73,
-        "change": 0.0641,
-        "direction": "Depreciation",
-        "source": "RBI Reference Rate",
-    }
+    return {"note": "USD/INR unavailable: no live source returned data"}
 
 
 def macro_summary(
@@ -602,12 +577,26 @@ def macro_summary(
     core_ind_val, _ = eight_core_industries(fetcher=fetcher)
 
     # Sovereign Spread calculation (India 10Y - US 10Y in bps)
-    in_yield = (gsec_value or {}).get("value", 6.87)
-    us_yield = (us10y_value or {}).get("value", 4.74)
-    spread_bps = round((in_yield - us_yield) * 100) if in_yield and us_yield else 213
+    in_yield = (gsec_value or {}).get("value")
+    us_yield = (us10y_value or {}).get("value")
+    spread_bps = round((in_yield - us_yield) * 100) if in_yield is not None and us_yield is not None else None
 
     # Current repo rate
-    current_repo = REPO_RATE_CHANGES[-1][1] if REPO_RATE_CHANGES else 6.50
+    current_repo = REPO_RATE_CHANGES[-1][1]
+    repo_as_of = REPO_RATE_CHANGES[-1][0].isoformat()
+    repo_source = "RBI MPC decision table (last change on " + repo_as_of + "); verify against rbi.org.in"
+    try:
+        live = fetcher.get(_REPO_URL) if fetcher is not None and not isinstance(fetcher, SkippedFetcher) else Fetcher().get(_REPO_URL)
+        mm = re.search(r"(?:recorded at|was|to)\s+([\d.]+)\s+percent", _extract_meta_description(live.text), re.I)
+        if mm:
+            current_repo = float(mm.group(1))
+            repo_source = "TradingEconomics / Reserve Bank of India (latest published)"
+            repo_as_of = None
+    except Exception:
+        pass
+
+    if fed_rate_val and fed_rate_val.get("effective_rate_pct") is not None:
+        fed_rate_val["us_india_rate_differential_bps"] = round((current_repo - fed_rate_val["effective_rate_pct"]) * 100)
 
     return {
         "repo_rate_changes": [
@@ -617,8 +606,8 @@ def macro_summary(
             "current_rate_pct": current_repo,
             "sdf_rate_pct": round(current_repo - 0.25, 2),
             "msf_rate_pct": round(current_repo + 0.25, 2),
-            "mpc_stance": "Neutral / Withdrawal of Accommodation",
-            "source": "Reserve Bank of India (MPC)",
+            "as_of": repo_as_of,
+            "source": repo_source,
         },
         "fed_funds_rate": fed_rate_val,
         "eight_core_industries": core_ind_val,
@@ -631,8 +620,8 @@ def macro_summary(
             "india_10y_pct": in_yield,
             "us_10y_pct": us_yield,
             "spread_bps": spread_bps,
-            "as_of": (gsec_value or {}).get("as_of", "August 2026"),
-            "source": "TradingEconomics / US Fed",
+            "as_of": (gsec_value or {}).get("as_of"),
+            "source": "TradingEconomics (India) / FRED (US)",
         },
         "usdinr": usdinr_val,
         "crude_oil": crude,

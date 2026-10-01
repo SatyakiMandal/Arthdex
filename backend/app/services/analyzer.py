@@ -22,9 +22,10 @@ import subprocess
 import sys
 import threading
 import uuid
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
+from app.services.analyzer_detail import detail_listed
 
 log = logging.getLogger("arthdex.analyzer")
 
@@ -114,6 +115,80 @@ def list_runs(limit: int = 50, origin: str | None = None) -> list[dict[str, Any]
     return out[:limit]
 
 
+SNAPSHOT_TTL_SECONDS = 12 * 3600
+SNAPSHOT_RETRY_SECONDS = 600
+
+
+def _age_seconds(iso: str | None) -> float:
+    try:
+        return (datetime.now(timezone.utc) - datetime.fromisoformat(iso)).total_seconds() if iso else 1e12
+    except ValueError:
+        return 1e12
+
+
+def snapshot_for(ticker: str) -> dict[str, Any] | None:
+    """Newest snapshot run for a ticker, in any state."""
+    runs = [m for m in list_runs(limit=10_000, origin="snapshot") if m.get("ticker") == ticker]
+    return runs[0] if runs else None
+
+
+def ensure_snapshot(symbol: str, company: str) -> dict[str, Any]:
+    """Return the current snapshot for a listed company, starting one if needed.
+
+    A completed snapshot is reused for SNAPSHOT_TTL_SECONDS (prices move daily, the
+    models do not need re-fitting on every page view); a failure is not retried for
+    a few minutes so a bad ticker cannot hammer the upstream price providers.
+    """
+    ticker = _ticker_for(symbol)
+    current = snapshot_for(ticker)
+    if current:
+        st = current["status"]
+        if st in ("QUEUED", "RUNNING"):
+            return current
+        age = _age_seconds(current.get("finishedAt") or current.get("createdAt"))
+        if st == "COMPLETED" and age < SNAPSHOT_TTL_SECONDS:
+            return current
+        if st in ("FAILED", "CANCELLED") and age < SNAPSHOT_RETRY_SECONDS:
+            return current
+    end = date.today()
+    fresh = submit(
+        kind="listed", company=company, ticker=ticker,
+        start=end - timedelta(days=365), end=end, snapshot=True,
+    )
+    # Superseded snapshots are pure cache; drop them so they do not accumulate
+    if current and current["status"] in ("COMPLETED", "FAILED", "CANCELLED"):
+        delete_run(current["id"], allow_snapshot=True)
+    return fresh
+
+
+def delete_run(run_id: str, allow_snapshot: bool = False) -> str:
+    """Remove one run's own folder (meta, log, report, workbook, analysis.json).
+
+    Returns "deleted", "missing", "active" or "sample". The per-company news
+    cache lives under DATA_DIR/data/news_cache and is deliberately left alone:
+    it is shared by every run for that company.
+    """
+    with _LOCK:
+        meta = read_meta(run_id)
+        if meta is None:
+            return "missing"
+        if meta.get("origin") == "sample" or (meta.get("origin") == "snapshot" and not allow_snapshot):
+            return "sample"
+        if meta.get("status") in ("QUEUED", "RUNNING"):
+            return "active"
+        shutil.rmtree(run_dir(run_id), ignore_errors=True)
+    return "deleted"
+
+
+def clear_unsuccessful() -> int:
+    """Delete every user-started run that failed or was cancelled."""
+    n = 0
+    for m in list_runs(limit=10_000, origin="run"):
+        if m["status"] in ("FAILED", "CANCELLED") and delete_run(m["id"]) == "deleted":
+            n += 1
+    return n
+
+
 def _public(meta: dict[str, Any]) -> dict[str, Any]:
     d = run_dir(meta["id"])
     return {
@@ -163,6 +238,7 @@ def submit(
     end: date,
     ticker: str | None = None,
     url: str | None = None,
+    snapshot: bool = False,
 ) -> dict[str, Any]:
     run_id = uuid.uuid4().hex[:16]
     d = run_dir(run_id)
@@ -177,7 +253,10 @@ def submit(
         "end": end.isoformat(),
         "status": "QUEUED",
         "stage": "Queued",
-        "origin": "run",
+        "origin": "snapshot" if snapshot else "run",
+        # Snapshots skip news scraping entirely: every fundamental, technical,
+        # statistical and risk section is still computed from prices and filings.
+        "noNews": snapshot,
         "createdAt": _now(),
     }
     _write_meta(meta)
@@ -191,6 +270,10 @@ def _command(meta: dict[str, Any], d: Path) -> list[str]:
         "--start", meta["start"],
         "--end", meta["end"],
         "--out", str(d / "analysis.json"),
+    ]
+    # Snapshots feed the on-page dossier only; the HTML report and Excel model are
+    # the slow, unused part of the run, so they are not built.
+    common += ["--html", ""] if meta.get("noNews") else [
         "--html", str(d / "report.html"),
         "--xlsx", str(d / "model.xlsx"),
     ]
@@ -199,11 +282,16 @@ def _command(meta: dict[str, Any], d: Path) -> list[str]:
         if meta.get("url"):
             cmd += ["--url", meta["url"]]
         return cmd
-    return [
+    cmd = [
         sys.executable, "-u", "-m", "ceia.analyze", *common,
         "--ticker", meta["ticker"],
         "--benchmark", "^NSEI",
     ]
+    if meta.get("noNews"):
+        empty = d / "news.json"
+        empty.write_text(json.dumps({"items": [], "company": meta["company"]}), encoding="utf-8")
+        cmd += ["--news", str(empty)]
+    return cmd
 
 
 def _worker(run_id: str) -> None:
@@ -256,7 +344,7 @@ def _worker(run_id: str) -> None:
         current = read_meta(run_id) or {}
         if current.get("status") == "CANCELLED":
             return
-        produced = (d / "analysis.json").exists() and (d / "report.html").exists()
+        produced = (d / "analysis.json").exists() and (meta.get("noNews") or (d / "report.html").exists())
         if code == 0 and produced:
             _update(run_id, status="COMPLETED", stage="Done", finishedAt=_now(), error=None)
         else:
@@ -322,6 +410,8 @@ def status(run_id: str) -> dict[str, Any] | None:
     if meta.get("status") == "RUNNING":
         pub["stage"] = _stage_from_log(lines) or meta.get("stage")
     pub["log"] = lines
+    if meta.get("status") == "RUNNING":
+        pub["progress"] = progress_from_log(lines)
     return pub
 
 
@@ -338,6 +428,41 @@ def log_tail(run_id: str, n: int = LOG_TAIL_LINES) -> list[str]:
         return [l.rstrip() for l in text.splitlines() if l.strip()][-n:]
     except (OSError, ValueError):
         return []
+
+
+# Pipeline steps shown to the user; the furthest one reached in the log is the current step.
+# (label, needles in a log line that mean this step has started)
+STEPS: list[tuple[str, tuple[str, ...]]] = [
+    ("Finding news", ("ceia.discovery", "discovered ", "alias widening")),
+    ("Reading articles", ("pre-filtered", "candidates,", "relevance kept", "unique after dedupe", "parsed ")),
+    ("Scoring tone", ("ceia.sentiment", "ceia.emotion", "news cache:")),
+    ("Market data", ("ceia.prices", "ceia.returns")),
+    ("Running models", ("EVENT STUDY", "Distance to Default", "Institutional Scorecard", "HAR-RV", "Value at Risk", "ceia.garch", "ceia.valuation")),
+    ("Writing the report", ("export_excel", "report.html", "analysis.json")),
+]
+_FRAC = re.compile(r"(\d+)\s*/\s*(\d+)")
+
+
+def progress_from_log(lines: list[str]) -> dict[str, Any]:
+    """Furthest pipeline step reached, with the fraction done inside it where the log says."""
+    step = -1
+    for line in lines:
+        for i, (_, needles) in enumerate(STEPS):
+            if i > step and any(n in line for n in needles):
+                step = i
+    if step < 0:
+        return {"steps": [s[0] for s in STEPS], "step": 0, "fraction": 0.0, "detail": None}
+    frac, detail = 0.0, None
+    for line in reversed(lines):
+        if step in (0, 1, 2) and ("days done" in line or "fetched" in line or "scored" in line):
+            m = _FRAC.search(line)
+            if m and int(m.group(2)):
+                a, b = int(m.group(1)), int(m.group(2))
+                frac = min(1.0, a / b)
+                unit = "days of archives" if "days done" in line else "articles" if "fetched" in line else "texts"
+                detail = f"{a} of {b} {unit}"
+                break
+    return {"steps": [s[0] for s in STEPS], "step": step, "fraction": round(frac, 3), "detail": detail}
 
 
 def _stage_from_log(lines: list[str]) -> str | None:
@@ -535,6 +660,7 @@ def _summarise_listed(a: dict[str, Any]) -> dict[str, Any]:
             "conformalCoveragePct": _num(_g(bt, "conformal_backtest", "observed_coverage_pct")),
         },
         "caveats": [c for c in (a.get("caveats") or []) if isinstance(c, str)][:6],
+        "detail": detail_listed(a),
     }
 
 

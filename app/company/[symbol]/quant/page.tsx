@@ -1,3 +1,4 @@
+import { PageStamp } from "@/components/layout/refresh-control";
 import type { Metadata } from "next";
 import { ReturnForecasts } from "@/components/quant/return-forecasts";
 import { VolatilityEnsemble } from "@/components/quant/volatility-ensemble";
@@ -46,6 +47,7 @@ export default async function QuantPage({ params }: PageProps) {
       </div>
 
       <div className="mt-4">
+<PageStamp meta={quant.meta} />
         <SourceLine meta={quant.meta} />
       </div>
     </div>

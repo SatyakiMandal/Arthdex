@@ -94,6 +94,8 @@ class Analysis:
     technical_analysis: dict = field(default_factory=dict)
     backtesting: dict = field(default_factory=dict)
     investment_verdict: dict = field(default_factory=dict)
+    relative_valuation_multiples: dict = field(default_factory=dict)
+    valuation_suite: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         table = self.daily.reset_index()
@@ -170,6 +172,8 @@ class Analysis:
             "technical_analysis": self.technical_analysis,
             "backtesting": self.backtesting,
             "investment_verdict": self.investment_verdict,
+            "relative_valuation_multiples": self.relative_valuation_multiples,
+            "valuation_suite": self.valuation_suite,
             "unattributed_items": [
                 {"url": i.url, "source": i.source, "headline": i.headline,
                  "reason": i.timestamp_confidence}
@@ -454,61 +458,76 @@ def analyse(
             port_rets_dict[g_name] = g_idx.daily["return"].dropna()
 
     port_df = pd.DataFrame(port_rets_dict).dropna(thresh=2) if port_rets_dict else pd.DataFrame()
-    if not port_df.empty and len(port_df.columns) >= 1:
-        views = {config.ticker: float(forecasting_analysis.get("horizons", {}).get("21", {}).get("expected_return_pct", 1.0)) / 100.0 * (252.0 / 21.0)} if forecasting_analysis else {}
-        hrp_obj = portfolio_mod.compute_hierarchical_risk_parity(port_df)
-        bl_obj = portfolio_mod.compute_black_litterman(port_df, views=views)
-        kelly_obj = portfolio_mod.compute_fractional_kelly_sizing(
-            expected_return=views.get(config.ticker, 0.05),
-            annual_volatility=hrp_obj.portfolio_volatility_annualized or 0.20,
-            leverage_penalty=float(forecasting_analysis.get("har_volatility", {}).get("asymmetry_ratio", 1.54)) if forecasting_analysis else 1.54,
-        )
-        portfolio_analysis = {
-            "hrp": asdict(hrp_obj),
-            "black_litterman": asdict(bl_obj),
-            "fractional_kelly": kelly_obj,
-            "weights": hrp_obj.weights,
-            "diversification_ratio": hrp_obj.diversification_ratio,
-        }
-    else:
+    # Covariance estimates need complete rows; ragged calendars across indices leave NaNs
+    port_df = port_df.dropna() if len(port_df.dropna()) >= 30 else port_df.fillna(0.0)
+    try:
+        if not port_df.empty and len(port_df.columns) >= 1:
+            views = {config.ticker: float(forecasting_analysis.get("horizons", {}).get("21", {}).get("expected_return_pct", 1.0)) / 100.0 * (252.0 / 21.0)} if forecasting_analysis else {}
+            hrp_obj = portfolio_mod.compute_hierarchical_risk_parity(port_df)
+            bl_obj = portfolio_mod.compute_black_litterman(port_df, views=views)
+            kelly_obj = portfolio_mod.compute_fractional_kelly_sizing(
+                expected_return=views.get(config.ticker, 0.05),
+                annual_volatility=hrp_obj.portfolio_volatility_annualized or 0.20,
+                leverage_penalty=float(forecasting_analysis.get("har_volatility", {}).get("asymmetry_ratio", 1.54)) if forecasting_analysis else 1.54,
+            )
+            portfolio_analysis = {
+                "hrp": asdict(hrp_obj),
+                "black_litterman": asdict(bl_obj),
+                "fractional_kelly": kelly_obj,
+                "weights": hrp_obj.weights,
+                "diversification_ratio": hrp_obj.diversification_ratio,
+            }
+        else:
+            portfolio_analysis = {}
+
+    except Exception as exc:  # optional section: never sink the run
+        log.warning("Portfolio allocation failed: %s", exc)
         portfolio_analysis = {}
 
     # 5. Diebold-Yilmaz Volatility Spillover
-    if not port_df.empty and len(port_df.columns) >= 2:
-        rolling_vols = port_df.rolling(10, min_periods=3).std().fillna(0.01) * np.sqrt(252.0)
-        spill_obj = spillover_mod.compute_diebold_yilmaz_connectedness(rolling_vols, target_ticker=config.ticker)
-        spillover_analysis = {
-            "total_connectedness_index": spill_obj.total_connectedness_index,
-            "directional_to": spill_obj.directional_to,
-            "directional_from": spill_obj.directional_from,
-            "net_spillover": spill_obj.net_spillover,
-            "net_transmitters": spill_obj.net_transmitters,
-            "net_receivers": spill_obj.net_receivers,
-            "target_company_tci": spill_obj.target_company_tci,
-            "target_company_role": spill_obj.target_company_role,
-            "spillover_matrix": spill_obj.spillover_matrix.to_dict(),
-        }
-    else:
+    try:
+        if not port_df.empty and len(port_df.columns) >= 2:
+            rolling_vols = port_df.rolling(10, min_periods=3).std().fillna(0.01) * np.sqrt(252.0)
+            spill_obj = spillover_mod.compute_diebold_yilmaz_connectedness(rolling_vols, target_ticker=config.ticker)
+            spillover_analysis = {
+                "total_connectedness_index": spill_obj.total_connectedness_index,
+                "directional_to": spill_obj.directional_to,
+                "directional_from": spill_obj.directional_from,
+                "net_spillover": spill_obj.net_spillover,
+                "net_transmitters": spill_obj.net_transmitters,
+                "net_receivers": spill_obj.net_receivers,
+                "target_company_tci": spill_obj.target_company_tci,
+                "target_company_role": spill_obj.target_company_role,
+                "spillover_matrix": spill_obj.spillover_matrix.to_dict(),
+            }
+        else:
+            spillover_analysis = {}
+    except Exception as exc:  # optional section
+        log.warning("spillover_analysis failed: %s", exc)
         spillover_analysis = {}
 
     # 6. Synthetic Difference-in-Differences (SDID)
-    if not port_df.empty and len(port_df.columns) >= 2 and incidents:
-        top_inc = incidents[0]
-        event_dt = pd.Timestamp(top_inc.day)
-        try:
-            ev_loc = table.index.get_loc(event_dt) if event_dt in table.index else len(table) // 2
-        except Exception:
-            ev_loc = len(table) // 2
+    try:
+        if not port_df.empty and len(port_df.columns) >= 2 and incidents:
+            top_inc = incidents[0]
+            event_dt = pd.Timestamp(top_inc.day)
+            try:
+                ev_loc = table.index.get_loc(event_dt) if event_dt in table.index else len(table) // 2
+            except Exception:
+                ev_loc = len(table) // 2
 
-        ctrl_cols = [c for c in port_df.columns if c != config.ticker]
-        sdid_obj = sdid_mod.compute_synthetic_difference_in_differences(
-            treated_series=table["close"] if "close" in table.columns else frame["close"],
-            control_panel_df=port_df[ctrl_cols],
-            event_index=max(5, ev_loc),
-            post_window_len=5,
-        )
-        sdid_analysis = asdict(sdid_obj)
-    else:
+            ctrl_cols = [c for c in port_df.columns if c != config.ticker]
+            sdid_obj = sdid_mod.compute_synthetic_difference_in_differences(
+                treated_series=table["close"] if "close" in table.columns else frame["close"],
+                control_panel_df=port_df[ctrl_cols],
+                event_index=max(5, ev_loc),
+                post_window_len=5,
+            )
+            sdid_analysis = asdict(sdid_obj)
+        else:
+            sdid_analysis = {}
+    except Exception as exc:  # optional section
+        log.warning("sdid_analysis failed: %s", exc)
         sdid_analysis = {}
 
     # 7. 4-Model Volatility Ensemble (GARCH, EGARCH, HAR-RV, FIGARCH) with 10-Min Intraday
@@ -532,7 +551,10 @@ def analyse(
     # 9. 1-Week Institutional Technical Analysis Suite
     from .technical_analysis import compute_technical_analysis
     try:
-        tech_obj = compute_technical_analysis(table if not table.empty else frame)
+        # Indicators need the lead-in history (a 200-bar average cannot be built from a 157-day
+        # window) and the session high/low, and they describe the market as of the window's end.
+        ta_frame = frame.loc[:pd.Timestamp(config.end)]
+        tech_obj = compute_technical_analysis(ta_frame if len(ta_frame) >= 60 else (table if not table.empty else frame))
         technical_analysis = tech_obj.to_dict()
     except Exception as exc:
         log.warning("Technical analysis computation failed: %s", exc)
@@ -548,10 +570,44 @@ def analyse(
         log.warning("Backtest suite computation failed: %s", exc)
         backtest_analysis = {}
 
+    valuation_pack = None
+    relative_multiples: dict = {}
+    valuation_suite_json: dict = {}
+
     # 11. Actionable Investment Call, Prescribed Quantity & Holding Period Engine
     from .investment_verdict import compute_investment_verdict
     try:
         curr_p = float(table["close"].iloc[-1]) if ("close" in table.columns and not table.empty) else (float(frame["close"].iloc[-1]) if not frame.empty else 100.0)
+        # One valuation shared by the verdict, the dossier and the multiples table
+        try:
+            from .valuation_model import run_valuation_suite
+
+            valuation_pack = run_valuation_suite(financials, curr_p, float(price_meta.get("beta") or 1.0), config.ticker)
+            if valuation_pack:
+                relative_multiples = valuation_pack["multiples"].to_dict()
+                vp = valuation_pack
+                valuation_suite_json = {
+                    "isBank": vp["is_bank"],
+                    "methodology": getattr(vp["core"], "methodology", None),
+                    "baseNopat": vp["base_nopat"],
+                    "basis": vp["basis"],
+                    "marketCap": vp["market_cap"],
+                    "unit": financials.get("currency_unit"),
+                    "wacc": vp["wacc"].to_dict(),
+                    "core": vp["core"].to_dict(),
+                    "scenario": asdict(vp["scenario"]),
+                    "bayesian": asdict(vp["bayesian"]),
+                    "dupont": vp["dupont"].to_dict(),
+                }
+                gap = getattr(vp["core"], "upside_downside_pct", None)
+                if gap is not None and abs(gap) > 50.0:
+                    valuation_suite_json["warning"] = (
+                        f"The model value differs from the market price by {gap:+.0f}%. A gap that large usually means the "
+                        "simple growth assumptions do not fit this business (for example a capital-heavy group, a REIT or a "
+                        "lender), not that the market is that wrong. Treat it as a model-fit warning."
+                    )
+        except Exception as exc:
+            log.warning("Valuation suite failed: %s", exc)
         verdict_obj = compute_investment_verdict(
             current_price=curr_p,
             daily_df=table if not table.empty else frame,
@@ -563,6 +619,9 @@ def analyse(
             distance_to_default=distance_to_default,
             backtest_data=backtest_analysis,
             as_of=config.end,
+            news_available=bool(items),
+            dcf_res=valuation_pack["core"] if valuation_pack else None,
+            valuation_multiples=valuation_pack["multiples"] if valuation_pack else None,
         )
         investment_verdict_analysis = verdict_obj.to_dict()
     except Exception as exc:
@@ -605,6 +664,8 @@ def analyse(
         technical_analysis=technical_analysis,
         backtesting=backtest_analysis,
         investment_verdict=investment_verdict_analysis,
+        relative_valuation_multiples=relative_multiples,
+        valuation_suite=valuation_suite_json,
     )
 
 
@@ -1133,7 +1194,7 @@ def main() -> None:
         try:
             print(f"wrote {render_analysis_pdf(analysis, pdf_path)}")
         except Exception as exc:
-            log.warning("PDF export encountered: %s", exc)
+            log.warning("PDF export encountered: %s", exc, exc_info=True)
             print(f"\nPDF export skipped: {exc}")
 
     if args.xlsx:
@@ -1143,7 +1204,7 @@ def main() -> None:
         try:
             print(f"wrote {export_analysis_to_excel(analysis, xlsx_path)}")
         except Exception as exc:
-            log.warning("Excel export encountered: %s", exc)
+            log.warning("Excel export encountered: %s", exc, exc_info=True)
             print(f"\nExcel export skipped: {exc}")
 
 

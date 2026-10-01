@@ -2,7 +2,17 @@ import "server-only";
 
 import { apiGet, apiGetOrNull, REVALIDATE, type ApiResult } from "./client";
 import type {
+  ApiBhavcopy,
   ApiCandleSeries,
+  ApiShareholding,
+  ApiYStats,
+  ApiYStatements,
+  ApiYAnalysts,
+  ApiYHistory,
+  ApiYCompare,
+  ApiCommodities,
+  ApiMacdScreen,
+  ApiTechnicals,
   ApiFinancials,
   ApiIndex,
   ApiIpoPipeline,
@@ -79,7 +89,7 @@ export const searchCompanies = (query: string, limit = 12) =>
 // -- primary markets --------------------------------------------------------
 
 export const getIpoPipeline = () =>
-  apiGet<ApiIpoPipeline>("/api/v1/ipo", REVALIDATE.ipo);
+  apiGet<ApiIpoPipeline>("/api/v1/ipo?v=2", REVALIDATE.ipo);
 
 // -- news -------------------------------------------------------------------
 
@@ -110,3 +120,38 @@ export const getUniverseStats = () =>
     "/api/v1/universe/stats",
     REVALIDATE.universe,
   );
+
+// -- bhavcopy ---------------------------------------------------------------
+
+export const getBhavcopy = (date?: string) =>
+  apiGet<ApiBhavcopy>(`/api/v1/bhavcopy?v=2${date ? `&on=${encodeURIComponent(date)}` : ""}`, 3600);
+
+// -- technicals -------------------------------------------------------------
+
+export const getTechnicals = (symbol: string, interval: string) =>
+  apiGet<ApiTechnicals>(`/api/v1/company/${symbol}/technicals?interval=${interval}`, 60);
+
+export const getMacdScreen = (params: { direction: string; interval: string; within: number; index: string }) =>
+  apiGet<ApiMacdScreen>(
+    `/api/v1/screener/macd-crossover?direction=${params.direction}&interval=${params.interval}&within=${params.within}&index=${params.index}`,
+    60,
+  );
+
+// -- commodities ------------------------------------------------------------
+
+export const getCommodities = () => apiGet<ApiCommodities>("/api/v1/market/commodities?v=2", 600);
+
+// -- shareholding -----------------------------------------------------------
+
+export const getShareholding = (symbol: string) =>
+  apiGet<ApiShareholding>(`/api/v1/company/${symbol}/shareholding`, 3600);
+
+// -- Yahoo Finance company sections -----------------------------------------
+
+export const getYStats = (symbol: string) => apiGet<ApiYStats>(`/api/v1/company/${symbol}/statistics?v=1`, 3600);
+export const getYStatements = (symbol: string) => apiGet<ApiYStatements>(`/api/v1/company/${symbol}/statements?v=1`, 3600);
+export const getYAnalysts = (symbol: string) => apiGet<ApiYAnalysts>(`/api/v1/company/${symbol}/analysts?v=1`, 3600);
+export const getYHistory = (symbol: string, range = "5Y", interval = "1d") =>
+  apiGet<ApiYHistory>(`/api/v1/company/${symbol}/history?range=${range}&interval=${interval}&v=1`, 900);
+export const getYCompare = (symbol: string, peers: string[], period = "1Y") =>
+  apiGet<ApiYCompare>(`/api/v1/company/${symbol}/compare?peers=${peers.join(",")}&period=${period}&v=1`, 900);

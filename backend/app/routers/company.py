@@ -8,6 +8,7 @@ from ..cache import CACHE
 from ..config import SETTINGS
 from ..providers import fundamentals, yahoo
 from ..schemas import envelope
+from ..services import shareholding, technicals, yahoo_company
 
 router = APIRouter(prefix="/api/v1/company", tags=["company"])
 
@@ -133,3 +134,98 @@ def get_valuation(symbol: str, exchange: str = Query("NSE", pattern="^(NSE|BSE)$
     except Exception as exc:
         raise HTTPException(status_code=503, detail=f"Valuation unavailable: {exc}") from exc
     return envelope(data, age, source="Yahoo Finance", delayed_minutes=0)
+
+
+@router.get("/{symbol}/technicals")
+def get_technicals(symbol: str, interval: str = Query("15m")):
+    """Indicator suite on 5-minute, 15-minute, hourly or daily bars."""
+    if interval not in technicals.INTERVALS:
+        raise HTTPException(status_code=400, detail=f"interval must be one of {list(technicals.INTERVALS)}")
+    sym = symbol.upper()
+    intraday = technicals.INTERVALS[interval][3]
+
+    def compute():
+        return technicals.build(sym, interval, technicals.fetch_bars(sym, interval))
+
+    try:
+        data, age = CACHE.get_or_fetch(f"company:technicals:{sym}:{interval}", 120 if intraday else 900, compute)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Technicals unavailable: {exc}") from exc
+    return envelope(
+        data,
+        age,
+        source="Yahoo Finance",
+        delayed_minutes=SETTINGS.quote_delay_minutes,
+        note="Intraday history is limited upstream: about 60 days of 5- and 15-minute bars.",
+    )
+
+
+@router.get("/{symbol}/shareholding")
+def get_shareholding(symbol: str):
+    """Shareholding pattern, promoter pledge, large-holder and insider activity."""
+    sym = symbol.upper()
+    try:
+        data, age = CACHE.get_or_fetch(f"company:shareholding:{sym}", 6 * 3600, lambda: shareholding.fetch(sym))
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Shareholding unavailable: {exc}") from exc
+    return envelope(
+        data,
+        age,
+        source="screener.in, NSE filings, Yahoo Finance",
+        delayed_minutes=0,
+        note="Holding patterns are filed quarterly, within 21 days of quarter end.",
+    )
+
+
+def _yahoo(key: str, ttl: int, fn, label: str):
+    try:
+        data, age = CACHE.get_or_fetch(key, ttl, fn)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"{label} unavailable: {exc}") from exc
+    return envelope(data, age, source="Yahoo Finance", delayed_minutes=0)
+
+
+@router.get("/{symbol}/statistics")
+def get_statistics(symbol: str):
+    """Profile, valuation measures, financial highlights, trading and dividend data."""
+    sym = symbol.upper()
+    return _yahoo(f"company:ystats:{sym}", 6 * 3600, lambda: yahoo_company.profile_stats(sym), "Statistics")
+
+
+@router.get("/{symbol}/statements")
+def get_statements(symbol: str):
+    sym = symbol.upper()
+    return _yahoo(f"company:ystmts:{sym}", 6 * 3600, lambda: yahoo_company.statements(sym), "Statements")
+
+
+@router.get("/{symbol}/analysts")
+def get_analysts(symbol: str):
+    sym = symbol.upper()
+    return _yahoo(f"company:yanalysts:{sym}", 3 * 3600, lambda: yahoo_company.analysts(sym), "Analyst data")
+
+
+@router.get("/{symbol}/history")
+def get_history(symbol: str, range: str = Query("1Y"), interval: str = Query("1d")):
+    rng = range.upper()
+    if rng not in yahoo_company.RANGES:
+        raise HTTPException(status_code=400, detail=f"range must be one of {list(yahoo_company.RANGES)}")
+    if interval not in ("1d", "1wk", "1mo"):
+        raise HTTPException(status_code=400, detail="interval must be 1d, 1wk or 1mo")
+    sym = symbol.upper()
+    return _yahoo(f"company:yhist:{sym}:{rng}:{interval}", 900, lambda: yahoo_company.history(sym, rng, interval), "History")
+
+
+@router.get("/{symbol}/compare")
+def get_compare(symbol: str, peers: str = Query(""), period: str = Query("1Y")):
+    per = period.upper()
+    if per not in yahoo_company.RANGES:
+        raise HTTPException(status_code=400, detail=f"period must be one of {list(yahoo_company.RANGES)}")
+    sym = symbol.upper()
+    plist = [p.strip().upper() for p in peers.split(",") if p.strip()][:6]
+    return _yahoo(f"company:ycmp:{sym}:{','.join(plist)}:{per}", 900, lambda: yahoo_company.compare(sym, plist, per), "Comparison")

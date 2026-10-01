@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { FlaskConical } from "lucide-react";
+import { Eyebrow } from "@/components/ui/eyebrow";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { Launcher } from "@/components/analyzer/launcher";
@@ -22,8 +24,8 @@ export default async function AnalyzerPage() {
 
       <main className="mx-auto max-w-[1600px] px-4 py-12 sm:px-6">
         <div className="max-w-3xl">
-          <p className="font-mono text-2xs uppercase tracking-[0.2em] text-accent">Event impact analyzer</p>
-          <h1 className="mt-3 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
+          <Eyebrow icon={FlaskConical}>Event impact analyzer</Eyebrow>
+          <h1 className="text-gradient mt-4 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
             What did the news do to the stock?
           </h1>
           <p className="mt-3 text-muted-foreground">
@@ -48,7 +50,7 @@ export default async function AnalyzerPage() {
           <h2 className="text-sm font-semibold tracking-tight">Your analyses</h2>
           <p className="mt-1 text-2xs text-muted-foreground">Runs started from this page, newest first.</p>
           <div className="mt-4">
-            <RunList runs={mine?.runs ?? []} empty="Nothing run yet. Your finished reports will appear here." />
+            <RunList deletable runs={mine?.runs ?? []} empty="Nothing run yet. Your finished reports will appear here." />
           </div>
         </section>
 

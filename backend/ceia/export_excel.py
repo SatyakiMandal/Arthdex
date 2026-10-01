@@ -44,6 +44,7 @@ from .valuation_model import (
     compute_wacc,
     is_financial_institution,
 )
+from .valuation_model import reported_cash as _rep_cash, reported_net_income as _rep_ni, reported_nopat as _rep_nopat
 from .volatility_models import compute_volatility_model_ensemble
 
 log = logging.getLogger(__name__)
@@ -173,14 +174,14 @@ def export_analysis_to_excel(
 
     bs = fin.get("balance_sheet") if isinstance(fin.get("balance_sheet"), dict) else {}
     debt_raw = bs.get("total_debt") if bs.get("total_debt") is not None else bs.get("borrowings")
-    debt = float(debt_raw) if debt_raw is not None else 100.0
+    debt = float(debt_raw) if debt_raw is not None else 0.0
 
     cash_raw = bs.get("cash_and_equivalents") if bs.get("cash_and_equivalents") is not None else bs.get("investments")
-    cash = float(cash_raw) if cash_raw is not None else 50.0
+    cash = _rep_cash(fin)
 
     op_inc = fin.get("operating_income")
     op_val = op_inc.get("latest") if isinstance(op_inc, dict) and op_inc.get("latest") is not None else None
-    nopat = float(op_val) if op_val is not None else (market_cap * 0.08)
+    nopat = _rep_nopat(fin)
 
     beta_raw = pm.get("beta")
     beta_val = float(beta_raw) if beta_raw is not None else 1.0
@@ -195,13 +196,13 @@ def export_analysis_to_excel(
     is_bank = is_financial_institution(fin, analysis.config.ticker)
     wacc_res = compute_wacc(market_cap=market_cap, total_debt=debt, beta=beta_val, risk_free_rate=rf_val)
 
-    eq_cap = float(bs.get("equity_capital") or 50.0)
-    reserves = float(bs.get("reserves") or 450.0)
-    book_equity = eq_cap + reserves if (eq_cap + reserves) > 0 else max(100.0, market_cap * 0.4)
+    eq_cap = float(bs.get("equity_capital") or 0.0)
+    reserves = float(bs.get("reserves") or 0.0)
+    book_equity = eq_cap + reserves if (eq_cap + reserves) > 0 else float(bs.get("total_equity") or 0.0)
 
     net_inc_dict = fin.get("net_profit") if isinstance(fin.get("net_profit"), dict) else {}
     net_inc_raw = getattr(net_inc_dict, "latest", None) if not isinstance(net_inc_dict, dict) else net_inc_dict.get("latest")
-    net_income = float(net_inc_raw) if net_inc_raw is not None else (market_cap * 0.06)
+    net_income = _rep_ni(fin)
 
     if is_bank:
         dcf_res = compute_residual_income_valuation(
@@ -517,40 +518,49 @@ def export_analysis_to_excel(
     usdinr_info = macro.get("usdinr") or {}
     repo_info = macro.get("repo_rate") or {}
 
-    crude_str = f"${crude_info.get('start_price', 60.75):,.2f} → ${crude_info.get('end_price', 89.03):,.2f}" if crude_info.get("start_price") else "N/A"
-    crude_chg = f"{crude_info.get('change', 0.0)*100:+.2f}% Window Move" if crude_info.get("change") is not None else "N/A"
+    def _n(v, fmt="{:.2f}", prefix="", suffix=""):
+        return f"{prefix}{fmt.format(v)}{suffix}" if isinstance(v, (int, float)) else "N/A"
 
-    usdinr_str = f"₹{usdinr_info.get('start_rate', 89.96):.2f} → ₹{usdinr_info.get('end_rate', 95.73):.2f}" if usdinr_info.get("start_rate") else "N/A"
-    usdinr_chg = f"{usdinr_info.get('change', 0.0)*100:+.2f}% {usdinr_info.get('direction', 'Depreciation')}" if usdinr_info.get("change") is not None else "N/A"
+    crude_str = (f"${crude_info['start_price']:,.2f} → ${crude_info['end_price']:,.2f}"
+                 if crude_info.get("start_price") is not None and crude_info.get("end_price") is not None else "N/A")
+    crude_chg = f"{crude_info['change']*100:+.2f}% Window Move" if crude_info.get("change") is not None else "N/A"
 
-    gsec_str = f"{gsec_info.get('value', 6.76):.2f}%" if gsec_info.get("value") is not None else "N/A"
-    gsec_asof = f"As of {gsec_info.get('as_of', 'August 2026')}"
+    usdinr_str = (f"₹{usdinr_info['start_rate']:.2f} → ₹{usdinr_info['end_rate']:.2f}"
+                  if usdinr_info.get("start_rate") is not None and usdinr_info.get("end_rate") is not None else "N/A")
+    usdinr_chg = (f"{usdinr_info['change']*100:+.2f}% {usdinr_info.get('direction', '')}".strip()
+                  if usdinr_info.get("change") is not None else "N/A")
 
-    sov_spread_str = f"+{sov_info.get('spread_bps', 202)} bps"
-    sov_spread_detail = f"India {sov_info.get('india_10y_pct', 6.76):.2f}% vs US {sov_info.get('us_10y_pct', 4.74):.2f}%"
+    gsec_str = _n(gsec_info.get("value"), suffix="%")
+    gsec_asof = f"As of {gsec_info['as_of']}" if gsec_info.get("as_of") else "N/A"
 
-    def_str = f"₹{deficit_info.get('lakh_crore', 15.69):.2f} Lakh Crore" if deficit_info.get("lakh_crore") is not None else "N/A"
-    def_detail = f"{deficit_info.get('pct_gdp', 4.4):.1f}% of GDP (FY {deficit_info.get('fiscal_year', '2026-27')})"
+    sov_spread_str = f"{sov_info['spread_bps']:+d} bps" if isinstance(sov_info.get("spread_bps"), (int, float)) else "N/A"
+    sov_spread_detail = (f"India {sov_info['india_10y_pct']:.2f}% vs US {sov_info['us_10y_pct']:.2f}%"
+                         if sov_info.get("india_10y_pct") is not None and sov_info.get("us_10y_pct") is not None else "N/A")
 
-    gdp_str = f"{gdp_info.get('value', 7.80):.2f}% YoY" if gdp_info.get("value") is not None else "N/A"
-    gdp_detail = f"{gdp_info.get('period', 'Q1 2026')} ({gdp_info.get('source', 'MOSPI')})"
+    def_str = _n(deficit_info.get("lakh_crore"), prefix="₹", suffix=" Lakh Crore")
+    def_detail = (f"{deficit_info['pct_gdp']:.1f}% of GDP (FY {deficit_info.get('fiscal_year', '')})"
+                  if deficit_info.get("pct_gdp") is not None else "N/A")
 
-    cpi_str = f"{cpi_info.get('value', 4.45):.2f}% YoY" if cpi_info.get("value") is not None else "N/A"
-    cpi_detail = f"{cpi_info.get('month', 'July 2026')} · {cpi_info.get('status', 'Inside RBI Target Band')}"
+    gdp_str = _n(gdp_info.get("value"), suffix="% YoY")
+    gdp_detail = f"{gdp_info.get('period', '')} ({gdp_info.get('source', '')})" if gdp_info.get("value") is not None else "N/A"
 
-    iip_str = f"{iip_info.get('value', 7.30):+.2f}% YoY" if iip_info.get("value") is not None else "N/A"
-    iip_detail = f"{iip_info.get('month', 'June 2026')} · {iip_info.get('sector', 'Mfg & Mining')}"
+    cpi_str = _n(cpi_info.get("value"), suffix="% YoY")
+    cpi_detail = f"{cpi_info.get('month', '')} · {cpi_info.get('status', '')}" if cpi_info.get("value") is not None else "N/A"
 
-    forex_str = f"${forex_info.get('value_usd_billion', 716.91):,.2f} Billion" if forex_info.get("value_usd_billion") is not None else "N/A"
-    forex_detail = f"~{forex_info.get('import_cover_months', 12.1):.1f} Months Import Cover ({forex_info.get('as_of', 'August 2026')})"
+    iip_str = _n(iip_info.get("value"), fmt="{:+.2f}", suffix="% YoY")
+    iip_detail = f"{iip_info.get('month', '')} · {iip_info.get('sector', '')}" if iip_info.get("value") is not None else "N/A"
 
-    mfg_pmi = pmi_info.get("manufacturing", 52.9)
-    srv_pmi = pmi_info.get("services", 54.5)
-    pmi_str = f"Mfg {mfg_pmi:.1f} / Srv {srv_pmi:.1f}"
-    pmi_detail = f"{pmi_info.get('regime', 'Expansionary (>50)')} · {pmi_info.get('as_of', 'August 2026')}"
+    forex_str = _n(forex_info.get("value_usd_billion"), fmt="{:,.2f}", prefix="$", suffix=" Billion")
+    forex_detail = (f"~{forex_info['import_cover_months']:.1f} Months Import Cover ({forex_info.get('as_of', '')})"
+                    if forex_info.get("import_cover_months") is not None else "N/A")
 
-    repo_str = f"{repo_info.get('current_rate_pct', 6.50):.2f}%"
-    repo_detail = f"SDF: {repo_info.get('sdf_rate_pct', 6.25):.2f}% · Stance: {repo_info.get('mpc_stance', 'Neutral')}"
+    mfg_pmi, srv_pmi = pmi_info.get("manufacturing"), pmi_info.get("services")
+    pmi_str = f"Mfg {_n(mfg_pmi, '{:.1f}')} / Srv {_n(srv_pmi, '{:.1f}')}" if (mfg_pmi is not None or srv_pmi is not None) else "N/A"
+    pmi_detail = f"{pmi_info.get('regime', '')} · {pmi_info.get('as_of', '')}" if pmi_info else "N/A"
+
+    repo_str = _n(repo_info.get("current_rate_pct"), suffix="%")
+    repo_detail = (f"SDF: {repo_info['sdf_rate_pct']:.2f}% · {repo_info.get('source', '')}"
+                   if repo_info.get("sdf_rate_pct") is not None else "N/A")
 
     macro_rows = [
         {"Category": "Growth & Output", "Indicator": "Real GDP Growth Rate (YoY %)", "Value": gdp_str, "Move": gdp_detail},
@@ -578,8 +588,8 @@ def export_analysis_to_excel(
     gov_risk = fin.get("governance_risk") or {}
 
     gov_rows = [
-        {"Diagnostic": "Governance Risk Index (GRI) Score", "Result": gov_risk.get("gri_score", 15)},
-        {"Diagnostic": "GRI Tier", "Result": gov_risk.get("gri_tier", "Low Risk")},
+        {"Diagnostic": "Governance Risk Index (GRI) Score", "Result": gov_risk.get("gri_score")},
+        {"Diagnostic": "GRI Tier", "Result": gov_risk.get("gri_tier")},
         {"Diagnostic": "Altman Z\"-Score (Emerging Markets)", "Result": altman.get("altman_z_score")},
         {"Diagnostic": "Altman Solvency Zone", "Result": altman.get("solvency_zone")},
         {"Diagnostic": "Beneish M-Score", "Result": beneish.get("beneish_m_score")},
@@ -900,7 +910,7 @@ def export_analysis_to_excel(
             start_d = getattr(analysis.config, "start", date(2026, 1, 1))
             end_d = getattr(analysis.config, "end", date(2026, 8, 23))
             ret_s = daily_df["return"].dropna() if ("return" in daily_df.columns and not daily_df.empty) else None
-            metals_res = compute_metals_summary(start_d, end_d, asset_returns=ret_s, provider=SkippedPriceProvider()).to_dict()
+            metals_res = compute_metals_summary(start_d, end_d, asset_returns=ret_s).to_dict()
         except Exception:
             metals_res = {}
 

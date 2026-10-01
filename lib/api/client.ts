@@ -56,7 +56,7 @@ export async function apiGet<T>(
 
   try {
     const response = await fetch(url, {
-      next: { revalidate },
+      next: { revalidate, tags: ["api"] },
       headers: { Accept: "application/json" },
     });
 
