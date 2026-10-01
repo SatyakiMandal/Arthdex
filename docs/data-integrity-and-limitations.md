@@ -24,15 +24,15 @@ Stale-on-failure caching means a figure can be older than its TTL when an upstre
 | Quotes, candles, indices, movers, news, filings, Bhavcopy, constituents, commodities | Live or delayed from public sources (Yahoo about 15 minutes; NSE about 1 minute) |
 | Quant, sensitivity, screens, technicals | Computed on real return series; components that fail return notes |
 | IPO listing performance | Reconstructed from real price history |
-| **Unlisted companies** | **Hand-maintained** in `data/unlisted.json`. The two shipped records (Pixel Vision Technologies, Droneacharya Aerial Innovations) are marked "Illustrative sample data, not from a live or licensed feed", so the UI shows warning banners |
+| **Unlisted companies** | Fetched by the backend from UnlistedZone (the same polite, robots-aware `ceia.fetcher` the analyzer uses). Prices are **indicative dealer levels**, not exchange prices; the source holds them flat between revisions. Directory cached 6 h, company pages 3 h |
 | **IPO grey-market premium** | Not available. Unofficial, unpublished by any exchange |
 | **IPO planning/DRHP stage** | Not available. Filed with SEBI, not exposed by a free API |
 | **Kyle's λ and VPIN** | Not estimated. They need tick-level order flow |
 | Alerts | Client-side only. Not saved, not monitored, nothing is delivered. The UI says so |
 | Analyzer | Real engine runs; output quality depends on news availability and the model assumptions listed per method |
 
-### Editing `data/unlisted.json`
-The file has a `_readme` and a `companies` map keyed by lower-case id. Each record needs the fields in `types/unlisted.ts` (`lastDealPrice`, `impliedValuationCr`, `impliedPe`, `impliedEvToEbitda`, `metrics`, `governanceFlags`, `milestones`, `listedPeerSymbols`) plus `source` and `lastUpdated`, both rendered in the UI. Optional `shareholding` holds cap-table data. A record whose `source` still matches `illustrative|sample` shows the warning banner; give it a real source to switch to a provenance line. Adding a record needs a rebuild for `generateStaticParams`, because ids are read at build time (a new id will render on demand in dev). Governance severity scoring: red-flag 6, watch 2, info 0.
+### Unlisted prices
+They come from UnlistedZone's indicative price chart, which holds the last value flat between team revisions (one test page: 1,669 daily points, 163 distinct values). The backend therefore returns only the real revisions and the UI draws a step line. The source is a dealer site, not an exchange: treat the level as indicative. A price of 0 on the source means "no price" and is shown as n/a.
 
 ## 3. Statistical limitations to keep in view
 

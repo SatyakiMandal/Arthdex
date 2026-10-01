@@ -46,6 +46,7 @@ export const REVALIDATE = {
   ipo: 1800,
   news: 300,
   universe: 86_400,
+  unlisted: 10_800,
 } as const;
 
 export async function apiGet<T>(

@@ -2,6 +2,8 @@ import "server-only";
 
 import { apiGet, apiGetOrNull, REVALIDATE, type ApiResult } from "./client";
 import type {
+  ApiUnlistedCompany,
+  ApiUnlistedDirectory,
   ApiBhavcopy,
   ApiCandleSeries,
   ApiShareholding,
@@ -90,6 +92,14 @@ export const searchCompanies = (query: string, limit = 12) =>
 
 export const getIpoPipeline = () =>
   apiGet<ApiIpoPipeline>("/api/v1/ipo?v=2", REVALIDATE.ipo);
+
+// -- unlisted ---------------------------------------------------------------
+
+export const getUnlistedDirectory = () =>
+  apiGet<ApiUnlistedDirectory>("/api/v1/unlisted", REVALIDATE.unlisted);
+
+export const getUnlistedCompany = (id: string) =>
+  apiGet<ApiUnlistedCompany>(`/api/v1/unlisted/${encodeURIComponent(id)}`, REVALIDATE.unlisted);
 
 // -- news -------------------------------------------------------------------
 

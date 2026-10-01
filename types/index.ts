@@ -3,6 +3,5 @@ export * from "./market";
 export * from "./ticker";
 export * from "./financials";
 export * from "./quant";
-export * from "./unlisted";
 export * from "./ipo";
 export * from "./macro";

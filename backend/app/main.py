@@ -8,12 +8,16 @@ route degrades to a clear error rather than inventing a value.
 
 from __future__ import annotations
 
+import threading
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from .cache import CACHE
 from .config import SETTINGS
-from .routers import analyzer, bhavcopy, company, health, ipo, market, news, quant, screener, search
+from .routers import analyzer, bhavcopy, company, health, ipo, market, news, quant, screener, search, unlisted
 from .services import analyzer as analyzer_service
+from .services import unlisted as unlisted_service
 
 app = FastAPI(
     title="Arthdex Data Service",
@@ -42,6 +46,7 @@ app.include_router(search.router)
 app.include_router(screener.router)
 app.include_router(analyzer.router)
 app.include_router(bhavcopy.router)
+app.include_router(unlisted.router)
 
 
 @app.on_event("startup")
@@ -49,6 +54,19 @@ def _analyzer_startup() -> None:
     analyzer_service.RUNS_DIR.mkdir(parents=True, exist_ok=True)
     analyzer_service.recover_interrupted()
     analyzer_service.seed_samples()
+
+
+@app.on_event("startup")
+def _unlisted_warmup() -> None:
+    # The directory is a dozen polite, rate-limited fetches (about half a minute cold),
+    # so build it in the background rather than on the first visitor's request.
+    def warm() -> None:
+        try:
+            CACHE.get_or_fetch("unlisted:directory", unlisted.DIRECTORY_TTL, unlisted_service.build_directory)
+        except Exception:
+            pass
+
+    threading.Thread(target=warm, name="unlisted-warmup", daemon=True).start()
 
 
 @app.get("/")

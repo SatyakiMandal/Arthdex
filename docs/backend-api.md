@@ -103,6 +103,12 @@ The factor and mover screens share one cached batch download per index (`screene
 ### Bhavcopy
 `GET /bhavcopy?on=YYYY-MM-DD`: omitted `on` means the latest available session. 404 if NSE has no file for the date. Cached 1 h per session. Returns `date`, `kpis`, `narrative`, `criteria`, `accumulation`, `volumeAnomalies`, `bandMoves{upper, lower}`, `insights`.
 
+### Unlisted
+| Route | Description |
+|---|---|
+| `GET /unlisted` | Every tracked unlisted company: id, name, sector, indicative price (cached 6 h, warmed at startup) |
+| `GET /unlisted/{id}` | Price, 6M move, ISIN/CIN, the source's ratios, revision series and revision table (cached 3 h) |
+
 ### Analyzer (not enveloped)
 | Route | Description |
 |---|---|

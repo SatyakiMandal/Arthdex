@@ -12,7 +12,7 @@ Next.js 15 App Router, React 19, TypeScript (strict), Tailwind 3.4. Path alias `
 | Cache-busting `?v=N` | Some fetchers append `v=1`/`v=2` (IPO, Bhavcopy, commodities, Yahoo sections). It forces Next's fetch cache to drop entries from an older payload shape. Bump it when a payload shape changes. |
 | Analyzer fetchers | `lib/api/analyzer.ts` uses `cache: "no-store"`. Runs are stateful and responses are not enveloped. |
 | Client components | Used only for interaction: header bar, search, charts, segmented controls, alert builders, technical workbench, MACD screener, analyzer launcher/run view/research panel. They call same-origin routes under `app/api/*`. |
-| Dynamic rendering | Company routes, news, market watch etc. render per request (live prices; about 2,600 companies cannot be prerendered). `/unlisted/[id]` is the only route with `generateStaticParams` (ids from `data/unlisted.json`). |
+| Dynamic rendering | Company routes, news, market watch etc. render per request (live prices; about 2,600 companies cannot be prerendered). |
 | Navigation state in the URL | Filters on market watch, IPO, news and Bhavcopy are plain `<a href>` links with query strings, so views are shareable and work without client JS. |
 
 ### Same-origin route handlers (`app/api/*`)
@@ -84,7 +84,7 @@ Query: `kind` (`filing`, `press`), `symbol`. Counts of filings and press items, 
 - **Alerts live in component state only.** Nothing is stored, monitored or delivered, and the page says so. The same applies to the company-page alert drawer (`CustomAlertEngine`).
 
 ### `/unlisted` and `/unlisted/[id]`
-Source: `data/unlisted.json` via `lib/illustrative/unlisted.ts`. Index cards show last deal price, implied P/E, revenue CAGR and order book plus a governance verdict. Profile page: header, `ScaleMetrics`, `PeerComparison` (P/E or EV/EBITDA against live listed peers; a peer without live data is dropped, not back-filled), `GovernanceTracker`, `MilestoneTimeline`, `ShareholderAnalysis` (shows "No data entered" until the record has a `shareholding` block). A record whose `source` contains "illustrative" or "sample" gets a warning banner; otherwise a provenance line with source and `lastUpdated`. Governance verdict is non-linear: red-flag 6, watch 2, info 0; score ≥ 6 is Red Flag, ≥ 2 Watchlist, else Clean. See [data-integrity-and-limitations.md](data-integrity-and-limitations.md) for how to edit the file.
+Source: `GET /api/v1/unlisted` and `/api/v1/unlisted/{id}` (UnlistedZone indicative prices, fetched by the backend). The index is a searchable, sector-filterable, sortable grid of about 270 companies. The profile page shows the indicative price and its 6-month move, a step-line price history (the source holds its price flat between revisions, so only real revisions are drawn), the source's own ratios (P/B, book value, face value, lot size, 52-week range, P/E where it exists), the revision table, and a warning that the figure is an indicative dealer level, not an exchange price. Governance flags, shareholding, order books and milestones are not offered, since the source carries none.
 
 ### `/analyzer` and `/analyzer/[id]`
 See [event-impact-analyzer.md](event-impact-analyzer.md). Both are `force-dynamic`.

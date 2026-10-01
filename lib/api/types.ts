@@ -632,3 +632,49 @@ export interface ApiYCompare {
   dates: string[];
   series: { key: string; label: string; values: N[]; returnPct: number }[];
 }
+
+// -- unlisted ---------------------------------------------------------------
+
+export interface ApiUnlistedListing {
+  id: string;
+  name: string;
+  sector: string | null;
+  /** Indicative price in rupees; null where the source shows none. */
+  price: number | null;
+}
+
+export interface ApiUnlistedDirectory {
+  companies: ApiUnlistedListing[];
+  sectors: string[];
+  total: number;
+}
+
+export interface ApiUnlistedRevision {
+  date: string;
+  price: number;
+  /** Move from the previous revision; null for the first. */
+  changePct: number | null;
+}
+
+export interface ApiUnlistedCompany {
+  id: string;
+  name: string;
+  sector: string | null;
+  isin: string | null;
+  cin: string | null;
+  summary: string | null;
+  price: number | null;
+  asOf: string | null;
+  change: { pct: number | null; window: string | null };
+  /** The source's own ratios, verbatim (P/E may be "N/A"). */
+  facts: Record<string, string>;
+  /** One point per real revision, oldest first, plus the latest day. */
+  series: { date: string; price: number }[];
+  /** Real revisions only, newest first. */
+  revisions: ApiUnlistedRevision[];
+  sinceFirstPct: number | null;
+  firstDate: string | null;
+  /** Daily points the source shows, most of which just repeat the last revision. */
+  dailyPoints: number;
+  url: string;
+}

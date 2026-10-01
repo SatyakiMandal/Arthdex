@@ -44,7 +44,7 @@ Use `GET /api/v1/cache` to see keys and ages when diagnosing staleness.
 | `backend/analyzer_samples/` | 19 bundled sample reports plus `index.json` (about 17 MB) | tracked |
 | `backend/cache/` | `http/` JSON responses (tradingeconomics, screener.in, govtbudget), `prices_day/*.pkl`, `provenance.jsonl` (about 4 MB) | ignored (`/cache/` in `backend/.gitignore`). They look like by-products of engine code run with `backend/` as the working directory (for example the price preflight) |
 
-Back up `analyzer_data/runs` if finished reports matter; it is the only durable state in the system apart from `data/unlisted.json`.
+Back up `analyzer_data/runs` if finished reports matter; it is the only durable state in the system.
 
 ## 5. Deployment guidance
 

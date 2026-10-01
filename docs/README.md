@@ -29,7 +29,7 @@ Arthdex is a quantitative market-intelligence website for Indian equities. It co
 | News | `/news` | NSE corporate filings and financial-press RSS in one flagged feed |
 | Alerts | `/alerts` | Threshold builder (client-side only) plus a filtered feed of results-type filings |
 | Company | `/company/[symbol]/…` | Ten tabs per listed company: overview, statistics, analysts, statements, history, shareholders, technicals, research dossier, quant engine, macro and news |
-| Unlisted | `/unlisted`, `/unlisted/[id]` | Hand-maintained private-company profiles compared against live listed peers |
+| Unlisted | `/unlisted`, `/unlisted/[id]` | Indicative prices, revision history and key ratios for ~270 unlisted companies (UnlistedZone, via the backend) |
 | Analyzer | `/analyzer`, `/analyzer/[id]` | Runs a news-driven event study and a full multi-model dossier for a listed or unlisted company |
 
 ## Architecture
@@ -92,8 +92,6 @@ components/
   analyzer/             launcher, run-list, run-view, run-progress, summary-view, dossier/* (12 tabs)
   ui/                   data-card, data-provenance, desk-analysis, segmented-control, swap-panel, cell-bar, gauge, tip, skeleton, …
 lib/api/                client.ts (envelope-aware fetch), endpoints.ts, analyzer.ts, types.ts
-lib/illustrative/       Loader and governance scoring for data/unlisted.json
-data/unlisted.json      Hand-maintained unlisted-company records
 types/                  Shared TypeScript contracts (analyzer.ts, unlisted.ts, …)
 backend/
   app/                  FastAPI service: main.py, config.py, cache.py, schemas.py, routers/, providers/, services/
