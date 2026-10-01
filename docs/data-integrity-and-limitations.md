@@ -28,7 +28,10 @@ Stale-on-failure caching means a figure can be older than its TTL when an upstre
 | **IPO grey-market premium** | Not available. Unofficial, unpublished by any exchange |
 | **IPO planning/DRHP stage** | Not available. Filed with SEBI, not exposed by a free API |
 | **Kyle's λ and VPIN** | Not estimated. They need tick-level order flow |
-| Alerts | Client-side only. Not saved, not monitored, nothing is delivered. The UI says so |
+| Alerts and watchlist | Saved in the browser's localStorage and evaluated in the browser every minute while an Arthdex tab is open (prices about 15 minutes delayed; unlisted prices change only when the dealer revises). Nothing is sent when no tab is open, and there is no email or phone push. The older "Threshold Alerts" card on `/alerts` is still component state only |
+| Deals, calendar | NSE public JSON, latest session and next 30 days. Insider-trading (PIT) disclosures are not offered: the endpoint returned no rows for any range tried |
+| Movers explained | A name-and-time match between a mover and its own recent filings or press headlines. A candidate explanation, not a cause |
+| Unlisted valuation and call | Built from the source's own ratios, NSE index multiples and a 25% illiquidity discount (an assumption). See [event-impact-analyzer.md](event-impact-analyzer.md#research-layer-ceiaunlisted_researchpy). Sector-to-index mapping is by label and approximate |
 | Analyzer | Real engine runs; output quality depends on news availability and the model assumptions listed per method |
 
 ### Unlisted prices

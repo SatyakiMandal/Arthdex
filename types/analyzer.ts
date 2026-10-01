@@ -341,6 +341,30 @@ export interface UnlistedSummary {
   }[];
   moveCount: number;
   news: { items: number | null; perSource: Record<string, number> };
+  /** The investment call, in the same shape as a listed run. Null on runs made before the research layer. */
+  verdict: ListedSummary["verdict"];
+  research: UnlistedResearch | null;
+  /** Why there is no research block, when the layer ran but could not produce one. */
+  researchNote?: string | null;
+  macro: Blk | null;
+}
+
+/** Valuation, risk, trend and execution detail for an unlisted run (see backend ceia/unlisted_research.py). */
+export interface UnlistedResearch {
+  sector: string | null;
+  sector_index: { key: string; yahoo: string; nse_id: string; name: string } | null;
+  facts: Record<string, number | null>;
+  price_profile: Blk;
+  risk: Blk;
+  market_model: Blk;
+  technical: Blk | null;
+  forecast: Blk | null;
+  valuation: Blk | null;
+  news_signal: Blk;
+  data_quality: { daily_points: number; revisions: number; months: number | null; weeks: number | null; thin: boolean; notes: string[] };
+  sizing: ListedSummary["detail"]["sizing"];
+  holding: ListedSummary["detail"]["holding"];
+  pillar_rationales: (string | null)[];
 }
 
 export type AnalyzerSummary = ListedSummary | UnlistedSummary;

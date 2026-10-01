@@ -2,6 +2,11 @@ import "server-only";
 
 import { apiGet, apiGetOrNull, REVALIDATE, type ApiResult } from "./client";
 import type {
+  ApiCalendar,
+  ApiDeals,
+  ApiMoverExplained,
+  ApiPreIpo,
+  ApiStatus,
   ApiUnlistedCompany,
   ApiUnlistedDirectory,
   ApiBhavcopy,
@@ -100,6 +105,20 @@ export const getUnlistedDirectory = () =>
 
 export const getUnlistedCompany = (id: string) =>
   apiGet<ApiUnlistedCompany>(`/api/v1/unlisted/${encodeURIComponent(id)}`, REVALIDATE.unlisted);
+
+// -- research desk ----------------------------------------------------------
+
+export const getDeals = () => apiGet<ApiDeals>("/api/v1/deals", 300);
+
+export const getCalendar = () => apiGet<ApiCalendar>("/api/v1/calendar", 900);
+
+export const getMoversExplained = (direction: "gainers" | "losers", limit = 8) =>
+  apiGet<ApiMoverExplained[]>(`/api/v1/market/movers-explained?direction=${direction}&limit=${limit}`, REVALIDATE.movers);
+
+export const getStatus = () => apiGet<ApiStatus>("/api/v1/status", 10);
+
+export const getPreIpo = (symbol: string) =>
+  apiGetOrNull<ApiPreIpo>(`/api/v1/company/${encodeURIComponent(symbol)}/pre-ipo`, REVALIDATE.unlisted);
 
 // -- news -------------------------------------------------------------------
 

@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowUpRight } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Rocket, TrendingUp } from "lucide-react";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { DataUnavailable, FreshnessBadge, SourceLine } from "@/components/ui/data-provenance";
+import { WatchButton } from "@/components/watchlist/watch-button";
 import { PriceHistoryChart } from "@/components/unlisted/price-history-chart";
 import { getUnlistedCompany } from "@/lib/api/endpoints";
 import { cn, formatINR, formatPct } from "@/lib/utils";
@@ -35,7 +36,7 @@ export default async function UnlistedCompanyPage({ params }: PageProps) {
     <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      <main className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6">
+      <main id="main" className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6">
         <Link
           href="/unlisted"
           className="group inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-accent"
@@ -84,7 +85,8 @@ function Profile({
           </p>
         </div>
 
-        <div className="text-right">
+        <div className="flex flex-col items-end">
+          <WatchButton kind="unlisted" id={c.id} name={c.name} className="mb-3" />
           <div className="font-mono text-4xl font-semibold tabular-nums">{c.price == null ? "n/a" : money(c.price)}</div>
           <div className="mt-1 flex items-center justify-end gap-2">
             {c.change.pct != null ? (
@@ -100,7 +102,9 @@ function Profile({
         </div>
       </header>
 
-      <div className="mt-8 grid items-start gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+      <Lifecycle l={c.lifecycle} />
+
+      <div className="mt-6 grid items-start gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <div className="space-y-5">
           <PriceHistoryChart series={c.series} />
 
@@ -188,5 +192,57 @@ function Profile({
         </div>
       </div>
     </>
+  );
+}
+
+type LifecycleData = Extract<Awaited<ReturnType<typeof getUnlistedCompany>>, { ok: true }>["data"]["lifecycle"];
+
+/** Where the company sits on the path from private to listed, when NSE data shows it has moved. */
+function Lifecycle({ l }: { l: LifecycleData }) {
+  if (!l.listedSymbol && !l.ipo) return null;
+  const ipo = l.ipo;
+  return (
+    <div className="mt-6 space-y-3">
+      {l.listedSymbol ? (
+        <Link
+          href={`/company/${l.listedSymbol}`}
+          className="group flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-up/40 bg-up/[0.07] px-4 py-3 transition-colors hover:border-up/70"
+        >
+          <span className="flex items-center gap-3">
+            <TrendingUp className="h-5 w-5 text-up" />
+            <span>
+              <span className="block text-sm font-semibold">Now listed on NSE as {l.listedSymbol}</span>
+              <span className="block text-2xs text-muted-foreground">
+                The price below is its indicative pre-listing level. Open the live company page for the exchange price.
+              </span>
+            </span>
+          </span>
+          <ArrowUpRight className="h-4 w-4 text-up transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+        </Link>
+      ) : null}
+      {ipo ? (
+        <Link
+          href="/ipo"
+          className="group flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-accent/40 bg-accent/[0.07] px-4 py-3 transition-colors hover:border-accent/70"
+        >
+          <span className="flex items-center gap-3">
+            <Rocket className="h-5 w-5 text-accent" />
+            <span>
+              <span className="block text-sm font-semibold capitalize">
+                IPO {ipo.status ?? "in the pipeline"}
+                {ipo.segment ? ` (${ipo.segment})` : ""}
+              </span>
+              <span className="block text-2xs text-muted-foreground">
+                {ipo.priceBandLow != null && ipo.priceBandHigh != null ? `Price band ₹${ipo.priceBandLow} to ₹${ipo.priceBandHigh}. ` : ""}
+                {ipo.issueStartDate ? `Issue opens ${ipo.issueStartDate}` : ""}
+                {ipo.issueEndDate ? `, closes ${ipo.issueEndDate}` : ""}
+                {ipo.listingDate ? `. Listing ${ipo.listingDate}` : ""}
+              </span>
+            </span>
+          </span>
+          <ArrowUpRight className="h-4 w-4 text-accent transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+        </Link>
+      ) : null}
+    </div>
   );
 }

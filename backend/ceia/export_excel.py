@@ -1368,6 +1368,52 @@ def export_unlisted_excel(analysis: Any, path: Path | str | None = None) -> Path
         "Sector Peers": peers_df,
     }
 
+    # Valuation, risk and the investment call, when the research layer produced them
+    research = getattr(analysis, "research", None) or {}
+    verdict = getattr(analysis, "investment_verdict", None) or {}
+    if verdict.get("actionable_call"):
+        rows = [
+            {"Item": "Call", "Value": verdict["actionable_call"]},
+            {"Item": "Conviction (0 to 100)", "Value": verdict["conviction_score"]},
+            {"Item": "Quote (INR)", "Value": verdict["current_price"]},
+            {"Item": "Entry zone (INR)", "Value": f"{verdict['entry_zone_low']} to {verdict['entry_zone_high']}"},
+            {"Item": "Target 1 (INR)", "Value": f"{verdict['target_1_price']} ({verdict['target_1_upside_pct']:+.1f}%)"},
+            {"Item": "Target 2 (INR)", "Value": f"{verdict['target_2_price']} ({verdict['target_2_upside_pct']:+.1f}%)"},
+            {"Item": "Stop (INR)", "Value": f"{verdict['stop_loss_price']} (-{verdict['stop_loss_downside_pct']:.1f}%)"},
+            {"Item": "Risk / reward", "Value": verdict["risk_reward_ratio"]},
+        ]
+        for p in verdict.get("pillars", []):
+            rows.append({"Item": f"Pillar: {p['pillar_name']} ({p['weight_pct']:.0f}%)", "Value": f"{p['stance']} | {p['metric_highlight']}"})
+        for t in verdict.get("sizing_tiers", []):
+            rows.append({"Item": f"Sizing: {t['portfolio_name']}", "Value": f"{t['allocation_pct']:.1f}% = {t['prescribed_shares']:,} shares, risk at stop {t['risk_at_stop_loss_inr']:,.0f} INR"})
+        sheets["Investment Call"] = pd.DataFrame(rows)
+    val = research.get("valuation") or {}
+    if val.get("available"):
+        sheets["Valuation Models"] = pd.DataFrame(
+            [
+                {"Model": m["name"], "Fair value (INR)": m["fair_value"], "Upside %": m["upside_pct"], "Weight": m.get("weight_used"), "Basis": m["basis"]}
+                for m in val["models"]
+            ]
+            + [{"Model": "Blended fair value", "Fair value (INR)": val["blended_fair_value"], "Upside %": val["upside_pct"], "Weight": 1.0, "Basis": val["valuation_tier"]}]
+        )
+        sens = val["sensitivity"]
+        sheets["Valuation Sensitivity"] = pd.DataFrame(sens["rows"])
+    risk = research.get("risk") or {}
+    if risk:
+        flat = []
+        for k, v in risk.items():
+            if isinstance(v, dict):
+                flat.extend({"Metric": f"{k}.{kk}", "Value": vv} for kk, vv in v.items() if not isinstance(vv, (dict, list)))
+            elif not isinstance(v, list):
+                flat.append({"Metric": k, "Value": v})
+        sheets["Risk And Liquidity"] = pd.DataFrame(flat)
+    tech = research.get("technical") or {}
+    if tech.get("indicators_table"):
+        sheets["Weekly Technicals"] = pd.DataFrame(tech["indicators_table"])
+    fc = research.get("forecast") or {}
+    if fc.get("horizons"):
+        sheets["Outcome Ranges"] = pd.DataFrame(fc["horizons"])
+
     _write_fallback_openxml_zip(sheets, out_path)
     log.info("Exported unlisted Excel workbook to %s", out_path)
     return out_path

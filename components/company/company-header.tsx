@@ -1,5 +1,6 @@
 import type { ResponseMeta } from "@/lib/api/client";
 import type { ApiProfile, ApiQuote, ApiValuation } from "@/lib/api/types";
+import { WatchButton } from "@/components/watchlist/watch-button";
 import { DataUnavailable, FreshnessBadge } from "@/components/ui/data-provenance";
 import { cn, deltaColor, formatDelta, formatINR, formatPct } from "@/lib/utils";
 
@@ -74,7 +75,8 @@ export function CompanyHeader({
             ) : null}
           </div>
 
-          <div className="text-right">
+          <div className="flex flex-col items-end">
+            <WatchButton kind="listed" id={quote.symbol} name={profile?.name ?? quote.symbol} className="mb-3" />
             <div className="font-mono text-3xl font-semibold tabular-nums">
               ₹{formatINR(quote.cmp)}
             </div>

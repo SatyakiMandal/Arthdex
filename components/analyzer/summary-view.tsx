@@ -1,5 +1,6 @@
 import { BarChart3, LineChart, Newspaper } from "lucide-react";
 import { DataCard } from "@/components/ui/data-card";
+import { UnlistedDossier } from "@/components/analyzer/unlisted-dossier";
 import { ListedDossier } from "@/components/analyzer/dossier";
 import { Stat, StatGrid, inr, pct } from "@/components/analyzer/dossier/shared";
 import { cn, deltaColor } from "@/lib/utils";
@@ -19,9 +20,14 @@ export function ListedSummaryView({ s }: { s: ListedSummary }) {
 }
 
 export function UnlistedSummaryView({ s }: { s: UnlistedSummary }) {
+  // Runs made after the research layer was added carry valuation, risk and the call
+  if (s.research) return <UnlistedDossier s={s} />;
   const p = s.price;
   return (
     <div className="space-y-4">
+      <p className="rounded-xl border border-flat/40 bg-flat/[0.07] px-4 py-2.5 text-2xs text-flat">
+        {s.researchNote ?? "This analysis was run before valuation, risk and the investment call were added for unlisted companies. Press Re-run above for the full dossier."}
+      </p>
       <DataCard
         title="Dealer-price trajectory"
         subtitle={p.firstDate && p.lastDate ? `${p.firstDate} → ${p.lastDate} · ${p.observations} quotes` : undefined}

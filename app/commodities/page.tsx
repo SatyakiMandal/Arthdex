@@ -109,7 +109,7 @@ export default async function CommoditiesPage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <main className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6">
+      <main id="main" className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6">
         <Eyebrow icon={Coins}>Commodities</Eyebrow>
         <h1 className="text-gradient mt-4 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">Metals, energy &amp; agriculture</h1>
         <p className="mt-3 max-w-2xl text-muted-foreground">

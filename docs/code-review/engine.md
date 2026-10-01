@@ -95,10 +95,21 @@ The website starts the engine through `python -m ceia.analyze` and `python -m ce
 | `backend/ceia/synthetic_control.py` | 201 | P | Dead | No importer found (SDID is separate) (F-32); ruff B023 is a false positive (closure used within the iteration). |
 | `backend/ceia/technical_analysis.py` | 534 | T | OK | Not read line by line. ruff and the dependency graph show nothing beyond the engine-level findings. |
 | `backend/ceia/ticker_lookup.py` | 121 | T | OK | Not read line by line. ruff and the dependency graph show nothing beyond the engine-level findings. |
-| `backend/ceia/unlisted.py` | 522 | P | Watch | Dealer-price timeline without significance claims (appropriate). Source decision left unchanged per owner. |
+| `backend/ceia/unlisted.py` | 560 | R | Watch | Dealer-price timeline without significance claims (appropriate). Now also reads the page's sector and ratios, accepts `--context`, and calls the research layer; a research failure is recorded rather than swallowed silently (F-46). Source decision left unchanged per owner. |
 | `backend/ceia/unlisted_narrative.py` | 119 | T | OK | Not read line by line. ruff and the dependency graph show nothing beyond the engine-level findings. |
 | `backend/ceia/valuation_model.py` | 1654 | T | OK | Not read line by line. ruff and the dependency graph show nothing beyond the engine-level findings. |
 | `backend/ceia/var.py` | 530 | T | OK | Not read line by line. ruff and the dependency graph show nothing beyond the engine-level findings. |
 | `backend/ceia/volatility_models.py` | 645 | T | OK | Not read line by line. ruff and the dependency graph show nothing beyond the engine-level findings. |
 | `backend/ceia/wayback.py` | 264 | T | OK | Not read line by line. ruff and the dependency graph show nothing beyond the engine-level findings. |
 | `backend/ceia/xai.py` | 147 | T | OK | Not read line by line. ruff and the dependency graph show nothing beyond the engine-level findings. |
+
+## Addendum: unlisted research layer (2026-10-02)
+
+Two new modules were read in full. Findings are in [addendum-2026-10-02.md](addendum-2026-10-02.md).
+
+| File | Lines | Cov. | Verdict | Notes and findings |
+|---|---:|:---:|:---:|---|
+| `backend/ceia/unlisted_research.py` | 970 | R | Watch | Valuation (relative P/B and P/E against NSE index multiples, justified P/B, a 12-month median anchor, a 25% illiquidity discount, a sensitivity grid), monthly risk and VaR, weekly technicals, a block-bootstrap outcome range, and a five-pillar investment call with a valuation guard and a lower confidence ceiling. Honest about what daily statistics cannot be built on a dealer price. Benchmarks are index averages chosen by sector label (F-40) and the call can look more precise than a short record deserves (F-48). Covered by 16 unit tests. |
+| `backend/ceia/unlisted_report_sections.py` | 270 | R | OK | HTML for the new report sections; escapes every string. |
+| `backend/ceia/report.py` (unlisted template) | n/a | P | OK | Adds the call, valuation, profile, trend, risk, market-model and outlook sections. A first edit hit the listed template by mistake and was reverted before any listed report was built. |
+| `backend/ceia/export_excel.py` (unlisted export) | n/a | P | OK | Adds sheets for the call, valuation, sensitivity, risk, weekly technicals and outcome ranges. |

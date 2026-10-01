@@ -41,4 +41,4 @@ def get_company(slug: str):
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=503, detail=f"Unlisted company unavailable: {exc}") from exc
-    return envelope(data, age, source=SOURCE, note=NOTE)
+    return envelope({**data, "lifecycle": unlisted_service.lifecycle_for(data["name"], data.get("isin"))}, age, source=SOURCE, note=NOTE)

@@ -5,7 +5,13 @@ import { cn, deltaColor, formatINR } from "@/lib/utils";
 import type { ListedSummary } from "@/types/analyzer";
 import { Bullets, Empty, Pill, Stat, Table, Td, dash, inr, num, pct, stanceTone } from "./shared";
 
-export function CallTab({ s }: { s: ListedSummary }) {
+/** What the call tab reads, so listed and unlisted runs can share it. */
+export interface CallTabData {
+  verdict: ListedSummary["verdict"];
+  detail: Pick<ListedSummary["detail"], "sizing" | "holding" | "pillar_rationales">;
+}
+
+export function CallTab({ s }: { s: CallTabData }) {
   const v = s.verdict;
   const { sizing, holding, pillar_rationales } = s.detail;
 

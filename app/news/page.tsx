@@ -39,7 +39,7 @@ export default async function NewsPage({ searchParams }: PageProps) {
     <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      <main className="mx-auto max-w-[1100px] px-4 py-10 sm:px-6">
+      <main id="main" className="mx-auto max-w-[1100px] px-4 py-10 sm:px-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="max-w-2xl">
             <Eyebrow icon={Newspaper}>News</Eyebrow>

@@ -55,13 +55,18 @@ F-01 (prescriptive calls and sizing) is the most significant non-code risk. F-39
 
 **P1, integrity**
 - F-02 and F-03 (stop inventing inputs; generate text from values), F-12/F-13 (raise, log, null), F-19/F-20/F-21 (method honesty).
+- F-40 (real peer sets for the unlisted valuation) and F-48 (stop showing paisa-level targets on a short record).
 
 **P2, scale and cost**
-- F-14, F-15, F-16, F-18, F-23, F-28.
+- F-14, F-15, F-16, F-18, F-23, F-28, and from the second pass F-41 (rate limits on the fan-out endpoints), F-42 (warm filings in the background), F-47.
 
 **P3, hygiene**
-- F-27, F-29, F-30-F-38 and the dead-code list in F-32.
+- F-27, F-29, F-30-F-38 and the dead-code list in F-32; from the second pass F-43 to F-46 and F-49.
 
 ## Counts
 
-Findings: **6 High, 23 Medium, 8 Low, 2 Info** (39 total). By category: Correctness 12, Integrity 7, Reliability 6, Performance 5, Maintainability 3, Compliance 2, Security 2, Testing 1, Accessibility 1.
+Findings: **6 High, 27 Medium, 14 Low, 2 Info** (49 total, including the second pass). By category: Correctness 14, Integrity 9, Reliability 8, Performance 6, Maintainability 4, Compliance 2, Security 3, Testing 2, Accessibility 1.
+
+## Second pass: tool results (2026-10-02)
+
+`tsc` and `next lint` clean; `ruff` (E, F) reports six items, all in files that predate the pass; `python -m unittest` runs 16 passing tests (new). Details and the defects fixed during the pass are in [addendum-2026-10-02.md](addendum-2026-10-02.md). The testing plan above still applies: the 16 tests cover only the unlisted research layer.

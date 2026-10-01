@@ -21,17 +21,22 @@ Arthdex is a quantitative market-intelligence website for Indian equities. It co
 
 | Area | Route | Summary |
 |---|---|---|
-| Landing | `/` | Live index strip, one-year Nifty 50 chart, methodology, top movers, overnight global cues, latest filings |
-| Market watch | `/market-watch` | NSE gainers/losers by universe, daily/weekly/monthly windows, price bands, index table, factor screens |
+| Landing | `/` | Animated hero with live index tiles and an interactive one-year Nifty 50 chart (1M/3M/6M/1Y, hover readout), methodology, top movers, overnight global cues, latest filings |
+| Market watch | `/market-watch` | NSE gainers/losers by universe, daily/weekly/monthly windows, price bands, "Why they moved" (each mover with its own recent filings and press), index table, factor screens |
 | Commodities | `/commodities` | 19 futures across metals, energy and agriculture, with Nifty Metal/Energy indices and a rule-based read |
 | Technical screener | `/screener` | MACD crossover scan across Nifty 50/100/200 on 5-minute to daily bars |
 | Bhavcopy | `/bhavcopy` | One session's breadth, delivery, volume anomalies and circuit closes from NSE's file |
 | IPO | `/ipo` | Ongoing, upcoming, closed and listed issues with reconstructed listing performance |
 | News | `/news` | NSE corporate filings and financial-press RSS in one flagged feed |
-| Alerts | `/alerts` | Threshold builder (client-side only) plus a filtered feed of results-type filings |
+| Watchlist | `/watchlist` | Listed and unlisted companies in one saved list with live prices and CSV export (saved in the browser) |
+| Alerts | `/alerts` | Price and day-change alerts on listed or unlisted names, checked every minute while a tab is open, plus a filtered feed of results-type filings |
+| Deals | `/deals` | Today's bulk, block and short-selling disclosures, filterable, with CSV export |
+| Calendar | `/calendar` | Next 30 days of board meetings and results dates, dividends, splits, bonuses and rights |
+| Briefing | `/briefing` | One-page morning briefing (indices, global cues, movers with explanations, deals, results, IPOs, filings), copy as text or print |
+| Methodology / Status | `/methodology`, `/status` | Plain-language sources and models; live freshness of each data feed |
 | Company | `/company/[symbol]/…` | Ten tabs per listed company: overview, statistics, analysts, statements, history, shareholders, technicals, research dossier, quant engine, macro and news |
-| Unlisted | `/unlisted`, `/unlisted/[id]` | Indicative prices, revision history and key ratios for ~270 unlisted companies (UnlistedZone, via the backend) |
-| Analyzer | `/analyzer`, `/analyzer/[id]` | Runs a news-driven event study and a full multi-model dossier for a listed or unlisted company |
+| Unlisted | `/unlisted`, `/unlisted/[id]` | Indicative prices, revision history and key ratios for ~270 unlisted companies (UnlistedZone, via the backend); a profile shows when the company has since listed or has an IPO open |
+| Analyzer | `/analyzer`, `/analyzer/[id]`, `/analyzer/compare` | Runs a news-driven event study and a full multi-model dossier for a listed company, or a valuation, risk, trend and investment-call dossier for an unlisted one; copy link, PDF, re-run and side-by-side compare |
 
 ## Architecture
 
@@ -88,7 +93,9 @@ app/                    Next.js routes (see frontend.md)
   analyzer/, ipo/, news/, alerts/, bhavcopy/, commodities/, market-watch/, screener/, unlisted/
 components/
   layout/               site-header (server), header-bar (client), market-ticker, footer, refresh-control
-  landing/              hero, methodology, index-chart, motion helpers (bento-grid is present but unused)
+  landing/              hero, methodology, interactive index-chart, motion helpers (bento-grid.tsx is present but unused)
+  watchlist/ alerts/    watch button, watchlist table, alert runner and builder
+  unlisted/             directory grid and price-history chart; analyzer/unlisted-dossier.tsx is the unlisted run dossier
   company/  quant/  macro/  market/  technicals/  shareholding/  yahoo/  unlisted/  alerts/
   analyzer/             launcher, run-list, run-view, run-progress, summary-view, dossier/* (12 tabs)
   ui/                   data-card, data-provenance, desk-analysis, segmented-control, swap-panel, cell-bar, gauge, tip, skeleton, …

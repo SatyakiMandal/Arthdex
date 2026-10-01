@@ -79,6 +79,23 @@ Header (company, ticker, window, status pill) and, once complete, links to the f
 
 `ceia.unlisted` is deliberately **not** an event study. UnlistedZone's displayed prices are periodically revised indicative levels (the engine's analysis of one company found 71 distinct values across 1,321 daily points), so there is no valid daily baseline for z-scores, market-model beta, CAR or permutation p-values. The module builds a timeline of dealer-price moves and attributes headline coverage to them, using the same "coincided with, never caused" language. Its summary has price statistics, the largest moves, per-source news counts and the same download set.
 
+### Research layer (`ceia/unlisted_research.py`)
+
+The timeline alone left the unlisted report thin next to the listed one, so a research layer now adds valuation, risk, trend, outlook and an investment call, all at the frequency the data really moves (monthly returns, weekly bars, the revision record), never daily:
+
+| Block | Method | Left out when |
+|---|---|---|
+| Price profile | Returns over 1/3/6/12 months, CAGR, 52-week position, max drawdown, revision count, median gap, average revision size | fewer than 30 daily points |
+| Valuation | Relative P/B and P/E against the NSE sector index (broad Nifty 500 when no sector index maps), justified P/B from ROE (P/B ÷ P/E) against a CAPM cost of equity, and a 12-month median anchor. Every relative model is cut by an illiquidity discount (25% base). Blended by weight into a fair value, with a sensitivity grid (discount × benchmark multiple) | the page prints no book value, P/B or P/E, or no benchmark was available |
+| Trend | RSI, MACD, 10/26/52-week averages, 4/13-week momentum and Bollinger %B on weekly bars, composite score and rating | fewer than 14 weekly bars |
+| Risk | Monthly volatility, skew, kurtosis, 1-month VaR (historical, parametric, Cornish-Fisher, expected shortfall), volatility regime, share of days the price is unchanged, lot size and minimum ticket, debt to equity | fewer than 6 monthly returns (historical VaR needs 12, 99% needs 24) |
+| Market sensitivity | Beta, R², t-stat on monthly returns against Nifty 50 and the sector index | fewer than 6 overlapping months |
+| Outcome ranges | Stationary block bootstrap of monthly returns with half of the historical drift removed, 1/3/6/12 months | fewer than 6 monthly returns |
+
+The investment call reuses the listed verdict objects but not its pillars: valuation 35%, trend 20%, news 10%, macro 10%, risk, leverage and liquidity 25% (a pillar with no data is dropped and its weight shared). Differences from the listed call: conviction is capped at 85, and at 65 when there are fewer than 24 revisions or 12 monthly returns; stops are wider (10 to 25%); position size is at most 3% and rounded down to whole lots; there is no tactical horizon; and a valuation guard stops a buy call when the quote is above fair value and lowers a neutral call to reduce when it is more than 50% above.
+
+The illiquidity discount, equity risk premium (5.5%) and terminal growth (5%) are assumptions and are returned with the output. The service writes a `context.json` per run (sector, the page's ratios, live NSE index P/E and P/B) and passes it with `--context`; without it the engine reads the page's ratios itself and skips benchmark models. Older unlisted runs carry no research block and the site asks for a re-run.
+
 ## 6. The CEIA engine (`backend/ceia/`)
 
 57 Python files; the Streamlit `gui.py` was dropped. Entry points: `python -m ceia.analyze` (listed) and `python -m ceia.unlisted`. Arguments the service passes: `--company`, `--start`, `--end`, `--html`, `--xlsx`, `--ticker`, `--benchmark ^NSEI`, `--news` (an empty JSON file for snapshots), `--url` (unlisted).

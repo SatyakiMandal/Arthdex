@@ -211,3 +211,19 @@ Next.js 15 / React 19 / TypeScript. `tsc --noEmit` and `next lint` both pass wit
 4. **Performance details** (F-18, F-26, F-31, F-37).
 5. **Accessibility** (F-35).
 6. **Dead code and duplicate contracts** (F-27, F-32).
+
+## Addendum: files added or changed after the first review (2026-10-02)
+
+Findings are in [addendum-2026-10-02.md](addendum-2026-10-02.md). `tsc` and `next lint` are clean for all of it.
+
+| Area | Files | Cov. | Verdict | Notes and findings |
+|---|---|:---:|:---:|---|
+| Client state | `lib/client/use-local-store.ts`, `watchlist.ts`, `alert-rules.ts`, `snapshot.ts`, `csv.ts` | R | OK | A localStorage hook that syncs across tabs and components, validates the stored shape, and survives a blocked store. CSV export escapes formula-leading text (fixed during the pass). |
+| Alerts | `components/alerts/alert-runner.tsx`, `my-alerts.tsx`, `components/layout/header-actions.tsx` | R | Watch | Rules checked every minute while a tab is visible and when it becomes visible. Duplicate firing across tabs and silent skips (F-43). The old `AlertsWorkbench` still has F-10. |
+| Watchlist | `app/watchlist/page.tsx`, `components/watchlist/*`, `app/api/watchlist/snapshot/route.ts` | R | OK | Unauthenticated proxy to the snapshot endpoint (F-41). |
+| Market desk | `app/deals`, `app/calendar`, `app/briefing`, `components/market/deals-view.tsx`, `calendar-view.tsx`, `movers-explained.tsx` | R | OK | Honest empty and error states; the briefing builds a plain-text twin of the page; movers explained says a headline is a candidate, not a cause. |
+| Trust pages | `app/methodology`, `app/status`, `components/layout/status-refresh.tsx`, `app/sitemap.ts`, `app/robots.ts` | R | Watch | The sitemap reads the unlisted directory and can block on a cold backend (F-47). |
+| Search | `components/search/universal-search.tsx`, `company-picker.tsx` | R | OK | Compact icon-and-overlay mode between 1024px and 1279px; unlisted hits carry a badge and their own link. |
+| Analyzer | `components/analyzer/unlisted-dossier.tsx`, `run-actions.tsx`, `launcher.tsx`, `summary-view.tsx`, `app/analyzer/compare/page.tsx` | R | Watch | Six-tab unlisted dossier reusing the listed call tab; copy link, PDF (prints the report window), re-run, compare. The call can look more precise than a short record deserves (F-48). |
+| Landing | `components/landing/hero.tsx`, `index-chart.tsx`, `motion.tsx`, `methodology.tsx`, `app/page.tsx` | R | OK | Interactive chart (range, crosshair), staggered entrances, all disabled under reduced motion. `bento-grid.tsx` is unused. |
+| Shared UI | `components/ui/export-csv.tsx`, `saved-presets.tsx`, `copy-text.tsx`, `unlisted/directory-view.tsx`, `price-history-chart.tsx` | R | OK | Small typed helpers; the price chart draws revisions as a step line, which is the honest reading of a dealer price. |

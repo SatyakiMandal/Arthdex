@@ -4855,6 +4855,22 @@ def build_unlisted_html(analysis) -> str:
             f'<ul class="src">{items}</ul></div>'
         )
 
+    from .unlisted_report_sections import research_sections
+
+    call_block = _investment_call_section(analysis) if getattr(analysis, "investment_verdict", None) else ""
+    research_block = research_sections(getattr(analysis, "research", None))
+    research = getattr(analysis, "research", None) or {}
+    research_nav = "".join(
+        f'<a href="#{sid}" class="nav-link">{label}</a>'
+        for sid, label, key in (
+            ("sec-valuation", "Valuation", "valuation"),
+            ("sec-technical", "Trend", "technical"),
+            ("sec-risk", "Risk", "risk"),
+            ("sec-forecast", "Outlook", "forecast"),
+        )
+        if research.get(key)
+    )
+
     macro_html = _macro_section(getattr(analysis, "macro", {}) or {})
     macro_block = f"""
 <div id="sec-macro" class="bbg-module">
@@ -4885,6 +4901,7 @@ def build_unlisted_html(analysis) -> str:
     <a href="#sec-call" class="nav-link" style="color:var(--bbg-amber);font-weight:800;">🎯 Call &amp; Sizing</a>
     <a href="#sec-overview" class="nav-link">Overview</a>
     <a href="#sec-timeline" class="nav-link">Timeline</a>
+    {research_nav}
     <a href="#sec-macro" class="nav-link">Macro Backdrop</a>
     <a href="#sec-peers" class="nav-link">Sector Peers</a>
     <a href="#sec-news" class="nav-link">Dispatches</a>
@@ -4925,6 +4942,8 @@ def build_unlisted_html(analysis) -> str:
   </div>
 </div>
 
+{call_block}
+
 <!-- EXECUTIVE DOSSIER NARRATIVE -->
 <div id="sec-overview" class="bbg-module">
   <div class="bbg-module-header">
@@ -4948,6 +4967,8 @@ def build_unlisted_html(analysis) -> str:
     {price_level_svg(analysis.series, real_dates, config.company, moves=ranked, macro_events=getattr(analysis, "macro_events", []) or [])}
   </div>
 </div>
+
+{research_block}
 
 {macro_block}
 

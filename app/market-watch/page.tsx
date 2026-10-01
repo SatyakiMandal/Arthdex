@@ -9,7 +9,9 @@ import { DataCard } from "@/components/ui/data-card";
 import { DataUnavailable, FreshnessBadge, SourceLine } from "@/components/ui/data-provenance";
 import { FactorScreens } from "@/components/market/factor-screens";
 import { WindowedMovers } from "@/components/market/windowed-movers";
-import { getFactorScreens, getIndices, getMovers, getWindowedMovers } from "@/lib/api/endpoints";
+import { MoversExplained } from "@/components/market/movers-explained";
+import { ExportCsv } from "@/components/ui/export-csv";
+import { getFactorScreens, getIndices, getMovers, getMoversExplained, getWindowedMovers } from "@/lib/api/endpoints";
 import { cn, deltaColor, formatINR, formatPct } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -56,12 +58,14 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
 
   // Daily comes straight from NSE's live variation feed; weekly and monthly are
   // computed from index-constituent history, because NSE publishes daily only.
-  const [gainers, losers, indices, windowed, factors] = await Promise.all([
+  const [gainers, losers, indices, windowed, factors, explainedUp, explainedDown] = await Promise.all([
     getMovers("gainers", universe, band.id === "all" ? 15 : 50),
     getMovers("losers", universe, band.id === "all" ? 15 : 50),
     getIndices(),
     activeWindow === "daily" ? Promise.resolve(null) : getWindowedMovers(activeWindow),
     getFactorScreens("nifty100", 8),
+    getMoversExplained("gainers", 8),
+    getMoversExplained("losers", 8),
   ]);
 
   // Advances and declines are reported per index constituent set
@@ -79,7 +83,7 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
     <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      <main className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6">
+      <main id="main" className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="max-w-2xl">
             <Eyebrow icon={CandlestickChart}>Market watch</Eyebrow>
@@ -177,7 +181,20 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
           </div>
         ) : null}
 
-        <div className={cn("grid gap-4 xl:grid-cols-2", activeWindow === "daily" ? "mt-6" : "mt-4")}>
+        {gainers.ok && losers.ok ? (
+          <div className="mt-6 flex justify-end">
+            <ExportCsv
+              filename={`arthdex-movers-${universe}`}
+              header={["Direction", "Symbol", "Price", "Change %"]}
+              rows={[
+                ...gainers.data.filter((r) => band.test(r.cmp)).map((r) => ["gainer", r.symbol, r.cmp, r.change.percent]),
+                ...losers.data.filter((r) => band.test(r.cmp)).map((r) => ["loser", r.symbol, r.cmp, r.change.percent]),
+              ]}
+            />
+          </div>
+        ) : null}
+
+        <div className={cn("grid gap-4 xl:grid-cols-2", activeWindow === "daily" ? "mt-3" : "mt-4")}>
           <DataCard title="Top Gainers" subtitle={`Universe: ${universeLabel}`} icon={TrendingUp}>
             {gainers.ok ? (
               <div className="p-2">
@@ -202,6 +219,12 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
             )}
           </DataCard>
         </div>
+
+        {explainedUp.ok && explainedDown.ok ? (
+          <div className="mt-6">
+            <MoversExplained gainers={explainedUp.data} losers={explainedDown.data} />
+          </div>
+        ) : null}
 
         {indices.ok ? (
           <section className="mt-6 rounded-xl border border-border bg-surface">

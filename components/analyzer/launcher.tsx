@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, Play, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AnalyzerRun, AnalyzerSearchHit } from "@/types/analyzer";
@@ -19,6 +19,7 @@ const TICKER_LIKE = /^[A-Za-z0-9&.^-]{1,20}$/;
 
 export function Launcher() {
   const router = useRouter();
+  const params = useSearchParams();
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<AnalyzerSearchHit[]>([]);
   const [open, setOpen] = useState(false);
@@ -31,6 +32,16 @@ export function Launcher() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const seq = useRef(0);
+
+  // Arriving from "Analyze in depth" on a mover pre-fills the company
+  useEffect(() => {
+    const company = params.get("company");
+    const ticker = params.get("ticker");
+    if (company && ticker) {
+      setPicked({ kind: "listed", name: company, ticker, symbol: ticker.replace(/\.(NS|BO)$/i, ""), url: null, sector: null });
+      setQuery(company);
+    }
+  }, [params]);
 
   // Dates are filled after mount so server and client markup match.
   useEffect(() => {

@@ -56,7 +56,7 @@ export default async function CompanyLayout({
         symbol={upper}
         action={<CustomAlertEngine symbol={upper} metrics={alertMetrics} />}
       />
-      <main>{children}</main>
+      <main id="main">{children}</main>
       <SiteFooter />
     </div>
   );

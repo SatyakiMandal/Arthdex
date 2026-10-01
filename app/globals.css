@@ -311,3 +311,14 @@
     animation: none;
   }
 }
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-14deg); }
+  75% { transform: rotate(14deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [class*="animate-[wiggle"] {
+    animation: none;
+  }
+}

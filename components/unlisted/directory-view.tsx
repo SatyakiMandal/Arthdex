@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ArrowUpRight, ChevronDown, Search, X } from "lucide-react";
+import { ExportCsv } from "@/components/ui/export-csv";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { cn, formatINR } from "@/lib/utils";
 import type { ApiUnlistedListing } from "@/lib/api/types";
@@ -111,9 +112,16 @@ export function DirectoryView({ companies, sectors }: { companies: ApiUnlistedLi
         </div>
       </div>
 
-      <p className="font-mono text-2xs text-muted-foreground">
-        {rows.length} of {companies.length} companies
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="font-mono text-2xs text-muted-foreground">
+          {rows.length} of {companies.length} companies
+        </p>
+        <ExportCsv
+          filename="arthdex-unlisted"
+          header={["Company", "Sector", "Indicative price (INR)", "Id"]}
+          rows={rows.map((c) => [c.name, c.sector, c.price, c.id])}
+        />
+      </div>
 
       {rows.length === 0 ? (
         <p className="rounded-2xl border border-border bg-surface px-4 py-10 text-center text-sm text-muted-foreground">

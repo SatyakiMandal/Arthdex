@@ -302,3 +302,61 @@ def search_directory(companies: list[dict[str, Any]], query: str, limit: int = 8
         scored.append((rank, len(name), c))
     scored.sort(key=lambda t: (t[0], t[1]))
     return [c for _, _, c in scored[:limit]]
+
+
+# -- lifecycle: unlisted -> IPO -> listed -------------------------------------
+
+_LEGAL_NOISE_RE = re.compile(r"\b(limited|ltd|private|pvt|public|company|co|the)\b")
+
+
+def normalise_name(name: str) -> str:
+    low = re.sub(r"[^\w\s]", " ", name.lower())
+    low = _LEGAL_NOISE_RE.sub(" ", low)
+    return " ".join(low.split())
+
+
+def lifecycle_for(name: str, isin: str | None = None) -> dict[str, Any]:
+    """Whether an unlisted company now trades on NSE or has an IPO in the pipeline.
+
+    Matched on the normalised legal name, since the directory page carries no NSE
+    symbol. Reads caches only, so it never waits on an upstream.
+    """
+    key = normalise_name(name)
+    out: dict[str, Any] = {"listedSymbol": None, "listedName": None, "ipo": None}
+
+    universe = CACHE.get_entry("universe:equity")
+    if universe is not None:
+        # An ISIN is exact; the legal name is the fallback because renames and "Limited" vs "Ltd" differ
+        for row in universe.value:
+            if isin and row.get("isin") == isin or normalise_name(row.get("name") or "") == key:
+                out["listedSymbol"] = row["symbol"]
+                out["listedName"] = row["name"]
+                break
+
+    pipeline = CACHE.get_entry("ipo:pipeline")
+    if pipeline is not None:
+        for issue in pipeline.value.get("issues", []):
+            if issue.get("name") and normalise_name(issue["name"]) == key:
+                out["ipo"] = {
+                    "status": issue.get("status"),
+                    "segment": issue.get("segment"),
+                    "priceBandLow": issue.get("priceBandLow"),
+                    "priceBandHigh": issue.get("priceBandHigh"),
+                    "issueStartDate": issue.get("issueStartDate"),
+                    "issueEndDate": issue.get("issueEndDate"),
+                    "listingDate": issue.get("listingDate"),
+                }
+                break
+    return out
+
+
+def pre_ipo_match(listed_name: str) -> dict[str, Any] | None:
+    """The unlisted directory entry for a now-listed company, if the directory still carries it."""
+    directory = cached_directory()
+    if not directory:
+        return None
+    key = normalise_name(listed_name)
+    for c in directory:
+        if normalise_name(c["name"]) == key:
+            return {"id": c["id"], "name": c["name"]}
+    return None

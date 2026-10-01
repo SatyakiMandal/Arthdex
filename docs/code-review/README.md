@@ -7,7 +7,8 @@ A review of the code written for the site: the Next.js front end, the FastAPI da
 | Document | Contents |
 |---|---|
 | **This file** | Scope, method, coverage, headline findings |
-| [findings.md](findings.md) | All 39 findings in detail: where, what, impact, fix |
+| [findings.md](findings.md) | The first 39 findings in detail: where, what, impact, fix |
+| [addendum-2026-10-02.md](addendum-2026-10-02.md) | Second pass over the work done after the first review: findings F-40 to F-49, what moved, defects found and fixed |
 | [backend.md](backend.md) | Per-file review of `backend/app` (routers, providers, services) |
 | [frontend.md](frontend.md) | Per-file review of `app`, `components`, `lib`, `types` and configuration |
 | [engine.md](engine.md) | The vendored CEIA engine: reachability, static analysis, deeper reads |
@@ -40,7 +41,7 @@ The codebase is generally careful: provenance, defensive parsing, safe subproces
 
 ## Headline findings
 
-Counts: **6 High, 23 Medium, 8 Low, 2 Info.**
+Counts after the second pass ([addendum](addendum-2026-10-02.md)): **6 High, 27 Medium, 14 Low, 2 Info** (49). The table below lists the first 39; F-40 to F-49 are in the addendum.
 
 | ID | Sev. | Category | Finding |
 |---|---|---|---|
@@ -73,6 +74,10 @@ Counts: **6 High, 23 Medium, 8 Low, 2 Info.**
 | [F-27](findings.md#f-27--two-parallel-type-systems-one-of-them-dead) | Medium | Maintainability | Two parallel type systems, one of them dead |
 | [F-28](findings.md#f-28--daily-price-cache-is-cwd-relative-caches-company-series-and-uses-pickle) | Medium | Reliability | Daily price cache is cwd-relative, caches company series, and uses pickle |
 | [F-29](findings.md#f-29--no-automated-tests-and-no-ci) | Medium | Testing | No automated tests and no CI |
+
+## Second pass (2026-10-02)
+
+The research desk (watchlist, alerts, deals, calendar, briefing, movers explained, methodology, status), the unified search and the unlisted-company research layer (valuation, risk, trend, outlook and an investment call) were added after this review. They were reviewed in a second pass: see the [addendum](addendum-2026-10-02.md). In short: ten new findings (four Medium, six Low), eight defects found and fixed during the pass, 16 unit tests added, and F-01, F-05, F-14, F-15 and F-29 extended or partly addressed. The most important new point is F-40: the unlisted valuation compares against index averages picked by sector label, so a fast-growing company reads "Rich".
 
 ## Verdict counts by file
 

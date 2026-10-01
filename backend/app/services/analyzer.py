@@ -264,6 +264,58 @@ def submit(
     return _public(meta)
 
 
+def _unlisted_context(meta: dict[str, Any], d: Path) -> Path | None:
+    """Sector, the source's own ratios and live NSE index multiples, written for the engine.
+
+    The engine runs as a subprocess without access to the service's caches, so the valuation
+    inputs it cannot fetch itself (NSE index P/E and P/B) are prepared here. Anything that
+    cannot be found is simply left out, and the engine skips the models that need it.
+    """
+    from ..cache import CACHE
+    from ..config import SETTINGS
+    from ..providers import nse
+    from . import unlisted as unlisted_service
+    from ceia.unlisted_research import sector_index
+
+    slug = None
+    if meta.get("url"):
+        slug = str(meta["url"]).rstrip("/").rsplit("/", 1)[-1]
+    else:
+        directory = unlisted_service.cached_directory() or []
+        key = unlisted_service.normalise_name(meta["company"])
+        slug = next((c["id"] for c in directory if unlisted_service.normalise_name(c["name"]) == key), None)
+    if not slug or not unlisted_service.SLUG_RE.match(slug):
+        return None
+
+    try:
+        page, _age = CACHE.get_or_fetch(f"unlisted:{slug}", 3 * 3600, lambda: unlisted_service.build_company(slug))
+    except Exception as exc:
+        log.warning("unlisted context: page unavailable (%s)", exc)
+        return None
+
+    context: dict[str, Any] = {"sector": page.get("sector"), "facts": page.get("facts") or {}}
+    try:
+        indices, _ = CACHE.get_or_fetch("market:indices", SETTINGS.index_ttl, nse.fetch_indices)
+        by_id = {i["id"]: i for i in indices}
+
+        def view(i: dict[str, Any] | None) -> dict[str, Any] | None:
+            if not i:
+                return None
+            return {"name": i["name"], "pe": i.get("peRatio"), "pb": i.get("pbRatio"), "dividendYield": i.get("dividendYieldPct")}
+
+        idx = sector_index(page.get("sector"))
+        context["benchmarks"] = {
+            "sector": view(by_id.get(idx["nse_id"])) if idx else None,
+            "broad": view(by_id.get("nifty-500") or by_id.get("nifty-50")),
+        }
+    except Exception as exc:
+        log.warning("unlisted context: index multiples unavailable (%s)", exc)
+
+    path = d / "context.json"
+    path.write_text(json.dumps(context), encoding="utf-8")
+    return path
+
+
 def _command(meta: dict[str, Any], d: Path) -> list[str]:
     common = [
         "--company", meta["company"],
@@ -281,6 +333,13 @@ def _command(meta: dict[str, Any], d: Path) -> list[str]:
         cmd = [sys.executable, "-u", "-m", "ceia.unlisted", *common]
         if meta.get("url"):
             cmd += ["--url", meta["url"]]
+        try:
+            ctx = _unlisted_context(meta, d)
+        except Exception:
+            log.exception("could not prepare the unlisted context")
+            ctx = None
+        if ctx:
+            cmd += ["--context", str(ctx)]
         return cmd
     cmd = [
         sys.executable, "-u", "-m", "ceia.analyze", *common,
@@ -513,6 +572,40 @@ def summarise(run_id: str) -> dict[str, Any] | None:
     return {"kind": meta.get("kind", "listed"), **body}
 
 
+def _verdict_view(v: dict[str, Any] | None) -> dict[str, Any] | None:
+    """The investment call in the shape the site renders, shared by listed and unlisted runs."""
+    if not v:
+        return None
+    return {
+        "call": v.get("actionable_call"),
+        "conviction": _num(v.get("conviction_score")),
+        "summary": v.get("one_line_summary"),
+        "thesis": v.get("detailed_thesis"),
+        "price": _num(v.get("current_price")),
+        "entryLow": _num(v.get("entry_zone_low")),
+        "entryHigh": _num(v.get("entry_zone_high")),
+        "target1": _num(v.get("target_1_price")),
+        "target1Pct": _num(v.get("target_1_upside_pct")),
+        "target2": _num(v.get("target_2_price")),
+        "target2Pct": _num(v.get("target_2_upside_pct")),
+        "stop": _num(v.get("stop_loss_price")),
+        "stopPct": _num(v.get("stop_loss_downside_pct")),
+        "riskReward": v.get("risk_reward_ratio"),
+        "asOf": v.get("as_of_date"),
+        "pillars": [
+            {
+                "name": p.get("pillar_name"),
+                "weight": _num(p.get("weight_pct")),
+                "score": _num(p.get("score")),
+                "stance": p.get("stance"),
+                "highlight": p.get("metric_highlight"),
+            }
+            for p in (v.get("pillars") or [])
+            if isinstance(p, dict)
+        ],
+    }
+
+
 def _summarise_listed(a: dict[str, Any]) -> dict[str, Any]:
     v = a.get("investment_verdict") or {}
     fc = a.get("forecasting") or {}
@@ -527,36 +620,7 @@ def _summarise_listed(a: dict[str, Any]) -> dict[str, Any]:
     pr = a.get("prices") or {}
     news = a.get("news") or {}
 
-    verdict = None
-    if v:
-        verdict = {
-            "call": v.get("actionable_call"),
-            "conviction": _num(v.get("conviction_score")),
-            "summary": v.get("one_line_summary"),
-            "thesis": v.get("detailed_thesis"),
-            "price": _num(v.get("current_price")),
-            "entryLow": _num(v.get("entry_zone_low")),
-            "entryHigh": _num(v.get("entry_zone_high")),
-            "target1": _num(v.get("target_1_price")),
-            "target1Pct": _num(v.get("target_1_upside_pct")),
-            "target2": _num(v.get("target_2_price")),
-            "target2Pct": _num(v.get("target_2_upside_pct")),
-            "stop": _num(v.get("stop_loss_price")),
-            "stopPct": _num(v.get("stop_loss_downside_pct")),
-            "riskReward": v.get("risk_reward_ratio"),
-            "asOf": v.get("as_of_date"),
-            "pillars": [
-                {
-                    "name": p.get("pillar_name"),
-                    "weight": _num(p.get("weight_pct")),
-                    "score": _num(p.get("score")),
-                    "stance": p.get("stance"),
-                    "highlight": p.get("metric_highlight"),
-                }
-                for p in (v.get("pillars") or [])
-                if isinstance(p, dict)
-            ],
-        }
+    verdict = _verdict_view(v)
 
     incidents = []
     for i in (a.get("incidents") or [])[:8]:
@@ -711,7 +775,42 @@ def _summarise_unlisted(a: dict[str, Any]) -> dict[str, Any]:
             "items": _g(news, "stats", "unique_after_dedupe"),
             "perSource": news.get("per_source") or {},
         },
+        "verdict": _verdict_view(a.get("investment_verdict")),
+        "research": _unlisted_research_view(a),
+        "researchNote": (a.get("research") or {}).get("note") if a.get("research") and not (a.get("research") or {}).get("available") else None,
+        "macro": _slim(a.get("macro")),
     }
+
+
+def _slim(obj: Any) -> Any:
+    from .analyzer_detail import slim
+
+    return slim(obj) if obj is not None else None
+
+
+def _unlisted_research_view(a: dict[str, Any]) -> dict[str, Any] | None:
+    """Valuation, risk, technicals and the call's execution detail, for the unlisted dossier."""
+    r = a.get("research")
+    if not r or not r.get("available"):
+        return None
+    v = a.get("investment_verdict") or {}
+    keys = ("sector", "sector_index", "facts", "price_profile", "risk", "market_model", "technical", "forecast", "valuation", "news_signal", "data_quality")
+    out = {k: _slim(r.get(k)) for k in keys}
+    out["sizing"] = {
+        "tiers": _slim(v.get("sizing_tiers") or []),
+        "prescribed_pct": _num(v.get("prescribed_allocation_pct")),
+        "raw_kelly_pct": _num(v.get("raw_kelly_pct")),
+        "half_kelly_pct": _num(v.get("half_kelly_pct")),
+        "cap_pct": _num(v.get("maximum_allocation_cap_pct")),
+    }
+    out["holding"] = {
+        "core": v.get("core_holding_period"),
+        "tactical": v.get("tactical_holding_period"),
+        "profit_booking": v.get("profit_booking_rules") or [],
+        "invalidation": v.get("invalidation_rules") or [],
+    }
+    out["pillar_rationales"] = [p.get("evidence_rationale") for p in (v.get("pillars") or []) if isinstance(p, dict)]
+    return out
 
 
 # ── sample library ──────────────────────────────────────────────────────────

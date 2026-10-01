@@ -91,3 +91,18 @@ Quant, screeners, technicals, Bhavcopy, IPO, news, shareholding, unlisted and th
 2. **Concurrency and cost** (F-14, F-15, F-16, F-18, F-23): add single-flight, bound the caches, stop doing network I/O outside cached sections, and restructure the MACD cache.
 3. **Statistical honesty** (F-19, F-20, F-21): tighten the Merton inputs and the wording of interval and confidence claims.
 4. **Security** (F-05): add authentication or at least a shared secret and rate limits before exposing the service beyond localhost.
+
+## Addendum: files added or changed after the first review (2026-10-02)
+
+Findings are in [addendum-2026-10-02.md](addendum-2026-10-02.md). Coverage **R** for every file below.
+
+| File | Lines | Cov. | Verdict | Notes and findings |
+|---|---:|:---:|:---:|---|
+| `backend/app/routers/desk.py` | 350 | R | Watch | New. Deals, calendar, watchlist snapshot, movers explained (per-symbol NSE filings, routine notices dropped, last four days), data status, pre-IPO lookup. All read from caches or fetch through the cache. Sequential NSE calls because the session is not thread-safe (F-42); fan-out endpoints are unauthenticated (F-41). |
+| `backend/app/routers/search.py` | 70 | R | OK | Now merges the unlisted directory into results, only if already built, so a keystroke never waits on a cold build. |
+| `backend/app/routers/analyzer.py` | 110 | R | Watch | Search is `kind=any` by default and keeps at least three unlisted slots. Two unused imports remain (`timedelta`, `CACHE`). |
+| `backend/app/routers/unlisted.py` | 45 | R | OK | Directory and company routes; the company route adds a `lifecycle` block (listed symbol, IPO status) read from caches only. |
+| `backend/app/services/unlisted.py` | 330 | R | Watch | New. Directory and company-page parsing by regular expression (duplicated in the engine, F-45), non-blocking `cached_directory`, `ensure_warm` with a flag lock, name normalisation and lifecycle matching (ISIN first, then name; F-44). Price 0 is treated as no price. |
+| `backend/app/services/analyzer.py` | 900 | R | Watch | Writes a `context.json` for unlisted runs (sector, the page's ratios, live NSE index multiples) and reports a missing research layer as a note rather than an old-run message. `_verdict_view` is now shared by listed and unlisted summaries. Earlier findings F-23 and the two ambiguous names stand. |
+| `backend/app/main.py` | 95 | R | Watch | Registers the desk router; the unlisted warm-up thread is started from a startup hook. Same F-34 caveat about import-time threads. |
+| `backend/tests/test_unlisted_research.py` | 170 | R | OK | 16 `unittest` cases, no network. First tests in the repository (F-49). |

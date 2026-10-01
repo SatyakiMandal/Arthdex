@@ -32,7 +32,9 @@ Ways to force fresh data:
 - Restart the backend (clears its cache).
 - Delete `.next/cache/fetch-cache` **with the dev server stopped**. While `next dev` runs, the fetch cache is also held in memory, so deleting files has no effect and a corrected payload looks stale for the whole revalidate window.
 
-Use `GET /api/v1/cache` to see keys and ages when diagnosing staleness.
+Use `GET /api/v1/cache` to see keys and ages when diagnosing staleness, or the `/status` page for a per-feed summary.
+
+**Warm-up.** On start the service builds the unlisted directory in a background thread (a dozen polite fetches at a 2-second spacing, about 30 to 55 seconds). Until it finishes, search returns listed hits only and `/unlisted` shows its loading state. The IPO pipeline is warmed the same way. Restarting the backend therefore restarts both warm-ups.
 
 ## 4. Storage layout (backend)
 
@@ -82,4 +84,10 @@ The repository contains no Dockerfile, CI configuration or deployment manifests 
 npm run typecheck && npm run lint && npm run build
 ```
 
-Then, with both services running: load `/`, `/market-watch`, a company page and each of its tabs, `/news`, `/ipo`, `/bhavcopy`, `/commodities`, `/screener`, `/unlisted`, `/analyzer`; check both themes; check `/company/NOTREAL` shows the symbol-not-found page and `/nope` the root 404 (adding a layout can silently relocate an error boundary). The build log recommends reading figures from the DOM rather than downscaled screenshots.
+```bash
+cd backend && ./.venv/Scripts/python.exe -m unittest discover -s tests -v   # unlisted research arithmetic, 16 tests, no network
+```
+
+These are the only automated tests in the repository (see finding F-29 in the code review); they cover the unlisted valuation, risk, forecast and call logic.
+
+Then, with both services running: load `/`, `/market-watch`, a company page and each of its tabs, `/news`, `/ipo`, `/bhavcopy`, `/commodities`, `/screener`, `/unlisted`, `/analyzer`, `/watchlist`, `/alerts`, `/deals`, `/calendar`, `/briefing`, `/methodology`, `/status`; check both themes; check `/company/NOTREAL` shows the symbol-not-found page and `/nope` the root 404 (adding a layout can silently relocate an error boundary). The build log recommends reading figures from the DOM rather than downscaled screenshots.

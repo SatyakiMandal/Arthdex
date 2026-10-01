@@ -9,7 +9,8 @@ import {
 } from "@/components/company/fundamentals";
 import { ValuationPanel } from "@/components/company/valuation-panel";
 import { DataUnavailable, SourceLine } from "@/components/ui/data-provenance";
-import { getCandles, getFinancials, getProfile, getValuation } from "@/lib/api/endpoints";
+import { PreIpoPanel } from "@/components/company/pre-ipo-panel";
+import { getCandles, getFinancials, getPreIpo, getProfile, getUnlistedCompany, getValuation } from "@/lib/api/endpoints";
 
 interface PageProps {
   params: Promise<{ symbol: string }>;
@@ -29,11 +30,15 @@ export default async function CompanyOverviewPage({ params }: PageProps) {
   const { symbol } = await params;
   const upper = symbol.toUpperCase();
 
-  const [candles, financials, valuation] = await Promise.all([
+  const [candles, financials, valuation, preIpoMatch] = await Promise.all([
     getCandles(upper, "1Y"),
     getFinancials(upper),
     getValuation(upper),
+    getPreIpo(upper),
   ]);
+  // A company that was once traded unlisted keeps its earlier price history on the same page
+  const preIpoId = preIpoMatch?.data.id ?? null;
+  const preIpo = preIpoId ? await getUnlistedCompany(preIpoId) : null;
 
   return (
     <div className="mx-auto max-w-[1600px] space-y-4 px-4 py-6 sm:px-6">
@@ -48,6 +53,8 @@ export default async function CompanyOverviewPage({ params }: PageProps) {
       )}
 
       {valuation ? <ValuationPanel valuation={valuation.data} /> : null}
+
+      {preIpo?.ok ? <PreIpoPanel company={preIpo.data} /> : null}
 
       {financials ? (
         <>

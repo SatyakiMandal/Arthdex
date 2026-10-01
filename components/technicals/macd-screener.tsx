@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { ChevronDown, Loader2, Minus, Plus, RefreshCw } from "lucide-react";
 import { CellBar } from "@/components/ui/cell-bar";
 import { DeskAnalysis } from "@/components/ui/desk-analysis";
+import { ExportCsv } from "@/components/ui/export-csv";
+import { SavedPresets } from "@/components/ui/saved-presets";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { cn, deltaColor, formatINR, formatPct } from "@/lib/utils";
 import type { ApiMacdScreen, TechInterval } from "@/lib/api/types";
@@ -144,6 +146,18 @@ export function MacdScreener() {
         </button>
       </div>
 
+      <SavedPresets
+        storageKey="macd-screener"
+        current={{ direction, interval, within, index }}
+        onApply={(v) => {
+          setDirection(v.direction);
+          setInterval(v.interval);
+          setWithin(v.within);
+          setIndex(v.index);
+        }}
+        defaultName={(v) => `${v.direction === "above" ? "Bullish" : "Bearish"} ${v.interval} in ${INDICES.find((i) => i.id === v.index)?.label ?? v.index}`}
+      />
+
       <p className="text-2xs text-muted-foreground">
         Showing stocks whose MACD (12, 26, 9) {direction === "above" ? "crossed above" : "crossed below"} its signal line in the last {span(interval, within)}.
         {interval !== "1d" ? " Outside market hours this looks back from the close of the latest session." : ""}
@@ -163,6 +177,13 @@ export function MacdScreener() {
             {loading && !data ? "Scanning…" : `${data?.results.length ?? 0} match${data?.results.length === 1 ? "" : "es"}`}
             {data ? <span className="ml-2 font-normal text-muted-foreground">of {data.scanned} scanned</span> : null}
           </h2>
+          {data && data.results.length > 0 ? (
+            <ExportCsv
+              filename={`arthdex-macd-${direction}-${interval}`}
+              header={["Symbol", "Company", "Industry", "Price", "Day %", "Bars ago", "Crossed at", "MACD", "Signal", "Histogram", "RSI", "Quality (of 4)"]}
+              rows={data.results.map((r) => [r.symbol, r.name, r.industry, r.price, r.changePct, r.barsAgo, r.crossedAt, r.macd, r.signal, r.hist, r.rsi, r.score])}
+            />
+          ) : null}
           {loading ? <Loader2 className="h-4 w-4 animate-spin text-accent" /> : data?.asOf ? <span className="font-mono text-2xs text-muted-foreground">as of {data.asOf.replace("T", " ").slice(0, 16)}</span> : null}
         </header>
 

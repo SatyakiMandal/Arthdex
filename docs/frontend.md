@@ -46,7 +46,7 @@ Every page composes `<SiteHeader/> … <SiteFooter/>` itself.
 |---|---|---|
 | `SiteHeader` | server | Sticky; stacks `MarketTicker` over `HeaderBar` |
 | `MarketTicker` | server | Marquee of every NSE index returned by `/market/indices` (level and % change). Pauses on hover; no animation under reduced motion. On failure shows "Index feed unavailable" |
-| `HeaderBar` | client | Logo, 9 nav items (Market Watch, Commodities, Screener, Bhavcopy, IPO, News, Alerts, Unlisted, Analyzer) with a sliding active indicator, `UniversalSearch`, theme toggle, mobile drawer under `lg` |
+| `HeaderBar` | client | Logo, 7 primary items (Market Watch, Commodities, Screener, IPO, News, Unlisted, Analyzer) with a sliding active indicator, a **More** menu (Morning briefing, Deals, Calendar, Bhavcopy, Alerts, Methodology, Data status), `UniversalSearch` (a full box from 1280px, an icon that opens an overlay from 1024px, in the drawer below), `HeaderActions` (watchlist star with a count, alerts bell with a badge for fired alerts), theme toggle, and a mobile drawer under `lg` |
 | `UniversalSearch` | client | Debounced (180 ms) autocomplete over about 2,600 NSE equities and the unlisted directory (unlisted hits show a building icon and an "Unlisted" tag and link to `/unlisted/{id}`), aborts superseded requests, keyboard navigation, Ctrl/⌘-K shortcut. Hidden below `md` in the bar (the mobile drawer has its own copy); between `lg` and `xl` it collapses to an icon that expands as an overlay |
 | `SiteFooter` | server | Link columns plus the standing disclaimer |
 | 404s | | `app/not-found.tsx` (root) and `app/company/not-found.tsx` ("Symbol not found"). The company one sits at `app/company/` and not beside `[symbol]/layout.tsx` because `notFound()` thrown from a layout is caught by the parent segment |
@@ -54,7 +54,7 @@ Every page composes `<SiteHeader/> … <SiteFooter/>` itself.
 ## 3. Routes
 
 ### `/` Landing
-Server component. Sections: `Hero` (live headline index tiles for Nifty 50, Nifty Bank, Nifty IT, India VIX plus a one-year `^NSEI` chart via `getCandles`), `Methodology` (three steps: ingestion, benchmark adjustment, multi-pillar synthesis), `MoversPreview` (6 gainers/losers, universe `gt20`), `GlobalSentiment` (six world indices), and the latest 8 items of `NewsFeed`. Animation helpers live in `components/landing/motion.tsx`. `bento-grid.tsx` exists but is not imported anywhere.
+Server component. Sections: `Hero` (live headline index tiles for Nifty 50, Nifty Bank, Nifty IT, India VIX plus a one-year `^NSEI` chart via `getCandles`), `Methodology` (three steps: ingestion, benchmark adjustment, multi-pillar synthesis), `MoversPreview` (6 gainers/losers, universe `gt20`), `GlobalSentiment` (six world indices), and the latest 8 items of `NewsFeed`. The hero fades in in sequence, trails a soft glow behind the pointer and wipes its chart line in; `IndexChart` is a client component with a range switch (1M/3M/6M/1Y, slicing the year of candles the server sent) and a hover crosshair. Animation helpers (`Reveal`, `Stagger`, `SpotlightCard`, `GlowSection`) live in `components/landing/motion.tsx`; all of it is switched off under `prefers-reduced-motion`. `bento-grid.tsx` exists but is not imported anywhere (the section was removed as redundant).
 
 ### `/market-watch`
 Query params: `universe` (`gt20` default, `nifty50`, `niftynext50`, `banknifty`, `fo`, `all`), `window` (`daily` default, `weekly`, `monthly`), `price` (`all`, `penny` under ₹50, `small` 50 to 500, `mid` 500 to 2,000, `large` above 2,000).
@@ -85,6 +85,18 @@ Query: `kind` (`filing`, `press`), `symbol`. Counts of filings and press items, 
 
 ### `/unlisted` and `/unlisted/[id]`
 Source: `GET /api/v1/unlisted` and `/api/v1/unlisted/{id}` (UnlistedZone indicative prices, fetched by the backend). The index is a searchable, sector-filterable, sortable grid of about 270 companies. The profile page shows the indicative price and its 6-month move, a step-line price history (the source holds its price flat between revisions, so only real revisions are drawn), the source's own ratios (P/B, book value, face value, lot size, 52-week range, P/E where it exists), the revision table, and a warning that the figure is an indicative dealer level, not an exchange price. Governance flags, shareholding, order books and milestones are not offered, since the source carries none.
+
+### `/watchlist` and `/alerts`
+The watchlist and alert rules live in `localStorage` (`arthdex:watchlist:v1`, `arthdex:alerts:v1`), via `lib/client/use-local-store.ts`, so they are per browser and survive reloads. `WatchButton` is on every company and unlisted header. `AlertRunner` (mounted in `Providers`) checks armed rules every minute while a tab is visible, and again when a hidden tab becomes visible, by posting to `/api/watchlist/snapshot`. A fired rule shows a toast, a browser notification if permitted, and a badge on the header bell. Nothing is sent when no tab is open; email or push needs a 24/7 host.
+
+### `/deals`, `/calendar`, `/briefing`
+Bulk/block/short deals, a 30-day results and corporate-actions calendar, and a one-page morning briefing (indices, global cues, movers with explanations, deals, results, IPOs, filings) with copy-as-text and print. Most tables have an Export CSV button (`components/ui/export-csv.tsx`).
+
+### `/methodology` and `/status`
+Plain-language sources and models, and a live feed-freshness table read from `GET /status`.
+
+### Movers explained, saved screens, analyzer extras
+`/market-watch` shows "Why they moved" next to the movers. The MACD screener saves named filter sets (`components/ui/saved-presets.tsx`). A finished analysis has Copy link, PDF (prints the report), Re-run (same window length ending today) and Compare, which opens `/analyzer/compare?a=&b=` for two finished runs of the same kind. An unlisted profile shows when the company is now listed or has an IPO open; a listed company that was once unlisted shows its pre-IPO history under the valuation panel.
 
 ### `/analyzer` and `/analyzer/[id]`
 See [event-impact-analyzer.md](event-impact-analyzer.md). Both are `force-dynamic`.

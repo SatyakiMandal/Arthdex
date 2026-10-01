@@ -2,6 +2,8 @@
 
 Every finding in the review, ordered by severity. IDs (`F-nn`) are referenced from the per-file tables in [backend.md](backend.md), [frontend.md](frontend.md) and [engine.md](engine.md). Line numbers refer to the repository at commit `788c016` plus the working tree at review time; re-check them after edits.
 
+> **Second pass, 2026-10-02.** F-40 to F-49 and the changes to F-01, F-05, F-10, F-14, F-15 and F-29 are recorded in [addendum-2026-10-02.md](addendum-2026-10-02.md). In short: F-01 now also covers the unlisted call, F-05 also covers the new desk endpoints, F-10 is still open for the old alerts card, F-29 is partly addressed by 16 new tests.
+
 **Severity:** *High* = wrong or unsafe behaviour a user or operator would hit, or a legal/integrity problem. *Medium* = real bug or weakness with a workaround or limited blast radius. *Low* = polish, edge cases, robustness. *Info* = observation.
 
 
@@ -483,3 +485,7 @@ Every finding in the review, ordered by severity. IDs (`F-nn`) are referenced fr
 **Impact:** These sources can change or block access without notice and their terms were not reviewed in the repository.
 
 **Fix:** Keep the provenance and fallbacks, record a terms review per source, and use one identifying User-Agent.
+
+## Addendum
+
+Findings F-40 to F-49 (second pass, 2026-10-02) are in [addendum-2026-10-02.md](addendum-2026-10-02.md): F-40 unlisted valuation benchmarks (Medium), F-41 unauthenticated fan-out endpoints (Medium), F-42 sequential NSE requests in movers explained (Medium), F-43 alert duplicates across tabs (Low), F-44 name-based listed/unlisted linking (Low), F-45 duplicated source parsing (Low), F-46 research layer fails open (Low), F-47 sitemap on a cold directory (Low), F-48 false precision on thin data (Medium), F-49 thin test coverage (Low).

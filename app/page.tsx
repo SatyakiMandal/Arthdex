@@ -18,7 +18,7 @@ export default async function Home() {
     <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      <main>
+      <main id="main">
         <Hero />
         <Methodology />
         <MoversPreview />

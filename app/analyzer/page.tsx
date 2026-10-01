@@ -3,6 +3,7 @@ import { FlaskConical } from "lucide-react";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { Suspense } from "react";
 import { Launcher } from "@/components/analyzer/launcher";
 import { RunList } from "@/components/analyzer/run-list";
 import { listRuns } from "@/lib/api/analyzer";
@@ -22,7 +23,7 @@ export default async function AnalyzerPage() {
     <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      <main className="mx-auto max-w-[1600px] px-4 py-12 sm:px-6">
+      <main id="main" className="mx-auto max-w-[1600px] px-4 py-12 sm:px-6">
         <div className="max-w-3xl">
           <Eyebrow icon={FlaskConical}>Event impact analyzer</Eyebrow>
           <h1 className="text-gradient mt-4 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
@@ -37,7 +38,9 @@ export default async function AnalyzerPage() {
         </div>
 
         <div className="mt-8">
-          <Launcher />
+          <Suspense fallback={<div className="h-56 animate-pulse rounded-xl border border-border bg-surface" />}>
+            <Launcher />
+          </Suspense>
         </div>
 
         {mine === null && samples === null ? (

@@ -111,6 +111,20 @@ The factor and mover screens share one cached batch download per index (`screene
 
 The unlisted service reuses `ceia.fetcher.Fetcher` (honest user agent, robots.txt checks, 2 s minimum spacing per origin, on-disk cache and provenance log under `backend/cache/unlisted`). Directory pages are parsed with regular expressions over UnlistedZone's HTML, so a markup change on that site will break parsing.
 
+### Research desk
+| Route | Description |
+|---|---|
+| `GET /deals` | Today's bulk, block and short-selling disclosures from NSE, largest value first (cached 15 min) |
+| `GET /calendar` | Next 30 days of board meetings (results flagged) and corporate actions: dividend, split, bonus, rights (cached 30 min) |
+| `POST /watchlist/snapshot` | Body `{listed: [symbols], unlisted: [ids]}` (up to 60 each). Latest price and day change for listed names, indicative price for unlisted. Used by the watchlist and by browser-side alert checks |
+| `GET /market/movers-explained?direction=&universe=&limit=` | Top movers, each with its own recent exchange filings (asked per symbol, last 4 days, routine notices dropped) plus press headlines that name it. A candidate explanation, not proof of cause |
+| `GET /company/{symbol}/pre-ipo` | The unlisted-directory id for a now-listed company, matched on normalised legal name, or `{id: null}` |
+| `GET /status` | Per-feed freshness (`fresh`, `stale`, `idle`), read from the cache so it never queries an upstream |
+
+`GET /unlisted/{id}` also returns a `lifecycle` block: the NSE symbol if the company's name now matches a listed equity, and its IPO issue if one is in the pipeline. Both are read from caches only.
+
+Insider-trading (PIT) disclosures are not offered: the NSE endpoint returned no rows for any date range tried.
+
 ### Analyzer (not enveloped)
 | Route | Description |
 |---|---|

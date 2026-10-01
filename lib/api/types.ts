@@ -672,9 +672,97 @@ export interface ApiUnlistedCompany {
   series: { date: string; price: number }[];
   /** Real revisions only, newest first. */
   revisions: ApiUnlistedRevision[];
+  lifecycle: {
+    listedSymbol: string | null;
+    listedName: string | null;
+    ipo: {
+      status: string | null;
+      segment: string | null;
+      priceBandLow: number | null;
+      priceBandHigh: number | null;
+      issueStartDate: string | null;
+      issueEndDate: string | null;
+      listingDate: string | null;
+    } | null;
+  };
   sinceFirstPct: number | null;
   firstDate: string | null;
   /** Daily points the source shows, most of which just repeat the last revision. */
   dailyPoints: number;
   url: string;
+}
+
+// -- research desk ----------------------------------------------------------
+
+export interface ApiDeal {
+  kind: "bulk" | "block" | "short";
+  symbol: string | null;
+  name: string;
+  client: string;
+  side: string;
+  quantity: number | null;
+  price: number | null;
+  valueCr: number | null;
+  remarks: string | null;
+  date: string | null;
+}
+
+export interface ApiDeals {
+  asOn: string | null;
+  bulk: ApiDeal[];
+  block: ApiDeal[];
+  short: ApiDeal[];
+}
+
+export interface ApiCalendarMeeting {
+  symbol: string;
+  name: string;
+  date: string | null;
+  purpose: string;
+  detail: string;
+  isResults: boolean;
+}
+
+export interface ApiCorporateAction {
+  symbol: string;
+  name: string;
+  subject: string;
+  kind: "dividend" | "split" | "bonus" | "rights" | "other";
+  exDate: string | null;
+  recordDate: string | null;
+}
+
+export interface ApiCalendar {
+  meetings: ApiCalendarMeeting[];
+  actions: ApiCorporateAction[];
+  errors: string[] | null;
+  from: string;
+  to: string;
+}
+
+export interface ApiMoverExplained {
+  symbol: string;
+  name: string | null;
+  cmp: number;
+  changePct: number;
+  labels: string[];
+  news: { headline: string; source: string; url: string | null; publishedAt: string | null; kind: "filing" | "press" }[];
+}
+
+export interface ApiStatus {
+  service: string;
+  uptimeSeconds: number;
+  feeds: {
+    label: string;
+    source: string;
+    state: "fresh" | "stale" | "idle";
+    ageSeconds: number | null;
+    ttlSeconds: number;
+    entries: number;
+  }[];
+}
+
+export interface ApiPreIpo {
+  id: string | null;
+  name: string | null;
 }

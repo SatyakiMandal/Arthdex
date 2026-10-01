@@ -1,6 +1,23 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
-import { AlertTriangle, BarChart3, Building2, Coins, FlaskConical, Layers, Newspaper, Rocket, ScanSearch, ShieldCheck } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowLeftRight,
+  BarChart3,
+  Building2,
+  CalendarDays,
+  Coins,
+  FlaskConical,
+  Gauge,
+  Layers,
+  Newspaper,
+  Rocket,
+  ScanSearch,
+  ScrollText,
+  ShieldCheck,
+  Star,
+  Sunrise,
+} from "lucide-react";
 
 const COLUMNS = [
   {
@@ -10,6 +27,8 @@ const COLUMNS = [
       { label: "Commodities", href: "/commodities", icon: Coins },
       { label: "Technical screener", href: "/screener", icon: ScanSearch },
       { label: "NSE Bhavcopy", href: "/bhavcopy", icon: Layers },
+      { label: "Bulk & block deals", href: "/deals", icon: ArrowLeftRight },
+      { label: "Results calendar", href: "/calendar", icon: CalendarDays },
     ],
   },
   {
@@ -19,6 +38,8 @@ const COLUMNS = [
       { label: "Unlisted space", href: "/unlisted", icon: Building2 },
       { label: "Filings & news", href: "/news", icon: Newspaper },
       { label: "Event impact analyzer", href: "/analyzer", icon: FlaskConical },
+      { label: "Watchlist", href: "/watchlist", icon: Star },
+      { label: "Morning briefing", href: "/briefing", icon: Sunrise },
     ],
   },
 ];
@@ -68,6 +89,14 @@ export function SiteFooter() {
             a SEBI-registered investment adviser. Model outputs are estimates from limited data and past behaviour. Grey-market
             premiums are unofficial, unregulated quotes. Unlisted prices are dealer quotes, not exchange prints. Check figures
             against primary filings before acting.
+          </p>
+          <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-2xs">
+            <Link href="/methodology" className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground">
+              <ScrollText className="h-3 w-3" /> Methodology
+            </Link>
+            <Link href="/status" className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground">
+              <Gauge className="h-3 w-3" /> Data status
+            </Link>
           </p>
         </div>
       </div>

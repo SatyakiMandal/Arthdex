@@ -204,6 +204,25 @@ def real_updates(series: pd.DataFrame | pd.Series) -> pd.DataFrame | pd.Series:
     return series[changed]
 
 
+_FACT_RE = re.compile(r'<div class="l">([^<]+)</div><div class="v[^"]*">([^<]*)</div>')
+_SECTOR_RE = re.compile(r'class="chip" href="/sector/[^"]+">([^<]+)<')
+
+
+def fetch_page_context(fetcher: Fetcher, url: str) -> dict:
+    """The sector and the source's own ratios (P/B, P/E, book value, lot size, ...) from a product page.
+
+    The page is already cached from the price fetch, so this costs no extra request.
+    """
+    html = fetcher.get(url).text
+    facts: dict[str, str] = {}
+    for label, value in _FACT_RE.findall(html):
+        label = unescape(label).strip()
+        if label not in facts:
+            facts[label] = unescape(value).strip()
+    sector = _SECTOR_RE.search(html)
+    return {"sector": unescape(sector.group(1)).strip() if sector else None, "facts": facts}
+
+
 @dataclass
 class PriceMove:
     """One real revision: the indicative price at the start of the range,
@@ -276,6 +295,9 @@ class UnlistedAnalysis:
     items: list[NewsItem] = field(default_factory=list)
     macro_events: list = field(default_factory=list)
     macro: dict = field(default_factory=dict)
+    # Valuation, risk, technicals and the investment call (see ceia.unlisted_research)
+    research: dict = field(default_factory=dict)
+    investment_verdict: dict = field(default_factory=dict)
 
     def ranked_moves(self, top_n: int | None = None) -> list[PriceMove]:
         ranked = sorted(self.moves, key=lambda m: -abs(m.change))
@@ -298,6 +320,8 @@ class UnlistedAnalysis:
             ],
             "series": json.loads(series.to_json(orient="records")),
             "macro": self.macro,
+            "research": self.research,
+            "investment_verdict": self.investment_verdict,
         }
 
 
@@ -318,6 +342,7 @@ def analyse_unlisted(
     skip_slug_prefilter: bool = False,
     macro_provider=None,
     macro_fetcher=None,
+    context: dict | None = None,
 ) -> UnlistedAnalysis:
     """Wire the price-move computation to the existing news pipeline.
 
@@ -361,9 +386,31 @@ def analyse_unlisted(
     macro_summary = macro_mod.macro_summary(
         config.start, config.end, provider=macro_provider, fetcher=macro_fetcher)
 
-    return UnlistedAnalysis(config=config, url=url, series=series, moves=moves,
-                            news_meta=news_meta or {}, unattributed=unattributed,
-                            items=items, macro_events=macro_events, macro=macro_summary)
+    analysis = UnlistedAnalysis(config=config, url=url, series=series, moves=moves,
+                                news_meta=news_meta or {}, unattributed=unattributed,
+                                items=items, macro_events=macro_events, macro=macro_summary)
+
+    # Valuation, risk, technicals and the call. A failure here must never lose the timeline,
+    # so it is logged and the report simply omits those sections.
+    try:
+        from .unlisted_research import build_research
+
+        ctx = dict(context or {})
+        if "facts" not in ctx:
+            try:
+                ctx.update(fetch_page_context(fetcher, url))
+            except Exception as exc:
+                log.warning("could not read the page's ratios: %s", exc)
+        window_real = real_updates(series)
+        analysis.research = build_research(
+            series, window_real, config.start, config.end, ctx, moves, macro_summary,
+            news_available=bool(items),
+        )
+        analysis.investment_verdict = (analysis.research or {}).get("verdict") or {}
+    except Exception as exc:
+        log.exception("unlisted research layer failed; continuing with the timeline only")
+        analysis.research = {"available": False, "note": f"The valuation and risk layer failed for this run ({type(exc).__name__}: {exc})."}
+    return analysis
 
 
 def main() -> None:
@@ -412,6 +459,10 @@ def main() -> None:
                              "needed) still show either way. Useful if Yahoo "
                              "is rate-limiting this connection - see the "
                              "README's note on shared/proxied egress.")
+    parser.add_argument("--context", default=None,
+                        help="JSON file with {sector, facts, benchmarks}. The Arthdex service writes it so the "
+                             "valuation can compare against live NSE index multiples; without it the page's own "
+                             "ratios are read and benchmark-based models are skipped.")
     parser.add_argument("--cache-dir", default="cache")
     parser.add_argument("--user-agent", default=DEFAULT_USER_AGENT)
     parser.add_argument("--out", default="json/unlisted.json")
@@ -474,6 +525,7 @@ def main() -> None:
             skip_slug_prefilter=args.skip_slug_prefilter,
             macro_provider=macro_provider,
             macro_fetcher=macro_fetcher,
+            context=json.loads(Path(args.context).read_text(encoding="utf-8")) if args.context else None,
         )
     except UnlistedPriceError as exc:
         print(f"\nPrice data unavailable: {exc}")

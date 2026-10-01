@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, Download, ExternalLink, FileSpreadsheet, RotateCcw, XCircle } from "lucide-react";
 import { ListedSummaryView, UnlistedSummaryView } from "@/components/analyzer/summary-view";
+import { RunActions } from "@/components/analyzer/run-actions";
 import { RunProgress } from "@/components/analyzer/run-progress";
 import { RunStatusPill } from "@/components/analyzer/run-list";
 import type { AnalyzerRun, AnalyzerSummary } from "@/types/analyzer";
@@ -102,6 +103,7 @@ export function RunView({ initial }: { initial: AnalyzerRun }) {
               <a href={`/api/analyzer/runs/${id}/download/analysis.json`} className={BTN}>
                 <Download className="h-3.5 w-3.5" /> JSON
               </a>
+              <RunActions run={run} />
             </>
           ) : null}
         </div>
