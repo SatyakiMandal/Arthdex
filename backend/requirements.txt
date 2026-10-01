@@ -9,6 +9,8 @@ charset-normalizer==3.5.1
 click==8.5.0
 curl_cffi==0.16.3
 fastapi==0.142.0
+feedparser==6.0.14
+feedparser_sgmllib==2.1.0
 formulaic==1.2.2
 h11==0.16.0
 httptools==0.8.0
