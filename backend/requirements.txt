@@ -1,54 +1,147 @@
-annotated-doc==0.0.5
-annotated-types==0.8.0
-anyio==4.15.1
-arch==8.0.0
-beautifulsoup4==4.15.0
-certifi==2026.7.22
-cffi==2.1.1
-charset-normalizer==3.5.1
-click==8.5.0
-curl_cffi==0.16.3
-fastapi==0.142.0
-feedparser==6.0.14
-feedparser_sgmllib==2.1.0
-formulaic==1.2.2
-h11==0.16.0
-httptools==0.8.0
-idna==3.20
-interface_meta==2.0.1
-lxml==6.1.3
-multitasking==0.0.13
-narwhals==2.26.0
-numpy==2.5.3
-opentelemetry-api==1.45.0
-packaging==26.3
-pandas==3.0.6
-patsy==1.0.3
-peewee==4.5.2
-platformdirs==4.12.2
-protobuf==7.36.2
-pycparser==3.0
-pydantic==2.13.5
-pydantic_core==2.46.5
-python-dateutil==2.9.0.post0
-python-dotenv==1.2.3
-pytz==2026.4
-PyYAML==6.0.3
-requests==2.34.2
-scipy==1.18.1
-six==1.17.0
-soupsieve==2.10
-starlette==1.7.0
-statsmodels==0.15.0
-typing-inspection==0.4.4
-typing_extensions==4.16.0
-tzdata==2026.4
-urllib3==2.8.0
-uvicorn==0.54.0
-watchfiles==1.3.0
-websockets==17.1
-wrapt==2.5.0
-yfinance==1.7.0
-openpyxl>=3.1
-torch>=2.0
-transformers>=4.40
+# =============================================================================
+#  Arthdex data service - Python dependencies
+#  File: backend/requirements.txt
+# =============================================================================
+#
+#  Tested with : Python 3.14.6 on Windows 11 (64-bit), pip 26.2
+#  Python      : 3.12 or newer. numpy 2.5 and scipy 1.18 require it, and networkx
+#                excludes exactly 3.14.1. Anything other than 3.14.6 is untested.
+#  Install     : python -m pip install -r requirements.txt     (run inside backend/, in a venv)
+#  Dev tools   : python -m pip install -r requirements-dev.txt (ruff; adds this file)
+#  Size        : about 1.3 GB installed, most of it torch. See "Lighter install" below.
+#
+#  How this file is organised
+#    1. Direct dependencies - what the code imports, with the reason.
+#    2. Optional extras     - commented out; enable only if you use that feature.
+#    3. Resolved transitive dependencies - pinned so every machine gets the same
+#       versions. Each line says which package pulls it in.
+#
+#  Lighter install (no language models)
+#    The event-impact engine falls back to a word-list sentiment model when torch /
+#    transformers are missing (it says so in the run log) and skips emotion tags.
+#    Everything else on the site works. To skip them, delete the "torch" and
+#    "transformers" lines in section 1d and every line tagged [ml-only] in section 3.
+#    That saves roughly 1 GB of disk and most of the install time.
+#
+#  Updating pins
+#    Install into a clean venv, run the unit tests and the site, then regenerate with
+#    "python -m pip freeze" and re-annotate. Do not edit pins by hand.
+#
+#  Not installed by this file
+#    * Node packages (the website)     -> package.json / package-lock.json (npm ci)
+#    * Playwright browsers (PDF export) -> see section 2
+# =============================================================================
+
+
+# -----------------------------------------------------------------------------
+# 1. Direct dependencies
+# -----------------------------------------------------------------------------
+
+
+# 1a. Web service (the FastAPI data service in backend/app)
+fastapi==0.142.0  # app/main.py and every router
+uvicorn[standard]==0.54.0  # ASGI server; [standard] adds httptools, websockets, watchfiles, python-dotenv, PyYAML
+pydantic==2.13.5  # request models in routers/analyzer.py and routers/desk.py (also required by FastAPI)
+
+# 1b. Market data and scraping
+yfinance==1.7.0  # Yahoo Finance: quotes, history, statements, analyst data (providers/yahoo.py, services/*)
+curl_cffi==0.16.3  # browser-impersonating HTTP client; NSE rejects ordinary clients (providers/nse.py)
+requests==2.34.2  # Bhavcopy, screener.in and the engine's polite Fetcher
+feedparser==6.0.14  # financial-press RSS feeds (providers/rss.py)
+beautifulsoup4==4.15.0  # HTML parsing for shareholding and the engine's extractors
+lxml==6.1.3  # fast parser backend for beautifulsoup4
+
+# 1c. Numerics and statistics
+numpy==2.5.3  # arrays everywhere
+pandas==3.0.6  # price frames, indicators, Bhavcopy
+scipy==1.18.1  # distributions, optimisation (VaR, synthetic control, event study)
+statsmodels==0.15.0  # OLS betas, HAR-RV, Markov regime switching, ARIMA
+arch==8.0.0  # GARCH, EGARCH and FIGARCH volatility models
+
+# 1d. Event-impact engine (backend/ceia) language models and reports
+torch==2.14.0  # runs FinBERT / GoEmotions. On Windows the PyPI wheel is the CPU build
+transformers==5.17.0  # loads ProsusAI/finbert and SamLowe/roberta-base-go_emotions. Without torch + transformers the engine falls back to a lexicon
+openpyxl==3.1.5  # Excel workbook export
+
+
+# -----------------------------------------------------------------------------
+# 2. Optional extras (commented out)
+# -----------------------------------------------------------------------------
+# PDF export of an analysis (ceia/pdf.py, only used with the engine's --pdf flag; the
+# website never passes it). After installing, fetch the browser once:
+#     python -m playwright install chromium
+# playwright==1.63.0
+#
+# Text extraction from annual-report / earnings-call PDFs (ceia/pdf_extract.py, a
+# stand-alone command-line tool that the website does not use):
+# pypdf==6.19.0
+#
+# Alpha Vantage price fallback is enabled by setting ALPHAVANTAGE_API_KEY in the
+# environment. It needs no extra package.
+
+
+# -----------------------------------------------------------------------------
+# 3. Resolved transitive dependencies (pinned)
+# -----------------------------------------------------------------------------
+
+annotated-doc==0.0.5  # required by: fastapi, typer
+annotated-types==0.8.0  # required by: pydantic
+anyio==4.15.1  # required by: httpx, starlette, watchfiles
+certifi==2026.7.22  # required by: curl-cffi, httpcore, httpx, requests
+cffi==2.1.1  # required by: curl-cffi
+charset-normalizer==3.5.1  # required by: requests
+click==8.5.0  # required by: huggingface-hub, uvicorn
+colorama==0.4.6; sys_platform == "win32"  # required by: tqdm, typer, uvicorn[standard]
+et-xmlfile==2.0.0  # required by: openpyxl
+feedparser-sgmllib==2.1.0  # required by: feedparser
+filelock==4.0.7  # [ml-only] required by: huggingface-hub, torch
+formulaic==1.2.2  # required by: statsmodels
+fsspec==2026.9.0  # [ml-only] required by: huggingface-hub, torch
+h11==0.16.0  # required by: httpcore, uvicorn
+hf-xet==1.6.0; platform_machine == "x86_64" or platform_machine == "AMD64" or platform_machine == "arm64" or platform_machine == "aarch64"  # [ml-only] required by: huggingface-hub
+httpcore==1.0.9  # [ml-only] required by: httpx
+httptools==0.8.0  # required by: uvicorn[standard]
+httpx==0.28.1  # [ml-only] required by: huggingface-hub
+huggingface-hub==1.33.0  # [ml-only] required by: tokenizers, transformers
+idna==3.20  # required by: anyio, httpx, requests
+interface-meta==2.0.1  # required by: formulaic
+jinja2==3.1.6  # [ml-only] required by: torch
+markdown-it-py==4.2.0  # [ml-only] required by: rich
+markupsafe==3.0.3  # [ml-only] required by: jinja2
+mdurl==0.1.2  # [ml-only] required by: markdown-it-py
+mpmath==1.3.0  # [ml-only] required by: sympy
+multitasking==0.0.13  # required by: yfinance
+narwhals==2.26.0  # required by: formulaic
+networkx==3.7  # [ml-only] required by: torch
+opentelemetry-api==1.45.0  # required by: fastapi
+packaging==26.3  # required by: arch, huggingface-hub, patsy, statsmodels, transformers
+patsy==1.0.3  # required by: statsmodels
+peewee==4.5.2  # required by: yfinance
+platformdirs==4.12.2  # required by: yfinance
+protobuf==7.36.2  # required by: yfinance
+pycparser==3.0  # required by: cffi
+pydantic-core==2.46.5  # required by: pydantic
+pygments==2.21.0  # [ml-only] required by: rich
+python-dateutil==2.9.0.post0  # required by: pandas
+python-dotenv==1.2.3  # required by: uvicorn[standard]
+pytz==2026.4  # required by: yfinance
+pyyaml==6.0.3  # required by: huggingface-hub, transformers, uvicorn[standard]
+regex==2026.9.29  # [ml-only] required by: transformers
+rich==15.0.0  # [ml-only] required by: typer
+safetensors==0.8.0  # [ml-only] required by: transformers
+setuptools==84.0.0  # [ml-only] required by: torch
+shellingham==1.5.4  # [ml-only] required by: typer
+six==1.17.0  # required by: python-dateutil
+soupsieve==2.10  # required by: beautifulsoup4
+starlette==1.7.0  # required by: fastapi
+sympy==1.14.0  # [ml-only] required by: torch
+tokenizers==0.23.2  # [ml-only] required by: transformers
+tqdm==4.70.1  # [ml-only] required by: huggingface-hub, transformers
+typer==0.27.2  # [ml-only] required by: transformers
+typing-extensions==4.16.0  # required by: anyio, beautifulsoup4, fastapi, formulaic, huggingface-hub, opentelemetry-api, pydantic, pydantic-core, starlette, torch, typing-inspection, uvicorn
+typing-inspection==0.4.4  # required by: fastapi, pydantic
+tzdata==2026.4  # required by: pandas
+urllib3==2.8.0  # required by: requests
+watchfiles==1.3.0  # required by: uvicorn[standard]
+websockets==17.1  # required by: uvicorn[standard], yfinance
+wrapt==2.5.0  # required by: formulaic

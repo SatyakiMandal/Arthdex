@@ -129,7 +129,7 @@ export function UniversalSearch({ className }: { className?: string }) {
       ref={containerRef}
       className={cn(
         "relative transition-[width] duration-300 ease-out",
-        open ? "w-full md:w-[22rem]" : "w-full md:w-52 2xl:w-64",
+        open ? "w-full md:w-[22rem]" : "w-full md:w-44 2xl:w-64",
         // Between lg and xl the nav leaves no room, so the box collapses to an icon
         // that opens as an overlay instead of pushing the nav around.
         "lg:max-xl:h-9 lg:max-xl:!w-10",

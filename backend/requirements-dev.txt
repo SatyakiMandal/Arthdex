@@ -1,0 +1,13 @@
+# =============================================================================
+#  Arthdex data service - development tools
+#  File: backend/requirements-dev.txt
+# =============================================================================
+#  Install (inside backend/, after the runtime requirements):
+#      python -m pip install -r requirements-dev.txt
+#
+#  The unit tests use the standard library's unittest and need nothing extra:
+#      python -m unittest discover -s tests -v
+# =============================================================================
+-r requirements.txt
+
+ruff==0.16.10   # linter used for the code review: python -m ruff check app
