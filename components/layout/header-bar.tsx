@@ -142,7 +142,7 @@ export function HeaderBar() {
     >
       <div className="mx-auto flex h-14 max-w-[1600px] items-center gap-4 px-4 sm:px-6">
         <Link href="/" aria-label="Arthdex home" className="group flex shrink-0 items-center">
-          <Logo className="[&_svg]:transition-transform [&_svg]:duration-300 group-hover:[&_svg]:rotate-[-5deg] group-hover:[&_svg]:scale-105" />
+          <Logo className="[&_img]:transition-transform [&_img]:duration-300 group-hover:[&_img]:scale-105" />
         </Link>
 
         <nav className="ml-3 hidden items-center gap-0.5 lg:flex">
@@ -174,7 +174,7 @@ export function HeaderBar() {
           <MoreMenu pathname={pathname} />
         </nav>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-2 pl-4">
           <UniversalSearch className="hidden md:block" />
           <HeaderActions />
           <ThemeToggle />

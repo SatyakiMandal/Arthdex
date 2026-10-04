@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ChevronDown, Columns2, Link2, Loader2, Printer, RefreshCw } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Check, Link2, Loader2, Printer, RefreshCw } from "lucide-react";
+import { CompareMenu } from "@/components/analyzer/compare-menu";
 import type { AnalyzerRun } from "@/types/analyzer";
 
 const BTN =
@@ -85,62 +85,5 @@ export function RunActions({ run }: { run: AnalyzerRun }) {
         </p>
       ) : null}
     </>
-  );
-}
-
-function CompareMenu({ run }: { run: AnalyzerRun }) {
-  const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const [runs, setRuns] = useState<AnalyzerRun[] | null>(null);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open || runs) return;
-    fetch("/api/analyzer/runs?limit=60")
-      .then((r) => r.json())
-      .then((b: { runs: AnalyzerRun[] }) => setRuns(b.runs))
-      .catch(() => setRuns([]));
-  }, [open, runs]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => !ref.current?.contains(e.target as Node) && setOpen(false);
-    document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
-  }, [open]);
-
-  const others = (runs ?? []).filter((r) => r.id !== run.id && r.status === "COMPLETED" && r.kind === run.kind);
-
-  return (
-    <div ref={ref} className="relative">
-      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} className={BTN}>
-        <Columns2 className="h-3.5 w-3.5" /> Compare
-        <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")} />
-      </button>
-      {open ? (
-        <div className="absolute right-0 top-[calc(100%+6px)] z-30 max-h-72 w-72 overflow-auto rounded-xl border border-border bg-surface-raised p-1 shadow-xl">
-          {runs === null ? (
-            <p className="px-3 py-3 text-2xs text-muted-foreground">Loading analyses…</p>
-          ) : others.length === 0 ? (
-            <p className="px-3 py-3 text-2xs text-muted-foreground">No other finished {run.kind} analysis to compare with yet.</p>
-          ) : (
-            others.map((r) => (
-              <button
-                key={r.id}
-                type="button"
-                onClick={() => router.push(`/analyzer/compare?a=${run.id}&b=${r.id}`)}
-                className="block w-full rounded-lg px-3 py-2 text-left transition-colors hover:bg-surface-muted"
-              >
-                <span className="block truncate text-sm">{r.company}</span>
-                <span className="block font-mono text-2xs text-muted-foreground">
-                  {r.start} to {r.end}
-                  {r.origin === "sample" ? " · sample" : ""}
-                </span>
-              </button>
-            ))
-          )}
-        </div>
-      ) : null}
-    </div>
   );
 }

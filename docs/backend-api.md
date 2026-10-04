@@ -129,6 +129,7 @@ Insider-trading (PIT) disclosures are not offered: the NSE endpoint returned no 
 | Route | Description |
 |---|---|
 | `GET /analyzer/search?q=&kind=any\|listed\|unlisted&limit=` | `kind` defaults to `any`: NSE equities plus the unlisted directory, merged so listed hits cannot crowd out unlisted ones (at least 3 unlisted slots are kept). Returns `unlistedReady: false` while the directory is still being built |
+| `GET /analyzer/runs/{id}/peers` | Companies worth comparing a finished run with. Listed: the peers the engine scraped for the company. Unlisted: other unlisted companies in the same UnlistedZone sector (needs the directory to be built; `ready: false` until then). Each carries `runId` when a finished analysis of it already exists |
 | `POST /analyzer/runs` (202) | Body `{kind, company, ticker?, url?, start, end}`. See validation below |
 | `GET /analyzer/runs?origin=run\|sample&limit=` | Newest first |
 | `GET /analyzer/runs/{id}` | Status, stage, log tail, progress |

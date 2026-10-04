@@ -201,6 +201,22 @@
       "change": -0.022222222222222223
     },
     {
+      "start_date": "2026-08-20",
+      "end_date": "2026-09-17",
+      "start_price": 48.0,
+      "end_price": 47.0,
+      "headlines": [],
+      "change": -0.020833333333333332
+    },
+    {
+      "start_date": "2026-08-17",
+      "end_date": "2026-08-20",
+      "start_price": 49.0,
+      "end_price": 48.0,
+      "headlines": [],
+      "change": -0.02040816326530612
+    },
+    {
       "start_date": "2026-08-01",
       "end_date": "2026-08-06",
       "start_price": 52.0,
@@ -1059,6 +1075,26 @@
     {
       "date": "2026-08-18",
       "close": 49.0
+    },
+    {
+      "date": "2026-08-19",
+      "close": 49.0
+    },
+    {
+      "date": "2026-08-20",
+      "close": 48.0
+    },
+    {
+      "date": "2026-08-21",
+      "close": 48.0
+    },
+    {
+      "date": "2026-08-22",
+      "close": 48.0
+    },
+    {
+      "date": "2026-08-23",
+      "close": 48.0
     }
   ],
   "macro": {
@@ -1067,798 +1103,685 @@
       "current_rate_pct": 5.25,
       "sdf_rate_pct": 5.0,
       "msf_rate_pct": 5.5,
-      "mpc_stance": "Neutral / Withdrawal of Accommodation",
-      "source": "Reserve Bank of India (MPC)"
+      "as_of": null,
+      "source": "TradingEconomics / Reserve Bank of India (latest published)"
     },
+    "fed_funds_rate": null,
+    "eight_core_industries": null,
     "gdp_growth": {
       "value": 7.8,
-      "period": "first quarter of 2026",
+      "period": "second quarter of 2026",
       "annual_rate_pct": 7.8,
       "source": "TradingEconomics / MOSPI"
     },
     "cpi_inflation": {
-      "value": 4.45,
-      "month": "July 2026",
+      "value": 4.82,
+      "month": "August 2026",
       "target_band": "2.0% - 6.0%",
       "target_midpoint": 4.0,
       "status": "Inside RBI Target Band",
       "source": "TradingEconomics / MOSPI"
     },
     "iip_growth": {
-      "value": 7.3,
-      "month": "June of 2026",
+      "value": 8.0,
+      "month": "August of 2026",
       "sector": "Manufacturing, Mining, Electricity",
       "source": "TradingEconomics / MOSPI"
     },
     "forex_reserves": {
-      "value_usd_billion": 716.91,
-      "as_of": "August 14, 2026",
-      "import_cover_months": 12.1,
+      "value_usd_billion": 765.9,
+      "as_of": "September 18, 2026",
+      "import_cover_months": 12.9,
       "source": "RBI / TradingEconomics"
     },
     "pmi": {
-      "manufacturing": 52.9,
-      "services": 54.5,
-      "composite": 53.78,
+      "manufacturing": 55.7,
+      "services": 55.8,
+      "composite": 55.76,
       "regime": "Expansionary (> 50.0)",
-      "as_of": "August 2026",
+      "as_of": "September 2026",
       "source": "HSBC / S&P Global India"
     },
     "sovereign_yields": {
-      "india_10y_pct": 6.76,
-      "us_10y_pct": 4.74,
-      "spread_bps": 202,
-      "as_of": "August 13, 2026",
-      "source": "TradingEconomics / US Fed"
+      "india_10y_pct": 7.17,
+      "us_10y_pct": 5.24,
+      "spread_bps": 193,
+      "as_of": "September 30, 2026",
+      "source": "TradingEconomics (India) / FRED (US)"
     },
     "usdinr": {
       "symbol": "USDINR",
       "label": "USD / INR Exchange Rate",
-      "start_date": "2026-01-01",
-      "end_date": "2026-08-23",
+      "start_date": "2026-01-02",
+      "end_date": "2026-08-21",
       "start_rate": 89.96,
-      "end_rate": 95.73,
-      "change": 0.0641,
+      "end_rate": 95.77,
+      "change": 0.06458626164675088,
       "direction": "Depreciation",
-      "source": "RBI Reference Rate"
+      "source": "RBI / Interbank FX"
     },
     "crude_oil": {
-      "start_date": "2026-01-01",
-      "end_date": "2026-08-23",
+      "start_date": "2026-01-02",
+      "end_date": "2026-08-21",
       "start_price": 60.75,
-      "end_price": 89.03,
-      "change": 0.4655144032921811,
+      "end_price": 94.39,
+      "change": 0.5537448559670782,
       "unit": "$/bbl",
       "source": "Intercontinental Exchange (Brent Crude)"
     },
     "gsec_yield": {
-      "value": 6.76,
-      "as_of": "August 13, 2026",
+      "value": 7.17,
+      "as_of": "September 30, 2026",
       "source": "tradingeconomics.com"
     },
     "fiscal_deficit": {
       "fiscal_year": "2026-27",
-      "lakh_crore": 15.69,
-      "pct_gdp": 4.4,
+      "lakh_crore": 16.96,
+      "pct_gdp": 4.3,
       "source": "govtbudget.com"
     },
-    "not_available": {},
-    "eight_core_industries": {
-      "combined_growth_yoy_pct": 5.91,
-      "total_iip_weight_pct": 40.27,
-      "core_index_weight_pct": 100.0,
-      "as_of_period": "June / July 2026",
-      "index_level": 168.4,
-      "sectors": [
-        {
-          "sector": "Refinery Products",
-          "weight_pct": 28.04,
-          "yoy_growth_pct": 4.9,
-          "status": "Expansionary",
-          "narrative": "Refinery throughput supported by robust domestic fuel consumption and export margins."
-        },
-        {
-          "sector": "Electricity Generation",
-          "weight_pct": 19.85,
-          "yoy_growth_pct": 8.6,
-          "status": "Strong Expansion",
-          "narrative": "Peak summer power demand and industrial baseload driving record thermal and renewable generation."
-        },
-        {
-          "sector": "Steel Production",
-          "weight_pct": 17.92,
-          "yoy_growth_pct": 7.2,
-          "status": "Robust Growth",
-          "narrative": "Infrastructure capex, railway modernization, and automotive demand underpinning crude steel output."
-        },
-        {
-          "sector": "Coal Mining",
-          "weight_pct": 10.33,
-          "yoy_growth_pct": 10.2,
-          "status": "High Double-Digit Growth",
-          "narrative": "Enhanced pithead dispatch and commercial mine ramping to maintain power plant inventory buffers."
-        },
-        {
-          "sector": "Crude Oil Extraction",
-          "weight_pct": 8.98,
-          "yoy_growth_pct": -1.4,
-          "status": "Mature / Flattish",
-          "narrative": "Offshore aging field declines offset by deepwater KG-basin production ramping."
-        },
-        {
-          "sector": "Natural Gas",
-          "weight_pct": 6.88,
-          "yoy_growth_pct": 3.5,
-          "status": "Moderate Expansion",
-          "narrative": "City gas distribution networks (CGD) and fertilizer feedstock demand maintaining positive momentum."
-        },
-        {
-          "sector": "Cement Manufacturing",
-          "weight_pct": 5.37,
-          "yoy_growth_pct": 5.8,
-          "status": "Expansionary",
-          "narrative": "Highway construction, affordable housing projects, and commercial real estate buildout driving dispatches."
-        },
-        {
-          "sector": "Fertilizers Production",
-          "weight_pct": 2.63,
-          "yoy_growth_pct": 2.4,
-          "status": "Steady",
-          "narrative": "Kharif sowing season buffer stocking and domestic urea/DAP production plants running at full capacity."
-        }
-      ],
-      "summary": "The 8 Core Industries (40.27% of IIP) recorded a combined YoY growth of +5.91%, led by double-digit surges in Coal (+10.2%) and Electricity (+8.6%).",
-      "source": "Office of Economic Adviser, DPIIT / Ministry of Commerce & Industry"
-    },
-    "fed_funds_rate": {
-      "target_range": "5.25% - 5.50%",
-      "effective_rate_pct": 5.33,
-      "upper_limit_pct": 5.5,
-      "lower_limit_pct": 5.25,
-      "fomc_stance": "Restrictive / Data-Dependent Calibration",
-      "next_meeting": "September 2026",
-      "us_india_rate_differential_bps": -8,
-      "as_of": "August 2026",
-      "source": "US Federal Reserve Board (FOMC)"
-    }
+    "not_available": {}
   },
-  "metals": {
-    "metals": [
-      {
-        "name": "Copper",
-        "symbol": "HG=F",
-        "category": "Industrial Metal",
-        "unit": "$/lb",
-        "description": "Global economic activity bellwether ('Dr. Copper')",
-        "start_price": 4.15,
-        "end_price": 4.52,
-        "current_price": 4.52,
-        "change_pct": 8.92,
-        "momentum_1w_pct": 1.34,
-        "annualized_volatility_pct": 24.2,
-        "correlation_with_asset": 0.12,
-        "transmission_channel": "Global capex, electronics, power grid infrastructure, and electric vehicles",
-        "high_price": 4.75,
-        "low_price": 3.94,
-        "as_of_date": "23-Aug-2026",
-        "source": "NYMEX / COMEX / LME / Yahoo Finance"
+  "research": {
+    "available": true,
+    "sector": "Semiconductors",
+    "sector_index": null,
+    "facts": {
+      "pb": 1.44,
+      "pe": 4.88,
+      "book_value": 31.97,
+      "face_value": 2.0,
+      "debt_equity": 0.04,
+      "lot_size": 1000.0,
+      "high_52w": 90.0,
+      "low_52w": 46.0
+    },
+    "price_profile": {
+      "first": 66.0,
+      "last": 48.0,
+      "first_date": "2026-01-01",
+      "last_date": "2026-08-23",
+      "window_return_pct": -27.27,
+      "cagr_pct": -39.15,
+      "high": 90.0,
+      "low": 48.0,
+      "change_1m_pct": -9.43,
+      "change_3m_pct": -14.29,
+      "change_6m_pct": -33.33,
+      "change_12m_pct": null,
+      "range_52w": {
+        "low": 48.0,
+        "high": 90.0,
+        "position_pct": 0.0
       },
-      {
-        "name": "Aluminium",
-        "symbol": "ALI=F",
-        "category": "Industrial Metal",
-        "unit": "$/ton",
-        "description": "Key lightweight metal for automotive, aerospace, power, and packaging",
-        "start_price": 2350.0,
-        "end_price": 2680.0,
-        "current_price": 2680.0,
-        "change_pct": 14.04,
-        "momentum_1w_pct": 2.11,
-        "annualized_volatility_pct": 24.2,
-        "correlation_with_asset": 0.12,
-        "transmission_channel": "Automotive body panels, aerospace structures, packaging, and transmission lines",
-        "high_price": 2814.0,
-        "low_price": 2232.5,
-        "as_of_date": "23-Aug-2026",
-        "source": "NYMEX / COMEX / LME / Yahoo Finance"
+      "percentile_52w": 1.9,
+      "drawdown": {
+        "max_drawdown_pct": -46.67,
+        "peak_date": "2026-01-20",
+        "trough_date": "2026-08-20",
+        "current_drawdown_pct": -46.67
       },
-      {
-        "name": "Zinc",
-        "symbol": "MZN=F",
-        "category": "Industrial Metal",
-        "unit": "$/ton",
-        "description": "Primary anti-corrosion galvanizing agent for steel structures and infrastructure",
-        "start_price": 2620.0,
-        "end_price": 2890.0,
-        "current_price": 2890.0,
-        "change_pct": 10.31,
-        "momentum_1w_pct": 1.55,
-        "annualized_volatility_pct": 24.2,
-        "correlation_with_asset": 0.12,
-        "transmission_channel": "Steel galvanizing, infrastructure construction, renewable energy hardware, and alloys",
-        "high_price": 3034.5,
-        "low_price": 2489.0,
-        "as_of_date": "23-Aug-2026",
-        "source": "NYMEX / COMEX / LME / Yahoo Finance"
-      },
-      {
-        "name": "Gold",
-        "symbol": "GC=F",
-        "category": "Precious Metal",
-        "unit": "$/troy oz",
-        "description": "Primary global monetary reserve asset, inflation hedge, and geopolitical risk barometer",
-        "start_price": 2650.0,
-        "end_price": 3020.0,
-        "current_price": 3020.0,
-        "change_pct": 13.96,
-        "momentum_1w_pct": 2.09,
-        "annualized_volatility_pct": 18.5,
-        "correlation_with_asset": -0.05,
-        "transmission_channel": "Sovereign reserve accumulation, currency debasement hedging, and safe-haven flows",
-        "high_price": 3171.0,
-        "low_price": 2517.5,
-        "as_of_date": "23-Aug-2026",
-        "source": "NYMEX / COMEX / LME / Yahoo Finance"
-      },
-      {
-        "name": "Silver",
-        "symbol": "SI=F",
-        "category": "Precious / Industrial Metal",
-        "unit": "$/troy oz",
-        "description": "Hybrid precious metal with critical demand in photovoltaic solar cells and advanced electronics",
-        "start_price": 29.5,
-        "end_price": 34.8,
-        "current_price": 34.8,
-        "change_pct": 17.97,
-        "momentum_1w_pct": 2.69,
-        "annualized_volatility_pct": 18.5,
-        "correlation_with_asset": 0.12,
-        "transmission_channel": "Solar PV installations, electronics conductors, investment demand, and jewelry",
-        "high_price": 36.54,
-        "low_price": 28.02,
-        "as_of_date": "23-Aug-2026",
-        "source": "NYMEX / COMEX / LME / Yahoo Finance"
+      "revisions": {
+        "count": 27,
+        "median_gap_days": 5.5,
+        "mean_abs_move_pct": 4.07,
+        "up_share_pct": 19.2,
+        "days_since_last": 3
       }
-    ],
-    "metals_table": [
-      {
-        "Commodity Metal": "Copper",
-        "Symbol": "HG=F",
-        "Category": "Industrial Metal",
-        "Spot Price": "4.52 $/lb",
-        "Window Return (%)": "+8.92%",
-        "1-Week Momentum": "+1.34%",
-        "Annualized Volatility": "24.2%",
-        "Asset Correlation (r)": "+0.120",
-        "Transmission Role": "Global capex, electronics, power grid infrastructure, and electric vehicles"
+    },
+    "risk": {
+      "months": 7,
+      "frequency": "monthly (the dealer price is revised too rarely for daily statistics)",
+      "liquidity": {
+        "stale_day_share_pct": 87.4,
+        "lot_size": 1000.0,
+        "min_ticket_inr": 48000.0,
+        "note": "A price that stays unchanged most days is a quote, not a market. Expect wide spreads and slow exits."
       },
-      {
-        "Commodity Metal": "Aluminium",
-        "Symbol": "ALI=F",
-        "Category": "Industrial Metal",
-        "Spot Price": "2,680.00 $/ton",
-        "Window Return (%)": "+14.04%",
-        "1-Week Momentum": "+2.11%",
-        "Annualized Volatility": "24.2%",
-        "Asset Correlation (r)": "+0.120",
-        "Transmission Role": "Automotive body panels, aerospace structures, packaging, and transmission lines"
+      "leverage": {
+        "debt_to_equity": 0.04
       },
-      {
-        "Commodity Metal": "Zinc",
-        "Symbol": "MZN=F",
-        "Category": "Industrial Metal",
-        "Spot Price": "2,890.00 $/ton",
-        "Window Return (%)": "+10.31%",
-        "1-Week Momentum": "+1.55%",
-        "Annualized Volatility": "24.2%",
-        "Asset Correlation (r)": "+0.120",
-        "Transmission Role": "Steel galvanizing, infrastructure construction, renewable energy hardware, and alloys"
-      },
-      {
-        "Commodity Metal": "Gold",
-        "Symbol": "GC=F",
-        "Category": "Precious Metal",
-        "Spot Price": "3,020.00 $/troy oz",
-        "Window Return (%)": "+13.96%",
-        "1-Week Momentum": "+2.09%",
-        "Annualized Volatility": "18.5%",
-        "Asset Correlation (r)": "-0.050",
-        "Transmission Role": "Sovereign reserve accumulation, currency debasement hedging, and safe-haven flows"
-      },
-      {
-        "Commodity Metal": "Silver",
-        "Symbol": "SI=F",
-        "Category": "Precious / Industrial Metal",
-        "Spot Price": "34.80 $/troy oz",
-        "Window Return (%)": "+17.97%",
-        "1-Week Momentum": "+2.69%",
-        "Annualized Volatility": "18.5%",
-        "Asset Correlation (r)": "+0.120",
-        "Transmission Role": "Solar PV installations, electronics conductors, investment demand, and jewelry"
+      "monthly_mean_pct": -7.99,
+      "monthly_vol_pct": 5.12,
+      "annualised_vol_pct": 17.8,
+      "skew": null,
+      "excess_kurtosis": null,
+      "best_month_pct": -1.9,
+      "worst_month_pct": -14.3,
+      "positive_months_pct": 0.0,
+      "var_1m": {
+        "historical_95_pct": null,
+        "historical_99_pct": null,
+        "parametric_95_pct": 15.1,
+        "parametric_99_pct": 18.1,
+        "cornish_fisher_95_pct": null,
+        "expected_shortfall_95_pct": null,
+        "note": "One-month loss that was not exceeded in 95 (or 99) of 100 months. Historical needs 12 (24) months of data."
       }
-    ],
-    "top_performer": "Silver",
-    "top_performer_gain_pct": 17.97,
-    "precious_vs_industrial_ratio": 303.06,
-    "summary_narrative": "Global metals commodities exhibited strong macro dispersion across the surveillance window. Silver led the cohort with a +17.97% price trajectory, driven by monetary and industrial demand. Industrial base metals (Copper, Aluminium, Zinc) reflected manufacturing order books and capex cycles, while precious metals (Gold, Silver) served as monetary anchors and safe-haven risk cushions.",
-    "start_date": "2026-01-01",
-    "end_date": "2026-08-23"
-  },
-  "technical_analysis": {
-    "current_price": 104.98,
-    "weekly_return_pct": 0.11,
-    "composite_score": 45.0,
-    "composite_rating": "Buy",
-    "moving_averages": {
-      "sma_20": 104.7,
-      "sma_50": 104.25,
-      "sma_200": 102.49,
-      "ema_12": 104.82,
-      "ema_26": 104.61,
-      "dist_to_sma_20_pct": 0.27,
-      "dist_to_sma_50_pct": 0.71,
-      "dist_to_sma_200_pct": 2.43,
-      "golden_cross_status": "Golden Cross (Bullish Regime: 50 SMA > 200 SMA)",
-      "ma_trend_bias": "Strongly Bullish (Above 20, 50, 200 SMA)"
     },
-    "adx": {
-      "adx_14": 100.0,
-      "plus_di_14": 100.0,
-      "minus_di_14": 0.0,
-      "trend_strength": "Extremely Strong Trend (ADX > 50)",
-      "directional_bias": "Bullish Dominance (+DI > -DI)"
+    "market_model": {
+      "months": 7,
+      "frequency": "monthly",
+      "Nifty 50": {
+        "beta": 0.5322,
+        "alpha_monthly": -0.0767,
+        "r_squared": 0.3662,
+        "beta_t": 1.6998,
+        "idio_vol_annual": 0.1548,
+        "correlation": 0.6052,
+        "months": 7,
+        "source": "yfinance",
+        "symbol": "^NSEI"
+      },
+      "interpretation": "A dealer-quoted price tracks the market loosely and with a lag, so a low R squared is expected and the beta is wide. Treat it as a rough sensitivity, not a hedge ratio."
     },
-    "macd": {
-      "macd_line": 0.21,
-      "signal_line": 0.21,
-      "histogram": 0.0,
-      "crossover_signal": "Bullish Momentum",
-      "momentum_velocity": "Decelerating Upward"
-    },
-    "rsi": {
-      "rsi_14": 100.0,
-      "condition": "Overbought (> 70) \u2014 Reversal Alert",
-      "reversal_risk": "High Exhaustion Risk"
-    },
-    "bollinger": {
-      "upper_band": 105.04,
-      "middle_band": 104.7,
-      "lower_band": 104.35,
-      "bandwidth_pct": 0.66,
-      "percent_b": 0.912,
-      "squeeze_status": "Normal Volatility Envelope",
-      "channel_position": "Upper Volatility Quartile (0.75 - 1.0 %B)"
-    },
-    "stochastic": {
-      "slow_k": 100.0,
-      "slow_d": 100.0,
-      "condition": "Overbought (> 80)",
-      "crossover": "Bullish Momentum (%K > %D)"
-    },
-    "pivots": {
-      "pivot": 104.94,
-      "r1": 105.02,
-      "r2": 105.06,
-      "r3": 105.14,
-      "s1": 104.9,
-      "s2": 104.82,
-      "s3": 104.78,
-      "fib_r1": 104.99,
-      "fib_r2": 105.01,
-      "fib_s1": 104.89,
-      "fib_s2": 104.87
-    },
-    "indicators_table": [
-      {
-        "Indicator": "20-Day SMA",
-        "Value": "\u20b9 104.70",
-        "Distance (%)": "+0.27%",
-        "Signal": "Bullish"
+    "technical": {
+      "weeks": 35,
+      "basis": "Weekly bars built from the dealer price. Daily indicators would mostly read a flat line.",
+      "composite_score": -32.1,
+      "composite_rating": "Bearish",
+      "rsi": 15.2,
+      "macd": {
+        "macd": -4.4164,
+        "signal": -4.1145,
+        "hist": -0.3019
       },
-      {
-        "Indicator": "50-Day SMA",
-        "Value": "\u20b9 104.25",
-        "Distance (%)": "+0.71%",
-        "Signal": "Bullish"
+      "moving_averages": {
+        "SMA 10w": 51.8,
+        "SMA 26w": 57.5
       },
-      {
-        "Indicator": "200-Day SMA",
-        "Value": "\u20b9 102.49",
-        "Distance (%)": "+2.43%",
-        "Signal": "Bullish"
+      "bollinger": {
+        "mid": 54.9,
+        "upper": 63.45,
+        "lower": 46.35,
+        "percent_b": 0.1
       },
-      {
-        "Indicator": "14-Period ADX",
-        "Value": "100.00",
-        "Distance (%)": "+DI: 100.0 / -DI: 0.0",
-        "Signal": "Extremely Strong Trend (ADX > 50)"
-      },
-      {
-        "Indicator": "MACD (12, 26, 9)",
-        "Value": "+0.21",
-        "Distance (%)": "Signal: +0.21 (Hist: +0.00)",
-        "Signal": "Bullish Momentum"
-      },
-      {
-        "Indicator": "14-Period RSI",
-        "Value": "100.00",
-        "Distance (%)": "Neutral Band (30-70)",
-        "Signal": "Overbought (> 70) \u2014 Reversal Alert"
-      },
-      {
-        "Indicator": "Bollinger Bands (20, 2\u03c3)",
-        "Value": "\u20b9 105.0 / 104.3",
-        "Distance (%)": "Bandwidth: 0.7% (%B: 0.91)",
-        "Signal": "Normal Volatility Envelope"
-      },
-      {
-        "Indicator": "Stochastic (%K, %D)",
-        "Value": "%K: 100.0 / %D: 100.0",
-        "Distance (%)": "Range (20-80)",
-        "Signal": "Bullish Momentum (%K > %D)"
-      }
-    ],
-    "weekly_playbook": [
-      {
-        "Pillar": "Trend Bias",
-        "Condition": "Strongly Bullish (Above 20, 50, 200 SMA)",
-        "Action": "Support base at 50 SMA (\u20b9104.25); trail stops below 20 SMA (\u20b9104.70)."
-      },
-      {
-        "Pillar": "Momentum (MACD/RSI)",
-        "Condition": "RSI: 100.0 \u00b7 Bullish Momentum",
-        "Action": "Align tactical trade entries with histogram acceleration."
-      },
-      {
-        "Pillar": "Volatility Regime",
-        "Condition": "Normal Volatility Envelope",
-        "Action": "Position for volatility expansion; avoid selling naked options during squeeze."
-      },
-      {
-        "Pillar": "Support & Resistance",
-        "Condition": "Weekly Pivot: \u20b9104.94",
-        "Action": "Upside targets R1: \u20b9105.02 / R2: \u20b9105.06; Downside buffers S1: \u20b9104.90 / S2: \u20b9104.82."
-      }
-    ],
-    "summary_verdict": "1-Week Quantitative Technical Verdict: BUY (Composite Score: +45.0/100). Price is trading at \u20b9104.98 (+0.3% vs 20 SMA, +0.7% vs 50 SMA). Momentum indicators show Overbought (> 70) \u2014 Reversal Alert with Bullish Momentum. ADX trend strength is 100.0 (Extremely Strong Trend (ADX > 50))."
-  },
-  "backtesting": {
-    "conformal_backtest": {
-      "target_coverage_pct": 90.0,
-      "observed_coverage_pct": 0.0,
-      "coverage_error_pct": -90.0,
-      "avg_interval_width_pct": 0.0,
-      "p50_directional_hit_rate_pct": 100.0,
-      "winkler_loss_score": 0.1,
-      "calibration_diagnosis": "Under-Covered (Distribution Shift Detected)",
-      "sample_windows": 30,
-      "evaluation_table": [
+      "indicators_table": [
         {
-          "Horizon": "5-Day Tactical",
-          "Target Coverage": "90.0%",
-          "Empirical Coverage": "1.2%",
-          "Width": "0.0%",
-          "Hit Rate": "100.0%"
+          "indicator": "RSI (14w)",
+          "value": "15.2",
+          "signal": "Oversold",
+          "note": "Below 30: washed out"
         },
         {
-          "Horizon": "21-Day Monthly Swing",
-          "Target Coverage": "90.0%",
-          "Empirical Coverage": "0.0%",
-          "Width": "0.0%",
-          "Hit Rate": "100.0%"
+          "indicator": "MACD (12,26,9 weekly)",
+          "value": "-0.302",
+          "signal": "Bearish",
+          "note": "Histogram above zero means momentum is rising"
         },
         {
-          "Horizon": "63-Day Quarterly",
-          "Target Coverage": "90.0%",
-          "Empirical Coverage": "80.0%",
-          "Width": "0.0%",
-          "Hit Rate": "97.5%"
+          "indicator": "SMA 10w",
+          "value": "\u20b951.80",
+          "signal": "Bearish",
+          "note": "Price is 7.3% below"
+        },
+        {
+          "indicator": "SMA 26w",
+          "value": "\u20b957.50",
+          "signal": "Bearish",
+          "note": "Price is 16.5% below"
+        },
+        {
+          "indicator": "10w / 26w cross",
+          "value": "Death",
+          "signal": "Bearish",
+          "note": ""
+        },
+        {
+          "indicator": "Momentum 4w",
+          "value": "-9.4%",
+          "signal": "Bearish",
+          "note": ""
+        },
+        {
+          "indicator": "Momentum 13w",
+          "value": "-14.3%",
+          "signal": "Bearish",
+          "note": ""
+        },
+        {
+          "indicator": "Bollinger %B (20w)",
+          "value": "0.10",
+          "signal": "Neutral",
+          "note": ""
         }
       ]
     },
-    "volatility_backtest": {
-      "models_comparison": [
+    "forecast": {
+      "method": "Stationary block bootstrap of monthly log returns, 4,000 paths, half of the historical drift removed",
+      "months_of_history": 7,
+      "confidence": "Low",
+      "bias": "Mildly negative",
+      "horizons": [
         {
-          "Volatility Model": "EGARCH(1,1)",
-          "RMSE (%)": 4.54,
-          "MAE (%)": 4.54,
-          "QLIKE Loss": 20.7811,
-          "DM Test p-val": 0.042,
-          "Efficiency Rank": "RANK 1 [OPTIMAL]"
+          "months": 1,
+          "p10_price": 42.82,
+          "p50_price": 45.24,
+          "p90_price": 49.03,
+          "p10_return_pct": -10.8,
+          "p50_return_pct": -5.7,
+          "p90_return_pct": 2.2,
+          "prob_loss_pct": 56.9
         },
         {
-          "Volatility Model": "GARCH(1,1)",
-          "RMSE (%)": 4.54,
-          "MAE (%)": 4.54,
-          "QLIKE Loss": 20.7811,
-          "DM Test p-val": 0.185,
-          "Efficiency Rank": "RANK 2"
+          "months": 3,
+          "p10_price": 37.34,
+          "p50_price": 42.2,
+          "p90_price": 46.38,
+          "p10_return_pct": -22.2,
+          "p50_return_pct": -12.1,
+          "p90_return_pct": -3.4,
+          "prob_loss_pct": 96.1
         },
         {
-          "Volatility Model": "HAR-RV (Intraday)",
-          "RMSE (%)": 4.54,
-          "MAE (%)": 4.54,
-          "QLIKE Loss": 20.7811,
-          "DM Test p-val": 0.185,
-          "Efficiency Rank": "RANK 3"
+          "months": 6,
+          "p10_price": 33.12,
+          "p50_price": 38.42,
+          "p90_price": 43.99,
+          "p10_return_pct": -31.0,
+          "p50_return_pct": -20.0,
+          "p90_return_pct": -8.3,
+          "prob_loss_pct": 99.5
         },
         {
-          "Volatility Model": "FIGARCH(1,d,1)",
-          "RMSE (%)": 4.54,
-          "MAE (%)": 4.54,
-          "QLIKE Loss": 20.7811,
-          "DM Test p-val": 0.185,
-          "Efficiency Rank": "RANK 4"
+          "months": 12,
+          "p10_price": 25.27,
+          "p50_price": 29.89,
+          "p90_price": 35.55,
+          "p10_return_pct": -47.4,
+          "p50_return_pct": -37.7,
+          "p90_return_pct": -25.9,
+          "prob_loss_pct": 100.0
         }
       ],
-      "optimal_model": "EGARCH(1,1)",
-      "optimal_qlike_loss": 20.7811,
-      "optimal_rmse": 4.54,
-      "diebold_mariano_p_val": 0.042,
-      "validation_sample_days": 30,
-      "diagnosis": "EGARCH(1,1) achieved minimum QLIKE loss (20.7811) and RMSE (4.54%), verifying optimal empirical variance forecasting."
+      "note": "A range of outcomes the past monthly moves allow, not a prediction. It cannot see a funding round, a DRHP filing or a downward revision that has not happened yet."
     },
-    "event_backtest": {
-      "total_events_tested": 0,
-      "win_rate_pct": 65.0,
-      "profit_factor": 2.45,
-      "mean_event_alpha_pct": 1.85,
-      "cumulative_strategy_return_pct": 12.4,
-      "max_event_drawdown_pct": -3.2,
-      "information_ratio": 1.65,
-      "event_performance_table": []
+    "valuation": {
+      "available": true,
+      "price": 48.0,
+      "blended_fair_value": 104.18,
+      "fair_value_low": 62.0,
+      "fair_value_high": 159.05,
+      "upside_pct": 117.0,
+      "valuation_tier": "Deep Discount",
+      "models": [
+        {
+          "key": "pb_relative",
+          "name": "Relative P/B vs NIFTY 500",
+          "fair_value": 73.37,
+          "upside_pct": 52.9,
+          "weight": 0.35,
+          "basis": "Book value per share x benchmark price-to-book x (1 - illiquidity discount)",
+          "inputs": {
+            "book_value": 31.97,
+            "benchmark_pb": 3.06,
+            "dlom_pct": 25.0
+          },
+          "caveat": "Index P/B is an average across large listed companies; a small private company can deserve less.",
+          "weight_used": 0.35
+        },
+        {
+          "key": "pe_relative",
+          "name": "Relative P/E vs NIFTY 500",
+          "fair_value": 159.05,
+          "upside_pct": 231.4,
+          "weight": 0.3,
+          "basis": "Earnings per share (price / P/E) x benchmark P/E x (1 - illiquidity discount)",
+          "inputs": {
+            "eps": 9.84,
+            "benchmark_pe": 21.56,
+            "dlom_pct": 25.0
+          },
+          "caveat": "Needs positive earnings; a single year of profit can mislead.",
+          "weight_used": 0.3
+        },
+        {
+          "key": "justified_pb",
+          "name": "Justified P/B (ROE vs cost of equity)",
+          "fair_value": 107.43,
+          "upside_pct": 123.8,
+          "weight": 0.2,
+          "basis": "Book value x (ROE - g) / (Ke - g) x (1 - illiquidity discount), with ROE = P/B divided by P/E",
+          "inputs": {
+            "roe_pct": 29.5,
+            "cost_of_equity_pct": 10.47,
+            "terminal_growth_pct": 5.0,
+            "risk_free_pct": 7.17,
+            "risk_free_assumed": false,
+            "beta_used": 0.6,
+            "dlom_pct": 25.0
+          },
+          "caveat": "Very sensitive to ROE persisting forever; treat as a cross-check on the relative models.",
+          "weight_used": 0.2
+        },
+        {
+          "key": "reversion",
+          "name": "12-month median price (mean reversion anchor)",
+          "fair_value": 62.0,
+          "upside_pct": 29.2,
+          "weight": 0.15,
+          "basis": "Median of the last 12 months of dealer prices",
+          "inputs": {
+            "window_days": 207
+          },
+          "caveat": "Only says where the price has spent its time. It is not a value estimate.",
+          "weight_used": 0.15
+        }
+      ],
+      "benchmark": {
+        "name": "NIFTY 500",
+        "pe": 21.56,
+        "pb": 3.06,
+        "dividend_yield": 1.03
+      },
+      "broad_benchmark": {
+        "name": "NIFTY 500",
+        "pe": 21.56,
+        "pb": 3.06
+      },
+      "company_multiples": {
+        "pb": 1.44,
+        "pe": 4.88,
+        "book_value": 31.97,
+        "roe_pct": 29.5,
+        "debt_equity": 0.04
+      },
+      "assumptions": {
+        "dlom_pct": 25.0,
+        "equity_risk_premium_pct": 5.5,
+        "terminal_growth_pct": 5.0,
+        "cost_of_equity_pct": 10.47,
+        "risk_free_pct": 7.17,
+        "risk_free_assumed": false,
+        "note": "The illiquidity discount, equity risk premium and growth rate are assumptions, not measurements. The grid below shows what happens when they change."
+      },
+      "sensitivity": {
+        "scale_columns": [
+          "x0.8",
+          "x0.9",
+          "x1.0",
+          "x1.1",
+          "x1.2"
+        ],
+        "rows": [
+          {
+            "DLOM": "15%",
+            "x0.8": 95.32,
+            "x0.9": 106.08,
+            "x1.0": 116.83,
+            "x1.1": 127.58,
+            "x1.2": 138.34
+          },
+          {
+            "DLOM": "20%",
+            "x0.8": 90.26,
+            "x0.9": 100.39,
+            "x1.0": 110.51,
+            "x1.1": 120.63,
+            "x1.2": 130.75
+          },
+          {
+            "DLOM": "25%",
+            "x0.8": 85.2,
+            "x0.9": 94.69,
+            "x1.0": 104.18,
+            "x1.1": 113.67,
+            "x1.2": 123.16
+          },
+          {
+            "DLOM": "30%",
+            "x0.8": 80.14,
+            "x0.9": 89.0,
+            "x1.0": 97.86,
+            "x1.1": 106.71,
+            "x1.2": 115.57
+          },
+          {
+            "DLOM": "35%",
+            "x0.8": 75.08,
+            "x0.9": 83.31,
+            "x1.0": 91.53,
+            "x1.1": 99.75,
+            "x1.2": 107.98
+          }
+        ],
+        "meaning": "Blended fair value per share. Columns scale the benchmark multiples; rows change the illiquidity discount."
+      },
+      "relative_models_count": 3
     },
-    "technical_backtest": {
-      "total_trades": 0,
-      "strategy_return_pct": 0.0,
-      "buy_and_hold_return_pct": 4.98,
-      "alpha_pct": -4.98,
-      "win_rate_pct": 66.7,
-      "profit_factor": 2.5,
-      "max_drawdown_pct": 0.0,
-      "strategy_sharpe_ratio": 1.2,
-      "buy_and_hold_sharpe": 22.83,
-      "trades_table": []
+    "news_signal": {
+      "moves_with_headlines": 2,
+      "agree": 1,
+      "net_tone": 1.0,
+      "agreement_pct": 50.0
     },
-    "composite_validation_score": 55.0,
-    "validation_status": "Moderate Validity (Further Calibration Recommended)",
-    "summary_report": "Quantitative Backtesting Audit: MODERATE VALIDITY (FURTHER CALIBRATION RECOMMENDED) (Validation Score: 55.0/100). Conformal Price Diffusion Cones achieved 0.0% empirical coverage vs 90.0% target. Volatility forecasting model EGARCH(1,1) minimized QLIKE loss to 20.7811. Event anomaly strategy produced a 65.0% win rate with Profit Factor 2.45. Multi-indicator technical rule strategy delivered +0.00% vs +4.98% Buy & Hold (Alpha: -4.98%, Sharpe: 1.20)."
-  },
-  "relative_valuation_multiples": {
-    "pe_ratio": 22.22,
-    "pb_ratio": 2.1,
-    "price_to_revenue_per_share": 3.33,
-    "peg_ratio": 1.53,
-    "ev_to_ebitda": 9.17,
-    "ev_to_ebit": 15.71,
-    "price_to_cash_flow": 13.23,
-    "ev_to_sales": 3.49,
-    "price_to_sales": 3.33,
-    "sector_name": "Diversified Industrial & Services",
-    "overall_valuation_rating": "Fair Value (In-Line with Sector Multiples)",
-    "relative_valuation_stance": "Fairly Valued (In-Line with Peer Cohort Median)",
-    "composite_relative_score": 51.3,
-    "peer_harmonized_target_price": 122.75,
-    "implied_upside_vs_peers_pct": 16.93,
-    "multiples_summary_table": [
-      {
-        "Multiple": "1. Price to Earnings (P/E)",
-        "ratio_name": "1. Price to Earnings (P/E)",
-        "Value": "22.22x",
-        "company_value": 22.222222222222225,
-        "Sector Benchmark": "22.0x",
-        "sector_median": 22.0,
-        "Variance vs Sector": "+1.0%",
-        "variance_pct": 1.0101010101010226,
-        "Analytical Role": "Profitability comparison & earnings capitalization",
-        "interpretation": "Profitability comparison & earnings capitalization",
-        "Verdict": "In-Line",
-        "verdict_badge": "In-Line"
-      },
-      {
-        "Multiple": "2. Price to Book (P/B)",
-        "ratio_name": "2. Price to Book (P/B)",
-        "Value": "2.10x",
-        "company_value": 2.0996,
-        "Sector Benchmark": "2.8x",
-        "sector_median": 2.8,
-        "Variance vs Sector": "-25.0%",
-        "variance_pct": -25.014285714285705,
-        "Analytical Role": "Net asset backing & equity replacement cost",
-        "interpretation": "Net asset backing & equity replacement cost",
-        "Verdict": "Discount (-)",
-        "verdict_badge": "Discount (-)"
-      },
-      {
-        "Multiple": "3. Price to Revenue Per Share (P/RPS)",
-        "ratio_name": "3. Price to Revenue Per Share (P/RPS)",
-        "Value": "3.33x",
-        "company_value": 3.3333333333333335,
-        "Sector Benchmark": "2.0x",
-        "sector_median": 2.0,
-        "Variance vs Sector": "+66.7%",
-        "variance_pct": 66.66666666666667,
-        "Analytical Role": "Early-stage & low/negative profitability valuation",
-        "interpretation": "Early-stage & low/negative profitability valuation",
-        "Verdict": "Premium (+)",
-        "verdict_badge": "Premium (+)"
-      },
-      {
-        "Multiple": "4. PEG Ratio (P/E to Growth)",
-        "ratio_name": "4. PEG Ratio (P/E to Growth)",
-        "Value": "1.53x",
-        "company_value": 1.5325670498084294,
-        "Sector Benchmark": "1.5x",
-        "sector_median": 1.5,
-        "Variance vs Sector": "+2.2%",
-        "variance_pct": 2.171136653895293,
-        "Analytical Role": "Peter Lynch growth-adjusted earnings multiple",
-        "interpretation": "Peter Lynch growth-adjusted earnings multiple",
-        "Verdict": "In-Line",
-        "verdict_badge": "In-Line"
-      },
-      {
-        "Multiple": "5. EV / EBITDA & EV / EBIT",
-        "ratio_name": "5. EV / EBITDA & EV / EBIT",
-        "Value": "9.17x / 15.71x",
-        "company_value": 9.166018446494055,
-        "Sector Benchmark": "13.0x / 15.5x",
-        "sector_median": 13.0,
-        "Variance vs Sector": "-29.5%",
-        "variance_pct": -29.492165796199576,
-        "Analytical Role": "Debt-neutral operating cash generation",
-        "interpretation": "Debt-neutral operating cash generation",
-        "Verdict": "Discount (-)",
-        "verdict_badge": "Discount (-)"
-      },
-      {
-        "Multiple": "6. Price to Cash Flow (P/CF)",
-        "ratio_name": "6. Price to Cash Flow (P/CF)",
-        "Value": "13.23x",
-        "company_value": 13.233804567540874,
-        "Sector Benchmark": "14.5x",
-        "sector_median": 14.5,
-        "Variance vs Sector": "-8.7%",
-        "variance_pct": -8.732382292821558,
-        "Analytical Role": "Operating cash flow multiple (non-cash addback)",
-        "interpretation": "Operating cash flow multiple (non-cash addback)",
-        "Verdict": "In-Line",
-        "verdict_badge": "In-Line"
-      },
-      {
-        "Multiple": "7. EV to Sales (EV/Sales)",
-        "ratio_name": "7. EV to Sales (EV/Sales)",
-        "Value": "3.49x",
-        "company_value": 3.492093732139455,
-        "Sector Benchmark": "2.2x",
-        "sector_median": 2.2,
-        "Variance vs Sector": "+58.7%",
-        "variance_pct": 58.73153327906612,
-        "Analytical Role": "Capital structure-adjusted top-line intensity",
-        "interpretation": "Capital structure-adjusted top-line intensity",
-        "Verdict": "Premium (+)",
-        "verdict_badge": "Premium (+)"
-      },
-      {
-        "Multiple": "8. Price to Sales (P/S)",
-        "ratio_name": "8. Price to Sales (P/S)",
-        "Value": "3.33x",
-        "company_value": 3.333333333333333,
-        "Sector Benchmark": "2.0x",
-        "sector_median": 2.0,
-        "Variance vs Sector": "+66.7%",
-        "variance_pct": 66.66666666666666,
-        "Analytical Role": "Market equity multiple on gross revenue",
-        "interpretation": "Market equity multiple on gross revenue",
-        "Verdict": "Premium (+)",
-        "verdict_badge": "Premium (+)"
-      }
-    ]
+    "verdict": {
+      "actionable_call": "BUY / ACCUMULATE",
+      "conviction_score": 65.0,
+      "recommendation_badge": "osint-badge-pos",
+      "one_line_summary": "Constructive ACCUMULATE: priced below fair value after an illiquidity discount. Build the position slowly and expect a long hold.",
+      "detailed_thesis": "The unlisted analysis combines 5 assessed pillars into a conviction of 65.0/100 and a BUY / ACCUMULATE call. Valuation: 4 model(s) after a 25% illiquidity discount; fair value range \u20b962.00 to \u20b9159.05. The discount and the benchmark multiple are assumptions, shown in the sensitivity grid. Trend: Bearish (score -32) | RSI 15.2. Risk: annualised vol 18% | max drawdown -47% | D/E 0.04. Confidence is capped because the price history or the revision record is short. The price is an indicative dealer level and the share is illiquid, so size small and plan for a long holding period.",
+      "pillars": [
+        {
+          "pillar_name": "1. Valuation vs Listed Peers & Intrinsic",
+          "weight_pct": 35.0,
+          "score": 70.0,
+          "stance": "Strong Bullish",
+          "metric_highlight": "Blended fair value \u20b9104.18 | +117.0% | Deep Discount",
+          "evidence_rationale": "4 model(s) after a 25% illiquidity discount; fair value range \u20b962.00 to \u20b9159.05. The discount and the benchmark multiple are assumptions, shown in the sensitivity grid."
+        },
+        {
+          "pillar_name": "2. Price Trend & Momentum (weekly)",
+          "weight_pct": 20.0,
+          "score": -32.1,
+          "stance": "Bearish",
+          "metric_highlight": "Bearish (score -32) | RSI 15.2",
+          "evidence_rationale": "Indicators on 35 weekly bars of the dealer price. A revised quote moves in steps, so trends are slow and can reverse on one revision."
+        },
+        {
+          "pillar_name": "3. News & Catalyst Flow",
+          "weight_pct": 10.0,
+          "score": 12.0,
+          "stance": "Neutral",
+          "metric_highlight": "2 revisions with headlines | 50% agree",
+          "evidence_rationale": "Share of price revisions whose attached headlines point the same way as the move. Timing only: a headline in the window is not proof it moved the price."
+        },
+        {
+          "pillar_name": "4. Macroeconomic Backdrop",
+          "weight_pct": 10.0,
+          "score": 40.0,
+          "stance": "Strong Bullish",
+          "metric_highlight": "PMI 55.8 | CPI 4.8% | IIP +8.0%",
+          "evidence_rationale": "Macro read from live releases; nothing is assumed for indicators that could not be retrieved."
+        },
+        {
+          "pillar_name": "5. Risk, Leverage & Liquidity",
+          "weight_pct": 25.0,
+          "score": 35.0,
+          "stance": "Bullish",
+          "metric_highlight": "annualised vol 18% | max drawdown -47% | D/E 0.04",
+          "evidence_rationale": "Volatility and drawdown from monthly returns, leverage from the reported debt to equity, and liquidity from how rarely the dealer price changes."
+        }
+      ],
+      "prescribed_allocation_pct": 3.0,
+      "raw_kelly_pct": 243.75,
+      "half_kelly_pct": 121.87,
+      "maximum_allocation_cap_pct": 3.0,
+      "sizing_tiers": [
+        {
+          "portfolio_name": "Conservative Tier (\u20b910 Lakhs)",
+          "portfolio_capital_inr": 1000000.0,
+          "allocation_pct": 3.0,
+          "allocated_capital_inr": 30000.0,
+          "prescribed_shares": 0,
+          "effective_exposure_inr": 0.0,
+          "risk_at_stop_loss_inr": 0.0,
+          "portfolio_risk_pct": 0.0
+        },
+        {
+          "portfolio_name": "Balanced Institutional Tier (\u20b925 Lakhs)",
+          "portfolio_capital_inr": 2500000.0,
+          "allocation_pct": 3.0,
+          "allocated_capital_inr": 75000.0,
+          "prescribed_shares": 1000,
+          "effective_exposure_inr": 48000.0,
+          "risk_at_stop_loss_inr": 8697.6,
+          "portfolio_risk_pct": 0.35
+        },
+        {
+          "portfolio_name": "High-Net-Worth / Institutional Tier (\u20b91 Crore)",
+          "portfolio_capital_inr": 10000000.0,
+          "allocation_pct": 3.0,
+          "allocated_capital_inr": 300000.0,
+          "prescribed_shares": 6000,
+          "effective_exposure_inr": 288000.0,
+          "risk_at_stop_loss_inr": 52185.6,
+          "portfolio_risk_pct": 0.52
+        }
+      ],
+      "current_price": 48.0,
+      "entry_zone_low": 46.56,
+      "entry_zone_high": 48.48,
+      "target_1_price": 81.71,
+      "target_1_upside_pct": 70.23,
+      "target_2_price": 104.18,
+      "target_2_upside_pct": 117.04,
+      "stop_loss_price": 39.3,
+      "stop_loss_downside_pct": 18.12,
+      "risk_reward_ratio": "1 : 3.88",
+      "core_holding_period": "12 to 36 months (liquidity-adjusted value convergence, with an IPO or secondary sale as the exit)",
+      "tactical_holding_period": "Not applicable: the price is revised infrequently and exit liquidity is thin, so short swings cannot be traded",
+      "profit_booking_rules": [
+        "Milestone 1 (\u20b9 81.71 / +70.2%): book part of the position if a buyer is available. Unlisted exits are slow, so quote the price you are willing to take and be patient.",
+        "Milestone 2 (\u20b9 104.18 / +117.0%): the liquidity-adjusted fair value. A DRHP filing or an IPO date is the cleanest exit; plan around it.",
+        "Minimum ticket is one lot of 1,000 shares, about \u20b9 48,000. Positions are rounded down to whole lots, so small portfolios may show zero shares."
+      ],
+      "invalidation_rules": [
+        "Price revised below \u20b9 39.30 (-18.1%): reassess the thesis, since an unlisted share cannot be stopped out at a price the way a listed one can.",
+        "A downward revision of more than 15% in one step, or two in a row, signals the dealer's view has turned.",
+        "Adverse news: a regulatory action, an audit qualification, a promoter dispute, or a down-round at a lower valuation than your entry.",
+        "Valuation closes the gap: if the quote reaches the blended fair value the margin of safety is gone."
+      ],
+      "as_of_date": "2026-08-23"
+    },
+    "data_quality": {
+      "daily_points": 207,
+      "revisions": 27,
+      "months": 7,
+      "weeks": 35,
+      "thin": true,
+      "notes": [
+        "The price is an indicative dealer level. Statistics are computed monthly or weekly because the daily series is mostly a held value.",
+        "Valuation uses the source's own ratios and listed benchmarks; the illiquidity discount is an assumption."
+      ]
+    }
   },
   "investment_verdict": {
-    "actionable_call": "STRONG BUY",
-    "conviction_score": 74.4,
+    "actionable_call": "BUY / ACCUMULATE",
+    "conviction_score": 65.0,
     "recommendation_badge": "osint-badge-pos",
-    "one_line_summary": "High-conviction BUY recommendation driven by attractive DCF margin of safety, robust fundamentals, and supportive technical alignment.",
-    "detailed_thesis": "Based on CEIA's quantitative synthesis, the entity achieves a composite conviction score of 74.4/100, warranting an actionable STRONG BUY verdict. Intrinsic DCF fair value estimates +44.7% margin of safety relative to current quote. On the event and news front, Absence of abnormal negative headline shocks confirms operational tranquility. Technically, Oscillators and moving averages signal a buy regime with 14-period ADX at 25.0. Solvency and balance sheet metrics indicate extremely low structural default probability (merton distance to default 5.0\u03c3) ensures institutional solvency cushion.",
+    "one_line_summary": "Constructive ACCUMULATE: priced below fair value after an illiquidity discount. Build the position slowly and expect a long hold.",
+    "detailed_thesis": "The unlisted analysis combines 5 assessed pillars into a conviction of 65.0/100 and a BUY / ACCUMULATE call. Valuation: 4 model(s) after a 25% illiquidity discount; fair value range \u20b962.00 to \u20b9159.05. The discount and the benchmark multiple are assumptions, shown in the sensitivity grid. Trend: Bearish (score -32) | RSI 15.2. Risk: annualised vol 18% | max drawdown -47% | D/E 0.04. Confidence is capped because the price history or the revision record is short. The price is an indicative dealer level and the share is illiquid, so size small and plan for a long holding period.",
     "pillars": [
       {
-        "pillar_name": "1. Fundamental Valuation & DCF Margin",
-        "weight_pct": 30.0,
-        "score": 60.0,
+        "pillar_name": "1. Valuation vs Listed Peers & Intrinsic",
+        "weight_pct": 35.0,
+        "score": 70.0,
         "stance": "Strong Bullish",
-        "metric_highlight": "DCF Upside: +44.7% (Substantial Undervaluation (>25% Upside))",
-        "evidence_rationale": "Intrinsic DCF fair value estimates +44.7% margin of safety relative to current quote."
+        "metric_highlight": "Blended fair value \u20b9104.18 | +117.0% | Deep Discount",
+        "evidence_rationale": "4 model(s) after a 25% illiquidity discount; fair value range \u20b962.00 to \u20b9159.05. The discount and the benchmark multiple are assumptions, shown in the sensitivity grid."
       },
       {
-        "pillar_name": "2. Event Study Information Flow & CARs",
+        "pillar_name": "2. Price Trend & Momentum (weekly)",
         "weight_pct": 20.0,
-        "score": 15.0,
-        "stance": "Bullish",
-        "metric_highlight": "No Adverse Event Shocks",
-        "evidence_rationale": "Absence of abnormal negative headline shocks confirms operational tranquility."
+        "score": -32.1,
+        "stance": "Bearish",
+        "metric_highlight": "Bearish (score -32) | RSI 15.2",
+        "evidence_rationale": "Indicators on 35 weekly bars of the dealer price. A revised quote moves in steps, so trends are slow and can reverse on one revision."
       },
       {
-        "pillar_name": "3. Technical & Indicator Momentum",
-        "weight_pct": 20.0,
-        "score": 45.0,
+        "pillar_name": "3. News & Catalyst Flow",
+        "weight_pct": 10.0,
+        "score": 12.0,
+        "stance": "Neutral",
+        "metric_highlight": "2 revisions with headlines | 50% agree",
+        "evidence_rationale": "Share of price revisions whose attached headlines point the same way as the move. Timing only: a headline in the window is not proof it moved the price."
+      },
+      {
+        "pillar_name": "4. Macroeconomic Backdrop",
+        "weight_pct": 10.0,
+        "score": 40.0,
         "stance": "Strong Bullish",
-        "metric_highlight": "Buy (Score +45.0)",
-        "evidence_rationale": "Oscillators and moving averages signal a buy regime with 14-period ADX at 25.0."
+        "metric_highlight": "PMI 55.8 | CPI 4.8% | IIP +8.0%",
+        "evidence_rationale": "Macro read from live releases; nothing is assumed for indicators that could not be retrieved."
       },
       {
-        "pillar_name": "4. Macroeconomic & 8 Core Transmission",
-        "weight_pct": 15.0,
-        "score": 45.0,
+        "pillar_name": "5. Risk, Leverage & Liquidity",
+        "weight_pct": 25.0,
+        "score": 35.0,
         "stance": "Bullish",
-        "metric_highlight": "8 Core Growth: +5.9% YoY | IN-US Diff: -8 bps",
-        "evidence_rationale": "Resilient infrastructure industrial output (+5.9%) and stable interest rate differential support domestic demand."
-      },
-      {
-        "pillar_name": "5. Downside Risk & Solvency Cushion",
-        "weight_pct": 15.0,
-        "score": 80.0,
-        "stance": "Strong Bullish",
-        "metric_highlight": "Merton DD: 5.0\u03c3 | 1D 99% VaR: 2.80%",
-        "evidence_rationale": "Extremely low structural default probability (Merton Distance to Default 5.0\u03c3) ensures institutional solvency cushion."
+        "metric_highlight": "annualised vol 18% | max drawdown -47% | D/E 0.04",
+        "evidence_rationale": "Volatility and drawdown from monthly returns, leverage from the reported debt to equity, and liquidity from how rarely the dealer price changes."
       }
     ],
-    "prescribed_allocation_pct": 6.0,
-    "raw_kelly_pct": 67.76,
-    "half_kelly_pct": 33.88,
-    "maximum_allocation_cap_pct": 6.0,
+    "prescribed_allocation_pct": 3.0,
+    "raw_kelly_pct": 243.75,
+    "half_kelly_pct": 121.87,
+    "maximum_allocation_cap_pct": 3.0,
     "sizing_tiers": [
       {
         "portfolio_name": "Conservative Tier (\u20b910 Lakhs)",
         "portfolio_capital_inr": 1000000.0,
-        "allocation_pct": 6.0,
-        "allocated_capital_inr": 60000.0,
-        "prescribed_shares": 571,
-        "effective_exposure_inr": 59943.58,
-        "risk_at_stop_loss_inr": 3356.84,
-        "portfolio_risk_pct": 0.34
+        "allocation_pct": 3.0,
+        "allocated_capital_inr": 30000.0,
+        "prescribed_shares": 0,
+        "effective_exposure_inr": 0.0,
+        "risk_at_stop_loss_inr": 0.0,
+        "portfolio_risk_pct": 0.0
       },
       {
         "portfolio_name": "Balanced Institutional Tier (\u20b925 Lakhs)",
         "portfolio_capital_inr": 2500000.0,
-        "allocation_pct": 6.0,
-        "allocated_capital_inr": 150000.0,
-        "prescribed_shares": 1428,
-        "effective_exposure_inr": 149911.44,
-        "risk_at_stop_loss_inr": 8395.04,
-        "portfolio_risk_pct": 0.34
+        "allocation_pct": 3.0,
+        "allocated_capital_inr": 75000.0,
+        "prescribed_shares": 1000,
+        "effective_exposure_inr": 48000.0,
+        "risk_at_stop_loss_inr": 8697.6,
+        "portfolio_risk_pct": 0.35
       },
       {
         "portfolio_name": "High-Net-Worth / Institutional Tier (\u20b91 Crore)",
         "portfolio_capital_inr": 10000000.0,
-        "allocation_pct": 6.0,
-        "allocated_capital_inr": 600000.0,
-        "prescribed_shares": 5715,
-        "effective_exposure_inr": 599960.7,
-        "risk_at_stop_loss_inr": 33597.8,
-        "portfolio_risk_pct": 0.34
+        "allocation_pct": 3.0,
+        "allocated_capital_inr": 300000.0,
+        "prescribed_shares": 6000,
+        "effective_exposure_inr": 288000.0,
+        "risk_at_stop_loss_inr": 52185.6,
+        "portfolio_risk_pct": 0.52
       }
     ],
-    "current_price": 104.98,
-    "entry_zone_low": 103.72,
-    "entry_zone_high": 105.4,
-    "target_1_price": 128.08,
-    "target_1_upside_pct": 22.0,
-    "target_2_price": 143.09,
-    "target_2_upside_pct": 36.3,
-    "stop_loss_price": 99.1,
-    "stop_loss_downside_pct": 5.6,
-    "risk_reward_ratio": "1 : 3.93",
-    "core_holding_period": "6 to 12 Months (Medium-Term Fundamental Compounding & Intrinsic DCF Realization)",
-    "tactical_holding_period": "2 to 4 Weeks (Event CAR Momentum & Technical Breakout Cycle)",
+    "current_price": 48.0,
+    "entry_zone_low": 46.56,
+    "entry_zone_high": 48.48,
+    "target_1_price": 81.71,
+    "target_1_upside_pct": 70.23,
+    "target_2_price": 104.18,
+    "target_2_upside_pct": 117.04,
+    "stop_loss_price": 39.3,
+    "stop_loss_downside_pct": 18.12,
+    "risk_reward_ratio": "1 : 3.88",
+    "core_holding_period": "12 to 36 months (liquidity-adjusted value convergence, with an IPO or secondary sale as the exit)",
+    "tactical_holding_period": "Not applicable: the price is revised infrequently and exit liquidity is thin, so short swings cannot be traded",
     "profit_booking_rules": [
-      "Milestone 1 (Target 1: \u20b9 128.08 / +22.0%): Book 50% profits, move trailing stop-loss to entry price (\u20b9 104.98) to lock in risk-free position.",
-      "Milestone 2 (Target 2: \u20b9 143.09 / +36.3%): Liquidate remaining 50% tactical allocation or trail tight 5-day EMA stop for compounding run."
+      "Milestone 1 (\u20b9 81.71 / +70.2%): book part of the position if a buyer is available. Unlisted exits are slow, so quote the price you are willing to take and be patient.",
+      "Milestone 2 (\u20b9 104.18 / +117.0%): the liquidity-adjusted fair value. A DRHP filing or an IPO date is the cleanest exit; plan around it.",
+      "Minimum ticket is one lot of 1,000 shares, about \u20b9 48,000. Positions are rounded down to whole lots, so small portfolios may show zero shares."
     ],
     "invalidation_rules": [
-      "Hard Stop-Loss Breach: Immediate mandatory exit if price closes below \u20b9 99.10 (-5.6% downside limit).",
-      "Structural Breakdown: Invalidate thesis if asset breaks convincingly below 200-day Simple Moving Average on elevated volume (> 2.0\u03c3 volume spike).",
-      "Material Negative SEBI Disclosure: Immediate portfolio reassessment if company files an adverse Reg 30 disclosure (e.g. forensic audit, regulatory penalty, or key management dispute)."
+      "Price revised below \u20b9 39.30 (-18.1%): reassess the thesis, since an unlisted share cannot be stopped out at a price the way a listed one can.",
+      "A downward revision of more than 15% in one step, or two in a row, signals the dealer's view has turned.",
+      "Adverse news: a regulatory action, an audit qualification, a promoter dispute, or a down-round at a lower valuation than your entry.",
+      "Valuation closes the gap: if the quote reaches the blended fair value the margin of safety is gone."
     ],
     "as_of_date": "2026-08-23"
   }

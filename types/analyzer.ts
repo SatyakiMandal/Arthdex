@@ -343,6 +343,8 @@ export interface UnlistedSummary {
   news: { items: number | null; perSource: Record<string, number> };
   /** The investment call, in the same shape as a listed run. Null on runs made before the research layer. */
   verdict: ListedSummary["verdict"];
+  /** One point per real price revision, plus the last day. */
+  series?: { date: string; close: number }[];
   research: UnlistedResearch | null;
   /** Why there is no research block, when the layer ran but could not produce one. */
   researchNote?: string | null;

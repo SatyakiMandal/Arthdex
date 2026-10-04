@@ -1,3 +1,4 @@
+import { CalendarRange } from "lucide-react";
 import type { ApiFinancials } from "@/lib/api/types";
 import { DataCard } from "@/components/ui/data-card";
 import { cn, formatINR } from "@/lib/utils";
@@ -17,7 +18,7 @@ export function QuarterlyPnLPanel({ financials }: { financials: ApiFinancials })
 
   if (quarters.length === 0) {
     return (
-      <DataCard title="Quarterly P&amp;L" subtitle="₹ crore" icon={undefined as never}>
+      <DataCard title="Quarterly P&amp;L" subtitle="₹ crore" icon={CalendarRange}>
         <p className="px-4 py-8 text-sm text-muted-foreground">
           No quarterly statements reported upstream for this company.
         </p>

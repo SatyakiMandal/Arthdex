@@ -775,11 +775,26 @@ def _summarise_unlisted(a: dict[str, Any]) -> dict[str, Any]:
             "items": _g(news, "stats", "unique_after_dedupe"),
             "perSource": news.get("per_source") or {},
         },
+        "series": _revision_series(prices),
         "verdict": _verdict_view(a.get("investment_verdict")),
         "research": _unlisted_research_view(a),
         "researchNote": (a.get("research") or {}).get("note") if a.get("research") and not (a.get("research") or {}).get("available") else None,
         "macro": _slim(a.get("macro")),
     }
+
+
+def _revision_series(prices: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """The price at each real revision plus the last day, which is all the daily series really says."""
+    out: list[dict[str, Any]] = []
+    prev = None
+    for p in prices:
+        close = p["close"]
+        if close != prev:
+            out.append({"date": p.get("date"), "close": close})
+            prev = close
+    if prices and (not out or out[-1]["date"] != prices[-1].get("date")):
+        out.append({"date": prices[-1].get("date"), "close": prices[-1]["close"]})
+    return out
 
 
 def _slim(obj: Any) -> Any:

@@ -1,57 +1,54 @@
-import { useId } from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 /**
- * The Arthdex mark.
+ * The Arthdex trademark: an open book under a letter A, a rising arrow and a bar chart
+ * (learn, analyse, invest, grow). Supplied by the project's professor as a brand board.
  *
- * The letter A is built as a price peak. Its crossbar is a small rising trend line, and the
- * apex is a data point. A thin bar runs across the top, the way the shirorekha (headline)
- * does over Devanagari, nodding to अर्थ (arth): meaning, purpose, wealth.
+ * The artwork is navy on white, which disappears on the dark theme, so a second file carries the
+ * same mark with its navy parts lightened (gold arrow and teal bars unchanged, as in the board's
+ * monochrome-white variant). The two are swapped with the theme class.
  */
 export function LogoMark({ className }: { className?: string }) {
-  const id = useId();
   return (
-    <svg viewBox="0 0 32 32" className={cn("h-8 w-8", className)} role="img" aria-label="Arthdex">
-      <defs>
-        <linearGradient id={`${id}-bg`} x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="hsl(var(--accent))" />
-          <stop offset="1" stopColor="hsl(var(--accent) / 0.55)" />
-        </linearGradient>
-        <linearGradient id={`${id}-shine`} x1="0" y1="0" x2="0" y2="32" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#fff" stopOpacity="0.28" />
-          <stop offset="0.5" stopColor="#fff" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <rect width="32" height="32" rx="9" fill={`url(#${id}-bg)`} />
-      <rect width="32" height="32" rx="9" fill={`url(#${id}-shine)`} />
-      <g fill="none" stroke="hsl(var(--accent-foreground))" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M7 6H25" strokeWidth="1.5" strokeOpacity="0.55" />
-        <path d="M8.4 25.6 16 9.6l7.6 16" strokeWidth="2.8" />
-        <path d="m10.9 20.6 3.6-2.3 2.1 1.5 2.7-3.3" strokeWidth="2" />
-      </g>
-      <circle cx="16" cy="9.6" r="1.9" fill="hsl(var(--accent-foreground))" />
-    </svg>
-  );
-}
-
-export function Wordmark({ className }: { className?: string }) {
-  return (
-    <span className={cn("font-display font-semibold leading-none tracking-[-0.035em]", className)}>
-      Arth<span className="text-gradient">dex</span>
+    <span className={cn("relative inline-block h-9 shrink-0", className)} style={{ aspectRatio: "539 / 381" }}>
+      <Image src="/brand/arthdex-mark.png" alt="Arthdex" width={539} height={381} priority className="h-full w-auto dark:hidden" />
+      <Image src="/brand/arthdex-mark-light.png" alt="Arthdex" width={539} height={381} priority className="hidden h-full w-auto dark:block" />
     </span>
   );
 }
 
-/** Mark + wordmark, with the Devanagari line under it when there is room. */
+/** ArThDex: navy (white on dark) for "ArTh", teal for "Dex", as on the brand board. */
+export function Wordmark({ className }: { className?: string }) {
+  return (
+    <span className={cn("font-brand font-bold leading-none tracking-[-0.01em] text-[#0B2D5B] dark:text-[#E8EEF4]", className)}>
+      ArTh<span className="text-[#00A896]">Dex</span>
+    </span>
+  );
+}
+
+const TAGLINE = ["LEARN", "ANALYZE", "INVEST", "GROW"];
+
+/** Mark beside the wordmark, with the brand's four-word line under it when there is room. */
 export function Logo({ tagline = true, full = false, className }: { tagline?: boolean; full?: boolean; className?: string }) {
   return (
-    <span className={cn("inline-flex items-center gap-2.5", className)}>
+    <span className={cn("inline-flex items-center gap-3", className)}>
       <LogoMark />
-      <span className="flex flex-col justify-center gap-[3px]">
-        <Wordmark className="text-[1.0625rem]" />
+      <span className="flex flex-col justify-center gap-[5px]">
+        <Wordmark className="text-[1.45rem]" />
         {tagline ? (
-          <span lang="sa" className="font-deva text-[0.625rem] leading-none tracking-[0.12em] text-muted-foreground">
-            अर्थ <span className={cn("text-muted-foreground/60", full ? "inline" : "hidden 2xl:inline")}>· meaning, purpose, wealth</span>
+          <span
+            className={cn(
+              "items-center gap-[0.45em] whitespace-nowrap font-sans text-[0.5625rem] font-medium leading-none tracking-[0.2em] text-[#0B2D5B]/80 dark:text-[#E8EEF4]/70",
+              full ? "flex" : "hidden 2xl:flex",
+            )}
+          >
+            {TAGLINE.map((word, i) => (
+              <span key={word} className="inline-flex items-center gap-[0.45em]">
+                {i > 0 ? <span aria-hidden className="h-[0.95em] w-px bg-[#F4B942]" /> : null}
+                {word}
+              </span>
+            ))}
           </span>
         ) : null}
       </span>

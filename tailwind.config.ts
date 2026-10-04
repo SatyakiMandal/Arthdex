@@ -41,6 +41,7 @@ const config: Config = {
       fontFamily: {
         sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
         display: ["var(--font-display)", "ui-sans-serif", "system-ui", "sans-serif"],
+        brand: ["var(--font-brand)", "Georgia", "serif"],
         deva: ["var(--font-deva)", "Noto Sans Devanagari", "sans-serif"],
         mono: ["var(--font-mono)", "ui-monospace", "SFMono-Regular", "monospace"],
       },

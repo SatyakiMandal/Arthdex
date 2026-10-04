@@ -169,6 +169,87 @@ def get_summary(run_id: str):
     return summary
 
 
+def _finished_index(kind: str) -> dict[str, dict]:
+    """Newest finished run per company, keyed by ticker (listed) or normalised name (unlisted)."""
+    out: dict[str, dict] = {}
+    for r in svc.list_runs(limit=200):
+        if r["status"] != "COMPLETED" or r["kind"] != kind:
+            continue
+        key = (r.get("ticker") or "").upper() if kind == "listed" else unlisted_service.normalise_name(r["company"])
+        if key and key not in out:
+            out[key] = r
+    return out
+
+
+@router.get("/runs/{run_id}/peers")
+def get_peers(run_id: str):
+    """Companies worth comparing a finished run with: its sector peers, flagged when already analysed.
+
+    Listed runs use the peer list the engine scraped for the company. Unlisted runs use other
+    unlisted companies in the same UnlistedZone sector. Anything with a finished run of its own
+    carries that run's id, so the site can open the comparison at once.
+    """
+    meta = svc.read_meta(run_id)
+    if meta is None:
+        raise HTTPException(404, "Run not found")
+    path = svc.artefact(run_id, "analysis.json")
+    if path is None:
+        raise HTTPException(409, "This run has no results yet")
+    import json as _json
+
+    a = _json.loads(path.read_text(encoding="utf-8"))
+    kind = meta.get("kind", "listed")
+    done = _finished_index(kind)
+    suggestions: list[dict] = []
+
+    if kind == "listed":
+        own = (meta.get("ticker") or "").upper()
+        for item in (a.get("financials") or {}).get("peers") or []:
+            if not isinstance(item, (list, tuple)) or len(item) < 2:
+                continue
+            name, ticker = str(item[0]), str(item[1]).upper()
+            if ticker == own:
+                continue
+            existing = done.get(ticker)
+            suggestions.append(
+                {
+                    "kind": "listed", "name": name, "ticker": ticker, "url": None,
+                    "reason": "Sector peer", "runId": existing["id"] if existing else None,
+                }
+            )
+    else:
+        research = a.get("research") or {}
+        sector = research.get("sector")
+        cached = unlisted_service.cached_directory()
+        directory_ready = cached is not None
+        directory = cached or []
+        own_key = unlisted_service.normalise_name(meta["company"])
+        if sector:
+            for c in directory:
+                if c.get("sector") != sector or unlisted_service.normalise_name(c["name"]) == own_key:
+                    continue
+                existing = done.get(unlisted_service.normalise_name(c["name"]))
+                suggestions.append(
+                    {
+                        "kind": "unlisted", "name": c["name"], "ticker": None,
+                        "url": f"https://unlistedzone.com/shares/{c['id']}",
+                        "reason": f"Same sector: {sector}", "runId": existing["id"] if existing else None,
+                    }
+                )
+        # Companies already analysed come first, then by name
+        suggestions.sort(key=lambda s: (s["runId"] is None, s["name"]))
+        suggestions = suggestions[:12]
+
+    if kind == "unlisted":
+        sector_label = (a.get("research") or {}).get("sector")
+    else:
+        sector_label = (a.get("relative_valuation_multiples") or {}).get("sector_name")
+        if sector_label and str(sector_label).lower().startswith("median of"):
+            sector_label = None  # a description of how the peers were taken, not a sector
+    ready = True if kind == "listed" else directory_ready
+    return {"kind": kind, "sector": sector_label, "ready": ready, "suggestions": suggestions}
+
+
 @router.get("/runs/{run_id}/report", response_class=HTMLResponse)
 def get_report(run_id: str):
     path = svc.artefact(run_id, "report.html")

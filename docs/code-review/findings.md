@@ -71,6 +71,8 @@ Every finding in the review, ordered by severity. IDs (`F-nn`) are referenced fr
 
 ### F-06 · Company overview page crashes when quarterly statements are missing
 
+> **Fixed 2026-10-03.** Reported by the owner on `/company/RENTOMOJO`. The empty-state card now passes a real icon (`CalendarRange`) instead of `undefined as never`; no other `undefined as never` remains in `app`, `components` or `lib`. The page renders with the "No quarterly statements" card.
+
 **Severity:** High · **Category:** Correctness
 
 **Where:** components/company/fundamentals.tsx:18-25; components/ui/data-card.tsx:33; backend/app/routers/company.py:113

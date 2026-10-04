@@ -1,173 +1,173 @@
 [
- {
-  "id": "sample-adanient",
-  "kind": "listed",
-  "company": "Adani Enterprises Limited",
-  "ticker": "ADANIENT.NS",
-  "start": "2026-01-01",
-  "end": "2026-08-23",
-  "generatedAt": "2026-09-18T00:00:00+00:00"
- },
- {
-  "id": "sample-biret",
-  "kind": "listed",
-  "company": "Brookfield India Real Estate Trust",
-  "ticker": "BIRET.BO",
-  "start": "2026-01-01",
-  "end": "2026-08-23",
-  "generatedAt": "2026-09-18T00:00:00+00:00"
- },
- {
-  "id": "sample-campus-ns",
-  "kind": "listed",
-  "company": "Campus Activewear Limited",
-  "ticker": "CAMPUS.NS",
-  "start": "2026-01-01",
-  "end": "2026-08-29",
-  "generatedAt": "2026-09-18T00:00:00+00:00"
- },
- {
-  "id": "sample-grse",
-  "kind": "listed",
-  "company": "Garden Reach Shipbuilders Engineers Limited",
-  "ticker": "GRSE.NS",
-  "start": "2026-01-01",
-  "end": "2026-08-23",
-  "generatedAt": "2026-09-18T00:00:00+00:00"
- },
- {
-  "id": "sample-idea",
-  "kind": "listed",
-  "company": "Vodafone Idea Limited",
-  "ticker": "IDEA.NS",
-  "start": "2026-01-01",
-  "end": "2026-08-23",
-  "generatedAt": "2026-09-18T00:00:00+00:00"
- },
- {
-  "id": "sample-indusindbk",
-  "kind": "listed",
-  "company": "IndusInd Bank Limited",
-  "ticker": "INDUSINDBK.NS",
-  "start": "2026-01-01",
-  "end": "2026-08-23",
-  "generatedAt": "2026-09-18T00:00:00+00:00"
- },
- {
-  "id": "sample-lloydsme",
-  "kind": "listed",
-  "company": "Lloyds Metals and Energy Limited",
-  "ticker": "LLOYDSME.NS",
-  "start": "2026-01-01",
-  "end": "2026-08-23",
-  "generatedAt": "2026-09-18T00:00:00+00:00"
- },
- {
-  "id": "sample-nationalum",
-  "kind": "listed",
-  "company": "National Aluminium Company Limited",
-  "ticker": "NATIONALUM.NS",
-  "start": "2026-01-01",
-  "end": "2026-08-23",
-  "generatedAt": "2026-09-18T00:00:00+00:00"
- },
- {
-  "id": "sample-pfc",
-  "kind": "listed",
-  "company": "Power Finance Corporation Limited",
-  "ticker": "PFC.NS",
-  "start": "2026-01-01",
-  "end": "2026-08-23",
-  "generatedAt": "2026-09-18T00:00:00+00:00"
- },
- {
-  "id": "sample-sonatsoftw",
-  "kind": "listed",
-  "company": "Sonata Software Limited",
-  "ticker": "SONATSOFTW.NS",
-  "start": "2026-01-01",
-  "end": "2026-08-23",
-  "generatedAt": "2026-09-18T00:00:00+00:00"
- },
- {
-  "id": "sample-tataconsum",
-  "kind": "listed",
-  "company": "Tata Consumer Products Limited",
-  "ticker": "TATACONSUM.NS",
-  "start": "2026-01-01",
-  "end": "2026-08-23",
-  "generatedAt": "2026-09-18T00:00:00+00:00"
- },
- {
-  "id": "sample-tatasteel",
-  "kind": "listed",
-  "company": "Tata Steel Limited",
-  "ticker": "TATASTEEL.NS",
-  "start": "2026-01-01",
-  "end": "2026-08-23",
-  "generatedAt": "2026-09-18T00:00:00+00:00"
- },
- {
-  "id": "sample-tcs",
-  "kind": "listed",
-  "company": "Tata Consultancy Services Limited",
-  "ticker": "TCS.NS",
-  "start": "2026-01-01",
-  "end": "2026-08-23",
-  "generatedAt": "2026-09-18T00:00:00+00:00"
- },
- {
-  "id": "sample-tmcv",
-  "kind": "listed",
-  "company": "Tata Motors Limited",
-  "ticker": "TMCV.NS",
-  "start": "2026-01-01",
-  "end": "2026-08-23",
-  "generatedAt": "2026-09-18T00:00:00+00:00"
- },
- {
-  "id": "sample-tmpv",
-  "kind": "listed",
-  "company": "Tata Motors Passenger Vehicles Limited",
-  "ticker": "TMPV.NS",
-  "start": "2026-01-01",
-  "end": "2026-08-23",
-  "generatedAt": "2026-09-18T00:00:00+00:00"
- },
- {
-  "id": "sample-zyduslife",
-  "kind": "listed",
-  "company": "Zydus Lifesciences Limited",
-  "ticker": "ZYDUSLIFE.NS",
-  "start": "2026-01-01",
-  "end": "2026-08-23",
-  "generatedAt": "2026-09-18T00:00:00+00:00"
- },
- {
-  "id": "sample-garuda-aerospace",
-  "kind": "unlisted",
-  "company": "Garuda Aerospace",
-  "ticker": null,
-  "start": "2026-01-01",
-  "end": "2026-09-18",
-  "generatedAt": "2026-09-18T00:00:00+00:00"
- },
- {
-  "id": "sample-polymatech",
-  "kind": "unlisted",
-  "company": "Polymatech",
-  "ticker": null,
-  "start": "2026-01-01",
-  "end": "2026-08-23",
-  "generatedAt": "2026-09-18T00:00:00+00:00"
- },
- {
-  "id": "sample-goa-shipyard-limited",
-  "kind": "unlisted",
-  "company": "Goa Shipyard Limited",
-  "ticker": null,
-  "start": "2026-01-01",
-  "end": "2026-08-23",
-  "generatedAt": "2026-09-18T00:00:00+00:00"
- }
+  {
+    "id": "sample-adanient",
+    "kind": "listed",
+    "company": "Adani Enterprises Limited",
+    "ticker": "ADANIENT.NS",
+    "start": "2026-01-01",
+    "end": "2026-08-23",
+    "generatedAt": "2026-09-18T00:00:00+00:00"
+  },
+  {
+    "id": "sample-biret",
+    "kind": "listed",
+    "company": "Brookfield India Real Estate Trust",
+    "ticker": "BIRET.BO",
+    "start": "2026-01-01",
+    "end": "2026-08-23",
+    "generatedAt": "2026-09-18T00:00:00+00:00"
+  },
+  {
+    "id": "sample-campus-ns",
+    "kind": "listed",
+    "company": "Campus Activewear Limited",
+    "ticker": "CAMPUS.NS",
+    "start": "2026-01-01",
+    "end": "2026-08-29",
+    "generatedAt": "2026-09-18T00:00:00+00:00"
+  },
+  {
+    "id": "sample-grse",
+    "kind": "listed",
+    "company": "Garden Reach Shipbuilders Engineers Limited",
+    "ticker": "GRSE.NS",
+    "start": "2026-01-01",
+    "end": "2026-08-23",
+    "generatedAt": "2026-09-18T00:00:00+00:00"
+  },
+  {
+    "id": "sample-idea",
+    "kind": "listed",
+    "company": "Vodafone Idea Limited",
+    "ticker": "IDEA.NS",
+    "start": "2026-01-01",
+    "end": "2026-08-23",
+    "generatedAt": "2026-09-18T00:00:00+00:00"
+  },
+  {
+    "id": "sample-indusindbk",
+    "kind": "listed",
+    "company": "IndusInd Bank Limited",
+    "ticker": "INDUSINDBK.NS",
+    "start": "2026-01-01",
+    "end": "2026-08-23",
+    "generatedAt": "2026-09-18T00:00:00+00:00"
+  },
+  {
+    "id": "sample-lloydsme",
+    "kind": "listed",
+    "company": "Lloyds Metals and Energy Limited",
+    "ticker": "LLOYDSME.NS",
+    "start": "2026-01-01",
+    "end": "2026-08-23",
+    "generatedAt": "2026-09-18T00:00:00+00:00"
+  },
+  {
+    "id": "sample-nationalum",
+    "kind": "listed",
+    "company": "National Aluminium Company Limited",
+    "ticker": "NATIONALUM.NS",
+    "start": "2026-01-01",
+    "end": "2026-08-23",
+    "generatedAt": "2026-09-18T00:00:00+00:00"
+  },
+  {
+    "id": "sample-pfc",
+    "kind": "listed",
+    "company": "Power Finance Corporation Limited",
+    "ticker": "PFC.NS",
+    "start": "2026-01-01",
+    "end": "2026-08-23",
+    "generatedAt": "2026-09-18T00:00:00+00:00"
+  },
+  {
+    "id": "sample-sonatsoftw",
+    "kind": "listed",
+    "company": "Sonata Software Limited",
+    "ticker": "SONATSOFTW.NS",
+    "start": "2026-01-01",
+    "end": "2026-08-23",
+    "generatedAt": "2026-09-18T00:00:00+00:00"
+  },
+  {
+    "id": "sample-tataconsum",
+    "kind": "listed",
+    "company": "Tata Consumer Products Limited",
+    "ticker": "TATACONSUM.NS",
+    "start": "2026-01-01",
+    "end": "2026-08-23",
+    "generatedAt": "2026-09-18T00:00:00+00:00"
+  },
+  {
+    "id": "sample-tatasteel",
+    "kind": "listed",
+    "company": "Tata Steel Limited",
+    "ticker": "TATASTEEL.NS",
+    "start": "2026-01-01",
+    "end": "2026-08-23",
+    "generatedAt": "2026-09-18T00:00:00+00:00"
+  },
+  {
+    "id": "sample-tcs",
+    "kind": "listed",
+    "company": "Tata Consultancy Services Limited",
+    "ticker": "TCS.NS",
+    "start": "2026-01-01",
+    "end": "2026-08-23",
+    "generatedAt": "2026-09-18T00:00:00+00:00"
+  },
+  {
+    "id": "sample-tmcv",
+    "kind": "listed",
+    "company": "Tata Motors Limited",
+    "ticker": "TMCV.NS",
+    "start": "2026-01-01",
+    "end": "2026-08-23",
+    "generatedAt": "2026-09-18T00:00:00+00:00"
+  },
+  {
+    "id": "sample-tmpv",
+    "kind": "listed",
+    "company": "Tata Motors Passenger Vehicles Limited",
+    "ticker": "TMPV.NS",
+    "start": "2026-01-01",
+    "end": "2026-08-23",
+    "generatedAt": "2026-09-18T00:00:00+00:00"
+  },
+  {
+    "id": "sample-zyduslife",
+    "kind": "listed",
+    "company": "Zydus Lifesciences Limited",
+    "ticker": "ZYDUSLIFE.NS",
+    "start": "2026-01-01",
+    "end": "2026-08-23",
+    "generatedAt": "2026-09-18T00:00:00+00:00"
+  },
+  {
+    "id": "sample-garuda-aerospace",
+    "kind": "unlisted",
+    "company": "Garuda Aerospace",
+    "ticker": null,
+    "start": "2026-01-01",
+    "end": "2026-09-18",
+    "generatedAt": "2026-10-01T20:03:27+00:00"
+  },
+  {
+    "id": "sample-polymatech",
+    "kind": "unlisted",
+    "company": "Polymatech",
+    "ticker": null,
+    "start": "2026-01-01",
+    "end": "2026-08-23",
+    "generatedAt": "2026-10-01T20:03:27+00:00"
+  },
+  {
+    "id": "sample-goa-shipyard-limited",
+    "kind": "unlisted",
+    "company": "Goa Shipyard Limited",
+    "ticker": null,
+    "start": "2026-01-01",
+    "end": "2026-08-23",
+    "generatedAt": "2026-10-01T20:03:27+00:00"
+  }
 ]

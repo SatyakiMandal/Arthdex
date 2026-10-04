@@ -17,7 +17,7 @@ const ALLOWED = [
   new RegExp(`^runs/clear-unsuccessful$`),
   new RegExp(`^snapshots/${SEG}$`),
   new RegExp(`^runs/${SEG}$`),
-  new RegExp(`^runs/${SEG}/(cancel|summary|report)$`),
+  new RegExp(`^runs/${SEG}/(cancel|summary|report|peers)$`),
   new RegExp(`^runs/${SEG}/download/${SEG}$`),
 ];
 
