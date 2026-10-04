@@ -16,12 +16,19 @@
 #    3. Resolved transitive dependencies - pinned so every machine gets the same
 #       versions. Each line says which package pulls it in.
 #
+#  Language models (FinBERT + GoEmotions)
+#    torch and transformers run the two models that score news in the Analyzer.
+#    When they are installed the models are REQUIRED: the engine refuses to fall back
+#    to a word-list scorer. After installing, fetch and verify the weights once
+#    (about 940 MB, pinned to exact revisions):
+#        python scripts/download_models.py
+#    ARTHDEX_ML=off opts into the word-list scorer on purpose.
+#
 #  Lighter install (no language models)
-#    The event-impact engine falls back to a word-list sentiment model when torch /
-#    transformers are missing (it says so in the run log) and skips emotion tags.
-#    Everything else on the site works. To skip them, delete the "torch" and
-#    "transformers" lines in section 1d and every line tagged [ml-only] in section 3.
-#    That cuts the install from about 1.1 GB to about 0.4 GB. This variant was
+#    Delete the "torch" and "transformers" lines in section 1d and every line tagged
+#    [ml-only] in section 3. The Analyzer then scores news with a word list and skips
+#    emotion tags (it says so on the Analyzer page and in the run log). Everything
+#    else works. This cuts the install from about 1.1 GB to about 0.4 GB, and was
 #    installed and unit-tested on a clean machine.
 #
 #  Updating pins
@@ -61,7 +68,7 @@ arch==8.0.0  # GARCH, EGARCH and FIGARCH volatility models
 
 # 1d. Event-impact engine (backend/ceia) language models and reports
 torch==2.14.0  # runs FinBERT / GoEmotions. On Windows the PyPI wheel is the CPU build
-transformers==5.17.0  # loads ProsusAI/finbert and SamLowe/roberta-base-go_emotions. Without torch + transformers the engine falls back to a lexicon
+transformers==5.17.0  # loads ProsusAI/finbert and SamLowe/roberta-base-go_emotions. Required by the engine whenever installed; see 'Language models' above
 openpyxl==3.1.5  # Excel workbook export
 
 

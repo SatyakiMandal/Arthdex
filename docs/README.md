@@ -82,7 +82,7 @@ Key design points:
 | Charts | Hand-rolled SVG (no chart library; `recharts` and `lightweight-charts` were removed) |
 | Fonts | Inter (body), Sora (display), Noto Sans Devanagari, via `next/font/google` |
 | Backend | Python, FastAPI 0.142, uvicorn, pandas 3, numpy, scipy, statsmodels, `arch`, `yfinance`, `curl_cffi`, BeautifulSoup/lxml, openpyxl |
-| Analyzer ML | `torch` and `transformers` for FinBERT and GoEmotions (optional; the engine falls back to a lexicon without them) |
+| Analyzer ML | `torch` and `transformers` for FinBERT and GoEmotions (required whenever installed: the engine refuses to run without the models rather than falling back; `ARTHDEX_ML=off` opts out) |
 
 ## Repository map
 

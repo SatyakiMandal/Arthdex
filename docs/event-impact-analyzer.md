@@ -104,7 +104,7 @@ The illiquidity discount, equity risk premium (5.5%) and terminal growth (5%) ar
 |---|---|
 | Ingestion | `sources`, `discovery` (robots-declared sitemaps, not search pages), `fetcher` (polite, cached, provenance-logging HTTP client that obeys robots.txt and crawl delay), `robots`, `extract`, `wayback` (fallback for Business Standard and Mint), `ingest`, `news_cache`, `ticker_lookup` |
 | Cleaning | `relevance` (alias and position scoring), `dedupe` (token-shingle Jaccard, same-day), `staleness` (Tetlock 2011), `align` (maps timestamps to the trading day that could react; after-close items go to the next day) |
-| Tone | `sentiment` (FinBERT primary, lexicon fallback), `emotion` (GoEmotions, secondary), event tagging |
+| Tone | `sentiment` (FinBERT primary; word-list scorer only when ML is off or not installed), `emotion` (GoEmotions, secondary), event tagging |
 | Market model | `prices`, `returns`, `eventstudy` (incident ranking needs unusual coverage **and** unusual abnormal return), `nifty`, `global_markets`, `metals`, `macro`, `synthetic_control`, `sdid` |
 | Risk and volatility | `var`, `volatility_models`, `distance_to_default`, `solvency_ensemble`, `regime` (3-state), `microstructure`, `spillover` |
 | Forecasting and valuation | `forecasting`, `valuation_model`, `financials`, `factor_model`, `portfolio`, `execution_simulator`, `xai`, `peer_benchmark`, `batch` |
@@ -112,7 +112,7 @@ The illiquidity discount, equity risk premium (5.5%) and terminal growth (5%) ar
 | Output | `narrative` and `unlisted_narrative` (deterministic templates, so identical inputs give identical prose and every number traces to a field), `report` (self-contained HTML, inline SVG), `charts`, `export_excel` (13-tab workbook), `pdf_report`/`pdf_charts`/`pdf` (A4 PDF via Playwright; not wired to the site) |
 | Misc | `models`, `probe` (a phase-0 feasibility spike), `pdf_extract` |
 
-Without `torch`/`transformers` the engine falls back to a lexicon, skips emotion tags, and says so in its log.
+With `torch` and `transformers` installed the models are required, pinned to a commit hash (`ceia/models_registry.py`) and fetched by `backend/scripts/download_models.py`; a model that cannot load stops the run with "Language model unavailable" instead of degrading. Only a machine without the packages (or with `ARTHDEX_ML=off`) uses the word-list scorer, and the Analyzer page says so.
 
 ### Difference from the original repository
 The original repository's company router fell back to hard-coded placeholder numbers when data was missing. That was deliberately **not** carried over: a failed run surfaces an error.

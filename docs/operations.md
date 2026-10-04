@@ -74,8 +74,8 @@ The repository contains no Dockerfile, CI configuration or deployment manifests 
 | Weekly/monthly movers or factor screens say unavailable | The batch constituent download failed; daily movers still work |
 | Analyzer run fails within seconds | Price preflight found no history for the ticker. Check the symbol (BSE tickers end `.BO`) |
 | Analyzer run "Interrupted: the service restarted…" | The backend restarted mid-run. Start a new run |
-| Analyzer is slow on first run | FinBERT/GoEmotions downloads (about 500 MB each) and uncached news crawl. Subsequent runs reuse caches |
-| No emotion tags in a report | `torch`/`transformers` missing; the engine fell back to the lexicon (stated in the log) |
+| Analyzer is slow on first run | Uncached news crawl, plus the FinBERT/GoEmotions download (about 940 MB) if `scripts/download_models.py` was not run. Subsequent runs reuse caches |
+| No emotion tags in a report | `torch`/`transformers` are not installed or `ARTHDEX_ML=off` (the Analyzer page shows which). With them installed a missing model stops the run with "Language model unavailable"; fix with `python scripts/download_models.py` |
 | Company page 404 "Symbol not found" | Yahoo has no quote for `SYMBOL.NS`; try the exact NSE symbol via search |
 
 ## 7. Verification checklist after changes

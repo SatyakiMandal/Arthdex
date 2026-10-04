@@ -177,8 +177,10 @@ Coast Paper.
 ## Event impact analyzer
 
 The CEIA engine is vendored in `backend/ceia/` and run as a subprocess per job (see
-`app/services/analyzer.py`). It needs `torch` and `transformers` for FinBERT / GoEmotions;
-without them the engine falls back to a lexicon and skips emotion tags, and says so in its log.
+`app/services/analyzer.py`). It needs `torch` and `transformers` for FinBERT / GoEmotions. Fetch and verify the
+models once with `python scripts/download_models.py`; with the packages installed they are
+required (a missing model stops the run), and `ARTHDEX_ML=off` opts into the word-list
+scorer. Status: `GET /api/v1/analyzer/models`.
 Run output lives in `analyzer_data/` (gitignored); bundled sample reports are in
 `analyzer_samples/`. Tuning: `ARTHDEX_ANALYZER_CONCURRENCY` (default 2) and
 `ARTHDEX_ANALYZER_TIMEOUT` seconds (default 5400). Runs are stateful and not cached; the analyzer
