@@ -13,6 +13,7 @@ export const dynamic = "force-dynamic";
 const SEG = "[A-Za-z0-9._-]+";
 const ALLOWED = [
   new RegExp(`^search$`),
+  new RegExp(`^models$`),
   new RegExp(`^runs$`),
   new RegExp(`^runs/clear-unsuccessful$`),
   new RegExp(`^snapshots/${SEG}$`),

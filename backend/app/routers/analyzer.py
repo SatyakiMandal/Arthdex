@@ -30,6 +30,14 @@ class RunRequest(BaseModel):
     end: date
 
 
+@router.get("/models")
+def language_models():
+    """Which language models the engine will use, and whether they are on disk. Cheap; loads nothing."""
+    from ceia import models_registry
+
+    return models_registry.status()
+
+
 @router.get("/search")
 def search(q: str = Query("", max_length=60), kind: Literal["any", "listed", "unlisted"] = "any", limit: int = Query(10, ge=1, le=25)):
     """Autocomplete for the analyzer across NSE equities and the unlisted directory."""

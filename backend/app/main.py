@@ -55,6 +55,19 @@ def _analyzer_startup() -> None:
 
 
 @app.on_event("startup")
+def _models_status() -> None:
+    # Say plainly which sentiment engine analyses will use, so a missing model is visible at start-up
+    import logging
+
+    from ceia import models_registry
+
+    info = models_registry.status()
+    logging.getLogger("uvicorn.error").info(
+        "Language models: %s. Run `python scripts/download_models.py` to fetch them ahead of time.", info["engine"]
+    )
+
+
+@app.on_event("startup")
 def _unlisted_warmup() -> None:
     # A cold directory is about half a minute of polite fetching, so build it in the
     # background rather than on the first visitor's request.

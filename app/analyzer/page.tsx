@@ -6,7 +6,8 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { Suspense } from "react";
 import { Launcher } from "@/components/analyzer/launcher";
 import { RunList } from "@/components/analyzer/run-list";
-import { listRuns } from "@/lib/api/analyzer";
+import { analyzerGet, listRuns } from "@/lib/api/analyzer";
+import type { ModelStatus } from "@/types/analyzer";
 
 export const metadata: Metadata = {
   title: "Event Impact Analyzer · Arthdex",
@@ -17,7 +18,11 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function AnalyzerPage() {
-  const [mine, samples] = await Promise.all([listRuns("run"), listRuns("sample")]);
+  const [mine, samples, models] = await Promise.all([
+    listRuns("run"),
+    listRuns("sample"),
+    analyzerGet<ModelStatus>("/models"),
+  ]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -36,6 +41,8 @@ export default async function AnalyzerPage() {
             models. Unlisted names get a dealer-price move study attributed to headlines.
           </p>
         </div>
+
+        {models ? <ModelNotice status={models} /> : null}
 
         <div className="mt-8">
           <Suspense fallback={<div className="h-56 animate-pulse rounded-xl border border-border bg-surface" />}>
@@ -78,4 +85,36 @@ export default async function AnalyzerPage() {
       <SiteFooter />
     </div>
   );
+}
+
+/** Says which sentiment engine the next run will use, so a degraded setup is never a surprise. */
+function ModelNotice({ status }: { status: ModelStatus }) {
+  const missing = status.models.filter((m) => !m.cached);
+  const mb = missing.reduce((sum, m) => sum + m.approxMb, 0);
+
+  if (status.mode === "off") {
+    return <Note tone="flat">Language models are switched off (ARTHDEX_ML=off). News is scored with a simple word list.</Note>;
+  }
+  if (!status.packagesInstalled && !status.required) {
+    return (
+      <Note tone="flat">
+        The language-model packages (torch, transformers) are not installed, so news is scored with a simple word list
+        and emotion tags are skipped. Install backend/requirements.txt for the full FinBERT and GoEmotions analysis.
+      </Note>
+    );
+  }
+  if (missing.length > 0) {
+    return (
+      <Note tone="flat">
+        FinBERT and GoEmotions are not on this machine yet. They download once (about {mb} MB) before the next run. To fetch
+        them now, run <code className="font-mono">python scripts/download_models.py</code> in the backend folder.
+      </Note>
+    );
+  }
+  return <Note tone="up">Sentiment engine ready: FinBERT for tone and GoEmotions for emotion tags.</Note>;
+}
+
+function Note({ tone, children }: { tone: "up" | "flat"; children: React.ReactNode }) {
+  const style = tone === "up" ? "border-up/30 bg-up/5 text-muted-foreground" : "border-flat/40 bg-flat/10 text-foreground";
+  return <p className={`mt-6 max-w-3xl rounded-xl border px-4 py-2.5 text-2xs ${style}`}>{children}</p>;
 }

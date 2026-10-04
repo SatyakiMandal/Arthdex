@@ -29,6 +29,7 @@ import logging
 from dataclasses import dataclass
 
 from .models import NewsItem
+from .models_registry import ModelUnavailable, disabled, kwargs_for, spec_for, strict, unavailable
 
 log = logging.getLogger(__name__)
 
@@ -151,23 +152,32 @@ class GoEmotionScorer:
         self._torch = None
 
     def _load(self) -> None:
-        if self._model is not None:
+        if self._model is not None or disabled():
             return
         try:
             import torch
             from transformers import AutoModelForSequenceClassification, AutoTokenizer
-        except ImportError as exc:  # pragma: no cover
+        except ImportError as exc:
+            if strict():
+                raise ModelUnavailable(
+                    f"Language model unavailable: torch / transformers are not installed ({exc}). "
+                    "Install backend/requirements.txt, or set ARTHDEX_ML=off to skip emotion tags on purpose."
+                ) from exc
             log.warning("GoEmotions dependencies missing: %s", exc)
             return
+        kwargs = kwargs_for(self.model_name)
         try:
-            log.info("loading %s (first run downloads ~500MB)", self.model_name)
+            log.info("loading %s%s", self.model_name, "" if kwargs.get("local_files_only") else " (not cached: downloading, about 500 MB)")
             self._torch = torch
-            self._tokenizer = AutoTokenizer.from_pretrained(self.model_name)
-            self._model = AutoModelForSequenceClassification.from_pretrained(self.model_name)
+            self._tokenizer = AutoTokenizer.from_pretrained(self.model_name, **kwargs)
+            self._model = AutoModelForSequenceClassification.from_pretrained(self.model_name, **kwargs)
             self._model.eval()
         except Exception as exc:
-            log.warning("Could not initialize GoEmotions model (%s): %s", self.model_name, exc)
             self._model = None
+            spec = spec_for(self.model_name)
+            if strict() and spec is not None:
+                raise unavailable(spec, exc) from exc
+            log.warning("Could not initialize GoEmotions model (%s): %s", self.model_name, exc)
 
     def _classify(self, texts: list[str]) -> list[dict[str, float]]:
         try:
@@ -188,7 +198,11 @@ class GoEmotionScorer:
                     out.append({id2label[i]: float(v) for i, v in enumerate(row)})
                 log.info("GoEmotions: scored %d/%d texts", min(start + self.batch_size, total), total)
             return out
+        except ModelUnavailable:
+            raise
         except Exception as exc:
+            if strict():
+                raise ModelUnavailable(f"Language model unavailable: GoEmotions inference failed ({type(exc).__name__}: {exc}).") from exc
             log.warning("GoEmotions inference error (%s); skipping secondary emotion tags", exc)
             return [{} for _ in texts]
 

@@ -376,6 +376,12 @@ def _worker(run_id: str) -> None:
                 logfile.write_text(problem + "\n", encoding="utf-8")
                 _update(run_id, status="FAILED", stage="Failed", error=problem, finishedAt=_now())
                 return
+        if not meta.get("noNews"):
+            problem = _preflight_models(run_id, logfile)
+            if problem:
+                logfile.write_text(problem + "\n", encoding="utf-8")
+                _update(run_id, status="FAILED", stage="Failed", error=problem, finishedAt=_now())
+                return
         _update(run_id, stage="Starting")
         try:
             with logfile.open("w", encoding="utf-8", errors="replace") as fh:
@@ -436,13 +442,35 @@ def _preflight_prices(meta: dict[str, Any]) -> str | None:
     return None
 
 
+def _preflight_models(run_id: str, logfile: Path) -> str | None:
+    """Make sure the language models are on disk before a news run starts.
+
+    A run scrapes news for minutes and only then scores it, so a missing model would otherwise
+    surface at the end of the crawl (or, worse, degrade silently). Models are normally fetched
+    once by ``scripts/download_models.py``; if that was skipped they are downloaded here, once.
+    """
+    from ceia import models_registry as ml
+
+    if not ml.strict():
+        return None
+    if all(ml.is_cached(m) for m in ml.MODELS):
+        return None
+    _update(run_id, stage="Downloading language models")
+    try:
+        logfile.write_text("Downloading language models (first run only, about 1 GB)\n", encoding="utf-8")
+        ml.ensure_cached(lambda line: log.info("models: %s", line))
+    except ml.ModelUnavailable as exc:
+        return str(exc)
+    return None
+
+
 def _failure_reason(logfile: Path, code: int) -> str:
     """Prefer the engine's own explanation over an exit code."""
     try:
         lines = [l.strip() for l in logfile.read_text(encoding="utf-8", errors="replace").splitlines() if l.strip()]
     except OSError:
         return f"The engine exited with code {code}."
-    for needle in ("Price data unavailable", "Ticker lookup failed", "UnlistedZone lookup failed", "Error", "Traceback"):
+    for needle in ("Language model unavailable", "Price data unavailable", "Ticker lookup failed", "UnlistedZone lookup failed", "Error", "Traceback"):
         for line in reversed(lines):
             if needle.lower() in line.lower():
                 return line[:400]

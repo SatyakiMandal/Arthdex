@@ -28,6 +28,7 @@ from typing import Any
 import numpy as np
 
 from .models import NewsItem
+from .models_registry import ModelUnavailable, disabled, kwargs_for, spec_for, strict, unavailable
 
 log = logging.getLogger(__name__)
 
@@ -150,23 +151,32 @@ class FinBertScorer:
         self._torch = None
 
     def _load(self) -> None:
-        if self._model is not None:
+        if self._model is not None or disabled():
             return
         try:
             import torch
             from transformers import AutoModelForSequenceClassification, AutoTokenizer
-        except ImportError as exc:  # pragma: no cover
-            log.warning("FinBERT dependencies missing: %s", exc)
+        except ImportError as exc:
+            if strict():
+                raise ModelUnavailable(
+                    f"Language model unavailable: torch / transformers are not installed ({exc}). "
+                    "Install backend/requirements.txt, or set ARTHDEX_ML=off to use the word-list scorer on purpose."
+                ) from exc
+            log.warning("FinBERT dependencies missing (%s); using the word-list scorer", exc)
             return
+        kwargs = kwargs_for(self.model_name)
         try:
-            log.info("loading %s (first run downloads ~440MB)", self.model_name)
+            log.info("loading %s%s", self.model_name, "" if kwargs.get("local_files_only") else " (not cached: downloading, about 440 MB)")
             self._torch = torch
-            self._tokenizer = AutoTokenizer.from_pretrained(self.model_name)
-            self._model = AutoModelForSequenceClassification.from_pretrained(self.model_name)
+            self._tokenizer = AutoTokenizer.from_pretrained(self.model_name, **kwargs)
+            self._model = AutoModelForSequenceClassification.from_pretrained(self.model_name, **kwargs)
             self._model.eval()
         except Exception as exc:
-            log.warning("Could not initialize FinBERT model (%s): %s", self.model_name, exc)
             self._model = None
+            spec = spec_for(self.model_name)
+            if strict() and spec is not None:
+                raise unavailable(spec, exc) from exc
+            log.warning("Could not initialize FinBERT model (%s): %s", self.model_name, exc)
 
     def _classify_lexicon(self, texts: list[str]) -> list[Sentiment]:
         pos_words = {"profit", "growth", "surge", "gain", "dividend", "order", "win", "expansion", "beat", "positive", "high", "rise", "rally", "upgrade", "approved", "revenue", "ebitda"}
@@ -212,7 +222,11 @@ class FinBertScorer:
                     ))
                 log.info("FinBERT: scored %d/%d texts", min(start + self.batch_size, total), total)
             return out
+        except ModelUnavailable:
+            raise
         except Exception as exc:
+            if strict():
+                raise ModelUnavailable(f"Language model unavailable: FinBERT inference failed ({type(exc).__name__}: {exc}).") from exc
             log.warning("FinBERT inference error (%s); using lexicon fallback", exc)
             return self._classify_lexicon(texts)
 

@@ -370,3 +370,12 @@ export interface UnlistedResearch {
 }
 
 export type AnalyzerSummary = ListedSummary | UnlistedSummary;
+
+/** Language-model readiness reported by GET /api/v1/analyzer/models. */
+export interface ModelStatus {
+  mode: "auto" | "required" | "off";
+  packagesInstalled: boolean;
+  required: boolean;
+  engine: string;
+  models: { key: string; repo: string; revision: string; purpose: string; approxMb: number; cached: boolean }[];
+}
