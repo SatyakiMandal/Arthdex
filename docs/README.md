@@ -15,6 +15,7 @@ Arthdex is a quantitative market-intelligence website for Indian equities. It co
 | [event-impact-analyzer.md](event-impact-analyzer.md) | The Analyzer tab and the vendored CEIA engine: run lifecycle, outputs, dossier tabs |
 | [operations.md](operations.md) | Running, deploying, tuning, storage layout, troubleshooting |
 | [data-integrity-and-limitations.md](data-integrity-and-limitations.md) | Provenance model, illustrative data, known gaps, open risks, documentation drift |
+| [windows-setup.md](windows-setup.md) | PowerShell commands to install and run everything on a fresh Windows machine, from `requirements.txt` and `package-lock.json` |
 | [code-review/README.md](code-review/README.md) | File-by-file code review of the front end, data service and engine, with 39 findings, a graph of the codebase and a remediation roadmap |
 
 ## What the site does

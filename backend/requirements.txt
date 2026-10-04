@@ -8,7 +8,7 @@
 #                excludes exactly 3.14.1. Anything other than 3.14.6 is untested.
 #  Install     : python -m pip install -r requirements.txt     (run inside backend/, in a venv)
 #  Dev tools   : python -m pip install -r requirements-dev.txt (ruff; adds this file)
-#  Size        : about 1.3 GB installed, most of it torch. See "Lighter install" below.
+#  Size        : about 1.1 GB installed, most of it torch (about 0.4 GB without it). See "Lighter install" below.
 #
 #  How this file is organised
 #    1. Direct dependencies - what the code imports, with the reason.
@@ -21,7 +21,8 @@
 #    transformers are missing (it says so in the run log) and skips emotion tags.
 #    Everything else on the site works. To skip them, delete the "torch" and
 #    "transformers" lines in section 1d and every line tagged [ml-only] in section 3.
-#    That saves roughly 1 GB of disk and most of the install time.
+#    That cuts the install from about 1.1 GB to about 0.4 GB. This variant was
+#    installed and unit-tested on a clean machine.
 #
 #  Updating pins
 #    Install into a clean venv, run the unit tests and the site, then regenerate with
