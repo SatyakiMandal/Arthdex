@@ -587,7 +587,22 @@ def _g(obj: Any, *path: str, default: Any = None) -> Any:
 
 
 def _num(v: Any) -> float | None:
-    return float(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else None
+    if not isinstance(v, (int, float)) or isinstance(v, bool):
+        return None
+    f = float(v)
+    # NaN and infinity are not JSON: a model that could not be fitted must read as "no value"
+    return f if f == f and f not in (float("inf"), float("-inf")) else None
+
+
+def _finite(obj: Any) -> Any:
+    """Replace every NaN or infinity in a payload with None, so the response always serialises."""
+    if isinstance(obj, float):
+        return obj if obj == obj and obj not in (float("inf"), float("-inf")) else None
+    if isinstance(obj, dict):
+        return {k: _finite(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_finite(v) for v in obj]
+    return obj
 
 
 def summarise(run_id: str) -> dict[str, Any] | None:
@@ -597,7 +612,7 @@ def summarise(run_id: str) -> dict[str, Any] | None:
         return None
     raw = json.loads(path.read_text(encoding="utf-8"))
     body = _summarise_unlisted(raw) if meta.get("kind") == "unlisted" else _summarise_listed(raw)
-    return {"kind": meta.get("kind", "listed"), **body}
+    return _finite({"kind": meta.get("kind", "listed"), **body})
 
 
 def _verdict_view(v: dict[str, Any] | None) -> dict[str, Any] | None:
