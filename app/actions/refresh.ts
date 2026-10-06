@@ -2,6 +2,8 @@
 
 import { revalidatePath, revalidateTag } from "next/cache";
 
+import { backendHeaders } from "@/lib/api/auth";
+
 const BASE_URL = process.env.ARTHDEX_API_URL ?? "http://127.0.0.1:8000";
 
 /** Expire the backend's cache for a page, then drop Next's cached copy of the page's data. */
@@ -11,7 +13,7 @@ export async function refreshData(path: string, prefixes: string[], symbol: stri
   try {
     const res = await fetch(`${BASE_URL}/api/v1/cache/refresh`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: backendHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ prefixes, symbol }),
       cache: "no-store",
     });

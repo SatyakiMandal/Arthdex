@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { analyzerBaseUrl } from "@/lib/api/analyzer";
+import { backendHeaders } from "@/lib/api/auth";
 
 /**
  * Same-origin proxy to the analyzer endpoints of the data service.
@@ -36,7 +37,7 @@ async function forward(request: Request, ctx: Ctx, method: "GET" | "POST" | "DEL
     const upstream = await fetch(`${analyzerBaseUrl}/api/v1/analyzer/${joined}${search}`, {
       method,
       cache: "no-store",
-      headers: { "Content-Type": "application/json" },
+      headers: backendHeaders({ "Content-Type": "application/json" }),
       body: method === "POST" ? await request.text() : undefined,
     });
 

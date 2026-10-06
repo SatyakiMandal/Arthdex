@@ -1,5 +1,7 @@
 import "server-only";
 
+import { backendHeaders } from "./auth";
+
 /**
  * Typed client for the Arthdex data service.
  *
@@ -58,7 +60,7 @@ export async function apiGet<T>(
   try {
     const response = await fetch(url, {
       next: { revalidate, tags: ["api"] },
-      headers: { Accept: "application/json" },
+      headers: backendHeaders({ Accept: "application/json" }),
     });
 
     if (!response.ok) {
