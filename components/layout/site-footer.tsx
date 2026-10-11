@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 import {
+  Activity,
   AlertTriangle,
   ArrowLeftRight,
   BarChart3,
@@ -26,6 +27,7 @@ const COLUMNS = [
       { label: "Market watch", href: "/market-watch", icon: BarChart3 },
       { label: "Commodities", href: "/commodities", icon: Coins },
       { label: "Technical screener", href: "/screener", icon: ScanSearch },
+      { label: "Order flow", href: "/orderflow", icon: Activity },
       { label: "NSE Bhavcopy", href: "/bhavcopy", icon: Layers },
       { label: "Bulk & block deals", href: "/deals", icon: ArrowLeftRight },
       { label: "Results calendar", href: "/calendar", icon: CalendarDays },

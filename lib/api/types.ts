@@ -427,6 +427,31 @@ export interface TechSignal {
   detail: string;
 }
 
+export interface OrderBlock {
+  type: "bullish" | "bearish";
+  start: number;
+  formed: number;
+  mitigated: number | null;
+  high: number;
+  low: number;
+}
+
+export interface FairValueGap {
+  type: "bullish" | "bearish";
+  start: number;
+  end: number;
+  filled: number | null;
+  high: number;
+  low: number;
+}
+
+export interface LiquiditySweep {
+  type: "bullish" | "bearish";
+  at: number;
+  level: number;
+  wick: number;
+}
+
 export interface ApiTechnicals {
   symbol: string;
   interval: TechInterval;
@@ -438,6 +463,9 @@ export interface ApiTechnicals {
   bars: { t: string; o: number; h: number; l: number; c: number; v: number }[];
   series: Record<string, (number | null)[]>;
   levels: { support: { price: number; touches: number }[]; resistance: { price: number; touches: number }[] };
+  orderBlocks: OrderBlock[];
+  fairValueGaps: FairValueGap[];
+  liquiditySweeps: LiquiditySweep[];
   signals: Record<string, TechSignal>;
   tally: { bullish: number; bearish: number; neutral: number };
   lastCrossover: { direction: "above" | "below"; at: string; barsAgo: number } | null;
@@ -765,4 +793,94 @@ export interface ApiStatus {
 export interface ApiPreIpo {
   id: string | null;
   name: string | null;
+}
+
+// -- order flow & options exposure -------------------------------------------
+
+export type OrderflowMarket = "nse" | "futures" | "us";
+export type OrderflowInterval = "1m" | "5m" | "15m" | "1h" | "1d";
+
+export interface ProfileBin {
+  lo: number;
+  hi: number;
+  mid: number;
+  v: number;
+  buy: number;
+  sell: number;
+  delta: number;
+}
+
+export interface FootprintLevel {
+  p: number;
+  buy: number;
+  sell: number;
+  bImb: boolean;
+  sImb: boolean;
+}
+
+export interface FootprintBar {
+  i: number;
+  t: string;
+  o: number;
+  h: number;
+  l: number;
+  c: number;
+  volume: number;
+  delta: number;
+  poc: number | null;
+  levels: FootprintLevel[];
+}
+
+export interface ApiOrderflow {
+  symbol: string;
+  market: OrderflowMarket;
+  interval: OrderflowInterval;
+  intervalLabel: string;
+  intraday: boolean;
+  asOf: string;
+  lastClose: number;
+  atr: number | null;
+  estimated: boolean;
+  method: string;
+  bars: { t: string; o: number; h: number; l: number; c: number; v: number; delta: number }[];
+  cvd: number[];
+  profile: { bins: ProfileBin[]; poc: number; vah: number; val: number; total: number; valueAreaPct: number };
+  footprint: { step: number; bars: FootprintBar[] };
+  imbalances: { i: number; t: string; price: number; side: "buy" | "sell"; ratio: number }[];
+  absorption: { at: number; type: "bullish" | "bearish"; volume: number; volRatio: number; rangeAtr: number; location: number; delta: number; price: number }[];
+  bigTrades: { at: number; volume: number; z: number; delta: number; bias: "buy" | "sell"; price: number; fwdPct: number | null }[];
+  heatmap: { available: boolean; reason: string };
+}
+
+export interface GexStrike {
+  strike: number;
+  callOi: number;
+  putOi: number;
+  gex: number;
+  callGex: number;
+  putGex: number;
+  dex: number;
+  tex: number;
+}
+
+export interface ApiGex {
+  symbol: string;
+  underlying: string;
+  spot: number;
+  asOf: string;
+  expiries: string[];
+  nearestExpiry: string;
+  proxy: { etf: string; futures: string | null; ratio: number | null };
+  totals: { gexMillions: number; callOi: number; putOi: number; putCallOi: number; dexMillions: number; thetaPerDay: number; vegaPerPoint: number };
+  regime: "positive" | "negative";
+  levels: {
+    gammaFlip: number | null;
+    callWall: number | null;
+    putWall: number | null;
+    maxPain: number | null;
+    scaled: { gammaFlip: number | null; callWall: number | null; putWall: number | null; maxPain: number | null; spot: number | null };
+  };
+  zeroDte: { expiry: string; oiShare: number; gexMillions: number; gexShare: number } | null;
+  strikes: GexStrike[];
+  assumption: string;
 }

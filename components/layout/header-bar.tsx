@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  Activity,
   ArrowLeftRight,
   Bell,
   Building2,
@@ -43,6 +44,7 @@ const NAV: { label: string; href: string; icon: LucideIcon }[] = [
 /** Less frequent destinations, kept behind one menu so the bar stays on a single line. */
 const MORE: { label: string; href: string; icon: LucideIcon; hint: string }[] = [
   { label: "Morning briefing", href: "/briefing", icon: Sunrise, hint: "Today in one page" },
+  { label: "Order flow", href: "/orderflow", icon: Activity, hint: "Profile, footprint, CVD and GEX" },
   { label: "Bulk & block deals", href: "/deals", icon: ArrowLeftRight, hint: "Large trades disclosed today" },
   { label: "Results & actions calendar", href: "/calendar", icon: CalendarDays, hint: "Next 30 days" },
   { label: "Bhavcopy", href: "/bhavcopy", icon: Layers, hint: "End-of-day delivery data" },

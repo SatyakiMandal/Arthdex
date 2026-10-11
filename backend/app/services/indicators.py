@@ -10,6 +10,8 @@ Expected columns: Open, High, Low, Close, Volume.
 
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 import pandas as pd
 
@@ -188,6 +190,155 @@ def support_resistance(df: pd.DataFrame, window: int = 5, per_side: int = 3) -> 
         "support": pick([lv for lv in levels if lv[0] < last], True),
         "resistance": pick([lv for lv in levels if lv[0] > last], False),
     }
+
+
+def order_blocks(
+    df: pd.DataFrame, window: int = 5, max_each: int = 6, min_displacement_atr: float = 1.0, lookback: int = 10
+) -> list[dict[str, Any]]:
+    """Bullish and bearish order blocks (a smart-money-concepts zone).
+
+    A bullish order block is the last bearish candle before an impulsive move
+    that breaks above the most recent swing high ("break of structure"); a
+    bearish order block mirrors this on the downside. The zone is that
+    candle's high-low range. A block is mitigated once price later trades
+    back into its zone.
+
+    Returned indices are positions into `df` (0-based), matching the bar
+    array the chart already renders.
+    """
+    n = len(df)
+    if n < window * 2 + 10:
+        return []
+    o, h, l, c = (df[col].to_numpy() for col in ("Open", "High", "Low", "Close"))
+    a = atr(df, 14).to_numpy()
+
+    swing_high = np.full(n, np.nan)
+    swing_low = np.full(n, np.nan)
+    for i in range(window, n - window):
+        if h[i] == h[i - window : i + window + 1].max():
+            swing_high[i] = h[i]
+        if l[i] == l[i - window : i + window + 1].min():
+            swing_low[i] = l[i]
+
+    def last_opposite(idx: int, want_bear: bool) -> int | None:
+        for j in range(idx - 1, max(idx - lookback, -1), -1):
+            if (c[j] < o[j]) == want_bear:
+                return j
+        return None
+
+    blocks: list[dict[str, Any]] = []
+    last_high: float | None = None
+    last_high_idx = used_high_idx = -1
+    last_low: float | None = None
+    last_low_idx = used_low_idx = -1
+
+    for i in range(n):
+        if not np.isnan(swing_high[i]):
+            last_high, last_high_idx = float(swing_high[i]), i
+        if not np.isnan(swing_low[i]):
+            last_low, last_low_idx = float(swing_low[i]), i
+
+        disp = a[i] if np.isfinite(a[i]) and a[i] > 0 else None
+        if disp is None:
+            continue
+
+        if last_high is not None and c[i] > last_high and last_high_idx != used_high_idx:
+            ob = last_opposite(i, want_bear=True)
+            if ob is not None and (h[i] - l[ob]) >= min_displacement_atr * disp:
+                blocks.append({"type": "bullish", "start": ob, "formed": i, "high": float(h[ob]), "low": float(l[ob]), "mitigated": None})
+                used_high_idx = last_high_idx
+
+        if last_low is not None and c[i] < last_low and last_low_idx != used_low_idx:
+            ob = last_opposite(i, want_bear=False)
+            if ob is not None and (h[ob] - l[i]) >= min_displacement_atr * disp:
+                blocks.append({"type": "bearish", "start": ob, "formed": i, "high": float(h[ob]), "low": float(l[ob]), "mitigated": None})
+                used_low_idx = last_low_idx
+
+    for b in blocks:
+        for k in range(b["formed"] + 1, n):
+            if l[k] <= b["high"] and h[k] >= b["low"]:
+                b["mitigated"] = k
+                break
+
+    bullish = [b for b in blocks if b["type"] == "bullish"][-max_each:]
+    bearish = [b for b in blocks if b["type"] == "bearish"][-max_each:]
+    return sorted(bullish + bearish, key=lambda b: b["start"])
+
+
+def fair_value_gaps(df: pd.DataFrame, min_gap_atr: float = 0.1, max_each: int = 8) -> list[dict[str, Any]]:
+    """Three-candle imbalances ("fair value gaps"): a bullish gap is where the
+    low of bar i sits above the high of bar i-2, leaving a price range the
+    middle candle never traded through; a bearish gap mirrors this below. The
+    gap is "filled" once price later trades back through the whole range.
+    """
+    n = len(df)
+    if n < 10:
+        return []
+    h, l = df["High"].to_numpy(), df["Low"].to_numpy()
+    a = atr(df, 14).to_numpy()
+
+    gaps: list[dict[str, Any]] = []
+    for i in range(2, n):
+        disp = a[i] if np.isfinite(a[i]) and a[i] > 0 else None
+        if disp is None:
+            continue
+        if l[i] > h[i - 2] and (l[i] - h[i - 2]) >= min_gap_atr * disp:
+            gaps.append({"type": "bullish", "start": i - 2, "end": i, "high": float(l[i]), "low": float(h[i - 2]), "filled": None})
+        if h[i] < l[i - 2] and (l[i - 2] - h[i]) >= min_gap_atr * disp:
+            gaps.append({"type": "bearish", "start": i - 2, "end": i, "high": float(l[i - 2]), "low": float(h[i]), "filled": None})
+
+    for g in gaps:
+        for k in range(g["end"] + 1, n):
+            if l[k] <= g["high"] and h[k] >= g["low"]:
+                g["filled"] = k
+                break
+
+    bullish = [g for g in gaps if g["type"] == "bullish"][-max_each:]
+    bearish = [g for g in gaps if g["type"] == "bearish"][-max_each:]
+    return sorted(bullish + bearish, key=lambda g: g["start"])
+
+
+def liquidity_sweeps(df: pd.DataFrame, window: int = 5, max_each: int = 8) -> list[dict[str, Any]]:
+    """Stop-hunt reversals: a bar wicks beyond the most recent swing high or
+    low (through resting liquidity) and closes back on the other side. A
+    sweep above a swing high is bearish (buy-side liquidity taken before a
+    drop); a sweep below a swing low is bullish.
+    """
+    n = len(df)
+    if n < window * 2 + 10:
+        return []
+    h, l, c = (df[col].to_numpy() for col in ("High", "Low", "Close"))
+
+    swing_high = np.full(n, np.nan)
+    swing_low = np.full(n, np.nan)
+    for i in range(window, n - window):
+        if h[i] == h[i - window : i + window + 1].max():
+            swing_high[i] = h[i]
+        if l[i] == l[i - window : i + window + 1].min():
+            swing_low[i] = l[i]
+
+    sweeps: list[dict[str, Any]] = []
+    last_high: float | None = None
+    last_high_idx = used_high_idx = -1
+    last_low: float | None = None
+    last_low_idx = used_low_idx = -1
+
+    for i in range(n):
+        if not np.isnan(swing_high[i]):
+            last_high, last_high_idx = float(swing_high[i]), i
+        if not np.isnan(swing_low[i]):
+            last_low, last_low_idx = float(swing_low[i]), i
+
+        if last_high is not None and h[i] > last_high and c[i] < last_high and last_high_idx != used_high_idx:
+            sweeps.append({"type": "bearish", "at": i, "level": last_high, "wick": float(h[i])})
+            used_high_idx = last_high_idx
+        if last_low is not None and l[i] < last_low and c[i] > last_low and last_low_idx != used_low_idx:
+            sweeps.append({"type": "bullish", "at": i, "level": last_low, "wick": float(l[i])})
+            used_low_idx = last_low_idx
+
+    bullish = [s for s in sweeps if s["type"] == "bullish"][-max_each:]
+    bearish = [s for s in sweeps if s["type"] == "bearish"][-max_each:]
+    return sorted(bullish + bearish, key=lambda s: s["at"])
 
 
 def macd_crossovers(hist: pd.Series) -> pd.Series:

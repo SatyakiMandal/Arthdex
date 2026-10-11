@@ -31,6 +31,7 @@ export function CompanyTabs({
     { label: "Historical", href: `/company/${symbol}/history` },
     { label: "Shareholders", href: `/company/${symbol}/shareholding` },
     { label: "Technicals", href: `/company/${symbol}/technicals` },
+    { label: "Order Flow", href: `/company/${symbol}/orderflow` },
     { label: "Research Dossier", href: `/company/${symbol}/research` },
     { label: "Quant Engine", href: `/company/${symbol}/quant` },
     { label: "Macro & News", href: `/company/${symbol}/macro` },

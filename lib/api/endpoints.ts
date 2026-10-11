@@ -20,6 +20,8 @@ import type {
   ApiCommodities,
   ApiMacdScreen,
   ApiTechnicals,
+  ApiOrderflow,
+  ApiGex,
   ApiFinancials,
   ApiIndex,
   ApiIpoPipeline,
@@ -159,6 +161,11 @@ export const getBhavcopy = (date?: string) =>
 
 export const getTechnicals = (symbol: string, interval: string) =>
   apiGet<ApiTechnicals>(`/api/v1/company/${symbol}/technicals?interval=${interval}`, 60);
+
+export const getOrderflow = (symbol: string, market: string, interval: string) =>
+  apiGet<ApiOrderflow>(`/api/v1/orderflow/${symbol}?market=${market}&interval=${interval}`, 30);
+
+export const getGex = (symbol: string) => apiGet<ApiGex>(`/api/v1/options/${symbol}/gex`, 120);
 
 export const getMacdScreen = (params: { direction: string; interval: string; within: number; index: string }) =>
   apiGet<ApiMacdScreen>(

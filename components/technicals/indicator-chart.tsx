@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { ApiTechnicals } from "@/lib/api/types";
 
-export type OverlayId = "sma20" | "sma50" | "sma200" | "ema20" | "ema50" | "bb" | "supertrend" | "vwap" | "sr";
+export type OverlayId = "sma20" | "sma50" | "sma200" | "ema20" | "ema50" | "bb" | "supertrend" | "vwap" | "sr" | "orderBlocks" | "fvg" | "liquidity";
 export type PaneId = "volume" | "rsi" | "macd" | "stoch" | "mfi" | "adx" | "atr";
 
 export const OVERLAYS: { id: OverlayId; label: string; color: string }[] = [
@@ -17,6 +17,9 @@ export const OVERLAYS: { id: OverlayId; label: string; color: string }[] = [
   { id: "supertrend", label: "Supertrend", color: "hsl(var(--up))" },
   { id: "vwap", label: "VWAP", color: "#fb923c" },
   { id: "sr", label: "Support / resistance", color: "hsl(var(--muted-foreground))" },
+  { id: "orderBlocks", label: "Order blocks", color: "hsl(var(--up))" },
+  { id: "fvg", label: "Fair value gaps", color: "#a78bfa" },
+  { id: "liquidity", label: "Liquidity sweeps", color: "#fb923c" },
 ];
 
 export const PANES: { id: PaneId; label: string }[] = [
@@ -233,6 +236,66 @@ export function IndicatorChart({
                     vectorEffect="non-scaling-stroke"
                   />
                 ))
+            : null}
+
+          {overlays.has("orderBlocks")
+            ? data.orderBlocks.map((b, i) => {
+                const x0 = x(b.start) - step / 2;
+                const endI = b.mitigated ?? n - 1;
+                const x1 = x(endI) + (b.mitigated != null ? -step / 2 : step / 2);
+                const color = b.type === "bullish" ? "hsl(var(--up))" : "hsl(var(--down))";
+                return (
+                  <rect
+                    key={i}
+                    x={x0}
+                    y={py(b.high)}
+                    width={Math.max(x1 - x0, 1)}
+                    height={Math.max(py(b.low) - py(b.high), 1)}
+                    fill={color}
+                    fillOpacity={b.mitigated != null ? 0.06 : 0.16}
+                    stroke={color}
+                    strokeOpacity={b.mitigated != null ? 0.25 : 0.6}
+                    strokeWidth={1}
+                    strokeDasharray={b.mitigated != null ? "3 3" : undefined}
+                    vectorEffect="non-scaling-stroke"
+                  />
+                );
+              })
+            : null}
+
+          {overlays.has("fvg")
+            ? data.fairValueGaps.map((g, i) => {
+                const x0 = x(g.start) - step / 2;
+                const endI = g.filled ?? n - 1;
+                const x1 = x(endI) + (g.filled != null ? -step / 2 : step / 2);
+                const color = g.type === "bullish" ? "hsl(var(--up))" : "hsl(var(--down))";
+                return (
+                  <rect
+                    key={i}
+                    x={x0}
+                    y={py(g.high)}
+                    width={Math.max(x1 - x0, 1)}
+                    height={Math.max(py(g.low) - py(g.high), 1)}
+                    fill={color}
+                    fillOpacity={g.filled != null ? 0.05 : 0.14}
+                    stroke="none"
+                  />
+                );
+              })
+            : null}
+
+          {overlays.has("liquidity")
+            ? data.liquiditySweeps.map((sw, i) => {
+                const color = sw.type === "bullish" ? "hsl(var(--up))" : "hsl(var(--down))";
+                const lx0 = x(Math.max(0, sw.at - 3));
+                const lx1 = x(Math.min(n - 1, sw.at + 2));
+                return (
+                  <g key={i}>
+                    <line x1={lx0} x2={lx1} y1={py(sw.level)} y2={py(sw.level)} stroke={color} strokeOpacity={0.6} strokeDasharray="2 3" vectorEffect="non-scaling-stroke" />
+                    <circle cx={x(sw.at)} cy={py(sw.wick)} r={3} fill="none" stroke={color} strokeWidth={1.4} vectorEffect="non-scaling-stroke" />
+                  </g>
+                );
+              })
             : null}
 
           <line x1={crossX} x2={crossX} y1={0} y2={PRICE_H} stroke="hsl(var(--muted-foreground))" strokeOpacity={0.5} strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />

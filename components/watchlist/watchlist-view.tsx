@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BellPlus, Loader2, RefreshCw, Star, Trash2 } from "lucide-react";
+import { BellPlus, LayoutGrid, List, Loader2, RefreshCw, Star, Trash2 } from "lucide-react";
 import { ExportCsv } from "@/components/ui/export-csv";
 import { fetchSnapshot, type Snapshot } from "@/lib/client/snapshot";
 import { useWatchlist, type WatchItem } from "@/lib/client/watchlist";
@@ -19,6 +19,7 @@ export function WatchlistView() {
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
   const [updated, setUpdated] = useState<Date | null>(null);
+  const [view, setView] = useState<"grid" | "list">("grid");
 
   const targets = useMemo(() => items.map((i) => ({ kind: i.kind, id: i.id })), [items]);
   const key = targets.map((t) => `${t.kind}:${t.id}`).join(",");
@@ -81,6 +82,26 @@ export function WatchlistView() {
           {" · refreshes every minute"}
         </p>
         <div className="flex items-center gap-2">
+          <div className="flex items-center rounded-lg border border-border bg-surface-muted p-0.5">
+            <button
+              type="button"
+              aria-pressed={view === "grid"}
+              onClick={() => setView("grid")}
+              title="Grid view"
+              className={cn("grid h-7 w-7 place-items-center rounded-md transition-colors", view === "grid" ? "bg-surface text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+            >
+              <LayoutGrid className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              aria-pressed={view === "list"}
+              onClick={() => setView("list")}
+              title="List view"
+              className={cn("grid h-7 w-7 place-items-center rounded-md transition-colors", view === "list" ? "bg-surface text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+            >
+              <List className="h-3.5 w-3.5" />
+            </button>
+          </div>
           <ExportCsv
             filename="arthdex-watchlist"
             header={["Name", "Type", "Id", "Price", "Day change %"]}
@@ -109,8 +130,67 @@ export function WatchlistView() {
         </p>
       ) : null}
 
-      <div className="overflow-x-auto">
-        <table className="data-table w-full text-sm">
+      {view === "grid" ? (
+        <div className="grid grid-cols-2 gap-2.5 p-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          {rows.map(({ item, price, changePct }) => (
+            <div
+              key={`${item.kind}:${item.id}`}
+              className={cn(
+                "group relative rounded-xl border p-3 transition-colors",
+                changePct == null
+                  ? "border-border bg-surface-muted"
+                  : changePct >= 0
+                    ? "border-up/25 bg-up/[0.06] hover:bg-up/[0.1]"
+                    : "border-down/25 bg-down/[0.06] hover:bg-down/[0.1]",
+              )}
+            >
+              <button
+                type="button"
+                aria-label={`Remove ${item.name}`}
+                title="Remove"
+                onClick={() => remove(item.kind, item.id)}
+                className="absolute right-1.5 top-1.5 grid h-6 w-6 place-items-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-down/10 hover:text-down group-hover:opacity-100"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+              <Link href={href(item)} className="block pr-6">
+                <p className="truncate text-sm font-semibold leading-tight hover:text-accent">{item.name}</p>
+                <div className="mt-0.5 flex items-center gap-1.5 font-mono text-2xs text-muted-foreground">
+                  {item.kind === "listed" ? (
+                    <span>{item.id}</span>
+                  ) : (
+                    <span className="rounded border border-flat/40 bg-flat/10 px-1 text-flat">Unlisted</span>
+                  )}
+                </div>
+              </Link>
+              <div className="mt-3 flex items-end justify-between gap-2">
+                <span className="font-mono text-base font-semibold tabular-nums">
+                  {price == null ? <span className="text-sm text-muted-foreground">{loading || !snap ? "…" : "n/a"}</span> : money(price)}
+                </span>
+                <span
+                  className={cn(
+                    "shrink-0 rounded-md px-1.5 py-0.5 font-mono text-2xs font-medium tabular-nums",
+                    changePct == null ? "text-muted-foreground" : changePct >= 0 ? "bg-up/15 text-up" : "bg-down/15 text-down",
+                  )}
+                >
+                  {changePct == null ? (item.kind === "unlisted" ? "revised" : "n/a") : formatPct(changePct, 2)}
+                </span>
+              </div>
+              <Link
+                href={`/alerts?kind=${item.kind}&target=${encodeURIComponent(item.id)}&name=${encodeURIComponent(item.name)}`}
+                aria-label={`Set an alert on ${item.name}`}
+                title="Set an alert"
+                className="mt-2 flex items-center gap-1 text-2xs text-muted-foreground opacity-0 transition-opacity hover:text-accent group-hover:opacity-100"
+              >
+                <BellPlus className="h-3 w-3" />
+                Set alert
+              </Link>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="data-table w-full text-sm">
           <thead className="text-2xs uppercase tracking-wide text-muted-foreground">
             <tr className="border-b border-border">
               <th className="px-4 py-2 text-left font-medium">Company</th>
@@ -168,8 +248,9 @@ export function WatchlistView() {
               </tr>
             ))}
           </tbody>
-        </table>
-      </div>
+          </table>
+        </div>
+      )}
       <p className="border-t border-border px-4 py-2 text-2xs text-muted-foreground">
         Your watchlist is saved in this browser only. Listed prices are about 15 minutes delayed; unlisted prices are
         indicative dealer levels.

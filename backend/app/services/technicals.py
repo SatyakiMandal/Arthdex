@@ -190,6 +190,18 @@ def build(symbol: str, interval: str, df: pd.DataFrame) -> dict[str, Any]:
         "bars": bars,
         "series": series,
         "levels": ind.support_resistance(df.iloc[-min(len(df), 300):]),
+        "orderBlocks": [
+            {"type": b["type"], "start": b["start"], "formed": b["formed"], "mitigated": b["mitigated"], "high": _f(b["high"]), "low": _f(b["low"])}
+            for b in ind.order_blocks(df.iloc[-tail:])
+        ],
+        "fairValueGaps": [
+            {"type": g["type"], "start": g["start"], "end": g["end"], "filled": g["filled"], "high": _f(g["high"]), "low": _f(g["low"])}
+            for g in ind.fair_value_gaps(df.iloc[-tail:])
+        ],
+        "liquiditySweeps": [
+            {"type": s["type"], "at": s["at"], "level": _f(s["level"]), "wick": _f(s["wick"])}
+            for s in ind.liquidity_sweeps(df.iloc[-tail:])
+        ],
         "signals": signals,
         "tally": {"bullish": bullish, "bearish": bearish, "neutral": len(signals) - bullish - bearish},
         "lastCrossover": last_cross,
