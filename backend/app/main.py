@@ -12,7 +12,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import SETTINGS
-from .routers import analyzer, bhavcopy, company, health, ipo, market, news, orderflow, quant, screener, search, unlisted, desk
+from .routers import analyzer, bhavcopy, company, decisions, health, ipo, market, news, orderflow, quant, screener, search, unlisted, desk
 from .services import analyzer as analyzer_service
 from .services import unlisted as unlisted_service
 
@@ -46,6 +46,7 @@ app.include_router(bhavcopy.router)
 app.include_router(unlisted.router)
 app.include_router(desk.router)
 app.include_router(orderflow.router)
+app.include_router(decisions.router)
 
 
 @app.on_event("startup")

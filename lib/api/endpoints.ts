@@ -22,6 +22,8 @@ import type {
   ApiTechnicals,
   ApiOrderflow,
   ApiGex,
+  ApiRisk,
+  ApiDecisions,
   ApiFinancials,
   ApiIndex,
   ApiIpoPipeline,
@@ -164,6 +166,10 @@ export const getTechnicals = (symbol: string, interval: string) =>
 
 export const getOrderflow = (symbol: string, market: string, interval: string) =>
   apiGet<ApiOrderflow>(`/api/v1/orderflow/${symbol}?market=${market}&interval=${interval}`, 30);
+
+export const getRisk = (symbol: string) => apiGet<ApiRisk>(`/api/v1/company/${symbol}/risk`, 300);
+
+export const getDecisions = () => apiGet<ApiDecisions>("/api/v1/decisions", 30);
 
 export const getGex = (symbol: string) => apiGet<ApiGex>(`/api/v1/options/${symbol}/gex`, 120);
 

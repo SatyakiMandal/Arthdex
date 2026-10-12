@@ -8,7 +8,7 @@ from ..cache import CACHE
 from ..config import SETTINGS
 from ..providers import fundamentals, yahoo
 from ..schemas import envelope
-from ..services import shareholding, technicals, yahoo_company
+from ..services import risk_layer, shareholding, technicals, yahoo_company
 
 router = APIRouter(prefix="/api/v1/company", tags=["company"])
 
@@ -160,6 +160,23 @@ def get_technicals(symbol: str, interval: str = Query("15m")):
         delayed_minutes=SETTINGS.quote_delay_minutes,
         note="Intraday history is limited upstream: about 60 days of 5- and 15-minute bars.",
     )
+
+
+@router.get("/{symbol}/risk")
+def get_risk(symbol: str):
+    """Deterministic risk score, drawdown, VaR, liquidity and position sizing from daily bars."""
+    sym = symbol.upper()
+
+    def compute():
+        return risk_layer.assess(sym, technicals.fetch_bars(sym, "1d"))
+
+    try:
+        data, age = CACHE.get_or_fetch(f"company:risk:{sym}", 900, compute)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Risk unavailable: {exc}") from exc
+    return envelope(data, age, source="Yahoo Finance", delayed_minutes=SETTINGS.quote_delay_minutes)
 
 
 @router.get("/{symbol}/shareholding")

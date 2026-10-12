@@ -884,3 +884,59 @@ export interface ApiGex {
   strikes: GexStrike[];
   assumption: string;
 }
+
+// -- risk layer & track record ------------------------------------------------
+
+export interface ApiRisk {
+  symbol: string;
+  asOf: string;
+  lastClose: number;
+  score: number;
+  tier: "Low" | "Moderate" | "High" | "Very high";
+  components: { name: string; reading: string; score: number; weight: number }[];
+  metrics: {
+    volatilityPct: number;
+    maxDrawdownPct: number;
+    currentDrawdownPct: number;
+    var95Pct: number;
+    cvar95Pct: number;
+    worstDayPct: number;
+    atr: number;
+    atrPct: number;
+    medianTradedCrore: number;
+    liquidity: "High" | "Moderate" | "Low" | "Thin";
+  };
+  sizing: { stopAtr: number; stopPrice: number; stopPct: number; riskPerTradePct: number; maxPositionPct: number | null };
+  method: string;
+}
+
+export interface DecisionResult {
+  returnPct: number;
+  niftyPct: number | null;
+  excessPct: number | null;
+  hit: boolean | null;
+  adjExcessPct: number | null;
+}
+
+export interface Decision {
+  id: number;
+  symbol: string;
+  createdAt: string;
+  asOf: string;
+  price: number;
+  call: "Bullish" | "Bearish" | "Neutral";
+  net: number;
+  bullish: number;
+  bearish: number;
+  neutral: number;
+  riskScore: number | null;
+  riskTier: string | null;
+  results: Record<string, DecisionResult | null>;
+}
+
+export interface ApiDecisions {
+  items: Decision[];
+  summary: Record<string, { scored: number; hitRatePct: number | null; avgExcessPct: number | null }>;
+  horizons: number[];
+  note: string;
+}

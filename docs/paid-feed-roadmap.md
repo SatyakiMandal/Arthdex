@@ -54,6 +54,6 @@ Ideas taken from reviewing TradingAgents at concept level (the review read the l
 
 - Parallel analyst reports per stock (technicals, fundamentals, FinBERT news sentiment, macro and sector), each as typed JSON with a score and rationale.
 - A bull-versus-bear synthesis card. This needs an LLM provider decision.
-- A deterministic risk layer in the quant engine (volatility, stops, drawdown, liquidity, concentration), with an LLM only explaining the result.
-- A decision log that records each recommendation with date and price and scores it against Nifty at 1, 5 and 20 trading days.
+- **Built:** a deterministic risk layer (`backend/app/services/risk_layer.py`, the Risk card on Technicals): volatility, drawdown, VaR, liquidity and 2-ATR position sizing. Not yet built: concentration across a portfolio, and an LLM explaining the result.
+- **Built:** a decision log (`backend/app/services/decision_log.py`, page `/track-record`, "Log this call" on Technicals): calls scored against Nifty at 1, 5 and 20 trading days. Logging is manual; automatic daily logging needs a scheduler.
 - A walk-forward backtest with an out-of-sample promotion gate before any signal is shown. Yahoo data is not point-in-time, so look-ahead bias has to be handled.

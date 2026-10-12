@@ -4,3 +4,4 @@ __pycache__/
 .cache/
 /cache/
 analyzer_data/
+app_data/

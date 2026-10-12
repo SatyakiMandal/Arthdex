@@ -7,6 +7,8 @@ import { Tip } from "@/components/ui/tip";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { cn, formatINR } from "@/lib/utils";
 import type { ApiTechnicals, TechInterval } from "@/lib/api/types";
+import { LogCallButton } from "./log-call-button";
+import { RiskCard } from "./risk-card";
 import { IndicatorChart, OVERLAYS, PANES, type OverlayId, type PaneId } from "./indicator-chart";
 
 const INTERVALS: { id: TechInterval; label: string }[] = [
@@ -81,7 +83,10 @@ export function TechnicalWorkbench({ symbol }: { symbol: string }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <SegmentedControl options={INTERVALS} value={interval} onChange={setInterval} layoutGroupId="tech-interval" />
+        <div className="flex flex-wrap items-center gap-3">
+          <SegmentedControl options={INTERVALS} value={interval} onChange={setInterval} layoutGroupId="tech-interval" />
+          <LogCallButton symbol={symbol} />
+        </div>
         {data ? (
           <p className="font-mono text-2xs text-muted-foreground">
             {data.intervalLabel} bars · {data.barsAvailable.toLocaleString("en-IN")} loaded · last {data.asOf.replace("T", " ").slice(0, 16)} · ₹{formatINR(data.lastClose)}
@@ -188,6 +193,8 @@ export function TechnicalWorkbench({ symbol }: { symbol: string }) {
                 ))}
               </div>
             </DataCard>
+
+            <RiskCard symbol={symbol} />
 
             <DataCard title="MACD crossover" subtitle="Most recent signal-line cross on these bars" icon={Target}>
               <p className="p-4 text-sm">
