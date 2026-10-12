@@ -844,6 +844,7 @@ export interface ApiOrderflow {
   method: string;
   bars: { t: string; o: number; h: number; l: number; c: number; v: number; delta: number }[];
   cvd: number[];
+  vwap: (number | null)[];
   profile: { bins: ProfileBin[]; poc: number; vah: number; val: number; total: number; valueAreaPct: number };
   footprint: { step: number; bars: FootprintBar[] };
   imbalances: { i: number; t: string; price: number; side: "buy" | "sell"; ratio: number }[];

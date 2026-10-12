@@ -73,6 +73,9 @@ def build(symbol: str, interval: str, df: pd.DataFrame) -> dict[str, Any]:
     # Daily VWAP is cumulative from the first bar shown, so anchor it to the chart window
     window = min(n_bars, len(df))
     vw = ind.vwap(df, True) if intraday else ind.vwap(df.iloc[-window:], False).reindex(df.index)
+    vb = ind.vwap_bands(df, True) if intraday else ind.vwap_bands(df.iloc[-window:], False).reindex(df.index)
+    dc = ind.donchian(df, 20)
+    rvol = ind.relative_volume(df, 20)
     cross = ind.macd_crossovers(m["hist"])
     tail = min(n_bars, len(df))
 
@@ -106,6 +109,13 @@ def build(symbol: str, interval: str, df: pd.DataFrame) -> dict[str, Any]:
         "supertrend": _series(sup["line"], tail),
         "supertrendDir": _series(sup["direction"], tail, 0),
         "vwap": _series(vw, tail),
+        "vwapUpper1": _series(vb["upper1"], tail),
+        "vwapLower1": _series(vb["lower1"], tail),
+        "vwapUpper2": _series(vb["upper2"], tail),
+        "vwapLower2": _series(vb["lower2"], tail),
+        "donchianUpper": _series(dc["upper"], tail),
+        "donchianLower": _series(dc["lower"], tail),
+        "donchianMiddle": _series(dc["middle"], tail),
         "rsi": _series(rsi14, tail),
         "macd": _series(m["macd"], tail, 3),
         "signal": _series(m["signal"], tail, 3),
@@ -175,6 +185,38 @@ def build(symbol: str, interval: str, df: pd.DataFrame) -> dict[str, Any]:
         signals["Bollinger (20, 2σ)"] = _tone(f"%B {pb:.2f}", "down" if pb > 1 else "up" if pb < 0 else "flat", f"Bandwidth {at(bb['bandwidth'])}%")
     if vwap_v is not None:
         signals["VWAP"] = _tone(f"{vwap_v:,.2f}", "up" if last > vwap_v else "down", "Price above" if last > vwap_v else "Price below")
+
+    if vwap_v is not None:
+        vs = ind.vwap_state(df, vw, atr14)
+        tone = {"break_up": "up", "accept_above": "up", "break_down": "down", "accept_below": "down"}.get(vs["state"], "flat")
+        label = {"break_up": "Break above", "accept_above": "Accepted above", "break_down": "Break below", "accept_below": "Accepted below"}.get(vs["state"], "No acceptance")
+        signals["VWAP position"] = _tone(label, tone, vs["detail"])
+    if len(df) >= 22 and pd.notna(dc["upper"].iloc[-2]) and pd.notna(dc["lower"].iloc[-2]):
+        prior_hi, prior_lo = float(dc["upper"].iloc[-2]), float(dc["lower"].iloc[-2])
+        if last > prior_hi:
+            signals["Donchian (20)"] = _tone("Breakout up", "up", f"Closed above the prior 20-bar high of {prior_hi:,.2f}")
+        elif last < prior_lo:
+            signals["Donchian (20)"] = _tone("Breakout down", "down", f"Closed below the prior 20-bar low of {prior_lo:,.2f}")
+        else:
+            pos = (last - prior_lo) / (prior_hi - prior_lo) * 100 if prior_hi > prior_lo else 50.0
+            signals["Donchian (20)"] = _tone(f"{pos:.0f}% of channel", "flat", f"Inside the 20-bar range {prior_lo:,.2f} to {prior_hi:,.2f}")
+    div = ind.rsi_divergence(df, rsi14)
+    if div:
+        bull = div["type"] == "bullish"
+        signals["RSI divergence"] = _tone(
+            "Bullish" if bull else "Bearish",
+            "up" if bull else "down",
+            f"Price {'lower low, RSI higher low' if bull else 'higher high, RSI lower high'}, swing {div['barsAgo']} bars ago",
+        )
+    else:
+        signals["RSI divergence"] = _tone("None", "flat", "No regular divergence on the last two swings")
+    vols = df["Volume"].fillna(0)
+    traded = vols[vols > 0]  # a zero-volume bar says nothing about conviction
+    if len(traded) >= 23 and float(traded.iloc[-23:-3].mean()) > 0:
+        rv_v = float(traded.iloc[-3:].mean() / traded.iloc[-23:-3].mean())
+        signals["Relative volume (3 vs 20)"] = _tone(
+            f"{rv_v:.2f}x", "flat", "Heavy: conviction behind the move" if rv_v >= 1.5 else "Light: little conviction" if rv_v < 0.7 else "Near the 20-bar average"
+        )
 
     bullish = sum(1 for s in signals.values() if s["tone"] == "up")
     bearish = sum(1 for s in signals.values() if s["tone"] == "down")

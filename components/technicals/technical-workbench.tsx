@@ -32,6 +32,10 @@ const GUIDE: Record<string, string> = {
   "Money Flow Index (14)": "An RSI that weights each bar by its traded value, so it reflects volume. Above 80 overbought, below 20 oversold.",
   "ATR (14)": "Average True Range: the typical size of a bar, in price terms. Used for stop distances, not direction.",
   "Bollinger (20, 2σ)": "A 20-bar mean with bands two standard deviations out. %B above 1 is outside the upper band, below 0 outside the lower.",
+  "VWAP position": "Where price stands against VWAP. Accepted means the last three closes are all on one side. A break is a close beyond VWAP by 0.25 ATR on 1.5x volume past the prior 10-bar extreme; the first return to VWAP after it is the pullback traders watch. A rule of thumb, not a validated signal.",
+  "Donchian (20)": "The highest high and lowest low of the last 20 bars. A close beyond the prior channel edge is a breakout: price doing something it has not done in 20 bars.",
+  "RSI divergence": "Regular divergence over the last two swings: price makes a lower low while RSI makes a higher low (bullish), or a higher high with a lower RSI high (bearish). Divergence is a more useful RSI read than overbought or oversold alone.",
+  "Relative volume (3 vs 20)": "The last three traded bars' average volume as a multiple of the 20 bars before them. Above 1.5x shows conviction behind the move; below 0.7x shows little.",
   VWAP: "Volume-weighted average price. Intraday it resets each session; on daily bars it is anchored at the first bar shown.",
 };
 

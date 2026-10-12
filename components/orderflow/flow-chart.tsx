@@ -113,6 +113,15 @@ export function FlowChart({
             );
           })}
 
+          <path
+            d={data.vwap.map((v, i) => (v == null ? "" : `${i && data.vwap[i - 1] != null ? "L" : "M"}${x(i).toFixed(1)} ${py(v).toFixed(1)}`)).join("")}
+            fill="none"
+            stroke="#fb923c"
+            strokeWidth={1.4}
+            strokeDasharray="4 3"
+            vectorEffect="non-scaling-stroke"
+          />
+
           <g clipPath="url(#flow-clip)">
             {keyLine(prof.poc, "#fbbf24")}
             {keyLine(prof.vah, "hsl(var(--accent))", "5 4")}
@@ -182,6 +191,7 @@ export function FlowChart({
             {l.text}
           </span>
         ))}
+        <span className="pointer-events-none absolute left-2 top-5 font-mono text-2xs text-[#fb923c]">- - VWAP</span>
         <span className="pointer-events-none absolute right-1 top-1 font-mono text-2xs text-muted-foreground">{mode === "volume" ? "Volume profile" : "Delta profile"}</span>
       </div>
 

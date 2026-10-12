@@ -334,6 +334,7 @@ def build(symbol: str, market: str, interval: str, df: pd.DataFrame, fp_bars: in
         "method": METHOD,
         "bars": bars,
         "cvd": [int(x) for x in cvd],
+        "vwap": [_f(v) for v in ind.vwap(df, intraday).to_numpy()],
         "profile": volume_profile(df, buy, sell),
         "footprint": fp,
         "imbalances": imbalances[-40:],

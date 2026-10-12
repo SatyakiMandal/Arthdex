@@ -348,3 +348,133 @@ def macd_crossovers(hist: pd.Series) -> pd.Series:
     out[(prev <= 0) & (hist > 0)] = 1
     out[(prev >= 0) & (hist < 0)] = -1
     return out
+
+
+def donchian(df: pd.DataFrame, n: int = 20) -> pd.DataFrame:
+    """Highest high and lowest low of the last `n` bars, including the current one."""
+    upper = df["High"].rolling(n, min_periods=n).max()
+    lower = df["Low"].rolling(n, min_periods=n).min()
+    return pd.DataFrame({"upper": upper, "lower": lower, "middle": (upper + lower) / 2.0})
+
+
+def vwap_bands(df: pd.DataFrame, intraday: bool, mult: tuple[float, ...] = (1.0, 2.0)) -> pd.DataFrame:
+    """VWAP with volume-weighted standard-deviation bands, on the same session rule as `vwap`."""
+    tp = (df["High"] + df["Low"] + df["Close"]) / 3.0
+    vol = df["Volume"].fillna(0.0)
+    if intraday:
+        day = df.index.normalize() if df.index.tz is None else df.index.tz_localize(None).normalize()
+        g = pd.Series(day, index=df.index)
+        cv = vol.groupby(g).cumsum().replace(0.0, np.nan)
+        cpv = (tp * vol).groupby(g).cumsum()
+        cpv2 = (tp * tp * vol).groupby(g).cumsum()
+    else:
+        cv = vol.cumsum().replace(0.0, np.nan)
+        cpv = (tp * vol).cumsum()
+        cpv2 = (tp * tp * vol).cumsum()
+    mean = cpv / cv
+    sd = np.sqrt((cpv2 / cv - mean * mean).clip(lower=0.0))
+    out = {"vwap": mean}
+    for m in mult:
+        out[f"upper{int(m)}"] = mean + m * sd
+        out[f"lower{int(m)}"] = mean - m * sd
+    return pd.DataFrame(out)
+
+
+def relative_volume(df: pd.DataFrame, n: int = 20) -> pd.Series:
+    """Volume as a multiple of its average over the previous `n` bars."""
+    v = df["Volume"].fillna(0.0)
+    return v / v.rolling(n, min_periods=n).mean().shift(1).replace(0.0, np.nan)
+
+
+def rsi_divergence(df: pd.DataFrame, rsi_s: pd.Series, window: int = 3, lookback: int = 60) -> dict[str, Any] | None:
+    """Regular divergence between price and RSI over the last two swing points.
+
+    Bullish: price makes a lower low while RSI makes a higher low. Bearish: price a higher
+    high while RSI a lower high. Returns the most recent one found inside `lookback` bars.
+    """
+    n = len(df)
+    if n < window * 2 + 10:
+        return None
+    lo, hi = df["Low"].to_numpy(), df["High"].to_numpy()
+    r = rsi_s.to_numpy()
+    start = max(window, n - lookback)
+    lows, highs = [], []
+    for i in range(start, n - window):
+        if lo[i] == lo[i - window : i + window + 1].min() and np.isfinite(r[i]):
+            lows.append(i)
+        if hi[i] == hi[i - window : i + window + 1].max() and np.isfinite(r[i]):
+            highs.append(i)
+    # equal prices on neighbouring bars would otherwise count as separate swings
+    def spaced(idx: list[int]) -> list[int]:
+        out: list[int] = []
+        for i in idx:
+            if not out or i - out[-1] > window:
+                out.append(i)
+        return out
+
+    lows, highs = spaced(lows), spaced(highs)
+    found: list[dict[str, Any]] = []
+    if len(lows) >= 2:
+        a, b = lows[-2], lows[-1]
+        if lo[b] < lo[a] and r[b] > r[a]:
+            found.append({"type": "bullish", "at": b, "barsAgo": n - 1 - b})
+    if len(highs) >= 2:
+        a, b = highs[-2], highs[-1]
+        if hi[b] > hi[a] and r[b] < r[a]:
+            found.append({"type": "bearish", "at": b, "barsAgo": n - 1 - b})
+    return min(found, key=lambda f: f["barsAgo"]) if found else None
+
+
+def vwap_state(df: pd.DataFrame, vw: pd.Series, atr_s: pd.Series, accept_bars: int = 3, lookback: int = 12) -> dict[str, Any]:
+    """Where price stands against VWAP, using the two rules traders describe for it.
+
+    Acceptance: the last `accept_bars` closes are all on one side of VWAP.
+    Qualified break: within `lookback` bars a close crossed to the other side of VWAP by at least 0.25 ATR,
+    on volume at least 1.5x its 20-bar average, and beyond the prior 10-bar extreme. After one, the first
+    return to VWAP is the pullback those traders look to trade. These are heuristics, not validated signals.
+    """
+    close, high, low = df["Close"].to_numpy(), df["High"].to_numpy(), df["Low"].to_numpy()
+    v = vw.to_numpy()
+    a = atr_s.to_numpy()
+    rv = relative_volume(df).to_numpy()
+    n = len(df)
+    if n < 25 or not np.isfinite(v[-1]) or not np.isfinite(a[-1]):
+        return {"state": "none", "side": None, "detail": "Not enough bars"}
+    side = "above" if close[-1] > v[-1] else "below"
+    k = accept_bars
+    tail_above = all(np.isfinite(v[-j]) and close[-j] > v[-j] for j in range(1, k + 1))
+    tail_below = all(np.isfinite(v[-j]) and close[-j] < v[-j] for j in range(1, k + 1))
+
+    brk = None
+    for i in range(n - 1, max(n - 1 - lookback, 10), -1):
+        if not (np.isfinite(v[i]) and np.isfinite(a[i]) and np.isfinite(rv[i])):
+            continue
+        # was on the other side of VWAP at some close in the previous three bars
+        prev_below = any(np.isfinite(v[i - j]) and close[i - j] <= v[i - j] for j in (1, 2, 3))
+        prev_above = any(np.isfinite(v[i - j]) and close[i - j] >= v[i - j] for j in (1, 2, 3))
+        if prev_below and close[i] > v[i] + 0.25 * a[i] and rv[i] >= 1.5 and close[i] > high[i - 10 : i].max():
+            brk = ("up", i)
+            break
+        if prev_above and close[i] < v[i] - 0.25 * a[i] and rv[i] >= 1.5 and close[i] < low[i - 10 : i].min():
+            brk = ("down", i)
+            break
+    if brk:
+        direction, i = brk
+        tol = 0.15 * a[-1]
+        touched = False
+        for j in range(i + 1, n):
+            if np.isfinite(v[j]) and ((direction == "up" and low[j] <= v[j] + tol) or (direction == "down" and high[j] >= v[j] - tol)):
+                touched = True
+                break
+        ago = n - 1 - i
+        if direction == "up" and side == "above":
+            return {"state": "break_up", "side": side, "barsAgo": ago, "pullbackDone": touched,
+                    "detail": f"Qualified break above VWAP {ago} bars ago; {'first pullback already taken' if touched else 'first pullback to VWAP still pending'}"}
+        if direction == "down" and side == "below":
+            return {"state": "break_down", "side": side, "barsAgo": ago, "pullbackDone": touched,
+                    "detail": f"Qualified break below VWAP {ago} bars ago; {'first pullback already taken' if touched else 'first pullback to VWAP still pending'}"}
+    if side == "above" and tail_above:
+        return {"state": "accept_above", "side": side, "detail": f"Accepted above VWAP: last {k} closes all above"}
+    if side == "below" and tail_below:
+        return {"state": "accept_below", "side": side, "detail": f"Accepted below VWAP: last {k} closes all below"}
+    return {"state": "mixed", "side": side, "detail": f"{side.capitalize()} VWAP without {k}-close acceptance"}

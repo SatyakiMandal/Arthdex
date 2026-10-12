@@ -241,6 +241,11 @@ export function OrderflowWorkbench({
                   <dd className={cn("text-right", data.lastClose > data.profile.vah ? "text-up" : data.lastClose < data.profile.val ? "text-down" : "")}>
                     {f2(data.lastClose)} {data.lastClose > data.profile.vah ? "above value" : data.lastClose < data.profile.val ? "below value" : "inside value"}
                   </dd>
+                  <dt className="col-span-2 mt-1 font-sans text-2xs text-muted-foreground">
+                    {data.lastClose > data.profile.vah || data.lastClose < data.profile.val
+                      ? "Outside value: price is out of balance, the condition trends start from. Watch whether it is accepted or rejected."
+                      : "Inside value: balanced, which usually means range trading around the POC until price leaves the area."}
+                  </dt>
                 </dl>
               </DataCard>
               <DataCard title="Liquidity heatmap" subtitle="Resting orders over time" icon={Waves}>

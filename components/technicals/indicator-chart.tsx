@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { ApiTechnicals } from "@/lib/api/types";
 
-export type OverlayId = "sma20" | "sma50" | "sma200" | "ema20" | "ema50" | "bb" | "supertrend" | "vwap" | "sr" | "orderBlocks" | "fvg" | "liquidity";
+export type OverlayId = "sma20" | "sma50" | "sma200" | "ema20" | "ema50" | "bb" | "supertrend" | "vwap" | "sr" | "orderBlocks" | "fvg" | "liquidity" | "donchian" | "vwapBands";
 export type PaneId = "volume" | "rsi" | "macd" | "stoch" | "mfi" | "adx" | "atr";
 
 export const OVERLAYS: { id: OverlayId; label: string; color: string }[] = [
@@ -20,6 +20,8 @@ export const OVERLAYS: { id: OverlayId; label: string; color: string }[] = [
   { id: "orderBlocks", label: "Order blocks", color: "hsl(var(--up))" },
   { id: "fvg", label: "Fair value gaps", color: "#a78bfa" },
   { id: "liquidity", label: "Liquidity sweeps", color: "#fb923c" },
+  { id: "donchian", label: "Donchian 20", color: "#38bdf8" },
+  { id: "vwapBands", label: "VWAP bands", color: "#fb923c" },
 ];
 
 export const PANES: { id: PaneId; label: string }[] = [
@@ -206,6 +208,27 @@ export function IndicatorChart({
           {overlayLine("ema20", "ema20")}
           {overlayLine("ema50", "ema50")}
           {overlayLine("vwap", "vwap", true)}
+
+          {overlays.has("vwapBands")
+            ? (
+                [
+                  ["vwapUpper1", 0.55, "4 3"],
+                  ["vwapLower1", 0.55, "4 3"],
+                  ["vwapUpper2", 0.3, "1 3"],
+                  ["vwapLower2", 0.3, "1 3"],
+                ] as const
+              ).map(([key, op, dash]) => (
+                <path key={key} d={path(s[key], x, py)} fill="none" stroke="#fb923c" strokeOpacity={op} strokeWidth={1} strokeDasharray={dash} vectorEffect="non-scaling-stroke" />
+              ))
+            : null}
+
+          {overlays.has("donchian") ? (
+            <>
+              <path d={path(s.donchianUpper, x, py)} fill="none" stroke="#38bdf8" strokeWidth={1.3} vectorEffect="non-scaling-stroke" />
+              <path d={path(s.donchianLower, x, py)} fill="none" stroke="#38bdf8" strokeWidth={1.3} vectorEffect="non-scaling-stroke" />
+              <path d={path(s.donchianMiddle, x, py)} fill="none" stroke="#38bdf8" strokeOpacity={0.45} strokeWidth={1} strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
+            </>
+          ) : null}
 
           {overlays.has("supertrend")
             ? (["1", "-1"] as const).map((dir) => (
