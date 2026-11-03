@@ -39,7 +39,7 @@ import type {
   ApiSensitivity,
   ApiWindowedMovers,
   ApiValuation,
-  GlobalIndexCard, ApiFlows, ApiPeers, ApiPeBand, ApiForensics, ApiOptionChain, ApiBuildUp } from "./types";
+  GlobalIndexCard, ApiFlows, ApiPeers, ApiPeBand, ApiForensics, ApiOptionChain, ApiBuildUp, ApiFundamentalScreen } from "./types";
 
 // -- market -----------------------------------------------------------------
 
@@ -215,3 +215,9 @@ export const getOptionChain = (symbol: string, expiry?: string) =>
   apiGetOrNull<ApiOptionChain>(`/api/v1/derivatives/chain?symbol=${encodeURIComponent(symbol)}${expiry ? `&expiry=${expiry}` : ""}`, 120);
 
 export const getBuildUp = () => apiGetOrNull<ApiBuildUp>("/api/v1/derivatives/buildup", 300);
+
+/** Returns the API's own error message on a bad formula, so the page can show it. */
+export const getFundamentalScreen = (params: { q?: string; preset?: string; sort?: string; order?: string }) => {
+  const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v) as [string, string][]);
+  return apiGet<ApiFundamentalScreen>(`/api/v1/screener/fundamental?${qs.toString()}`, 300);
+};

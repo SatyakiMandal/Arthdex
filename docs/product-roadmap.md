@@ -45,7 +45,7 @@ Written 3 November 2026. Status reflects the code on that date. Related: [paid-f
 | Screener | Technical screener | Built | Free | P1 |
 | | Factor screens (alpha, value, quality, momentum) | Built | Free | P1 |
 | | Fundamental screener on any ratio, with vetted figures only | New | Free | P1 |
-| | Custom formula screens (`PE < 20 AND ROE > 18 AND debt_to_equity < 0.5`), saved and shareable | New | Free | P2 |
+| | Custom formula screens (`pe < 20 AND roe > 18 AND de < 0.5`), shareable as links | Built (saving needs accounts) | Free | P2 |
 | | Screen results as a table, a heatmap and a scatter (any two metrics) | New | Free | P2 |
 | | Screen alerts: tell me when a stock enters or leaves a screen | New | Free | P2 |
 | Themes | Thematic baskets (defence, railways, EV, PSU banks, shipbuilding) with basket performance and constituents | New | Free | P3 |

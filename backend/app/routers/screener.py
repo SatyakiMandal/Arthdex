@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Query
 
 from ..cache import CACHE
+from ..config import SETTINGS
 from ..providers import constituents
 from ..schemas import envelope
 from ..services import screener, technicals
@@ -120,4 +121,45 @@ def macd_crossover(
         source="Yahoo Finance",
         delayed_minutes=15,
         note="Computed from 15-minute delayed bars; a crossover on the latest bar can still flip before the bar closes.",
+    )
+
+
+def _fundamental_inputs(symbol: str) -> tuple[dict, dict]:
+    """A company's vetted financials and valuation, the same ones its page shows."""
+    from . import company
+
+    return company.get_financials(symbol, "NSE")["data"], company.get_valuation(symbol, "NSE")["data"]
+
+
+@router.get("/fundamental")
+def get_fundamental_screen(
+    q: str = Query("", max_length=400),
+    preset: str | None = Query(None),
+    sort: str = Query("mcap"),
+    order: str = Query("desc", pattern="^(asc|desc)$"),
+    limit: int = Query(50, ge=1, le=200),
+):
+    """Screen the Nifty 500 on vetted fundamentals, with price-based multiples from live prices."""
+    from ..providers import nse as nse_provider
+    from ..services import fundamental_screen as fs
+
+    formula = fs.PRESETS[preset][1] if preset in fs.PRESETS else q
+    snapshots = fs.load()
+    if not snapshots:
+        raise HTTPException(status_code=503, detail="Fundamental snapshots are still being recorded; the first slice is taken shortly after start-up.")
+    try:
+        traded, _ = CACHE.get_or_fetch("market:traded", 300, nse_provider.fetch_stocks_traded)
+        live = traded.get("rows") or {}
+    except Exception:
+        live = {}
+    try:
+        data = fs.screen(formula, snapshots, live, sort=sort, descending=order == "desc", limit=limit)
+    except fs.FilterError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    data["fields"] = {k: {"label": v[0], "unit": v[1], "basis": v[2]} for k, v in fs.FIELDS.items()}
+    data["presets"] = {k: {"label": v[0], "formula": v[1]} for k, v in fs.PRESETS.items()}
+    data["preset"] = preset if preset in fs.PRESETS else None
+    return envelope(
+        data, 0, source="Arthdex vetted financials (snapshots); NSE traded prices for multiples", delayed_minutes=SETTINGS.quote_delay_minutes,
+        note=f"{data['universe']} companies snapshotted so far; the rest are recorded over the coming nights." if data["universe"] < 450 else None,
     )

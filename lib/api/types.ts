@@ -1160,3 +1160,25 @@ export interface ApiBuildUp {
   of: number;
   asOf: string | null;
 }
+
+// -- fundamental screen ------------------------------------------------------
+
+export interface ApiScreenCompany {
+  symbol: string;
+  sector: string | null;
+  asOf: string;
+  unresolved: number;
+  [field: string]: string | number | null;
+}
+
+export interface ApiFundamentalScreen {
+  formula: string;
+  matched: number;
+  universe: number;
+  rows: ApiScreenCompany[];
+  snapshotRange: { oldest: string; newest: string } | null;
+  withUnresolved: number;
+  fields: Record<string, { label: string; unit: string; basis: string }>;
+  presets: Record<string, { label: string; formula: string }>;
+  preset: string | null;
+}
