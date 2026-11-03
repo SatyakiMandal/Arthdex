@@ -39,7 +39,7 @@ import type {
   ApiSensitivity,
   ApiWindowedMovers,
   ApiValuation,
-  GlobalIndexCard, ApiFlows, ApiPeers, ApiPeBand } from "./types";
+  GlobalIndexCard, ApiFlows, ApiPeers, ApiPeBand, ApiForensics } from "./types";
 
 // -- market -----------------------------------------------------------------
 
@@ -207,3 +207,6 @@ export const getPeers = (symbol: string) => apiGetOrNull<ApiPeers>(`/api/v1/comp
 
 export const getPeBand = (symbol: string) =>
   apiGetOrNull<ApiPeBand>(`/api/v1/company/${symbol}/valuation-bands`, REVALIDATE.fundamentals);
+
+export const getForensics = (symbol: string) =>
+  apiGetOrNull<ApiForensics>(`/api/v1/company/${symbol}/forensics`, REVALIDATE.fundamentals);

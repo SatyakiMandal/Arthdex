@@ -48,6 +48,7 @@ ENDPOINTS = {
     "technicals": "technicals?interval=1d",
     "statements": "statements?v=1",
     "peers": "peers",
+    "forensics": "forensics",
 }
 
 
@@ -266,6 +267,18 @@ def checks(d: dict[str, Any]) -> list[tuple[str, Callable[[], tuple[str, str]]]]
         bad = [c for c in v["checks"] if not c["agree"]]
         return ("fail" if bad else "pass"), "peer table's own row: " + ", ".join(f"{c['field']} {c['gapPct']}%" for c in v["checks"])
 
+    def forensics_inputs():
+        # Quality scores are withheld when Yahoo's line items disagree with the vetted figures
+        fx = d.get("forensics") or {}
+        if not fx:
+            return "skip", "forensics: not available"
+        if fx.get("withheld"):
+            return "fail", f"forensics withheld: {fx['withheld']}"
+        if fx.get("lender"):
+            return "skip", "forensics: lender, scores not computed"
+        checks = (fx.get("vetting") or {}).get("checks") or []
+        return "pass", f"forensics inputs: {sum(c['agree'] for c in checks)} of {len(checks)} headline lines agree with vetted figures"
+
     fin_sources = f.get("sources") or {}
     return [
         ("sources.quarterly_agree", agree("quarterly results, Yahoo vs screener.in", fin_sources.get("quarterly"), "series")),
@@ -275,6 +288,7 @@ def checks(d: dict[str, Any]) -> list[tuple[str, Callable[[], tuple[str, str]]]]
         ("sources.closes_agree", agree("recent daily closes, Yahoo vs NSE", c.get("vetting"), "pair")),
         ("sources.promoter_agree", agree("promoter holding, screener.in vs NSE filing", sh.get("vetting"), "pair")),
         ("sources.peers_self_row", peers_self_row),
+        ("sources.forensics_inputs", forensics_inputs),
         ("price.last_close", last_close),
         ("price.high52", high52),
         ("price.low52", low52),

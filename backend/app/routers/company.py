@@ -495,3 +495,27 @@ def get_valuation_bands(symbol: str):
     except Exception as exc:
         raise HTTPException(status_code=503, detail=f"Valuation bands unavailable: {exc}") from exc
     return envelope(data, age, source="Yahoo Finance weekly prices; screener.in annual EPS", delayed_minutes=0)
+
+
+@router.get("/{symbol}/forensics")
+def get_forensics(symbol: str):
+    """Piotroski, Altman, Beneish, cash conversion and reverse-DCF inputs, withheld if Yahoo's lines fail vetting."""
+    sym = symbol.upper()
+
+    def build():
+        from ..services import forensics
+
+        statements = get_statements(sym)["data"]
+        vetted = get_financials(sym, "NSE")["data"]
+        quote, _ = CACHE.get_or_fetch(f"company:quote:NSE:{sym}", SETTINGS.quote_ttl, lambda: _quote(sym, "NSE"))
+        company = screener.fetch_company(sym)
+        lender = any(r.get("lender") for r in company.get("quarterly") or [])
+        return forensics.build(statements, vetted, (quote or {}).get("marketCapCr"), lender, company.get("annual"))
+
+    try:
+        data, age = CACHE.get_or_fetch(f"company:forensics:{sym}", 6 * 3600, build)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Quality checks unavailable: {exc}") from exc
+    return envelope(data, age, source="Yahoo Finance line items, vetted against Yahoo, screener.in and NSE filings", delayed_minutes=0)

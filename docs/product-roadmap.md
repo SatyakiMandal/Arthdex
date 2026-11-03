@@ -76,13 +76,13 @@ Written 3 November 2026. Status reflects the code on that date. Related: [paid-f
 | | Segment and geography revenue and margins | New | Free-new (XBRL segment facts are already in the filings) | P1 |
 | | Ten-year history with CAGR (revenue, profit, EPS, book value, dividends) | Partial (four years) | Free (screener.in has ten) | P1 |
 | Statistics | Valuation, profitability, trading, dividends | Built | Free | P1 |
-| Valuation | Reverse DCF: what growth the price implies | New | Free | P1 |
+| Valuation | Reverse DCF: what growth the price implies, on free cash flow and on earnings, with adjustable rates | Built | Free | P1 |
 | | DCF with editable assumptions and a sensitivity table | Partial (analyzer valuation tab) | Free | P2 |
 | | Relative valuation against peers and against its own five-year P/E range | Built (P/E; EV/EBITDA bands not yet) | Free | P1 |
 | | Monte Carlo valuation | Built (analyzer) | Free | P3 |
 | Peers | Peer table: size, growth, returns, valuation, with the company ranked, vetted through its own row | Built | Free | P1 |
 | | Peer charts: any metric over time against peers | New | Free | P2 |
-| Quality and forensics | Piotroski F-score, Altman Z, Beneish M, accruals, cash conversion, with each input shown | New | Free | P1 |
+| Quality and forensics | Piotroski F-score, Altman Z, Beneish M, cash conversion, withheld when inputs fail vetting | Built | Free | P1 |
 | | Red-flag panel: pledge rising, auditor change, related-party transactions, contingent liabilities, frequent equity dilution | New | Free-new (filings, annual reports) | P2 |
 | Ownership | Shareholding pattern, pledge, SAST, insider trades, vetted against NSE | Built | Free | P1 |
 | | Top holders by name (mutual funds, FPIs, individuals above 1%) | New | Free-new | P2 |

@@ -1078,3 +1078,31 @@ export interface ApiPeBand {
   percentile: number;
   since: string;
 }
+
+// -- quality checks and reverse DCF ------------------------------------------
+
+export interface ApiForensics {
+  years: string[];
+  vetting: { checks: { year: string; field: string; yahoo: number; vetted: number; gapPct: number; agree: boolean }[]; vetted: boolean };
+  withheld?: string;
+  lender?: boolean;
+  note?: string;
+  piotroski?: { score: number; of: number; signals: { test: string; pass: boolean | null; values: unknown }[] };
+  altman?: { z: number; zone: "safe" | "grey" | "distress"; ratios: Record<string, number> } | null;
+  beneish?: { m: number; flag: boolean; threshold: number; indices: Record<string, number>; sgaMissing: boolean } | null;
+  cashConversion?: { ratio: number; years: number; cfo: number[]; netIncome: number[] } | null;
+  reverseDcf?: {
+    netIncomeLatest: number | null;
+    fcfLatest: number;
+    fcfAverage3y: number;
+    fcfYears: number;
+    netDebt: number;
+    marketCap: number;
+    enterpriseValue: number;
+    revenueCagr: { "3y": number | null; "5y": number | null; "10y": number | null };
+    defaults: { discountRatePct: number; terminalGrowthPct: number; years: number };
+    impliedGrowthPct: number | null;
+    impliedGrowthEarningsPct: number | null;
+    fcfToProfit: number | null;
+  } | null;
+}
