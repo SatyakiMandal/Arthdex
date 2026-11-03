@@ -48,7 +48,7 @@ class RefreshTests(unittest.TestCase):
             store = Store(url="", sqlite_path=Path(tmp) / "t.db")
             from datetime import date
 
-            store.put(fs.SERIES, date.today(), {"symbol": "FRESH"}, key="FRESH")
+            store.put(fs.SERIES, date.today(), {"symbol": "FRESH", "comparisonSource": "chosen"}, key="FRESH")
             calls = []
 
             def fetch(sym):

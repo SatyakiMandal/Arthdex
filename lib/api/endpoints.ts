@@ -39,7 +39,7 @@ import type {
   ApiSensitivity,
   ApiWindowedMovers,
   ApiValuation,
-  GlobalIndexCard, ApiFlows, ApiPeers, ApiPeBand, ApiForensics, ApiOptionChain, ApiBuildUp, ApiFundamentalScreen } from "./types";
+  GlobalIndexCard, ApiFlows, ApiPeers, ApiPeBand, ApiForensics, ApiOptionChain, ApiBuildUp, ApiFundamentalScreen, ApiResultsSeason } from "./types";
 
 // -- market -----------------------------------------------------------------
 
@@ -221,3 +221,5 @@ export const getFundamentalScreen = (params: { q?: string; preset?: string; sort
   const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v) as [string, string][]);
   return apiGet<ApiFundamentalScreen>(`/api/v1/screener/fundamental?${qs.toString()}`, 300);
 };
+
+export const getResultsSeason = () => apiGet<ApiResultsSeason>("/api/v1/market/results-season", 900);

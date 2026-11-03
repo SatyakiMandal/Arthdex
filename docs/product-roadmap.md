@@ -57,7 +57,7 @@ Written 3 November 2026. Status reflects the code on that date. Related: [paid-f
 | | Mutual fund holding changes by stock, monthly | New | Free-new (AMFI portfolios) | P3 |
 | | Delivery percentage spikes (bhavcopy accumulation) | Built | Free | P2 |
 | Events | Results calendar and corporate actions | Built | Free | P1 |
-| | Results season tracker: who reported, beat or miss against last year and against estimates, live during the season | New | Free (filings) / Paid (estimates) | P1 |
+| | Results season tracker: who reported, how they did against a year ago, who reports next | Built (/results; estimates beat or miss needs a paid feed) | Free / Paid for estimates | P1 |
 | | Corporate-action screens: upcoming dividends, splits, bonuses, buybacks with record dates | Partial (calendar) | Free | P2 |
 | New issues | IPO pipeline, subscription, listing performance | Built | Free | P1 |
 | | SME IPOs, with their own risk notes | New | Free-new | P2 |

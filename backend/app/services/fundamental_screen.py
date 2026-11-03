@@ -92,7 +92,13 @@ def _growth(new: float | None, old: float | None) -> float | None:
     return round((new / old - 1) * 100, 2)
 
 
-def snapshot_one(symbol: str, financials: dict[str, Any], valuation: dict[str, Any], sector: str | None) -> dict[str, Any]:
+def snapshot_one(
+    symbol: str,
+    financials: dict[str, Any],
+    valuation: dict[str, Any],
+    sector: str | None,
+    alt_quarterly: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     """Per-share figures, growth and quality from the vetted financials; nothing price-based."""
     ratios = financials.get("ratios") or {}
     annual = [r for r in financials.get("annual") or [] if isinstance(r.get("revenue"), (int, float))]
@@ -122,7 +128,35 @@ def snapshot_one(symbol: str, financials: dict[str, Any], valuation: dict[str, A
         if len(annual) >= 4 and annual[-4]["revenue"] > 0 else None,
         "basis": ratios.get("basis"),
         "unresolved": unresolved,
+        # For the results-season tracker: the latest quarter and the same quarter a year before,
+        # both from one source. Where the chosen series skips the year-ago quarter (Yahoo's
+        # TCS series lacked September 2025), both come from screener.in's longer series instead,
+        # so a comparison never pairs two sources' definitions.
+        **_comparison(quarterly, alt_quarterly or []),
     }
+
+
+def _comparison(primary: list[dict[str, Any]], alt: list[dict[str, Any]]) -> dict[str, Any]:
+    if primary and _year_ago(primary):
+        return {"latestQuarter": _quarter(primary[-1]), "yearAgoQuarter": _quarter(_year_ago(primary)), "comparisonSource": "chosen"}
+    if alt and primary and alt[-1]["periodEnd"][:10] == primary[-1]["periodEnd"][:10] and _year_ago(alt):
+        return {"latestQuarter": _quarter(alt[-1]), "yearAgoQuarter": _quarter(_year_ago(alt)), "comparisonSource": "screener.in"}
+    return {"latestQuarter": _quarter(primary[-1]) if primary else None, "yearAgoQuarter": None, "comparisonSource": None}
+
+
+def _quarter(q: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not q:
+        return None
+    return {k: q.get(k) for k in ("quarter", "periodEnd", "revenue", "operatingProfit", "opmPct", "netProfit", "eps")}
+
+
+def _year_ago(quarterly: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """The quarter ending about a year before the latest one, if the series has it."""
+    latest = date.fromisoformat(quarterly[-1]["periodEnd"][:10])
+    for q in quarterly[:-1]:
+        if 355 <= (latest - date.fromisoformat(q["periodEnd"][:10])).days <= 375:
+            return q
+    return None
 
 
 def refresh(
@@ -132,18 +166,30 @@ def refresh(
     store: Store = STORE,
     limit: int = PER_RUN,
     pace: float = PACE_SECONDS,
+    reported_on: dict[str, str] | None = None,
 ) -> dict[str, Any]:
-    """Snapshot up to `limit` companies whose snapshot is missing or older than a week, oldest first."""
+    """
+    Snapshot up to `limit` companies, those that reported results since their last snapshot
+    first (`reported_on`: symbol to results date), then any missing or older than a week.
+    """
     cutoff = (date.today() - timedelta(days=STALE_AFTER_DAYS)).isoformat()
     latest = {r[0]: str(r[1])[:10] for r in store.query("SELECT key, MAX(as_of) FROM series WHERE name = ? GROUP BY key", (SERIES,))}
-    due = sorted((s for s in symbols if latest.get(s, "0000") < cutoff), key=lambda s: latest.get(s, "0000"))[:limit]
+    reported_on = reported_on or {}
+    fresh_results = [s for s in symbols if s in reported_on and latest.get(s, "0000") <= reported_on[s]]
+    # Snapshots recorded before a field was added are refreshed ahead of their week
+    outdated = [s for s, snap in load(store).items() if "comparisonSource" not in snap and s in symbols and s not in fresh_results]
+    fresh_results += outdated
+    stale = sorted((s for s in symbols if latest.get(s, "0000") < cutoff and s not in fresh_results), key=lambda s: latest.get(s, "0000"))
+    due = (fresh_results + stale)[:limit]
     done, failed = [], []
     for i, sym in enumerate(due):
         if i:
             time.sleep(pace)
         try:
-            financials, valuation = fetch(sym)
-            store.put(SERIES, date.today(), snapshot_one(sym, financials, valuation, sectors.get(sym)), key=sym, source="Arthdex vetted financials")
+            fetched = fetch(sym)
+            financials, valuation = fetched[0], fetched[1]
+            alt = fetched[2] if len(fetched) > 2 else None
+            store.put(SERIES, date.today(), snapshot_one(sym, financials, valuation, sectors.get(sym), alt), key=sym, source="Arthdex vetted financials")
             done.append(sym)
         except Exception as exc:  # one company failing does not stop the slice
             failed.append({"symbol": sym, "error": f"{type(exc).__name__}: {str(exc)[:120]}"})

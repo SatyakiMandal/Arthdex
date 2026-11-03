@@ -209,3 +209,35 @@ def get_flows(days: int = Query(90, ge=5, le=730)):
         data, age, source="NSE provisional (trade date); NSDL FPI report (custodial, a day later)", delayed_minutes=0,
         note=f"History recorded daily since {data.get('historyStarts')}; NSE publishes only the latest day.",
     )
+
+
+@router.get("/results-season")
+def get_results_season():
+    """The current results season across the Nifty 500: who reported, how they did, who is next."""
+    from ..services import fundamental_screen, results_season
+
+    def build():
+        snapshots = fundamental_screen.load()
+        if not snapshots:
+            raise ValueError("No company snapshots recorded yet")
+        try:
+            members, _ = CACHE.get_or_fetch("constituents:nifty500", 86_400, lambda: constituents.fetch_constituents("nifty500"))
+            names = {m["symbol"]: m["name"] for m in members}
+        except Exception:
+            names = {}
+        try:
+            scheduled = results_season.calendar()
+        except Exception:
+            scheduled = []
+        return results_season.build(snapshots, scheduled, names)
+
+    try:
+        data, age = CACHE.get_or_fetch("market:results-season", 900, build)
+    except ValueError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Results season unavailable: {exc}") from exc
+    return envelope(
+        data, age, source="Arthdex vetted quarterly results (Nifty 500 snapshots); NSE event calendar", delayed_minutes=0,
+        note=f"{data['covered']} of the Nifty 500 snapshotted so far." if data["covered"] < 450 else None,
+    )

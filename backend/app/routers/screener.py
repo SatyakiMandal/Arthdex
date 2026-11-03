@@ -124,11 +124,16 @@ def macd_crossover(
     )
 
 
-def _fundamental_inputs(symbol: str) -> tuple[dict, dict]:
-    """A company's vetted financials and valuation, the same ones its page shows."""
+def _fundamental_inputs(symbol: str) -> tuple[dict, dict, list]:
+    """A company's vetted financials and valuation, as its page shows them, and screener.in's longer quarterly series."""
+    from ..providers import screener as screener_provider
     from . import company
 
-    return company.get_financials(symbol, "NSE")["data"], company.get_valuation(symbol, "NSE")["data"]
+    try:
+        alt = screener_provider.fetch_company(symbol).get("quarterly") or []
+    except Exception:
+        alt = []
+    return company.get_financials(symbol, "NSE")["data"], company.get_valuation(symbol, "NSE")["data"], alt
 
 
 @router.get("/fundamental")

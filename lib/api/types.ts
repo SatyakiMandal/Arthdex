@@ -1182,3 +1182,41 @@ export interface ApiFundamentalScreen {
   presets: Record<string, { label: string; formula: string }>;
   preset: string | null;
 }
+
+// -- results season ----------------------------------------------------------
+
+export interface ApiReportedResult {
+  symbol: string;
+  name: string;
+  sector: string | null;
+  quarter: string | null;
+  revenue: number | null;
+  netProfit: number | null;
+  revenueGrowth: number | null;
+  profitGrowth: number | null;
+  epsGrowth: number | null;
+  marginChange: number | null;
+  yearAgo: boolean;
+  unresolved: number;
+  asOf: string;
+}
+
+export interface ApiResultsSeason {
+  season: string | null;
+  quarter: string | null;
+  covered: number;
+  reported: ApiReportedResult[];
+  summary: {
+    reported: number;
+    comparable: number;
+    revenueUp: number;
+    profitUp: number;
+    medianRevenueGrowth: number | null;
+    medianProfitGrowth: number | null;
+    aggregateRevenueGrowth: number | null;
+    aggregateProfitGrowth: number | null;
+  };
+  upcoming: { symbol: string; name: string; date: string }[];
+  awaitingFigures: { symbol: string; name: string; date: string }[];
+  notScheduled: number;
+}

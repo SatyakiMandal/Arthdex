@@ -25,7 +25,7 @@ import {
   Star,
   Sunrise,
   X,
-  type LucideIcon, Sigma } from "lucide-react";
+  type LucideIcon, Sigma, FileBarChart } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { UniversalSearch } from "@/components/search/universal-search";
@@ -47,6 +47,7 @@ const GROUPS: Group[] = [
       { label: "Order flow", href: "/orderflow", icon: Activity, hint: "Profile, footprint, CVD and GEX" },
       { label: "Bhavcopy", href: "/bhavcopy", icon: Layers, hint: "End-of-day delivery data" },
       { label: "Bulk and block deals", href: "/deals", icon: ArrowLeftRight, hint: "Large trades disclosed today" },
+      { label: "Results season", href: "/results", icon: FileBarChart, hint: "Who reported, and how they did against last year" },
       { label: "Results calendar", href: "/calendar", icon: CalendarDays, hint: "Board meetings and actions, 30 days" },
     ],
   },

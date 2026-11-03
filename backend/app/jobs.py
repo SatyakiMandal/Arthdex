@@ -33,7 +33,9 @@ def _snapshot_fundamentals() -> None:
 
     members, _ = CACHE.get_or_fetch("constituents:nifty500", 86_400, lambda: constituents.fetch_constituents("nifty500"))
     sectors = {m["symbol"]: m["industry"] for m in members}
-    fundamental_screen.refresh(list(sectors), _fundamental_inputs, sectors, limit=30)
+    from .services import results_season
+
+    fundamental_screen.refresh(list(sectors), _fundamental_inputs, sectors, limit=30, reported_on=results_season.reported_dates())
 
 
 # A trickle rather than a nightly burst: 30 of the stalest companies an hour covers the

@@ -19,6 +19,7 @@ interface SearchHit {
 /** Every tool, findable by name or by the words people use for it, so search doubles as navigation. */
 const PAGES: { name: string; href: string; words: string }[] = [
   { name: "Market watch", href: "/market-watch", words: "indices movers gainers losers breadth nifty sensex" },
+  { name: "Results season", href: "/results", words: "results earnings season quarterly reported beat profit growth q1 q2 q3 q4" },
   { name: "Derivatives", href: "/derivatives", words: "options option chain open interest oi pcr max pain futures f&o fno build-up greeks iv" },
   { name: "Commodities", href: "/commodities", words: "gold silver crude oil metals energy rupee usd" },
   { name: "Screener", href: "/screener", words: "screen macd factor alpha beta momentum filter" },
