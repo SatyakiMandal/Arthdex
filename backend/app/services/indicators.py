@@ -35,8 +35,9 @@ def rsi(close: pd.Series, n: int = 14) -> pd.Series:
     loss = _rma((-delta).clip(lower=0.0), n)
     rs = gain / loss.replace(0.0, np.nan)
     out = 100.0 - 100.0 / (1.0 + rs)
-    # No losses in the window is an RSI of 100, not undefined
-    return out.where(~((loss == 0) & gain.notna()), 100.0)
+    # No losses in the window is an RSI of 100, not undefined -- but a flat
+    # price (no gains either) is neutral, not overbought.
+    return out.where(~((loss == 0) & gain.notna() & (gain > 0)), 100.0)
 
 
 def macd(close: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9) -> pd.DataFrame:
@@ -143,12 +144,13 @@ def vwap(df: pd.DataFrame, intraday: bool) -> pd.Series:
     anchored at the first bar shown.
     """
     tp = (df["High"] + df["Low"] + df["Close"]) / 3.0
-    pv = tp * df["Volume"]
+    vol = df["Volume"].fillna(0.0)
+    pv = tp * vol
     if intraday:
         day = df.index.normalize() if df.index.tz is None else df.index.tz_localize(None).normalize()
         g = pd.Series(day, index=df.index)
-        return pv.groupby(g).cumsum() / df["Volume"].groupby(g).cumsum().replace(0.0, np.nan)
-    return pv.cumsum() / df["Volume"].cumsum().replace(0.0, np.nan)
+        return pv.groupby(g).cumsum() / vol.groupby(g).cumsum().replace(0.0, np.nan)
+    return pv.cumsum() / vol.cumsum().replace(0.0, np.nan)
 
 
 def support_resistance(df: pd.DataFrame, window: int = 5, per_side: int = 3) -> dict[str, list[dict[str, float]]]:

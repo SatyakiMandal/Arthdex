@@ -73,7 +73,7 @@ def _load_chain(etf: str) -> tuple[float, pd.DataFrame, list[str]]:
     frames, skipped = [], []
     for exp in tk.options:
         d = date.fromisoformat(exp)
-        if (d - now.date()).days > MAX_DAYS or len(frames) >= MAX_EXPIRIES:
+        if (d - now.date()).days > MAX_DAYS or len(skipped) >= MAX_EXPIRIES:
             break
         chain = tk.option_chain(exp)
         for side, df in (("C", chain.calls), ("P", chain.puts)):
