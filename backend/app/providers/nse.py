@@ -9,9 +9,11 @@ degrade gracefully rather than assume a shape.
 
 from __future__ import annotations
 
+import html
+
 import threading
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from curl_cffi import requests as curl_requests
@@ -258,6 +260,13 @@ def fetch_current_ipos() -> list[dict[str, Any]]:
     return out
 
 
+def _text(value: Any) -> str | None:
+    """NSE filing text arrives HTML-escaped, sometimes twice (&amp;#8377; for the rupee sign)."""
+    if not value:
+        return value
+    return html.unescape(html.unescape(str(value))).strip()
+
+
 def fetch_announcements(limit: int = 60) -> list[dict[str, Any]]:
     """
     Corporate announcements — the primary-source LODR filings that the news
@@ -276,9 +285,9 @@ def fetch_announcements(limit: int = 60) -> list[dict[str, Any]]:
                 # each announcement uniquely identifiable downstream.
                 "seqId": row.get("seq_id"),
                 "symbol": (row.get("symbol") or "").upper(),
-                "company": row.get("sm_name") or row.get("symbol"),
-                "subject": row.get("desc"),
-                "detail": row.get("attchmntText"),
+                "company": _text(row.get("sm_name")) or row.get("symbol"),
+                "subject": _text(row.get("desc")),
+                "detail": _text(row.get("attchmntText")),
                 "attachment": row.get("attchmntFile"),
                 "publishedAt": row.get("an_dt"),
                 "broadcastAt": row.get("exchdisstime"),
@@ -339,3 +348,117 @@ def fetch_past_issues(limit: int = 120) -> list[dict[str, Any]]:
         if len(out) >= limit:
             break
     return out
+
+
+def fetch_stocks_traded() -> dict[str, Any]:
+    """
+    Every security traded in the session: last price, change and market cap.
+
+    This is NSE's own whole-market list (about 3,400 rows), so market breadth and
+    per-constituent moves come from one call rather than one request per stock.
+    """
+    payload = nse_get("/api/live-analysis-stocksTraded")
+    total = payload.get("total") or {}
+    rows: dict[str, dict[str, Any]] = {}
+    for row in total.get("data") or []:
+        symbol = (row.get("symbol") or "").upper()
+        last = _num(row.get("lastPrice"))
+        if not _is_tradable_equity(symbol) or last is None or row.get("series") not in ("EQ", "BE", "BZ", "SM", "ST"):
+            continue
+        cap = _num(row.get("totalMarketCapcsv"))  # NSE reports this in lakh rupees
+        rows[symbol] = {
+            "last": round(last, 2),
+            "changePct": round(_num(row.get("pchange")) or 0.0, 2),
+            "marketCapCr": round(cap / 100, 0) if cap else None,
+            "series": row.get("series"),
+        }
+    count = total.get("count") or {}
+    return {
+        "rows": rows,
+        "breadth": {
+            "advances": int(_num(count.get("Advances")) or 0),
+            "declines": int(_num(count.get("Declines")) or 0),
+            "unchanged": int(_num(count.get("Unchange")) or 0),
+            "total": int(_num(count.get("Total")) or 0),
+        },
+        "asOf": payload.get("timestamp") or datetime.now(timezone.utc).isoformat(),
+    }
+
+
+_QUOTE_API = "/api/NextApi/apiClient/GetQuoteApi?functionName={fn}&marketType=N&series=EQ&symbol={symbol}"
+
+
+def fetch_quote(symbol: str) -> dict[str, Any] | None:
+    """
+    The exchange's own quote, in the same shape as yahoo.fetch_quote plus ISIN and sector.
+
+    The older /api/quote-equity endpoint answers 403 since NSE's site rebuild; this is
+    the call the current quote page makes.
+    """
+    payload = nse_get(_QUOTE_API.format(fn="getSymbolData", symbol=symbol.upper()))
+    rows = (payload or {}).get("equityResponse") or []
+    if not rows:
+        return None
+    r = rows[0]
+    meta, trade, price, sec = (r.get(k) or {} for k in ("metaData", "tradeInfo", "priceInfo", "secInfo"))
+    last = _num(trade.get("lastPrice")) or _num(meta.get("closePrice"))
+    prev = _num(meta.get("previousClose"))
+    if not last:
+        return None
+    change = last - prev if prev else 0.0
+    mcap = _num(trade.get("totalMarketCap"))
+    return {
+        "symbol": symbol.upper(),
+        "exchange": "NSE",
+        "cmp": round(last, 2),
+        "change": {"absolute": round(change, 2), "percent": round(change / prev * 100, 2) if prev else 0.0},
+        "open": _num(meta.get("open")),
+        "previousClose": prev,
+        "dayHigh": _num(meta.get("dayHigh")),
+        "dayLow": _num(meta.get("dayLow")),
+        "high52w": _num(price.get("yearHigh")),
+        "low52w": _num(price.get("yearLow")),
+        "volume": int(_num(trade.get("totalTradedVolume")) or 0),
+        "marketCapCr": round(mcap / 1e7, 2) if mcap else None,
+        "currency": "INR",
+        "isin": meta.get("isinCode"),
+        "name": meta.get("companyName"),
+        "sector": (sec.get("sector") or "").strip() or None,
+        "basicIndustry": (sec.get("basicIndustry") or "").strip() or None,
+    }
+
+
+def fetch_daily_history(symbol: str, days: int) -> list[dict[str, Any]]:
+    """
+    Daily bars from the exchange, oldest first, in the candle shape the site uses.
+
+    These are the prices as traded: unlike Yahoo's they are not adjusted for splits or
+    bonus issues, so a series that spans one shows the step. Callers say so on screen.
+    The endpoint answers up to a year per request, so longer spans are fetched in years.
+    """
+    end = datetime.now(timezone.utc).date()
+    start = end - timedelta(days=days)
+    rows: dict[str, dict[str, Any]] = {}
+    cursor = start
+    while cursor <= end:
+        chunk_end = min(cursor + timedelta(days=364), end)
+        payload = nse_get(
+            _QUOTE_API.format(fn="getHistoricalTradeData", symbol=symbol.upper())
+            + f"&fromDate={cursor:%d-%m-%Y}&toDate={chunk_end:%d-%m-%Y}"
+        )
+        for r in payload if isinstance(payload, list) else (payload or {}).get("data") or []:
+            close = _num(r.get("chClosingPrice") or r.get("CH_CLOSING_PRICE"))
+            stamp = r.get("mtimestamp") or r.get("mTIMESTAMP")
+            if close is None or not stamp:
+                continue
+            day = datetime.strptime(stamp, "%d-%b-%Y").date().isoformat()
+            rows[day] = {
+                "date": day,
+                "open": round(_num(r.get("chOpeningPrice") or r.get("CH_OPENING_PRICE")) or close, 2),
+                "high": round(_num(r.get("chTradeHighPrice") or r.get("CH_TRADE_HIGH_PRICE")) or close, 2),
+                "low": round(_num(r.get("chTradeLowPrice") or r.get("CH_TRADE_LOW_PRICE")) or close, 2),
+                "close": round(close, 2),
+                "volume": int(_num(r.get("chTotTradedQty") or r.get("CH_TOT_TRADED_QTY")) or 0),
+            }
+        cursor = chunk_end + timedelta(days=1)
+    return [rows[k] for k in sorted(rows)]

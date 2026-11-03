@@ -76,6 +76,14 @@ def _unlisted_warmup() -> None:
     unlisted_service.ensure_warm()
 
 
+@app.on_event("startup")
+def _feed_watchdog() -> None:
+    # Probe every feed on a timer, repair what it can, and log the rest (see app/watchdog.py)
+    from . import watchdog
+
+    watchdog.start_background()
+
+
 @app.get("/")
 def root():
     return {

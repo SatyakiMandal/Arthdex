@@ -8,7 +8,7 @@ from ..cache import CACHE
 from ..config import SETTINGS
 from ..providers import fundamentals, yahoo
 from ..schemas import envelope
-from ..services import quant, sensitivity
+from ..services import quant, quote_sources, sensitivity
 
 router = APIRouter(prefix="/api/v1/company", tags=["quant"])
 
@@ -38,7 +38,7 @@ def get_quant(symbol: str, exchange: str = Query("NSE", pattern="^(NSE|BSE)$")):
             "realisedAnnualisedVolPct"
         )
 
-        quote = yahoo.fetch_quote(symbol, exchange) or {}
+        quote = quote_sources.fetch(symbol, exchange) or {}
         balance = _latest_balance(symbol, exchange)
 
         return {

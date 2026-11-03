@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Query
 
 from ..cache import CACHE
 from ..config import SETTINGS
-from ..providers import nse, yahoo
+from ..providers import constituents, nse, yahoo
 from ..services import bhavcopy, commodities
 from ..schemas import envelope
 
@@ -18,9 +18,21 @@ def get_indices():
     """Broad, sectoral and thematic NSE indices for the ticker bar."""
     try:
         data, age = CACHE.get_or_fetch("market:indices", SETTINGS.index_ttl, nse.fetch_indices)
-    except Exception as exc:
-        raise HTTPException(status_code=503, detail=f"NSE indices unavailable: {exc}") from exc
-    return envelope(data, age, source="NSE (nseindia.com public API)", delayed_minutes=1)
+        return envelope(data, age, source="NSE (nseindia.com public API)", delayed_minutes=1)
+    except Exception as nse_exc:
+        # NSE refuses some networks outright; Yahoo carries the same levels (vetted to the paisa)
+        try:
+            data, age = CACHE.get_or_fetch(
+                "market:indices:yahoo", SETTINGS.index_ttl, lambda: yahoo.fetch_nse_index_levels(nse.TICKER_INDICES)
+            )
+        except Exception:
+            data, age = [], 0
+        if not data:
+            raise HTTPException(status_code=503, detail=f"NSE indices unavailable: {nse_exc}") from nse_exc
+        return envelope(
+            data, age, source="Yahoo Finance (NSE unavailable)", delayed_minutes=SETTINGS.quote_delay_minutes,
+            note="Breadth and index valuation come from NSE only and are missing until it answers again.",
+        )
 
 
 @router.get("/mover-universes")
@@ -110,4 +122,61 @@ def get_commodities():
         source="Yahoo Finance (front-month futures)",
         delayed_minutes=15,
         note="US-dollar futures from COMEX, NYMEX, CBOT and ICE, not MCX prices. Rupee equivalents exclude duty, GST and premiums.",
+    )
+
+
+@router.get("/pulse")
+def get_pulse(index: str = Query("nifty50", pattern="^(nifty50|nifty100|nifty200|nifty500)$")):
+    """
+    Every constituent of an index with today's move, plus sector and market breadth.
+
+    Joins NSE's index membership file with its whole-market traded list, so the
+    pulse grid on the home page shows all members, not just the top-20 movers.
+    """
+    try:
+        members, _ = CACHE.get_or_fetch(f"constituents:{index}", 86_400, lambda: constituents.fetch_constituents(index))
+        traded, age = CACHE.get_or_fetch("market:traded", SETTINGS.movers_ttl, nse.fetch_stocks_traded)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"NSE market breadth unavailable: {exc}") from exc
+
+    stocks = []
+    for m in members:
+        row = traded["rows"].get(m["symbol"])
+        if row:
+            stocks.append({"symbol": m["symbol"], "name": m["name"], "industry": m["industry"], **row})
+    stocks.sort(key=lambda s: s["marketCapCr"] or 0, reverse=True)
+
+    sectors: dict[str, dict] = {}
+    for s in stocks:
+        sec = sectors.setdefault(s["industry"], {"industry": s["industry"], "count": 0, "cap": 0.0, "weighted": 0.0})
+        cap = s["marketCapCr"] or 0
+        sec["count"] += 1
+        sec["cap"] += cap
+        sec["weighted"] += cap * s["changePct"]
+    sector_rows = sorted(
+        (
+            {"industry": v["industry"], "count": v["count"], "marketCapCr": round(v["cap"]),
+             "changePct": round(v["weighted"] / v["cap"], 2) if v["cap"] else 0.0}
+            for v in sectors.values()
+        ),
+        key=lambda r: r["marketCapCr"],
+        reverse=True,
+    )
+    label = constituents.INDEX_FILES[index][0]
+    return envelope(
+        {
+            "index": index,
+            "label": label,
+            "advances": sum(s["changePct"] > 0 for s in stocks),
+            "declines": sum(s["changePct"] < 0 for s in stocks),
+            "unchanged": sum(s["changePct"] == 0 for s in stocks),
+            "market": traded["breadth"],
+            "stocks": stocks,
+            "sectors": sector_rows,
+            "asOf": traded["asOf"],
+        },
+        age,
+        source="NSE index constituents and whole-market traded list",
+        delayed_minutes=1,
+        note="Sector moves are weighted by market capitalisation.",
     )

@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+from datetime import date
+
 from fastapi import APIRouter, HTTPException, Query
 
 from ..cache import CACHE
 from ..config import SETTINGS
-from ..providers import fundamentals, yahoo
+from ..providers import fundamentals, nse, nse_xbrl, screener, yahoo
 from ..schemas import envelope
-from ..services import risk_layer, shareholding, technicals, yahoo_company
+from ..services import financial_sources, quote_sources, risk_layer, shareholding, technicals, yahoo_company
 
 router = APIRouter(prefix="/api/v1/company", tags=["company"])
 
@@ -19,27 +21,55 @@ VALID_PERIODS = set(yahoo.PERIOD_MAP.keys())
 def get_quote(symbol: str, exchange: str = Query("NSE", pattern="^(NSE|BSE)$")):
     key = f"company:quote:{exchange}:{symbol.upper()}"
     try:
-        data, age = CACHE.get_or_fetch(
-            key, SETTINGS.quote_ttl, lambda: yahoo.fetch_quote(symbol, exchange)
-        )
+        data, age = CACHE.get_or_fetch(key, SETTINGS.quote_ttl, lambda: _quote(symbol, exchange))
     except Exception as exc:
         raise HTTPException(status_code=503, detail=f"Quote unavailable: {exc}") from exc
 
     if not data:
         raise HTTPException(status_code=404, detail=f"No quote found for {symbol.upper()}")
-    return envelope(data, age, source="Yahoo Finance", delayed_minutes=SETTINGS.quote_delay_minutes)
+    used = (data.get("sources") or {}).get("used")
+    return envelope(
+        data, age, source="NSE (Yahoo Finance cross-check)" if used == "nse" else "Yahoo Finance (NSE unavailable)",
+        delayed_minutes=SETTINGS.quote_delay_minutes,
+    )
+
+
+def _quote(symbol: str, exchange: str) -> dict | None:
+    return quote_sources.fetch(symbol, exchange)
 
 
 @router.get("/{symbol}/profile")
 def get_profile(symbol: str, exchange: str = Query("NSE", pattern="^(NSE|BSE)$")):
     key = f"company:profile:{exchange}:{symbol.upper()}"
     try:
-        data, age = CACHE.get_or_fetch(
-            key, SETTINGS.fundamentals_ttl, lambda: yahoo.fetch_profile(symbol, exchange)
-        )
+        data, age = CACHE.get_or_fetch(key, SETTINGS.fundamentals_ttl, lambda: _profile(symbol, exchange))
     except Exception as exc:
         raise HTTPException(status_code=503, detail=f"Profile unavailable: {exc}") from exc
-    return envelope(data, age, source="Yahoo Finance", delayed_minutes=0)
+    return envelope(data, age, source="Yahoo Finance, NSE for identifiers", delayed_minutes=0)
+
+
+def _profile(symbol: str, exchange: str) -> dict:
+    """
+    Yahoo's profile, with the ISIN (which Yahoo leaves empty for Indian listings) from the
+    exchange. If Yahoo has no profile, name and classification come from the exchange alone.
+    """
+    try:
+        profile = yahoo.fetch_profile(symbol, exchange)
+    except Exception:
+        profile = None
+    try:
+        quote, _ = CACHE.get_or_fetch(f"company:quote:{exchange}:{symbol.upper()}", SETTINGS.quote_ttl, lambda: _quote(symbol, exchange))
+    except Exception:
+        quote = None
+    quote = quote or {}
+    if not profile:
+        if not quote.get("name"):
+            raise ValueError(f"No profile from Yahoo or NSE for {symbol.upper()}")
+        profile = {"name": quote["name"], "sector": quote.get("sector") or "", "industry": quote.get("basicIndustry") or "",
+                   "isin": None, "website": None, "summary": None, "employees": None}
+    if not profile.get("isin") and quote.get("isin"):
+        profile = {**profile, "isin": quote["isin"]}
+    return profile
 
 
 @router.get("/{symbol}/candles")
@@ -59,25 +89,59 @@ def get_candles(
     intraday = period in yahoo.INTRADAY_PERIODS
 
     def fetch():
-        frame = yahoo.fetch_history(symbol, period, exchange)
-        return yahoo.history_to_candles(frame, intraday)
+        try:
+            frame = yahoo.fetch_history(symbol, period, exchange)
+            candles = yahoo.history_to_candles(frame, intraday)
+        except Exception:
+            candles = []
+        if candles:
+            return {"candles": candles, "source": "yahoo", "vetting": _vet_closes(symbol, candles) if not intraday and exchange.upper() == "NSE" else None}
+        # The exchange's daily history backs up the daily periods (Yahoo's weekly and
+        # intraday series have no exchange equivalent here)
+        days = NSE_HISTORY_DAYS.get(period)
+        if days and exchange.upper() == "NSE":
+            return {"candles": nse.fetch_daily_history(symbol, days), "source": "nse"}
+        return {"candles": [], "source": "yahoo"}
 
     try:
         data, age = CACHE.get_or_fetch(key, SETTINGS.candles_ttl, fetch)
     except Exception as exc:
         raise HTTPException(status_code=503, detail=f"Candles unavailable: {exc}") from exc
 
-    if not data:
+    if not data["candles"]:
         raise HTTPException(
             status_code=404, detail=f"No price history for {symbol.upper()} over {period}"
         )
 
+    from_nse = data["source"] == "nse"
     return envelope(
-        {"symbol": symbol.upper(), "period": period, "candles": data},
+        {"symbol": symbol.upper(), "period": period, "candles": data["candles"], "vetting": data.get("vetting")},
         age,
-        source="Yahoo Finance",
+        source="NSE daily history (Yahoo unavailable)" if from_nse else "Yahoo Finance",
         delayed_minutes=SETTINGS.quote_delay_minutes,
+        note="Exchange prices as traded, not adjusted for splits or bonus issues." if from_nse else None,
     )
+
+
+NSE_HISTORY_DAYS = {"1M": 31, "6M": 183, "1Y": 366}
+
+
+def _vet_closes(symbol: str, candles: list[dict]) -> dict | None:
+    """
+    Yahoo's recent daily closes against the exchange's. Only the last two weeks are
+    compared: older Yahoo prices are adjusted for later splits and the exchange's are not.
+    A failed NSE call leaves vetting empty rather than failing the chart.
+    """
+    try:
+        exchange_rows = {r["date"]: r["close"] for r in nse.fetch_daily_history(symbol, 14)}
+    except Exception:
+        return None
+    pairs = [(c["date"][:10], c["close"], exchange_rows[c["date"][:10]]) for c in candles[-10:] if c["date"][:10] in exchange_rows]
+    if not pairs:
+        return None
+    worst = max(pairs, key=lambda p: abs(p[1] - p[2]) / p[2])
+    gap = abs(worst[1] - worst[2]) / worst[2]
+    return {"compared": len(pairs), "worstDate": worst[0], "yahoo": worst[1], "nse": worst[2], "gapPct": round(gap * 100, 3), "agree": gap <= 0.005}
 
 
 @router.get("/{symbol}/financials")
@@ -92,17 +156,32 @@ def get_financials(symbol: str, exchange: str = Query("NSE", pattern="^(NSE|BSE)
     key = f"company:financials:{exchange}:{symbol.upper()}"
 
     def fetch():
-        quarterly = fundamentals.fetch_quarterly_pnl(symbol, exchange)
-        annual = fundamentals.fetch_annual_pnl(symbol, exchange)
-        balance = fundamentals.fetch_balance_sheet(symbol, exchange)
-        quote = yahoo.fetch_quote(symbol, exchange)
+        primary = {
+            "quarterly": fundamentals.fetch_quarterly_pnl(symbol, exchange),
+            "annual": fundamentals.fetch_annual_pnl(symbol, exchange),
+            "balanceSheet": fundamentals.fetch_balance_sheet(symbol, exchange),
+        }
+        # The second source is always fetched, not only when Yahoo looks wrong: vetting
+        # needs both, and a stale or gapped Yahoo series is only visible by comparison.
+        try:
+            backup = screener.fetch_company(symbol)
+        except Exception:
+            backup = {"quarterly": [], "annual": [], "balanceSheet": [], "url": None}
+        chosen, sources = {}, {}
+        # The company's own XBRL filing with NSE settles any disagreement left after vetting
+        def filing_for(period_end: str) -> dict | None:
+            return nse_xbrl.figures_for(symbol, period_end) if exchange.upper() == "NSE" else None
+
+        for kind in ("quarterly", "annual", "balanceSheet"):
+            chosen[kind], sources[kind] = financial_sources.choose(kind, primary[kind], backup.get(kind) or [], filing_for=filing_for)
+        sources["screenerUrl"] = backup.get("url")
+        quote = _quote(symbol, exchange)
         market_cap = quote.get("marketCapCr") if quote else None
         return {
             "symbol": symbol.upper(),
-            "quarterly": quarterly,
-            "annual": annual,
-            "balanceSheet": balance,
-            "ratios": fundamentals.compute_ratios(quarterly, balance, market_cap, annual),
+            **chosen,
+            "ratios": fundamentals.compute_ratios(chosen["quarterly"], chosen["balanceSheet"], market_cap, chosen["annual"]),
+            "sources": sources,
         }
 
     try:
@@ -115,10 +194,30 @@ def get_financials(symbol: str, exchange: str = Query("NSE", pattern="^(NSE|BSE)
             status_code=404, detail=f"No reported financials found for {symbol.upper()}"
         )
 
+    # Computed per request, not cached: the panel warns when the newest quarter is overdue
+    latest = data["quarterly"][-1]["periodEnd"] if data["quarterly"] else None
+    data = {**data, "latestQuarterAgeDays": (date.today() - date.fromisoformat(latest)).days if latest else None}
+
+    used = {k: data.get("sources", {}).get(k, {}).get("used") for k in ("quarterly", "annual", "balanceSheet")}
+    names = {"yahoo": "Yahoo Finance", "screener": "screener.in"}
+    series = {"quarterly": "quarterly results", "annual": "annual results", "balanceSheet": "balance sheet"}
+    present = {v for v in used.values() if v and v != "none"}
+    if len(present) <= 1:
+        label = f"{names.get(next(iter(present), 'yahoo'))}, reported statements cross-checked against " + (
+            "screener.in" if present != {"screener"} else "Yahoo Finance"
+        )
+    else:
+        by_source: dict[str, list[str]] = {}
+        for k, v in used.items():
+            if v and v != "none":
+                by_source.setdefault(names[v], []).append(series[k])
+        label = "; ".join(f"{' and '.join(parts)} from {src}" for src, parts in by_source.items())
+        label = label[0].upper() + label[1:] + ", each cross-checked against the other"
+
     return envelope(
         data,
         age,
-        source="Yahoo Finance (reported statements)",
+        source=label,
         delayed_minutes=0,
         note=f"{len(data['quarterly'])} quarters available upstream.",
     )
@@ -133,7 +232,43 @@ def get_valuation(symbol: str, exchange: str = Query("NSE", pattern="^(NSE|BSE)$
         )
     except Exception as exc:
         raise HTTPException(status_code=503, detail=f"Valuation unavailable: {exc}") from exc
-    return envelope(data, age, source="Yahoo Finance", delayed_minutes=0)
+    return envelope(_live_valuation(symbol, exchange, data), age, source="Yahoo Finance", delayed_minutes=0)
+
+
+def _live_valuation(symbol: str, exchange: str, cached: dict) -> dict:
+    """
+    Price-based multiples re-derived from the live quote on every request.
+
+    The fundamentals cache holds Yahoo's multiples for hours, so its P/E was priced
+    at whatever the stock traded at when it was fetched (TCS: 17.45 against a live
+    17.52). Per-share earnings and book value change only with filings, so dividing
+    the current price by them gives the multiple a reader expects beside that price.
+    ROE comes from the same statements calculation the key-ratios panel shows, so
+    the page never prints two different ROEs.
+    """
+    data = dict(cached)
+    try:
+        quote, _ = CACHE.get_or_fetch(
+            f"company:quote:{exchange}:{symbol.upper()}", SETTINGS.quote_ttl, lambda: _quote(symbol, exchange)
+        )
+        price = quote.get("cmp") if quote else None
+    except Exception:
+        price = None
+    if price:
+        eps, book, paid = data.get("eps"), data.get("bookValue"), data.get("dividendsTtm")
+        if eps and eps > 0:
+            data["peRatio"] = round(price / eps, 2)
+        if book and book > 0:
+            data["pbRatio"] = round(price / book, 2)
+        if paid is not None:
+            data["dividendYieldPct"] = round(paid / price * 100, 2)
+    try:
+        ratios = get_financials(symbol, exchange)["data"]["ratios"]
+        if ratios.get("roePct") is not None:
+            data["roePct"] = ratios["roePct"]
+    except Exception:
+        pass
+    return data
 
 
 @router.get("/{symbol}/technicals")
@@ -212,13 +347,48 @@ def _yahoo(key: str, ttl: int, fn, label: str):
 def get_statistics(symbol: str):
     """Profile, valuation measures, financial highlights, trading and dividend data."""
     sym = symbol.upper()
-    return _yahoo(f"company:ystats:{sym}", 6 * 3600, lambda: yahoo_company.profile_stats(sym), "Statistics")
+    res = _yahoo(f"company:ystats:{sym}", 6 * 3600, lambda: yahoo_company.profile_stats(sym), "Statistics")
+    # Yahoo's own TTM revenue and profit lag the filed quarters and treat one-offs
+    # differently (HINDUNILVR: 10,585 against 15,062 filed). The overview's figures
+    # come from the filed quarters, so the statistics tab shows the same ones.
+    try:
+        ratios = get_financials(sym, "NSE")["data"]["ratios"]
+        if ratios.get("ttmComplete"):
+            data = dict(res["data"])
+            highlights = dict(data.get("highlights") or {})
+            if ratios.get("revenueCr") is not None:
+                highlights["revenue"] = ratios["revenueCr"]
+            if ratios.get("netProfitCr") is not None:
+                highlights["netIncome"] = ratios["netProfitCr"]
+            data["highlights"] = highlights
+            res = {**res, "data": data}
+    except Exception:
+        pass
+    # The 52-week range is the exchange's own record when NSE answered (Yahoo's, built
+    # from its own bars, differed by up to 1.7% for ITC and Titan)
+    try:
+        quote, _ = CACHE.get_or_fetch(f"company:quote:NSE:{sym}", SETTINGS.quote_ttl, lambda: _quote(sym, "NSE"))
+        if quote and (quote.get("sources") or {}).get("used") == "nse" and quote.get("high52w") and quote.get("low52w"):
+            data = dict(res["data"])
+            data["trading"] = {**(data.get("trading") or {}), "high52w": quote["high52w"], "low52w": quote["low52w"]}
+            res = {**res, "data": data}
+    except Exception:
+        pass
+    return res
 
 
 @router.get("/{symbol}/statements")
 def get_statements(symbol: str):
     sym = symbol.upper()
-    return _yahoo(f"company:ystmts:{sym}", 6 * 3600, lambda: yahoo_company.statements(sym), "Statements")
+    res = _yahoo(f"company:ystmts:{sym}", 6 * 3600, lambda: yahoo_company.statements(sym), "Statements")
+    # Full line items have no second source, so a stale series is flagged rather than replaced
+    try:
+        newest = (res["data"]["income"]["quarterly"] or {}).get("dates", [None])[0]
+        age = (date.today() - date.fromisoformat(newest)).days if newest else None
+        res = {**res, "data": {**res["data"], "latestQuarterAgeDays": age, "latestQuarter": newest}}
+    except Exception:
+        pass
+    return res
 
 
 @router.get("/{symbol}/analysts")

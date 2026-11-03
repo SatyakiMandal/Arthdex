@@ -17,6 +17,7 @@ from ..providers import nse, yahoo
 from ..providers import universe as universe_provider
 from ..schemas import envelope
 from ..services import news as news_service
+from ..services import quote_sources
 from ..services import unlisted as unlisted_service
 from .search import load_universe
 
@@ -180,7 +181,7 @@ _SYMBOL_RE = re.compile(r"^[A-Za-z0-9&.\-]{1,24}$")
 def _quote(symbol: str) -> dict[str, Any] | None:
     key = f"company:quote:NSE:{symbol.upper()}"
     try:
-        data, _age = CACHE.get_or_fetch(key, SETTINGS.quote_ttl, lambda: yahoo.fetch_quote(symbol, "NSE"))
+        data, _age = CACHE.get_or_fetch(key, SETTINGS.quote_ttl, lambda: quote_sources.fetch(symbol, "NSE"))
     except Exception:
         return None
     if not data:
@@ -367,8 +368,8 @@ def movers_explained(
 _FEEDS: list[tuple[str, str, str, int]] = [
     ("Indices and ticker", "market:indices", "NSE", SETTINGS.index_ttl),
     ("Movers", "market:movers", "NSE", SETTINGS.movers_ttl),
-    ("Company quotes", "company:quote", "Yahoo Finance", SETTINGS.quote_ttl),
-    ("Price candles", "company:candles", "Yahoo Finance", SETTINGS.candles_ttl),
+    ("Company quotes", "company:quote", "NSE, Yahoo Finance backup", SETTINGS.quote_ttl),
+    ("Price candles", "company:candles", "Yahoo Finance, NSE daily backup", SETTINGS.candles_ttl),
     ("Fundamentals", "company:profile", "Yahoo Finance", SETTINGS.fundamentals_ttl),
     ("News and filings", "news:feed", "NSE filings and press RSS", SETTINGS.news_ttl),
     ("IPO pipeline", "ipo:pipeline", "NSE IPO desk", SETTINGS.ipo_ttl),

@@ -88,6 +88,31 @@ def _screener(symbol: str) -> dict[str, Any] | None:
     return None
 
 
+def _nse_pattern(symbol: str) -> dict[str, Any] | None:
+    """
+    The exchange's record of the quarterly filings: promoter and public only, no FII or
+    DII split. Used to vet screener.in's promoter figure and, if screener.in fails, as
+    a pattern of its own in the same shape (`labels`, `promoters`, `public`), oldest first.
+    """
+    rows = nse_get(f"/api/corporate-share-holdings-master?index=equities&symbol={symbol}") or []
+    rows = [r for r in rows if isinstance(r, dict) and r.get("date") and r.get("pr_and_prgrp") not in (None, "", "-")]
+    if not rows:
+        return None
+    parsed = []
+    for r in rows:
+        try:
+            when = datetime.strptime(r["date"].title(), "%d-%b-%Y")
+        except ValueError:
+            continue
+        parsed.append((when, _pct(r.get("pr_and_prgrp")), _pct(r.get("public_val"))))
+    parsed = sorted({p[0]: p for p in parsed}.values())[-12:]
+    return {
+        "labels": [p[0].strftime("%b %Y") for p in parsed],
+        "promoters": [p[1] for p in parsed],
+        "public": [p[2] for p in parsed],
+    }
+
+
 def _nse_pledge(symbol: str) -> dict[str, Any] | None:
     data = nse_get(f"/api/corporate-pledgedata?index=equities&symbol={symbol}").get("data") or []
     if not data:
@@ -277,6 +302,13 @@ def fetch(symbol: str) -> dict[str, Any]:
             return default
 
     pattern = guard("screener.in shareholding pattern", lambda: _screener(sym))
+    exchange_pattern = guard("NSE shareholding pattern", lambda: _nse_pattern(sym))
+    pattern_source = "screener.in"
+    if not pattern and exchange_pattern:
+        # Promoter and public only; the FII, DII and government split is screener.in's
+        pattern = {"quarterly": exchange_pattern, "yearly": {}, "url": None}
+        pattern_source = "NSE"
+        notes.append("FII, DII and government holdings unavailable: screener.in did not answer, so the exchange's promoter and public split is shown")
     pledge = guard("NSE promoter pledge", lambda: _nse_pledge(sym))
     sast = guard("NSE large-holder (SAST) disclosures", lambda: _nse_sast(sym), [])
     insiders = guard("NSE insider-trading disclosures", lambda: _nse_insiders(sym), [])
@@ -285,13 +317,33 @@ def fetch(symbol: str) -> dict[str, Any]:
     if not pattern and not (pledge or sast or insiders or yahoo):
         raise ValueError(f"No shareholding data could be retrieved for {sym}.")
 
+    stats = analytics(pattern, pledge, insiders) if pattern else None
+    # NSE's pledge dataset carries its own promoter percentage on a different basis
+    # (INFY: 21.36% there, 13.9% in the shareholding pattern). The tab shows one
+    # promoter figure, from the pattern; the pledge dataset supplies only the pledge.
+    promoters = next((c for c in (stats or {}).get("categories") or [] if c.get("key") == "promoters"), None)
+    if pledge and promoters and promoters.get("latest") is not None:
+        pledge = {**pledge, "promoterPctNse": pledge.get("promoterPct"), "promoterPct": promoters["latest"]}
+
+    # Vetting: the latest promoter holding from screener.in against the exchange's own record
+    vetting = None
+    if exchange_pattern and pattern and pattern_source == "screener.in":
+        ours = [v for v in (pattern.get("quarterly") or {}).get("promoters") or [] if v is not None]
+        theirs = [v for v in exchange_pattern.get("promoters") or [] if v is not None]
+        if ours and theirs:
+            gap = abs(ours[-1] - theirs[-1])
+            vetting = {"screenerPromoterPct": ours[-1], "nsePromoterPct": theirs[-1], "gapPp": round(gap, 2), "agree": gap <= 0.5,
+                       "screenerAsOf": (pattern.get("quarterly") or {}).get("labels", [None])[-1], "nseAsOf": exchange_pattern["labels"][-1]}
+
     return {
         "symbol": sym,
+        "patternSource": pattern_source,
+        "vetting": vetting,
         "pattern": pattern,
         "pledge": pledge,
         "largeHolders": sast,
         "insiders": insiders,
         "yahoo": yahoo,
-        "analytics": analytics(pattern, pledge, insiders) if pattern else None,
+        "analytics": stats,
         "notes": notes,
     }

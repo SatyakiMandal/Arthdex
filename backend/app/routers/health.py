@@ -7,7 +7,9 @@ from datetime import datetime, timezone
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
+from .. import watchdog
 from ..cache import CACHE
+from ..schemas import envelope
 
 router = APIRouter(prefix="/api/v1", tags=["health"])
 
@@ -19,6 +21,24 @@ def health():
         "service": "arthdex-data",
         "time": datetime.now(timezone.utc).isoformat(),
     }
+
+
+@router.get("/health/feeds")
+def feed_health():
+    """The watchdog's last report: per-feed results, open incidents and recently resolved ones."""
+    state = watchdog.load_state()
+    return envelope(
+        {**state, "resolved": state.get("resolved", [])[-20:]},
+        0,
+        source="Arthdex feed watchdog",
+        note="Each feed is probed on a timer; failures are retried, cached values expired and the NSE session re-primed before an incident is opened.",
+    )
+
+
+@router.post("/health/feeds/run")
+def feed_health_run():
+    """Probe every feed now, repairing what can be repaired. Takes up to a minute on a cold cache."""
+    return watchdog.run_all(mode="on demand")
 
 
 @router.get("/cache")

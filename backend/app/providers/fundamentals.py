@@ -17,7 +17,7 @@ from typing import Any
 import pandas as pd
 import yfinance as yf
 
-from .yahoo import to_yahoo_symbol
+from .yahoo import frame_in_inr, statement_currency, to_yahoo_symbol
 
 CRORE = 1e7
 
@@ -56,6 +56,21 @@ def _first_available(frame: pd.DataFrame, names: list[str], col: Any) -> float |
     return None
 
 
+def _eps(frame: pd.DataFrame, col: Any, net_profit: float | None, *, recompute: bool) -> float | None:
+    """
+    Yahoo's EPS line, or for a company filing in another currency, converted profit
+    over weighted shares.
+
+    Recomputing matters for companies that file in dollars: Yahoo rounds their
+    EPS to the cent, which after conversion is a rupee or two of error.
+    """
+    shares = _first_available(frame, ["Diluted Average Shares", "Basic Average Shares"], col)
+    if recompute and net_profit is not None and shares:
+        return round(net_profit / shares, 2)
+    reported = _first_available(frame, ["Basic EPS", "Diluted EPS"], col)
+    return None if reported is None else round(reported, 2)
+
+
 def fetch_quarterly_pnl(symbol: str, exchange: str = "NSE", limit: int = 8) -> list[dict[str, Any]]:
     """
     Quarterly P&L, oldest first.
@@ -66,7 +81,8 @@ def fetch_quarterly_pnl(symbol: str, exchange: str = "NSE", limit: int = 8) -> l
     """
     ticker = yf.Ticker(to_yahoo_symbol(symbol, exchange))
     try:
-        frame = ticker.quarterly_income_stmt
+        currency = statement_currency(ticker)
+        frame = frame_in_inr(ticker.quarterly_income_stmt, currency, flow_days=91)
     except Exception:
         return []
 
@@ -104,7 +120,9 @@ def fetch_quarterly_pnl(symbol: str, exchange: str = "NSE", limit: int = 8) -> l
                 "netMarginPct": (
                     round((net_profit / revenue) * 100, 2) if net_profit is not None else None
                 ),
-                "eps": _first_available(frame, ["Basic EPS", "Diluted EPS"], col),
+                "eps": _eps(frame, col, net_profit, recompute=currency != "INR"),
+                # Set when Yahoo filed these in another currency and they were converted here
+                "convertedFrom": None if currency == "INR" else currency,
             }
         )
 
@@ -116,7 +134,7 @@ def fetch_balance_sheet(symbol: str, exchange: str = "NSE", limit: int = 4) -> l
     """Annual balance-sheet highlights, oldest first."""
     ticker = yf.Ticker(to_yahoo_symbol(symbol, exchange))
     try:
-        frame = ticker.balance_sheet
+        frame = frame_in_inr(ticker.balance_sheet, statement_currency(ticker))
     except Exception:
         return []
 
@@ -173,7 +191,8 @@ def fetch_annual_pnl(symbol: str, exchange: str = "NSE", limit: int = 4) -> list
     """
     ticker = yf.Ticker(to_yahoo_symbol(symbol, exchange))
     try:
-        frame = ticker.income_stmt
+        currency = statement_currency(ticker)
+        frame = frame_in_inr(ticker.income_stmt, currency, flow_days=365)
     except Exception:
         return []
 
@@ -201,6 +220,8 @@ def fetch_annual_pnl(symbol: str, exchange: str = "NSE", limit: int = 4) -> list
                     else None
                 ),
                 "netProfit": _cr(net_profit),
+                "eps": _eps(frame, col, net_profit, recompute=currency != "INR"),
+                "convertedFrom": None if currency == "INR" else currency,
             }
         )
 

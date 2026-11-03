@@ -15,6 +15,8 @@ from typing import Any
 import pandas as pd
 import yfinance as yf
 
+from ..providers.yahoo import frame_in_inr, inr_rate, statement_currency
+
 CR = 1e7
 
 SKIP_CR = ("Shares", "EPS", "Rate", "Ratio", "Number", "Per Share")
@@ -78,6 +80,7 @@ def profile_stats(symbol: str) -> dict[str, Any]:
         )
 
     div_rows: list[dict[str, Any]] = []
+    paid_ttm: float | None = None
     try:
         divs = t.dividends
         if divs is not None and len(divs):
@@ -86,6 +89,8 @@ def profile_stats(symbol: str) -> dict[str, Any]:
                 by_year[ts.year] = by_year.get(ts.year, 0.0) + float(v)
             div_rows = [{"year": y, "amount": round(a, 2)} for y, a in sorted(by_year.items())][-20:]
             recent = [{"date": ts.strftime("%Y-%m-%d"), "amount": round(float(v), 2)} for ts, v in divs.tail(8).items()][::-1]
+            cutoff = pd.Timestamp.now(tz=divs.index.tz) - pd.Timedelta(days=365)
+            paid_ttm = round(float(divs[divs.index >= cutoff].sum()), 2)
         else:
             recent = []
     except Exception:
@@ -110,7 +115,18 @@ def profile_stats(symbol: str) -> dict[str, Any]:
     except Exception:
         cal = {}
 
-    g = info.get
+    # Statement totals in `info` (revenue, profit, cash, debt, cash flow) are in the
+    # filing currency; prices and per-share price fields are in rupees.
+    fx = inr_rate(info.get("financialCurrency") or "INR")
+    _raw = info.get
+    money_keys = {"totalRevenue", "grossProfits", "ebitda", "netIncomeToCommon", "totalCash", "totalDebt", "operatingCashflow", "freeCashflow"}
+
+    def g(key: str) -> Any:
+        v = _raw(key)
+        return v * fx if key in money_keys and isinstance(v, (int, float)) else v
+
+    price = g("currentPrice") or g("regularMarketPrice")
+    eps = g("trailingEps")
     return {
         "symbol": symbol.upper(),
         "about": {
@@ -154,7 +170,8 @@ def profile_stats(symbol: str) -> dict[str, Any]:
             "earningsGrowth": _n(g("earningsQuarterlyGrowth") or g("earningsGrowth"), 4),
             "cash": _cr(g("totalCash")),
             "debt": _cr(g("totalDebt")),
-            "debtToEquity": _n(g("debtToEquity"), 2),
+            # Yahoo reports debt to equity as a percentage (TCS 9.83 = 0.098x); the UI shows a ratio
+            "debtToEquity": _n(g("debtToEquity") / 100, 3) if isinstance(g("debtToEquity"), (int, float)) else None,
             "currentRatio": _n(g("currentRatio"), 2),
             "bookValue": _n(g("bookValue"), 2),
             "operatingCashflow": _cr(g("operatingCashflow")),
@@ -179,6 +196,11 @@ def profile_stats(symbol: str) -> dict[str, Any]:
             "rate": _n(g("dividendRate"), 2),
             "yieldPct": _n(g("dividendYield"), 2),
             "payoutRatio": _n(g("payoutRatio"), 4),
+            # Paid over the last year by ex-date, which includes special dividends that
+            # Yahoo's indicated rate and yield leave out
+            "trailing12m": paid_ttm,
+            "trailingYieldPct": _n(paid_ttm / price * 100, 2) if paid_ttm is not None and price else None,
+            "trailingPayoutPct": _n(paid_ttm / eps * 100, 1) if paid_ttm is not None and eps and eps > 0 else None,
             "fiveYearAvgYieldPct": _n(g("fiveYearAvgDividendYield"), 2),
             "exDividendDate": _date(g("exDividendDate")),
             "lastValue": _n(g("lastDividendValue"), 2),
@@ -214,12 +236,19 @@ def _frame(df: pd.DataFrame | None) -> dict[str, Any] | None:
 
 def statements(symbol: str) -> dict[str, Any]:
     t = _ticker(symbol)
+    cur = statement_currency(t)
+
+    def inr(df: pd.DataFrame | None, flow_days: int | None = None) -> dict[str, Any] | None:
+        return _frame(frame_in_inr(df, cur, flow_days))
+
     out = {
-        "income": {"annual": _frame(t.income_stmt), "quarterly": _frame(t.quarterly_income_stmt)},
-        "balance": {"annual": _frame(t.balance_sheet), "quarterly": _frame(t.quarterly_balance_sheet)},
-        "cashflow": {"annual": _frame(t.cashflow), "quarterly": _frame(t.quarterly_cashflow)},
+        "income": {"annual": inr(t.income_stmt, 365), "quarterly": inr(t.quarterly_income_stmt, 91)},
+        "balance": {"annual": inr(t.balance_sheet), "quarterly": inr(t.quarterly_balance_sheet)},
+        "cashflow": {"annual": inr(t.cashflow, 365), "quarterly": inr(t.quarterly_cashflow, 91)},
+        # Converted at each period-end's rate when the company files in another currency
+        "reportedCurrency": cur,
     }
-    if not any(v for grp in out.values() for v in grp.values()):
+    if not any(v for grp in out.values() if isinstance(grp, dict) for v in grp.values()):
         raise ValueError(f"No Yahoo Finance statements for {symbol.upper()}")
     return out
 
@@ -276,6 +305,29 @@ def analysts(symbol: str) -> dict[str, Any]:
                             "surprisePct": _n(r.get("Surprise(%)"), 2),
                         }
                     )
+            # earnings_dates is keyed by announcement date and carries stray rows (RELIANCE
+            # showed 11.34 for the September 2026 quarter, which filed 18.88). Where Yahoo's
+            # quarter-keyed earnings_history covers a quarter, its figures win.
+            try:
+                eh = t.earnings_history
+                if eh is not None and len(eh):
+                    for qend, row in eh.iterrows():
+                        qd = pd.Timestamp(qend).tz_localize(None)
+                        actual = _n(row.get("epsActual"), 2)
+                        if actual is None:
+                            continue
+                        fixed = {
+                            "estimate": _n(row.get("epsEstimate"), 2),
+                            "actual": actual,
+                            "surprisePct": _n((row.get("surprisePercent") or 0) * 100, 2) if _clean(row.get("surprisePercent")) is not None else None,
+                        }
+                        match = [h for h in hist if 0 < (pd.Timestamp(h["date"]) - qd).days <= 75]
+                        if match:
+                            match[0].update(fixed)
+                        else:
+                            hist.append({"date": qd.strftime("%Y-%m-%d"), **fixed})
+            except Exception:
+                pass
             hist = sorted(hist, key=lambda x: x["date"])[-12:]
             if upcoming is None:
                 future = [ts for ts in ed.index if ts > now]

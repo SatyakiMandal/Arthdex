@@ -39,6 +39,99 @@ def to_yahoo_symbol(symbol: str, exchange: str = "NSE") -> str:
     return f"{s}.BO" if exchange.upper() == "BSE" else f"{s}.NS"
 
 
+# Rows of a statement frame that are not amounts of money: counts, ratios and rates.
+_NON_MONEY = ("EPS", "Shares", "Rate", "Ratio")
+_FX_CACHE: dict[str, tuple[float, pd.Series]] = {}
+
+
+def statement_currency(ticker: yf.Ticker) -> str:
+    """
+    The currency Yahoo's statement frames for this company are in.
+
+    `financialCurrency` alone is not enough. For Infosys it says USD and the
+    statements are in dollars; for HCLTECH it also says USD, but the statements
+    are in rupees and only the summary totals are in dollars. So the statements'
+    revenue is compared with the summary revenue (which is in `financialCurrency`):
+    a ratio near one means the same currency, a ratio near the exchange rate means
+    the statements are already in rupees.
+    """
+    try:
+        info = ticker.get_info() or {}
+    except Exception:
+        return "INR"
+    cur = (info.get("financialCurrency") or "INR").upper()
+    if cur == "INR":
+        return "INR"
+    summary = info.get("totalRevenue")
+    try:
+        annual = ticker.income_stmt
+        stated = float(annual.loc["Total Revenue"].dropna().iloc[0]) if annual is not None and "Total Revenue" in annual.index else None
+    except Exception:
+        stated = None
+    if not summary or not stated:
+        return cur
+    # Same currency: about 1. Rupees against a dollar summary: about the USD/INR rate.
+    return "INR" if stated / summary > 8 else cur
+
+
+def inr_rate(currency: str, on: Any = None) -> float:
+    """
+    Rupees per unit of `currency` on a date (the latest close when no date is given).
+
+    Raises when the rate cannot be fetched: a statement left in dollars and labelled
+    rupees is off by a factor of ninety, so no figure is better than that figure.
+    """
+    cur = (currency or "INR").upper()
+    if cur == "INR":
+        return 1.0
+    cached = _FX_CACHE.get(cur)
+    if cached is None or datetime.now(timezone.utc).timestamp() - cached[0] > 6 * 3600:
+        closes = yf.Ticker(f"{cur}INR=X").history(period="10y")["Close"].dropna()
+        if closes.empty:
+            raise ValueError(f"No {cur}/INR rate available to convert statements")
+        closes.index = closes.index.tz_localize(None)
+        _FX_CACHE[cur] = (datetime.now(timezone.utc).timestamp(), closes)
+    closes = _FX_CACHE[cur][1]
+    if on is None:
+        return float(closes.iloc[-1])
+    before = closes[closes.index <= pd.Timestamp(on).tz_localize(None)]
+    return float(before.iloc[-1] if len(before) else closes.iloc[0])
+
+
+def inr_rate_average(currency: str, end: Any, days: int) -> float:
+    """Average rupees per unit over the `days` up to `end`: the rate an income statement's flows were earned at."""
+    cur = (currency or "INR").upper()
+    if cur == "INR":
+        return 1.0
+    inr_rate(cur)  # fills the cache
+    closes = _FX_CACHE[cur][1]
+    stop = pd.Timestamp(end).tz_localize(None)
+    window = closes[(closes.index > stop - pd.Timedelta(days=days)) & (closes.index <= stop)]
+    return float(window.mean()) if len(window) else inr_rate(cur, end)
+
+
+def frame_in_inr(frame: pd.DataFrame | None, currency: str, flow_days: int | None = None) -> pd.DataFrame | None:
+    """
+    A statement frame with money rows converted to rupees at each period-end's rate.
+
+    `flow_days` marks an income or cash-flow frame, converted at the average rate over
+    that many days to each period end (a quarter is 91, a year 365); balance sheets
+    convert at the period-end rate. Per-share rows are recomputed by callers from
+    converted totals where possible, since Yahoo rounds dollar EPS to the cent.
+    """
+    if frame is None or frame.empty or (currency or "INR").upper() == "INR":
+        return frame
+    out = frame.copy()
+    money = [r for r in out.index if not any(k in str(r) for k in _NON_MONEY)]
+    eps_rows = [r for r in out.index if "EPS" in str(r)]
+    for col in out.columns:
+        # Flows (income, cash flow) at the period's average rate; stocks (balance sheet) at its end
+        rate = inr_rate_average(currency, col, flow_days) if flow_days else inr_rate(currency, col)
+        out.loc[money + eps_rows, col] = out.loc[money + eps_rows, col].astype(float) * rate
+    out.attrs["convertedFrom"] = currency.upper()
+    return out
+
+
 def _clean_number(value: Any) -> float | None:
     """Yahoo returns NaN for incomplete sessions; treat that as missing."""
     if value is None:
@@ -200,7 +293,20 @@ def fetch_valuation(symbol: str, exchange: str = "NSE") -> dict[str, Any]:
         v = _clean_number(value)
         return None if v is None else round(v, 2)
 
+    # Dividends actually paid (by ex-date) over the last year. Yahoo's dividendYield
+    # annualises the latest regular dividend only, which for a company that pays
+    # specials (TCS: ₹12 regular, ₹112 paid in the year) understates the yield by half.
+    dividends_ttm: float | None = None
+    try:
+        divs = ticker.dividends
+        if divs is not None and len(divs):
+            cutoff = pd.Timestamp.now(tz=divs.index.tz) - pd.Timedelta(days=365)
+            dividends_ttm = round(float(divs[divs.index >= cutoff].sum()), 2)
+    except Exception:
+        dividends_ttm = None
+
     return {
+        "dividendsTtm": dividends_ttm,
         "peRatio": _clean_number(info.get("trailingPE")),
         "pbRatio": _clean_number(info.get("priceToBook")),
         "evToEbitda": _clean_number(info.get("enterpriseToEbitda")),
@@ -213,6 +319,46 @@ def fetch_valuation(symbol: str, exchange: str = "NSE") -> dict[str, Any]:
         "bookValue": _clean_number(info.get("bookValue")),
         "dividendYieldPct": as_pct_direct(info.get("dividendYield")),
     }
+
+
+# Yahoo symbols for the NSE ticker indices. Vetted on 2026-11-03: every level matched
+# NSE's own to the paisa (India VIX within 0.4%, as it ticks between the two reads).
+NSE_INDEX_SYMBOLS: dict[str, str] = {
+    "nifty-50": "^NSEI", "nifty-next-50": "^NSMIDCP", "nifty-100": "^CNX100", "nifty-500": "^CRSLDX",
+    "nifty-midcap-100": "NIFTY_MIDCAP_100.NS", "nifty-smallcap-100": "^CNXSC", "nifty-bank": "^NSEBANK",
+    "nifty-it": "^CNXIT", "nifty-auto": "^CNXAUTO", "nifty-pharma": "^CNXPHARMA", "nifty-fmcg": "^CNXFMCG",
+    "nifty-metal": "^CNXMETAL", "nifty-energy": "^CNXENERGY", "nifty-realty": "^CNXREALTY",
+    "nifty-psu-bank": "^CNXPSUBANK", "india-vix": "^INDIAVIX",
+}
+
+
+def fetch_nse_index_levels(indices: list[tuple[str, str, str]]) -> list[dict[str, Any]]:
+    """
+    Backup for nse.fetch_indices: the same rows, level and day change only. Breadth,
+    valuation and 30/365-day changes are NSE-only and are left empty, not estimated.
+    """
+    out: list[dict[str, Any]] = []
+    for index_id, name, family in indices:
+        y_symbol = NSE_INDEX_SYMBOLS.get(index_id)
+        if not y_symbol:
+            continue
+        try:
+            info = yf.Ticker(y_symbol).fast_info
+            level, prev = _clean_number(info.get("lastPrice")), _clean_number(info.get("previousClose"))
+        except Exception:
+            continue
+        if level is None:
+            continue
+        change = level - prev if prev else 0.0
+        out.append({
+            "id": index_id, "name": name, "family": family, "exchange": "NSE", "level": round(level, 2),
+            "change": {"absolute": round(change, 2), "percent": round(change / prev * 100, 2) if prev else 0.0},
+            "peRatio": None, "pbRatio": None, "dividendYieldPct": None, "advances": 0, "declines": 0,
+            "oneMonthChangePct": None, "oneYearChangePct": None,
+            "high52w": _clean_number(info.get("yearHigh")), "low52w": _clean_number(info.get("yearLow")),
+            "asOf": datetime.now(timezone.utc).isoformat(),
+        })
+    return out
 
 
 GLOBAL_INDEX_SYMBOLS: list[tuple[str, str, str, str]] = [
