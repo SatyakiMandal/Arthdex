@@ -20,6 +20,8 @@ export interface ApiQuote {
   change: Delta;
   open: number;
   previousClose: number;
+  /** The previous close adjusted for a dividend, bonus or split on an ex-date; null otherwise. */
+  adjustedBase?: number | null;
   dayHigh: number;
   dayLow: number;
   high52w: number;

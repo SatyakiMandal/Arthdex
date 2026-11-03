@@ -403,17 +403,23 @@ def fetch_quote(symbol: str) -> dict[str, Any] | None:
     meta, trade, price, sec = (r.get(k) or {} for k in ("metaData", "tradeInfo", "priceInfo", "secInfo"))
     last = _num(trade.get("lastPrice")) or _num(meta.get("closePrice"))
     prev = _num(meta.get("previousClose"))
+    # On an ex-date the exchange measures the day against the previous close adjusted for
+    # the dividend, bonus or split (Infosys ex-dividend 3 Nov 2026: close 1,161, base
+    # 1,135). Measuring against the raw close shows the payout as a fall.
+    base = _num(meta.get("basePrice")) or prev
     if not last:
         return None
-    change = last - prev if prev else 0.0
+    change = last - base if base else 0.0
     mcap = _num(trade.get("totalMarketCap"))
     return {
         "symbol": symbol.upper(),
         "exchange": "NSE",
         "cmp": round(last, 2),
-        "change": {"absolute": round(change, 2), "percent": round(change / prev * 100, 2) if prev else 0.0},
+        "change": {"absolute": round(change, 2), "percent": round(change / base * 100, 2) if base else 0.0},
         "open": _num(meta.get("open")),
         "previousClose": prev,
+        # Set only when the base differs from the close: the stock went ex today
+        "adjustedBase": base if base and prev and abs(base - prev) > 0.005 else None,
         "dayHigh": _num(meta.get("dayHigh")),
         "dayLow": _num(meta.get("dayLow")),
         "high52w": _num(price.get("yearHigh")),

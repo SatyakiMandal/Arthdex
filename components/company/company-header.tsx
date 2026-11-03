@@ -36,7 +36,10 @@ function readQuote(name: string, quote: ApiQuote, valuation: ApiValuation | null
 
   const pe = valuation?.peRatio;
   const multiple = pe && pe > 0 ? `, at ${pe.toFixed(1)} times trailing earnings` : "";
-  return `${shortName(name)} ${today}, ${band}${multiple}.`;
+  const ex = quote.adjustedBase
+    ? ` It went ex today: the change is measured from ₹${formatINR(quote.adjustedBase)}, the previous close of ₹${formatINR(quote.previousClose)} adjusted by the exchange.`
+    : "";
+  return `${shortName(name)} ${today}, ${band}${multiple}.${ex}`;
 }
 
 /** Volume in lakh or crore shares, the way Indian market data is usually read. */
@@ -178,10 +181,10 @@ export function CompanyHeader({
         <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:gap-16">
           <RangeRail
             label="Today"
-            low={Math.min(quote.dayLow, quote.previousClose)}
-            high={Math.max(quote.dayHigh, quote.previousClose)}
+            low={Math.min(quote.dayLow, quote.adjustedBase ?? quote.previousClose)}
+            high={Math.max(quote.dayHigh, quote.adjustedBase ?? quote.previousClose)}
             value={quote.cmp}
-            from={quote.previousClose}
+            from={quote.adjustedBase ?? quote.previousClose}
             tone={dayTone}
           />
           <RangeRail label="52 weeks" low={quote.low52w} high={quote.high52w} value={quote.cmp} from={quote.low52w} tone="ink" />
