@@ -15,7 +15,7 @@ export function BenchmarkSensitivityPanel({ sensitivity }: { sensitivity: ApiSen
 
   if (rows.length === 0) {
     return (
-      <DataCard title="Benchmark Sensitivity" subtitle="OLS regression" icon={Gauge}>
+      <DataCard title="Benchmark sensitivity" subtitle="OLS regression" icon={Gauge}>
         <p className="px-4 py-8 text-sm text-muted-foreground">
           {sensitivity.note ?? "Not enough overlapping history to run a regression."}
         </p>
@@ -28,13 +28,13 @@ export function BenchmarkSensitivityPanel({ sensitivity }: { sensitivity: ApiSen
 
   return (
     <DataCard
-      title="Benchmark Sensitivity"
+      title="Benchmark sensitivity"
       subtitle={`OLS over ${primaryRow.observationWindowDays} overlapping sessions · risk-free ${sensitivity.riskFreePct ?? 6.5}%`}
       icon={Gauge}
       badge={
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <div className="font-mono text-2xs uppercase tracking-wide text-muted-foreground">
+            <div className="font-mono text-2xs text-muted-foreground">
               Best fit
             </div>
             <div className="font-mono text-sm font-semibold">{primaryRow.benchmarkName}</div>
@@ -47,7 +47,7 @@ export function BenchmarkSensitivityPanel({ sensitivity }: { sensitivity: ApiSen
       <div className="overflow-x-auto p-2">
         <table className="w-full min-w-[760px] border-collapse text-sm">
           <thead>
-            <tr className="border-b border-border text-2xs uppercase tracking-wide text-muted-foreground">
+            <tr className="border-b border-border text-2xs text-muted-foreground">
               <th className="px-3 py-2 text-left font-medium">Benchmark</th>
               <th className="px-3 py-2 text-right font-medium">Index</th>
               <th className="px-3 py-2 text-right font-medium">Beta β</th>

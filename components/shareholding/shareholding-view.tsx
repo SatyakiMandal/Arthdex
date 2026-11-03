@@ -11,9 +11,9 @@ import type { ApiShareholding, ShareholdingCategory, ShareholdingTable } from "@
 
 const COLORS: Record<ShareholdingCategory["key"], string> = {
   promoters: "hsl(var(--accent))",
-  fiis: "#22d3ee",
-  diis: "#a78bfa",
-  government: "#fb923c",
+  fiis: "hsl(var(--chart-teal))",
+  diis: "hsl(var(--chart-plum))",
+  government: "hsl(var(--chart-clay))",
   public: "hsl(var(--muted-foreground) / 0.65)",
 };
 const KEYS: ShareholdingCategory["key"][] = ["promoters", "fiis", "diis", "government", "public"];
@@ -156,7 +156,7 @@ export function ShareholdingView({ data }: { data: ApiShareholding }) {
               <Tip key={c.key} title={MEANING[c.key]}>
                 <div className="animate-fade-up rounded-xl border border-border bg-surface px-4 py-3 transition-colors hover:border-accent/40">
                   <div className="flex items-center justify-between">
-                    <p className="flex items-center gap-1.5 text-2xs uppercase tracking-wider text-muted-foreground">
+                    <p className="flex items-center gap-1.5 text-2xs text-muted-foreground">
                       <span className="h-2 w-2 rounded-full" style={{ background: COLORS[c.key] }} />
                       {c.label}
                     </p>
@@ -171,7 +171,7 @@ export function ShareholdingView({ data }: { data: ApiShareholding }) {
           </div>
           {a.notes.length > 0 ? (
             <p className="rounded-xl border border-border bg-surface px-4 py-3 text-sm text-muted-foreground">
-              <span className="mr-2 font-mono text-2xs uppercase tracking-wider text-accent">Notable</span>
+              <span className="mr-2 font-mono text-2xs text-accent">Notable</span>
               {a.notes.join(" ")}
             </p>
           ) : null}
@@ -213,17 +213,17 @@ export function ShareholdingView({ data }: { data: ApiShareholding }) {
             {a ? (
               <div className="grid grid-cols-2 gap-x-3 gap-y-3 border-t border-border p-4 text-sm sm:grid-cols-3 lg:grid-cols-2 2xl:grid-cols-3">
                 <div>
-                  <p className="text-2xs uppercase tracking-wider text-muted-foreground">Institutions (FII + DII)</p>
+                  <p className="text-2xs text-muted-foreground">Institutions (FII + DII)</p>
                   <p className="font-mono">{fmt(a.institutionalPct)}</p>
                   <p className={cn("font-mono text-2xs", deltaColor(a.institutionalYoy))}>{pp(a.institutionalYoy)} YoY</p>
                 </div>
                 <div>
-                  <p className="text-2xs uppercase tracking-wider text-muted-foreground">Non-promoter float</p>
+                  <p className="text-2xs text-muted-foreground">Non-promoter float</p>
                   <p className="font-mono">{fmt(a.freeFloatPct)}</p>
                 </div>
                 {a.shareholderCount ? (
                   <div>
-                    <p className="text-2xs uppercase tracking-wider text-muted-foreground">Shareholders</p>
+                    <p className="text-2xs text-muted-foreground">Shareholders</p>
                     <p className="font-mono">
                       {formatINR(a.shareholderCount.latest, 0)}{" "}
                       {a.shareholderCount.yoyPct != null ? <span className={cn("text-2xs", deltaColor(a.shareholderCount.yoyPct))}>({a.shareholderCount.yoyPct > 0 ? "+" : ""}{a.shareholderCount.yoyPct}% YoY)</span> : null}
@@ -245,7 +245,7 @@ export function ShareholdingView({ data }: { data: ApiShareholding }) {
         >
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-left text-sm">
-              <thead className="text-2xs uppercase tracking-wider text-muted-foreground">
+              <thead className="text-2xs text-muted-foreground">
                 <tr className="border-b border-border">
                   <th className="px-4 py-2 font-medium">Group</th>
                   <th className="px-3 py-2 text-right font-medium">Latest</th>
@@ -293,7 +293,7 @@ export function ShareholdingView({ data }: { data: ApiShareholding }) {
             <div className="space-y-4 p-4">
               <div>
                 <div className="flex items-baseline justify-between">
-                  <span className="text-2xs uppercase tracking-wider text-muted-foreground">Pledged share of promoter holding</span>
+                  <span className="text-2xs text-muted-foreground">Pledged share of promoter holding</span>
                   <span className="font-mono text-xl font-semibold">{fmt(pl.pledgedPct)}</span>
                 </div>
                 <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-muted">
@@ -302,11 +302,11 @@ export function ShareholdingView({ data }: { data: ApiShareholding }) {
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <p className="text-2xs uppercase tracking-wider text-muted-foreground">Promoter holding</p>
+                  <p className="text-2xs text-muted-foreground">Promoter holding</p>
                   <p className="font-mono">{fmt(pl.promoterPct)}</p>
                 </div>
                 <div>
-                  <p className="text-2xs uppercase tracking-wider text-muted-foreground">Shares pledged</p>
+                  <p className="text-2xs text-muted-foreground">Shares pledged</p>
                   <p className="font-mono">{pl.sharesPledged != null ? formatINR(pl.sharesPledged, 0) : "—"}</p>
                 </div>
                 <div className="col-span-2 text-2xs text-muted-foreground">As of {pl.asOf ?? "latest filing"}</div>
@@ -321,15 +321,15 @@ export function ShareholdingView({ data }: { data: ApiShareholding }) {
           ) : (
             <div className="grid grid-cols-3 gap-3 p-4 text-sm">
               <div>
-                <p className="text-2xs uppercase tracking-wider text-muted-foreground">Insiders</p>
+                <p className="text-2xs text-muted-foreground">Insiders</p>
                 <p className="font-mono text-lg">{fmt(data.yahoo.insidersPct, 1)}</p>
               </div>
               <div>
-                <p className="text-2xs uppercase tracking-wider text-muted-foreground">Institutions</p>
+                <p className="text-2xs text-muted-foreground">Institutions</p>
                 <p className="font-mono text-lg">{fmt(data.yahoo.institutionsPct, 1)}</p>
               </div>
               <div>
-                <p className="text-2xs uppercase tracking-wider text-muted-foreground">Institutions of float</p>
+                <p className="text-2xs text-muted-foreground">Institutions of float</p>
                 <p className="font-mono text-lg">{fmt(data.yahoo.institutionsOfFloatPct, 1)}</p>
               </div>
             </div>
@@ -349,7 +349,7 @@ export function ShareholdingView({ data }: { data: ApiShareholding }) {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px] text-left text-sm">
-              <thead className="text-2xs uppercase tracking-wider text-muted-foreground">
+              <thead className="text-2xs text-muted-foreground">
                 <tr className="border-b border-border">
                   <th className="px-4 py-2 font-medium">Holder</th>
                   <th className="px-3 py-2 font-medium">Action</th>
@@ -393,7 +393,7 @@ export function ShareholdingView({ data }: { data: ApiShareholding }) {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px] text-left text-sm">
-              <thead className="text-2xs uppercase tracking-wider text-muted-foreground">
+              <thead className="text-2xs text-muted-foreground">
                 <tr className="border-b border-border">
                   <th className="px-4 py-2 font-medium">Person</th>
                   <th className="px-3 py-2 font-medium">Role</th>

@@ -66,12 +66,12 @@ export function MacdScreener() {
   }, [direction, interval, within, index, tick]);
 
   const maxHist = Math.max(...(data?.results.map((r) => Math.abs(r.hist ?? 0)) ?? [0]), 0.001);
-  const label = "mb-1.5 block text-2xs font-medium uppercase tracking-wide text-muted-foreground";
+  const label = "mb-1.5 block text-2xs font-medium text-muted-foreground";
   const unit = interval === "1d" ? "days" : "bars";
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end gap-x-5 gap-y-4 rounded-2xl border border-border bg-surface/70 p-4 backdrop-blur">
+      <div className="flex flex-wrap items-end gap-x-5 gap-y-4 rounded-2xl border border-border bg-surface p-4">
         <div>
           <span className={label}>Signal</span>
           <SegmentedControl options={DIRECTIONS} value={direction} onChange={setDirection} layoutGroupId="macd-direction" />
@@ -194,7 +194,7 @@ export function MacdScreener() {
         ) : (
           <div className={cn("max-h-[70vh] overflow-auto", loading && "opacity-50")}>
             <table className="data-table data-table-sticky w-full min-w-[820px] border-collapse text-sm">
-              <thead className="text-2xs uppercase tracking-wide text-muted-foreground">
+              <thead className="text-2xs text-muted-foreground">
                 <tr className="border-b border-border">
                   <th className="px-3 py-2 text-left font-medium">Scrip</th>
                   <th className="px-3 py-2 text-left font-medium">Industry</th>
@@ -241,7 +241,7 @@ export function MacdScreener() {
                       )}
                     </td>
                     <td className="px-3 py-1 text-right">
-                      <span className="inline-flex gap-0.5" title={`${r.score ?? 0} of 4 confirmations`} aria-label={`${r.score ?? 0} of 4 confirmations`}>
+                      <span role="img" className="inline-flex gap-0.5" title={`${r.score ?? 0} of 4 confirmations`} aria-label={`${r.score ?? 0} of 4 confirmations`}>
                         {[0, 1, 2, 3].map((k) => (
                           <span key={k} className={cn("h-2 w-2 rounded-sm", k < (r.score ?? 0) ? "bg-accent" : "bg-muted")} />
                         ))}

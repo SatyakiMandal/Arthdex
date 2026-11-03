@@ -40,7 +40,7 @@ export function CallTab({ s }: { s: CallTabData }) {
             </div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[420px] text-left text-sm">
-                <thead className="text-2xs uppercase tracking-wider text-muted-foreground">
+                <thead className="text-2xs text-muted-foreground">
                   <tr>
                     <th className="pb-2 font-medium">Pillar</th>
                     <th className="pb-2 text-right font-medium">Weight</th>
@@ -127,7 +127,7 @@ export function CallTab({ s }: { s: CallTabData }) {
           </div>
           {holding.profit_booking.length > 0 ? (
             <div className="border-t border-border">
-              <p className="px-4 pt-3 text-2xs uppercase tracking-wider text-muted-foreground">Profit-booking rules</p>
+              <p className="px-4 pt-3 text-2xs text-muted-foreground">Profit-booking rules</p>
               <Bullets items={holding.profit_booking} />
             </div>
           ) : null}

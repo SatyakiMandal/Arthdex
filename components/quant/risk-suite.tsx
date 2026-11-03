@@ -34,7 +34,7 @@ export function RiskSuite({ merton, varSuite }: { merton: ApiMerton; varSuite: A
 
   return (
     <DataCard
-      title="Risk &amp; Default Suite"
+      title="Tail risk and default"
       subtitle={`Merton structural model · ${varSuite.horizonDays ?? 1}-day ${varSuite.confidencePct ?? 99}% VaR`}
       icon={ShieldAlert}
       badge={<StatusPill label={credit.label} tone={credit.tone} />}
@@ -47,7 +47,7 @@ export function RiskSuite({ merton, varSuite }: { merton: ApiMerton; varSuite: A
       ) : (
         <div className="grid grid-cols-2 gap-px bg-border sm:grid-cols-4">
           <div className="bg-surface px-4 py-3">
-            <div className="text-2xs uppercase tracking-wide text-muted-foreground">
+            <div className="text-2xs text-muted-foreground">
               Distance to Default
             </div>
             <div className="mt-1 font-mono text-xl font-semibold tabular-nums">
@@ -56,7 +56,7 @@ export function RiskSuite({ merton, varSuite }: { merton: ApiMerton; varSuite: A
             </div>
           </div>
           <div className="bg-surface px-4 py-3">
-            <div className="text-2xs uppercase tracking-wide text-muted-foreground">
+            <div className="text-2xs text-muted-foreground">
               Default Probability
             </div>
             <div
@@ -73,7 +73,7 @@ export function RiskSuite({ merton, varSuite }: { merton: ApiMerton; varSuite: A
             </div>
           </div>
           <div className="bg-surface px-4 py-3">
-            <div className="text-2xs uppercase tracking-wide text-muted-foreground">Asset Value</div>
+            <div className="text-2xs text-muted-foreground">Asset Value</div>
             <div className="mt-1 font-mono text-sm font-medium tabular-nums">
               ₹{formatINR(merton.assetValueCr ?? 0, 0)} Cr
             </div>
@@ -82,7 +82,7 @@ export function RiskSuite({ merton, varSuite }: { merton: ApiMerton; varSuite: A
             </div>
           </div>
           <div className="bg-surface px-4 py-3">
-            <div className="text-2xs uppercase tracking-wide text-muted-foreground">
+            <div className="text-2xs text-muted-foreground">
               Solvency Barrier
             </div>
             <div className="mt-1 font-mono text-sm font-medium tabular-nums">
@@ -101,7 +101,7 @@ export function RiskSuite({ merton, varSuite }: { merton: ApiMerton; varSuite: A
         <div className="border-t border-border p-2">
           <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="border-b border-border text-2xs uppercase tracking-wide text-muted-foreground">
+              <tr className="border-b border-border text-2xs text-muted-foreground">
                 <th className="px-3 py-2 text-left font-medium">Measure</th>
                 <th className="w-1/3 px-3 py-2 text-left font-medium">Magnitude</th>
                 <th className="px-3 py-2 text-right font-medium">1D Loss</th>

@@ -1,4 +1,5 @@
 import { PageStamp } from "@/components/layout/refresh-control";
+import { SectionHead } from "@/components/ui/section-head";
 import type { Metadata } from "next";
 import { BenchmarkSensitivityPanel } from "@/components/macro/benchmark-sensitivity";
 import { NewsFeed } from "@/components/macro/news-feed";
@@ -24,7 +25,8 @@ export default async function CompanyMacroPage({ params }: PageProps) {
   ]);
 
   return (
-    <div className="mx-auto max-w-[1600px] space-y-4 px-4 py-6 sm:px-6">
+    <div className="mx-auto max-w-[1600px] space-y-4 px-4 py-8 lg:py-10 sm:px-6">
+      <SectionHead title="Macro and news" note="How the stock moves with its benchmarks, and the filings and news that mention it" className="mb-8" />
       {sensitivity ? (
         <>
           <BenchmarkSensitivityPanel sensitivity={sensitivity.data} />

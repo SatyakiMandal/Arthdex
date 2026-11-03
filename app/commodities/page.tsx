@@ -48,7 +48,7 @@ function Group({ title, rows }: { title: string; rows: ApiCommodity[] }) {
       <h2 className="border-b border-border px-4 py-3 text-sm font-semibold tracking-tight">{title}</h2>
       <div className="overflow-x-auto">
         <table className="data-table w-full min-w-[900px] border-collapse text-sm">
-          <thead className="text-2xs uppercase tracking-wide text-muted-foreground">
+          <thead className="text-2xs text-muted-foreground">
             <tr className="border-b border-border">
               <th className="px-3 py-2 text-left font-medium">Commodity</th>
               <th className="px-3 py-2 text-right font-medium">Price</th>
@@ -111,7 +111,7 @@ export default async function CommoditiesPage() {
       <SiteHeader />
       <main id="main" className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6">
         <Eyebrow icon={Coins}>Commodities</Eyebrow>
-        <h1 className="text-gradient mt-4 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">Metals, energy &amp; agriculture</h1>
+        <h1 className="mt-4 text-balance text-4xl sm:text-5xl">Metals, energy &amp; agriculture</h1>
         <p className="mt-3 max-w-2xl text-muted-foreground">
           The commodity prices that move Indian earnings and inflation, next to the Nifty indices that trade them.
         </p>
@@ -120,7 +120,7 @@ export default async function CommoditiesPage() {
           <div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4">
             {related.map((i) => (
               <div key={i.id} className="rounded-xl border border-border bg-surface px-4 py-3">
-                <p className="text-2xs uppercase tracking-wider text-muted-foreground">{i.name}</p>
+                <p className="text-2xs text-muted-foreground">{i.name}</p>
                 <p className="mt-1 font-mono text-xl font-semibold tabular-nums">{formatINR(i.level)}</p>
                 <p className={cn("font-mono text-xs", deltaColor(i.change.percent))}>{formatPct(i.change.percent)} today</p>
                 <p className="mt-1 text-2xs text-muted-foreground">
@@ -136,18 +136,18 @@ export default async function CommoditiesPage() {
             {res.data.usdinr ? (
               <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-1 rounded-xl border border-border bg-surface px-4 py-3 text-sm">
                 <span>
-                  <span className="text-2xs uppercase tracking-wider text-muted-foreground">USD / INR </span>
+                  <span className="text-2xs text-muted-foreground">USD / INR </span>
                   <span className="font-mono">{res.data.usdinr.toFixed(2)}</span>
                 </span>
                 {res.data.indicativeInr.goldPer10g ? (
                   <span>
-                    <span className="text-2xs uppercase tracking-wider text-muted-foreground">Gold per 10 g </span>
+                    <span className="text-2xs text-muted-foreground">Gold per 10 g </span>
                     <span className="font-mono">₹{formatINR(res.data.indicativeInr.goldPer10g, 0)}</span>
                   </span>
                 ) : null}
                 {res.data.indicativeInr.silverPerKg ? (
                   <span>
-                    <span className="text-2xs uppercase tracking-wider text-muted-foreground">Silver per kg </span>
+                    <span className="text-2xs text-muted-foreground">Silver per kg </span>
                     <span className="font-mono">₹{formatINR(res.data.indicativeInr.silverPerKg, 0)}</span>
                   </span>
                 ) : null}

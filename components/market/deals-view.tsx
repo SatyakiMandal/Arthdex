@@ -47,11 +47,11 @@ export function DealsView({ deals }: { deals: ApiDeals }) {
     return map;
   }, [deals.bulk]);
 
-  const label = "mb-1.5 block text-2xs font-medium uppercase tracking-wide text-muted-foreground";
+  const label = "mb-1.5 block text-2xs font-medium text-muted-foreground";
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end gap-x-5 gap-y-4 rounded-2xl border border-border bg-surface/70 p-4 backdrop-blur">
+      <div className="flex flex-wrap items-end gap-x-5 gap-y-4 rounded-2xl border border-border bg-surface p-4">
         <div>
           <span className={label}>Disclosure</span>
           <SegmentedControl options={kinds} value={kind} onChange={setKind} layoutGroupId="deals-kind" />
@@ -94,7 +94,7 @@ export function DealsView({ deals }: { deals: ApiDeals }) {
         ) : (
           <div className="max-h-[70vh] overflow-auto">
             <table className="data-table data-table-sticky w-full min-w-[820px] text-sm">
-              <thead className="text-2xs uppercase tracking-wide text-muted-foreground">
+              <thead className="text-2xs text-muted-foreground">
                 <tr className="border-b border-border">
                   <th className="px-4 py-2 text-left font-medium">Company</th>
                   <th className="px-4 py-2 text-left font-medium">Client</th>

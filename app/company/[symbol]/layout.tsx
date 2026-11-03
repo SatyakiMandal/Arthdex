@@ -54,6 +54,7 @@ export default async function CompanyLayout({
       />
       <CompanyTabs
         symbol={upper}
+        price={quote.ok ? { cmp: quote.data.cmp, percent: quote.data.change.percent } : null}
         action={<CustomAlertEngine symbol={upper} metrics={alertMetrics} />}
       />
       <main id="main">{children}</main>

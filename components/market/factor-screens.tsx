@@ -27,7 +27,7 @@ function ScreenTable({ rows }: { rows: ApiScreenRow[] }) {
     <div className="overflow-x-auto">
       <table className="w-full min-w-[620px] border-collapse text-sm">
         <thead>
-          <tr className="border-b border-border text-2xs uppercase tracking-wide text-muted-foreground">
+          <tr className="border-b border-border text-2xs text-muted-foreground">
             <th className="px-3 py-2 text-left font-medium">Scrip</th>
             <th className="px-3 py-2 text-right font-medium">CMP</th>
             <th className="px-3 py-2 text-right font-medium">Beta</th>
@@ -94,11 +94,11 @@ function ScreenTable({ rows }: { rows: ApiScreenRow[] }) {
 export function FactorScreens({ screens }: { screens: ApiFactorScreens }) {
   return (
     <DataCard
-      title="Factor Screens"
+      title="Factor screens"
       subtitle={`${screens.indexLabel} · regressed on ${screens.benchmark}`}
       icon={SlidersHorizontal}
       badge={
-        <span className="font-mono text-2xs uppercase tracking-wide text-muted-foreground">
+        <span className="font-mono text-2xs text-muted-foreground">
           {screens.computed}/{screens.universeSize} computed
         </span>
       }

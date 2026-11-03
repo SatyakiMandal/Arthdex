@@ -25,7 +25,7 @@ const money = (m: number) => `${m < 0 ? "-" : ""}$${Math.abs(m) >= 1000 ? `${(Ma
 function Tile({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: "up" | "down" | "flat" }) {
   return (
     <div className="rounded-lg border border-border bg-surface-muted/50 px-3 py-2">
-      <p className="text-2xs uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="text-2xs text-muted-foreground">{label}</p>
       <p className={cn("mt-0.5 font-mono text-sm font-semibold", tone === "up" && "text-up", tone === "down" && "text-down")}>{value}</p>
       {sub ? <p className="mt-0.5 text-2xs text-muted-foreground">{sub}</p> : null}
     </div>
@@ -84,10 +84,10 @@ export function GexPanel({ symbol }: { symbol: string }) {
   const lines = data
     ? ([
         { k: "Spot", v: data.spot, color: "hsl(var(--foreground))", dash: "2 2" },
-        { k: "Flip", v: data.levels.gammaFlip, color: "#fbbf24", dash: "6 4" },
+        { k: "Flip", v: data.levels.gammaFlip, color: "hsl(var(--gold))", dash: "6 4" },
         { k: "Call wall", v: data.levels.callWall, color: "hsl(var(--up))", dash: "6 4" },
         { k: "Put wall", v: data.levels.putWall, color: "hsl(var(--down))", dash: "6 4" },
-        { k: "Max pain", v: data.levels.maxPain, color: "#a78bfa", dash: "3 3" },
+        { k: "Max pain", v: data.levels.maxPain, color: "hsl(var(--chart-plum))", dash: "3 3" },
       ] as const)
     : [];
 
@@ -165,7 +165,7 @@ export function GexPanel({ symbol }: { symbol: string }) {
                 </svg>
                 {lines.map((l) =>
                   l.v != null && l.v >= chart.min && l.v <= chart.max ? (
-                    <span key={l.k} className="pointer-events-none absolute top-0 -translate-x-1/2 whitespace-nowrap rounded bg-surface/80 px-1 font-mono text-2xs" style={{ left: `${(chart.x(l.v) / W) * 100}%`, color: l.color }}>
+                    <span key={l.k} className="pointer-events-none absolute top-0 -translate-x-1/2 whitespace-nowrap rounded bg-surface px-1 font-mono text-2xs" style={{ left: `${(chart.x(l.v) / W) * 100}%`, color: l.color }}>
                       {l.k}
                     </span>
                   ) : null,

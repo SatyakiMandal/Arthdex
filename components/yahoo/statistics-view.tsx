@@ -3,6 +3,14 @@ import { DataCard } from "@/components/ui/data-card";
 import type { ApiYStats } from "@/lib/api/types";
 import { BarChart, StatList, big, cr, num, pct } from "./shared";
 
+/** Yahoo's calendar keeps the last results date until the next one is announced. */
+function nextOrLastResults(dates: string[]): [string, string] {
+  const first = dates[0];
+  if (!first) return ["Next results", "Not announced"];
+  const today = new Date().toISOString().slice(0, 10);
+  return first.slice(0, 10) >= today ? ["Next results", first.slice(0, 10)] : ["Last results", first.slice(0, 10)];
+}
+
 export function StatisticsView({ data }: { data: ApiYStats }) {
   const { about, officers, valuation: v, highlights: h, trading: t, dividends: d, calendar } = data;
   const range52 = t.high52w != null && t.low52w != null ? t.high52w - t.low52w : null;
@@ -15,7 +23,19 @@ export function StatisticsView({ data }: { data: ApiYStats }) {
     <div className="space-y-4">
       <DataCard title={about.name ?? data.symbol} subtitle={[about.sector, about.industry].filter(Boolean).join(" · ") || undefined} icon={Building2}>
         <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-          <p className="text-sm leading-relaxed text-muted-foreground">{about.summary ?? "Yahoo Finance has no business description for this company."}</p>
+          {about.summary ? (
+            <details className="group">
+              <summary className="cursor-pointer list-none text-sm text-muted-foreground [&::-webkit-details-marker]:hidden">
+                <span className="line-clamp-3 leading-relaxed group-open:hidden">{about.summary}</span>
+                <span className="mt-1 inline-block text-xs font-medium text-foreground underline decoration-border underline-offset-4 group-open:hidden">
+                  Read the full description
+                </span>
+              </summary>
+              <p className="text-sm leading-relaxed text-muted-foreground">{about.summary}</p>
+            </details>
+          ) : (
+            <p className="text-sm text-muted-foreground">Yahoo Finance has no business description for this company.</p>
+          )}
           <dl className="space-y-1.5 text-[0.8125rem]">
             {facts.map(([k, val]) => (
               <div key={k} className="flex justify-between gap-3">
@@ -27,7 +47,7 @@ export function StatisticsView({ data }: { data: ApiYStats }) {
               <div className="flex justify-between gap-3">
                 <dt className="text-muted-foreground">Website</dt>
                 <dd>
-                  <a className="inline-flex items-center gap-1 text-accent hover:underline" href={about.website} target="_blank" rel="noreferrer noopener">
+                  <a className="inline-flex items-center gap-1 underline decoration-border underline-offset-4 hover:decoration-gold" href={about.website} target="_blank" rel="noreferrer noopener">
                     <Globe className="h-3 w-3" />
                     {about.website.replace(/^https?:\/\//, "")}
                   </a>
@@ -61,7 +81,6 @@ export function StatisticsView({ data }: { data: ApiYStats }) {
               ["Operating margin", pct(h.operatingMargin)],
               ["Gross margin", pct(h.grossMargin)],
               ["Return on assets", pct(h.returnOnAssets)],
-              ["Return on equity", pct(h.returnOnEquity)],
               ["Revenue", cr(h.revenue)],
               ["Revenue growth (yoy)", pct(h.revenueGrowth)],
               ["EBITDA", cr(h.ebitda)],
@@ -76,7 +95,7 @@ export function StatisticsView({ data }: { data: ApiYStats }) {
             rows={[
               ["Total cash", cr(h.cash)],
               ["Total debt", cr(h.debt)],
-              ["Debt / equity", num(h.debtToEquity)],
+              ["Debt to equity", h.debtToEquity != null ? `${h.debtToEquity.toFixed(2)}x` : "—"],
               ["Current ratio", num(h.currentRatio)],
               ["Book value per share", num(h.bookValue)],
               ["Operating cash flow", cr(h.operatingCashflow)],
@@ -87,7 +106,6 @@ export function StatisticsView({ data }: { data: ApiYStats }) {
         <DataCard title="Trading information" icon={CalendarDays}>
           <StatList
             rows={[
-              ["Beta", num(t.beta)],
               ["52-week high / low", `${num(t.high52w)} / ${num(t.low52w)}`],
               ["52-week range width", num(range52)],
               ["52-week change", pct(t.change52w)],
@@ -104,21 +122,21 @@ export function StatisticsView({ data }: { data: ApiYStats }) {
               ["Float", big(t.floatShares)],
               ["Held by insiders", pct(t.heldByInsiders)],
               ["Held by institutions", pct(t.heldByInstitutions)],
-              ["Short ratio", num(t.shortRatio)],
             ]}
           />
         </DataCard>
         <DataCard title="Dividends and splits" icon={Coins}>
           <StatList
             rows={[
-              ["Annual dividend", num(d.rate)],
-              ["Yield", d.yieldPct != null ? `${d.yieldPct.toFixed(2)}%` : "—"],
-              ["5-year avg yield", d.fiveYearAvgYieldPct != null ? `${d.fiveYearAvgYieldPct.toFixed(2)}%` : "—"],
-              ["Payout ratio", pct(d.payoutRatio)],
+              ["Paid in the last 12 months", d.trailing12m != null ? `₹${num(d.trailing12m)}` : "—"],
+              ["Yield on dividends paid", d.trailingYieldPct != null ? `${d.trailingYieldPct.toFixed(2)}%` : "—"],
+              ["Payout of earnings", d.trailingPayoutPct != null ? `${d.trailingPayoutPct.toFixed(1)}%` : "—"],
+              ["Regular rate, annualised", d.rate != null ? `₹${num(d.rate)} (${d.yieldPct != null ? `${d.yieldPct.toFixed(2)}%` : "—"})` : "—"],
+              ["5-year average yield", d.fiveYearAvgYieldPct != null ? `${d.fiveYearAvgYieldPct.toFixed(2)}%` : "—"],
               ["Last dividend", d.lastValue != null ? `${num(d.lastValue)} on ${d.lastDate ?? "—"}` : "—"],
               ["Ex-dividend date", d.exDividendDate ?? "—"],
               ["Last split", d.lastSplitFactor ? `${d.lastSplitFactor} on ${d.lastSplitDate ?? "—"}` : "None on record"],
-              ["Next earnings", calendar.earningsDates[0] ?? "—"],
+              nextOrLastResults(calendar.earningsDates),
             ]}
           />
         </DataCard>

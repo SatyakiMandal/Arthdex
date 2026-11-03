@@ -48,31 +48,28 @@ const COLUMNS = [
 
 export function SiteFooter() {
   return (
-    <footer className="relative mt-16 border-t border-border bg-gradient-to-b from-surface-muted/40 to-background">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
+    <footer className="mt-16 border-t border-border bg-surface-muted/40">
       <div className="mx-auto grid max-w-[1600px] gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.2fr_repeat(2,0.6fr)_1.6fr]">
         <div>
-          <Link href="/" aria-label="Arthdex home" className="inline-flex">
+          <Link href="/" className="inline-flex">
             <Logo full />
           </Link>
           <p className="mt-3 max-w-xs text-sm text-muted-foreground">
             Indian market analytics computed from exchange data and filings, with the workings shown.
           </p>
-          <p className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-muted px-2.5 py-1 text-2xs text-muted-foreground">
-            <ShieldCheck className="h-3 w-3 text-up" /> Every figure states its source
+          <p className="mt-4 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+            <ShieldCheck className="h-3.5 w-3.5" strokeWidth={1.75} /> Every figure states its source
           </p>
         </div>
 
         {COLUMNS.map((col) => (
           <nav key={col.title} aria-label={col.title}>
-            <h3 className="text-2xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">{col.title}</h3>
-            <ul className="mt-4 space-y-2.5">
+            <h3 className="text-xs font-medium text-foreground">{col.title}</h3>
+            <ul className="mt-3 space-y-0.5">
               {col.links.map((l) => {
-                const Icon = l.icon;
                 return (
                   <li key={l.href}>
-                    <Link href={l.href} className="group inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
-                      <Icon className="h-3.5 w-3.5 opacity-60 transition-opacity group-hover:text-accent group-hover:opacity-100" />
+                    <Link href={l.href} className="inline-block py-1 text-sm text-muted-foreground transition-colors hover:text-foreground">
                       {l.label}
                     </Link>
                   </li>
@@ -82,8 +79,8 @@ export function SiteFooter() {
           </nav>
         ))}
 
-        <div className="rounded-xl border border-flat/25 bg-flat/5 p-4">
-          <p className="flex items-center gap-2 text-2xs font-semibold uppercase tracking-[0.18em] text-flat">
+        <div className="rounded-lg border border-border bg-surface p-4">
+          <p className="flex items-center gap-2 text-2xs font-semibold text-flat">
             <AlertTriangle className="h-3.5 w-3.5" /> Important
           </p>
           <p className="mt-2 text-2xs leading-relaxed text-muted-foreground">
@@ -101,6 +98,23 @@ export function SiteFooter() {
             </Link>
           </p>
         </div>
+      </div>
+
+      {/* Sign-off: the name set as large as the page allows, artha (wealth, meaning) beside it */}
+      <div className="mx-auto max-w-[1600px] overflow-hidden px-4 sm:px-6">
+        <div className="flex items-end justify-between gap-6 border-t border-border pt-6">
+          <p className="select-none font-display text-[clamp(4rem,17vw,15rem)] font-semibold leading-[0.78] tracking-[-0.055em] text-foreground/[0.9]" aria-hidden>
+            Arthdex
+          </p>
+          <p className="mb-2 hidden shrink-0 text-right md:block">
+            <span className="block font-deva text-4xl text-gold" lang="hi">अर्थ</span>
+            <span className="mt-1 block text-2xs text-muted-foreground">artha: wealth, and meaning</span>
+          </p>
+        </div>
+        <p className="flex flex-wrap justify-between gap-2 py-5 text-2xs text-muted-foreground">
+          <span>Arthdex. Indian market analytics.</span>
+          <span>NSE and Yahoo Finance data, delayed. Not investment advice.</span>
+        </p>
       </div>
     </footer>
   );

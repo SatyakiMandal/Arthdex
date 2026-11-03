@@ -43,7 +43,7 @@ export default async function NewsPage({ searchParams }: PageProps) {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="max-w-2xl">
             <Eyebrow icon={Newspaper}>News</Eyebrow>
-            <h1 className="text-gradient mt-4 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
+            <h1 className="mt-4 text-balance text-4xl sm:text-5xl">
               Filings &amp; market coverage
             </h1>
             <p className="mt-3 text-muted-foreground">

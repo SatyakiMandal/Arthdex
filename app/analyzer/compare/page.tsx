@@ -28,7 +28,7 @@ function Notice({ children }: { children: React.ReactNode }) {
 function Side({ run, tone }: { run: AnalyzerRun; tone: "a" | "b" }) {
   return (
     <div className={`min-w-0 rounded-2xl border bg-surface p-4 ${tone === "a" ? "border-accent/40" : "border-flat/40"}`}>
-      <p className={`font-mono text-2xs uppercase tracking-wider ${tone === "a" ? "text-accent" : "text-flat"}`}>{tone === "a" ? "Company A" : "Company B"}</p>
+      <p className={`font-mono text-2xs ${tone === "a" ? "text-accent" : "text-flat"}`}>{tone === "a" ? "Company A" : "Company B"}</p>
       <h2 className="mt-1 truncate text-lg font-semibold tracking-tight">{run.company}</h2>
       <p className="mt-0.5 font-mono text-2xs text-muted-foreground">
         {run.ticker ?? "Unlisted"} · {run.start} to {run.end}
@@ -88,7 +88,7 @@ export default async function ComparePage({ searchParams }: Props) {
         </Link>
         <div className="mt-4 max-w-2xl">
           <Eyebrow icon={Columns2}>Compare</Eyebrow>
-          <h1 className="text-gradient mt-4 text-balance text-3xl font-semibold tracking-tight">Side by side</h1>
+          <h1 className="mt-4 text-balance text-4xl sm:text-5xl">Side by side</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Every block each analysis produced, set against the other. A ▲ marks the stronger reading where a higher or lower number clearly means better. Windows and
             data coverage can differ between the two runs, so treat close differences as noise.

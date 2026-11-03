@@ -7,8 +7,9 @@ import {
   KeyRatiosPanel,
   QuarterlyPnLPanel,
 } from "@/components/company/fundamentals";
-import { ValuationPanel } from "@/components/company/valuation-panel";
+import { CompanyAbout, ValuationPanel } from "@/components/company/valuation-panel";
 import { DataUnavailable, SourceLine } from "@/components/ui/data-provenance";
+import { SectionHead } from "@/components/ui/section-head";
 import { PreIpoPanel } from "@/components/company/pre-ipo-panel";
 import { getCandles, getFinancials, getPreIpo, getProfile, getUnlistedCompany, getValuation } from "@/lib/api/endpoints";
 
@@ -30,10 +31,11 @@ export default async function CompanyOverviewPage({ params }: PageProps) {
   const { symbol } = await params;
   const upper = symbol.toUpperCase();
 
-  const [candles, financials, valuation, preIpoMatch] = await Promise.all([
+  const [candles, financials, valuation, profile, preIpoMatch] = await Promise.all([
     getCandles(upper, "1Y"),
     getFinancials(upper),
     getValuation(upper),
+    getProfile(upper),
     getPreIpo(upper),
   ]);
   // A company that was once traded unlisted keeps its earlier price history on the same page
@@ -41,39 +43,59 @@ export default async function CompanyOverviewPage({ params }: PageProps) {
   const preIpo = preIpoId ? await getUnlistedCompany(preIpoId) : null;
 
   return (
-    <div className="mx-auto max-w-[1600px] space-y-4 px-4 py-6 sm:px-6">
-      {candles.ok ? (
-        <>
-          <PriceChart symbol={upper} initialCandles={candles.data.candles} initialPeriod="1Y" />
-<PageStamp meta={candles.meta} />
-          <SourceLine meta={candles.meta} className="px-1" />
-        </>
-      ) : (
-        <DataUnavailable title="Price history unavailable" message={candles.message} />
-      )}
+    <div className="mx-auto max-w-[1600px] space-y-14 px-4 py-8 sm:px-6 lg:py-10">
+      <section aria-label="Price history">
+        {candles.ok ? (
+          <>
+            <PriceChart symbol={upper} initialCandles={candles.data.candles} initialPeriod="1Y" />
+            <PageStamp meta={candles.meta} />
+            <SourceLine meta={candles.meta} className="mt-2 px-1" />
+          </>
+        ) : (
+          <DataUnavailable title="Price history unavailable" message={candles.message} />
+        )}
+      </section>
 
-      {valuation ? <ValuationPanel valuation={valuation.data} /> : null}
+      {profile || valuation ? (
+        <section aria-labelledby="business">
+          <SectionHead id="business" title="The business" note="From the company's profile and reported figures" />
+          <div className="mt-6 grid gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16">
+            {profile ? <CompanyAbout profile={profile.data} /> : null}
+            {valuation ? (
+              <div className={profile ? undefined : "lg:col-span-2"}>
+                <h3 className="font-sans text-sm font-semibold tracking-normal">Valuation</h3>
+                <div className="mt-2">
+                  <ValuationPanel valuation={valuation.data} />
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
 
       {preIpo?.ok ? <PreIpoPanel company={preIpo.data} /> : null}
 
-      {financials ? (
-        <>
-          <QuarterlyPnLPanel financials={financials.data} />
-
-          <div className="grid gap-4 lg:grid-cols-2">
-            <AnnualPnLPanel financials={financials.data} />
-            <KeyRatiosPanel financials={financials.data} />
-          </div>
-
-          <BalanceSheetPanel financials={financials.data} />
-          <SourceLine meta={financials.meta} className="px-1" />
-        </>
-      ) : (
-        <DataUnavailable
-          title="Financial statements unavailable"
-          message={`No reported statements were returned for ${upper}.`}
-        />
-      )}
+      <section aria-labelledby="financials" className="space-y-4">
+        <SectionHead id="financials" title="Financials" note="Quarterly and annual, as reported" />
+        {financials ? (
+          <>
+            <div className="pt-2">
+              <QuarterlyPnLPanel financials={financials.data} />
+            </div>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <AnnualPnLPanel financials={financials.data} />
+              <KeyRatiosPanel financials={financials.data} />
+            </div>
+            <BalanceSheetPanel financials={financials.data} />
+            <SourceLine meta={financials.meta} className="px-1" />
+          </>
+        ) : (
+          <DataUnavailable
+            title="Financial statements unavailable"
+            message={`No reported statements were returned for ${upper}.`}
+          />
+        )}
+      </section>
     </div>
   );
 }

@@ -35,7 +35,7 @@ export function FreshnessBadge({
     >
       <Clock className="h-3 w-3" />
       {meta.delayedMinutes > 0 ? `${meta.delayedMinutes}m delayed` : "Live"}
-      <span className="opacity-60">· {formatAge(meta.cacheAgeSeconds)}</span>
+      <span className="text-muted-foreground">· {formatAge(meta.cacheAgeSeconds)}</span>
     </span>
   );
 }

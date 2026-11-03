@@ -15,7 +15,7 @@ export default function NotFound() {
       <SiteHeader />
 
       <main id="main" className="mx-auto w-full max-w-[1600px] flex-1 px-4 py-20 sm:px-6">
-        <p className="font-mono text-2xs uppercase tracking-[0.2em] text-accent">404</p>
+        <p className="font-mono text-2xs text-accent">404</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight">Page not found</h1>
         <p className="mt-3 max-w-lg text-muted-foreground">
           That route does not exist. Try one of the sections below, or use the search field

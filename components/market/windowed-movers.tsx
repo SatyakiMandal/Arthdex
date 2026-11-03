@@ -31,7 +31,7 @@ function WindowTable({
     <div className="overflow-x-auto">
       <table className="data-table w-full min-w-[640px] border-collapse text-sm">
         <thead>
-          <tr className="border-b border-border text-2xs uppercase tracking-wide text-muted-foreground">
+          <tr className="border-b border-border text-2xs text-muted-foreground">
             <th className="px-3 py-2 text-left font-medium">Scrip</th>
             <th className="px-3 py-2 text-right font-medium">CMP</th>
             <th className="px-3 py-2 text-right font-medium">% Chg</th>

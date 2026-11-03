@@ -37,7 +37,7 @@ export default async function AlertsPage() {
       <main id="main" className="mx-auto max-w-[1100px] px-4 py-10 sm:px-6">
         <div className="max-w-2xl">
           <Eyebrow icon={Bell}>Alerts</Eyebrow>
-          <h1 className="text-gradient mt-4 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
+          <h1 className="mt-4 text-balance text-4xl sm:text-5xl">
             Thresholds &amp; important results
           </h1>
           <p className="mt-3 text-muted-foreground">

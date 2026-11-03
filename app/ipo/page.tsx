@@ -121,7 +121,7 @@ export default async function IpoPage({ searchParams }: PageProps) {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="max-w-2xl">
             <Eyebrow icon={Rocket}>Primary markets</Eyebrow>
-            <h1 className="text-gradient mt-4 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
+            <h1 className="mt-4 text-balance text-4xl sm:text-5xl">
               IPO intelligence
             </h1>
             <p className="mt-3 text-muted-foreground">
@@ -152,7 +152,7 @@ export default async function IpoPage({ searchParams }: PageProps) {
         <dl className="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-4">
           {ORDER.map((status) => (
             <div key={status} className="bg-surface px-4 py-2.5">
-              <dt className="text-2xs uppercase tracking-wide text-muted-foreground">
+              <dt className="text-2xs text-muted-foreground">
                 {STATUS_META[status].label}
               </dt>
               <dd className="mt-0.5 font-mono text-lg font-semibold tabular-nums">
@@ -176,7 +176,7 @@ export default async function IpoPage({ searchParams }: PageProps) {
               <div className="overflow-x-auto p-2">
                 <table className="w-full min-w-[760px] border-collapse text-sm">
                   <thead>
-                    <tr className="border-b border-border text-2xs uppercase tracking-wide text-muted-foreground">
+                    <tr className="border-b border-border text-2xs text-muted-foreground">
                       <th className="px-3 py-2 text-left font-medium">Issue</th>
                       <th className="px-3 py-2 text-right font-medium">Price Band</th>
                       <th className="px-3 py-2 text-right font-medium">Subscription</th>

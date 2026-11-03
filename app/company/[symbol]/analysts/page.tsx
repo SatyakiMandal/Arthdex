@@ -1,4 +1,5 @@
 import { PageStamp } from "@/components/layout/refresh-control";
+import { SectionHead } from "@/components/ui/section-head";
 import type { Metadata } from "next";
 import { AnalystsView } from "@/components/yahoo/analysts-view";
 import { DataUnavailable, SourceLine } from "@/components/ui/data-provenance";
@@ -18,7 +19,8 @@ export default async function Page({ params }: PageProps) {
   const upper = symbol.toUpperCase();
   const res = await getYAnalysts(upper);
   return (
-    <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6">
+    <div className="mx-auto max-w-[1600px] px-4 py-8 lg:py-10 sm:px-6">
+      <SectionHead title="Analyst view" note="Price targets, rating trends and how reported earnings compared with estimates" className="mb-8" />
       {res.ok ? (
         <>
           <AnalystsView data={res.data} />

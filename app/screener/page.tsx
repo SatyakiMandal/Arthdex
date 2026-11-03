@@ -16,7 +16,7 @@ export default function ScreenerPage() {
       <SiteHeader />
       <main id="main" className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6">
         <Eyebrow icon={ScanSearch}>Technical screener</Eyebrow>
-        <h1 className="text-gradient mt-4 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">MACD crossovers</h1>
+        <h1 className="mt-4 text-balance text-4xl sm:text-5xl">MACD crossovers</h1>
         <p className="mt-3 max-w-2xl text-muted-foreground">
           Stocks whose MACD line has just crossed above or below its signal line. Choose the bar size and how many
           bars back to look, so the same screen works for a 5-minute scalp or a daily swing.

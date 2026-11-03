@@ -53,7 +53,7 @@ export function RunProgress({
       </div>
 
       <div className="h-1 w-full bg-muted">
-        <div className="h-full bg-gradient-to-r from-accent to-accent/60 transition-[width] duration-700" style={{ width: `${pct}%` }} />
+        <div className="h-full bg-accent transition-[width] duration-700" style={{ width: `${pct}%` }} />
       </div>
 
       <ol className="grid gap-px bg-border/60 sm:grid-cols-3 lg:grid-cols-6">

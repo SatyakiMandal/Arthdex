@@ -141,7 +141,7 @@ export function AlertsWorkbench() {
 
   return (
     <DataCard
-      title="Threshold Alerts"
+      title="Threshold alerts"
       subtitle="Any listed company, any of three metrics"
       icon={Bell}
       footnote="Alerts live in this page only. Nothing is saved and nothing will notify you. Delivery needs a scheduler and a notification channel, neither of which is built."
@@ -157,7 +157,7 @@ export function AlertsWorkbench() {
       <div className="space-y-3 border-b border-border px-4 py-4">
         {/* Company picker */}
         <div className="relative">
-          <label className="text-2xs uppercase tracking-wide text-muted-foreground">Company</label>
+          <label className="text-2xs text-muted-foreground">Company</label>
           <div className="mt-1 flex items-center gap-2 rounded-lg border border-border bg-surface-muted px-2.5">
             {searching ? (
               <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-accent" />
@@ -210,7 +210,7 @@ export function AlertsWorkbench() {
 
         <div className="flex flex-wrap items-end gap-2">
           <label className="flex flex-col gap-1">
-            <span className="text-2xs uppercase tracking-wide text-muted-foreground">Metric</span>
+            <span className="text-2xs text-muted-foreground">Metric</span>
             <select
               value={metric}
               onChange={(e) => setMetric(e.target.value)}
@@ -225,7 +225,7 @@ export function AlertsWorkbench() {
           </label>
 
           <label className="flex flex-col gap-1">
-            <span className="text-2xs uppercase tracking-wide text-muted-foreground">Condition</span>
+            <span className="text-2xs text-muted-foreground">Condition</span>
             <select
               value={comparator}
               onChange={(e) => setComparator(e.target.value as WatchAlert["comparator"])}
@@ -240,7 +240,7 @@ export function AlertsWorkbench() {
           </label>
 
           <label className="flex flex-col gap-1">
-            <span className="text-2xs uppercase tracking-wide text-muted-foreground">
+            <span className="text-2xs text-muted-foreground">
               {metricMeta?.unit ?? "Value"}
             </span>
             <input

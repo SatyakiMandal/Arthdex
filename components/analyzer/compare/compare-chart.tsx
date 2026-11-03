@@ -116,7 +116,7 @@ export function CompareChart({ series, title }: { series: CmpSeries[]; title?: s
         {hover !== null ? <span className="pointer-events-none absolute inset-y-0 w-px bg-foreground/25" style={{ left: `${hover * 100}%` }} aria-hidden /> : null}
         <div className="pointer-events-none absolute inset-y-0 right-0 flex flex-col justify-between py-1">
           {[model.hi, model.lo].map((v, i) => (
-            <span key={i} className="rounded bg-surface/80 px-1 font-mono text-2xs text-muted-foreground">
+            <span key={i} className="rounded bg-surface px-1 font-mono text-2xs text-muted-foreground">
               {v.toFixed(0)}
             </span>
           ))}

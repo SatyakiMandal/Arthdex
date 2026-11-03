@@ -31,7 +31,7 @@ export default async function AnalyzerPage() {
       <main id="main" className="mx-auto max-w-[1600px] px-4 py-12 sm:px-6">
         <div className="max-w-3xl">
           <Eyebrow icon={FlaskConical}>Event impact analyzer</Eyebrow>
-          <h1 className="text-gradient mt-4 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
+          <h1 className="mt-4 text-balance text-4xl sm:text-5xl">
             What did the news do to the stock?
           </h1>
           <p className="mt-3 text-muted-foreground">

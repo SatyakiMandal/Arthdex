@@ -145,7 +145,7 @@ export function PriceHistoryChart({ series }: { series: Point[] }) {
 
         <div className="pointer-events-none absolute inset-y-0 right-0 flex flex-col justify-between py-1">
           {[geo.max, geo.min].map((v) => (
-            <span key={v} className="rounded bg-surface/80 px-1 font-mono text-2xs text-muted-foreground">
+            <span key={v} className="rounded bg-surface px-1 font-mono text-2xs text-muted-foreground">
               {fmt(v)}
             </span>
           ))}

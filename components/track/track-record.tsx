@@ -76,7 +76,7 @@ export function TrackRecord() {
           const s = data.summary[String(h)];
           return (
             <div key={h} className="rounded-xl border border-border bg-surface px-4 py-3">
-              <p className="text-2xs uppercase tracking-wider text-muted-foreground">After {h} trading day{h > 1 ? "s" : ""}</p>
+              <p className="text-2xs text-muted-foreground">After {h} trading day{h > 1 ? "s" : ""}</p>
               <p className="mt-1 font-mono text-xl font-semibold">{s.hitRatePct == null ? "—" : `${s.hitRatePct}% hit`}</p>
               <p className="mt-0.5 text-2xs text-muted-foreground">
                 {s.scored} scored · vs Nifty <span className={cn("font-mono", tone(s.avgExcessPct))}>{pct(s.avgExcessPct)}</span> on average
@@ -89,7 +89,7 @@ export function TrackRecord() {
       <section className="overflow-hidden rounded-2xl border border-border bg-surface">
         <div className="overflow-x-auto">
           <table className="data-table w-full min-w-[720px] text-sm">
-            <thead className="text-2xs uppercase tracking-wide text-muted-foreground">
+            <thead className="text-2xs text-muted-foreground">
               <tr className="border-b border-border">
                 <th className="px-4 py-2 text-left font-medium">Call</th>
                 <th className="px-3 py-2 text-right font-medium">Price</th>

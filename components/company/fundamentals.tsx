@@ -1,5 +1,5 @@
 import { CalendarRange } from "lucide-react";
-import type { ApiFinancials } from "@/lib/api/types";
+import type { ApiFinancials, ApiSeriesSource } from "@/lib/api/types";
 import { DataCard } from "@/components/ui/data-card";
 import { cn, formatINR } from "@/lib/utils";
 
@@ -13,12 +13,64 @@ function num(value: number | null | undefined, digits = 0, suffix = ""): string 
  * columns, which is how these are read — you scan one line for a trend rather
  * than comparing across a row of mixed units.
  */
+/**
+ * Says where a series came from when it is not the primary source, and why, so a
+ * table that changes source never changes silently. Disagreements between the two
+ * sources on the periods shown are listed rather than hidden.
+ */
+const FIELD_NAMES: Record<string, string> = {
+  revenue: "revenue",
+  eps: "EPS",
+  netWorth: "net worth",
+  totalAssets: "total assets",
+  borrowings: "borrowings",
+};
+
+function SourceNote({ source, lender }: { source?: ApiSeriesSource; lender?: boolean }) {
+  if (!source) return null;
+  const switched = source.used === "screener";
+  const settled = (source.disagreements ?? []).filter((d) => d.settled);
+  const corrected = settled.filter((d) => d.settled && d.settled.correct !== source.used && d.settled.correct !== "restated");
+  const open = source.unresolved ?? [];
+  if (!switched && settled.length === 0 && open.length === 0) return null;
+  const name = (field: string) => FIELD_NAMES[field] ?? field;
+  const inr = (v: number) => v.toLocaleString("en-IN");
+  return (
+    <p role="note" className="border-b border-border bg-surface-muted px-4 py-2 text-xs text-muted-foreground">
+      {switched ? <>Shown from screener.in. {source.reason}.</> : null}
+      {switched && lender ? " For a lender, revenue here is gross interest earned." : null}
+      {settled.length ? (
+        <>
+          {" "}
+          Where Yahoo Finance and screener.in disagreed, the company&apos;s own filing with NSE settled{" "}
+          {settled.length === 1 ? "it" : `all ${settled.length}`}
+          {corrected.length ? (
+            <>
+              {"; "}the filed figure is shown for {name(corrected[0].field)} at {corrected[0].period}: {inr(corrected[0].settled!.filed)}
+              {corrected.length > 1 ? ` and ${corrected.length - 1} more` : ""}
+            </>
+          ) : null}
+          .
+        </>
+      ) : null}
+      {open.length ? (
+        <>
+          {" "}
+          The two sources still disagree on {open.length === 1 ? "one figure" : `${open.length} figures`} that no filing could settle, for
+          example {name(open[0].field)} at {open[0].period}: {inr(open[0].yahoo)} on Yahoo Finance against {inr(open[0].screener)} on
+          screener.in.
+        </>
+      ) : null}
+    </p>
+  );
+}
+
 export function QuarterlyPnLPanel({ financials }: { financials: ApiFinancials }) {
   const quarters = financials.quarterly;
 
   if (quarters.length === 0) {
     return (
-      <DataCard title="Quarterly P&amp;L" subtitle="₹ crore" icon={CalendarRange}>
+      <DataCard title="Quarterly results" subtitle="₹ crore" icon={CalendarRange}>
         <p className="px-4 py-8 text-sm text-muted-foreground">
           No quarterly statements reported upstream for this company.
         </p>
@@ -26,18 +78,22 @@ export function QuarterlyPnLPanel({ financials }: { financials: ApiFinancials })
     );
   }
 
+  // Companies file within 45 to 60 days of quarter end, so a newest quarter older than
+  // 150 days means the source is missing at least one filed quarter.
+  const staleDays = financials.latestQuarterAgeDays ?? 0;
+
   const rows = [
     { label: "Revenue", get: (i: number) => num(quarters[i].revenue), emphasis: true },
-    { label: "Operating Expenses", get: (i: number) => num(quarters[i].operatingExpenses) },
-    { label: "Operating Profit", get: (i: number) => num(quarters[i].operatingProfit), emphasis: true },
+    { label: "Operating expenses", get: (i: number) => num(quarters[i].operatingExpenses) },
+    { label: "Operating profit", get: (i: number) => num(quarters[i].operatingProfit), emphasis: true },
     {
-      label: "OPM %",
+      label: "Operating margin",
       get: (i: number) =>
         quarters[i].opmPct === null ? "—" : `${quarters[i].opmPct!.toFixed(1)}%`,
       accent: true,
     },
     { label: "EBITDA", get: (i: number) => num(quarters[i].ebitda) },
-    { label: "Net Profit (PAT)", get: (i: number) => num(quarters[i].netProfit), emphasis: true },
+    { label: "Net profit", get: (i: number) => num(quarters[i].netProfit), emphasis: true },
     {
       label: "EPS (₹)",
       get: (i: number) => (quarters[i].eps === null ? "—" : quarters[i].eps!.toFixed(2)),
@@ -47,16 +103,23 @@ export function QuarterlyPnLPanel({ financials }: { financials: ApiFinancials })
   return (
     <section className="rounded-xl border border-border bg-surface">
       <header className="flex flex-wrap items-baseline justify-between gap-3 border-b border-border px-4 py-3">
-        <h3 className="text-sm font-semibold tracking-tight">Quarterly P&amp;L</h3>
-        <span className="font-mono text-2xs uppercase tracking-wide text-muted-foreground">
+        <h3 className="font-sans text-sm font-semibold tracking-normal">Quarterly results</h3>
+        <span className="font-mono text-2xs text-muted-foreground">
           ₹ crore · {quarters.length} quarters reported
         </span>
       </header>
+      <SourceNote source={financials.sources?.quarterly} lender={quarters.some((q) => q.lender)} />
+      {staleDays > 150 ? (
+        <p role="note" className="border-b border-border bg-flat/10 px-4 py-2 text-xs text-foreground">
+          The latest quarter on file is {quarters.at(-1)?.quarter}, which ended {staleDays} days ago. Later results
+          have been filed with the exchanges but neither data source has them yet.
+        </p>
+      ) : null}
 
       <div className="overflow-x-auto p-2">
         <table className="w-full min-w-[720px] border-collapse text-sm">
           <thead>
-            <tr className="border-b border-border text-2xs uppercase tracking-wide text-muted-foreground">
+            <tr className="border-b border-border text-2xs text-muted-foreground">
               <th className="sticky left-0 bg-surface px-3 py-2 text-left font-medium">Metric</th>
               {quarters.map((q) => (
                 <th key={q.periodEnd} className="px-3 py-2 text-right font-medium">
@@ -113,21 +176,22 @@ export function AnnualPnLPanel({ financials }: { financials: ApiFinancials }) {
   return (
     <section className="rounded-xl border border-border bg-surface">
       <header className="flex items-baseline justify-between gap-3 border-b border-border px-4 py-3">
-        <h3 className="text-sm font-semibold tracking-tight">Annual P&amp;L</h3>
-        <span className="font-mono text-2xs uppercase tracking-wide text-muted-foreground">
+        <h3 className="font-sans text-sm font-semibold tracking-normal">Annual results</h3>
+        <span className="font-mono text-2xs text-muted-foreground">
           ₹ crore
         </span>
       </header>
+      <SourceNote source={financials.sources?.annual} />
 
       <div className="overflow-x-auto p-2">
         <table className="w-full min-w-[460px] border-collapse text-sm">
           <thead>
-            <tr className="border-b border-border text-2xs uppercase tracking-wide text-muted-foreground">
+            <tr className="border-b border-border text-2xs text-muted-foreground">
               <th className="px-3 py-2 text-left font-medium">Year</th>
               <th className="px-3 py-2 text-right font-medium">Revenue</th>
-              <th className="px-3 py-2 text-right font-medium">Op Profit</th>
-              <th className="px-3 py-2 text-right font-medium">OPM %</th>
-              <th className="px-3 py-2 text-right font-medium">Net Profit</th>
+              <th className="px-3 py-2 text-right font-medium">Operating profit</th>
+              <th className="px-3 py-2 text-right font-medium">Margin</th>
+              <th className="px-3 py-2 text-right font-medium">Net profit</th>
             </tr>
           </thead>
           <tbody>
@@ -165,22 +229,23 @@ export function BalanceSheetPanel({ financials }: { financials: ApiFinancials })
   return (
     <section className="rounded-xl border border-border bg-surface">
       <header className="flex items-baseline justify-between gap-3 border-b border-border px-4 py-3">
-        <h3 className="text-sm font-semibold tracking-tight">Balance Sheet Highlights</h3>
-        <span className="font-mono text-2xs uppercase tracking-wide text-muted-foreground">
+        <h3 className="font-sans text-sm font-semibold tracking-normal">Balance sheet</h3>
+        <span className="font-mono text-2xs text-muted-foreground">
           ₹ crore
         </span>
       </header>
+      <SourceNote source={financials.sources?.balanceSheet} />
 
       <div className="overflow-x-auto p-2">
         <table className="w-full min-w-[520px] border-collapse text-sm">
           <thead>
-            <tr className="border-b border-border text-2xs uppercase tracking-wide text-muted-foreground">
+            <tr className="border-b border-border text-2xs text-muted-foreground">
               <th className="px-3 py-2 text-left font-medium">Period</th>
               <th className="px-3 py-2 text-right font-medium">Borrowings</th>
-              <th className="px-3 py-2 text-right font-medium">Net Worth</th>
-              <th className="px-3 py-2 text-right font-medium">Total Assets</th>
+              <th className="px-3 py-2 text-right font-medium">Net worth</th>
+              <th className="px-3 py-2 text-right font-medium">Total assets</th>
               <th className="px-3 py-2 text-right font-medium">D/E</th>
-              <th className="px-3 py-2 text-right font-medium">Current Ratio</th>
+              <th className="px-3 py-2 text-right font-medium">Current ratio</th>
             </tr>
           </thead>
           <tbody>
@@ -227,6 +292,7 @@ export function BalanceSheetPanel({ financials }: { financials: ApiFinancials })
 
 export function KeyRatiosPanel({ financials }: { financials: ApiFinancials }) {
   const ratios = financials.ratios;
+  const yearEnd = financials.balanceSheet.at(-1)?.period ?? null;
 
   const tiles = [
     {
@@ -240,24 +306,24 @@ export function KeyRatiosPanel({ financials }: { financials: ApiFinancials }) {
       tone: ratios.rocePct !== null && ratios.rocePct >= 20 ? 1 : 0,
     },
     {
-      label: "Current Ratio",
+      label: "Current ratio",
       value: ratios.currentRatio === null ? "—" : `${ratios.currentRatio.toFixed(2)}x`,
       tone: ratios.currentRatio !== null && ratios.currentRatio >= 1.5 ? 1 : 0,
     },
     {
-      label: "Debt / Equity",
+      label: "Debt to equity",
       value: ratios.debtToEquity === null ? "—" : `${ratios.debtToEquity.toFixed(2)}x`,
       tone: ratios.debtToEquity !== null && ratios.debtToEquity < 0.5 ? 1 : 0,
     },
     { label: "Revenue", value: num(ratios.revenueCr, 0, " Cr"), tone: 0 },
-    { label: "Net Profit", value: num(ratios.netProfitCr, 0, " Cr"), tone: 0 },
+    { label: "Net profit", value: num(ratios.netProfitCr, 0, " Cr"), tone: 0 },
   ];
 
   return (
     <section className="rounded-xl border border-border bg-surface">
       <header className="flex flex-wrap items-baseline justify-between gap-3 border-b border-border px-4 py-3">
-        <h3 className="text-sm font-semibold tracking-tight">Key Ratios</h3>
-        <span className="font-mono text-2xs uppercase tracking-wide text-muted-foreground">
+        <h3 className="font-sans text-sm font-semibold tracking-normal">Key ratios</h3>
+        <span className="font-mono text-2xs text-muted-foreground">
           {ratios.period}
         </span>
       </header>
@@ -265,7 +331,7 @@ export function KeyRatiosPanel({ financials }: { financials: ApiFinancials }) {
       <dl className="grid grid-cols-2 gap-px bg-border sm:grid-cols-3">
         {tiles.map((tile) => (
           <div key={tile.label} className="bg-surface px-4 py-3">
-            <dt className="text-2xs uppercase tracking-wide text-muted-foreground">{tile.label}</dt>
+            <dt className="text-2xs text-muted-foreground">{tile.label}</dt>
             <dd
               className={cn(
                 "mt-1 font-mono text-lg font-semibold tabular-nums",
@@ -282,7 +348,8 @@ export function KeyRatiosPanel({ financials }: { financials: ApiFinancials }) {
       {/* The window these ratios cover is stated explicitly: a fiscal-year ROE
           must never be read as a trailing-twelve-month one. */}
       <p className="border-t border-border px-4 py-2 text-2xs text-muted-foreground">
-        Computed over the {ratios.basis}.
+        Profit figures cover the {ratios.basis}
+        {yearEnd ? `; balance-sheet figures are at the ${yearEnd} year-end, and ROE divides one by the other` : ""}.
         {ratios.ttmNote ? ` ${ratios.ttmNote}` : ""}
       </p>
     </section>

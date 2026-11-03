@@ -64,7 +64,7 @@ export async function MoversPreview() {
     <section id="market-watch" className="mx-auto max-w-[1600px] scroll-mt-28 px-4 py-16 sm:px-6 lg:py-24">
       <Reveal className="flex flex-wrap items-end justify-between gap-4">
         <div className="max-w-2xl">
-          <h2 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">Today&rsquo;s movers</h2>
+          <h2 className="text-balance text-3xl sm:text-4xl">Today&rsquo;s movers</h2>
           <p className="mt-3 text-muted-foreground">
             Live NSE variation lists. Rights entitlements are excluded, since they are not shares in the company.
           </p>
@@ -74,7 +74,7 @@ export async function MoversPreview() {
           {gainers.ok ? <FreshnessBadge meta={gainers.meta} /> : null}
           <Link
             href="/market-watch"
-            className="group inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-muted px-3 py-2 text-xs font-medium transition-all hover:-translate-y-0.5 hover:border-accent/50 hover:text-accent active:scale-[0.98]"
+            className="group inline-flex items-center gap-1 text-sm font-medium text-accent underline-offset-4 hover:underline"
           >
             Full market watch
             <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />

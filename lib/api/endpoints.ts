@@ -7,6 +7,8 @@ import type {
   ApiMoverExplained,
   ApiPreIpo,
   ApiStatus,
+  FeedHealth,
+  ApiPulse,
   ApiUnlistedCompany,
   ApiUnlistedDirectory,
   ApiBhavcopy,
@@ -66,22 +68,22 @@ export const getMoverUniverses = () =>
 // -- company ----------------------------------------------------------------
 
 export const getQuote = (symbol: string) =>
-  apiGet<ApiQuote>(`/api/v1/company/${symbol}/quote`, REVALIDATE.quote);
+  apiGet<ApiQuote>(`/api/v1/company/${symbol}/quote?v=2`, REVALIDATE.quote);
 
 export const getProfile = (symbol: string) =>
-  apiGetOrNull<ApiProfile>(`/api/v1/company/${symbol}/profile`, REVALIDATE.fundamentals);
+  apiGetOrNull<ApiProfile>(`/api/v1/company/${symbol}/profile?v=2`, REVALIDATE.fundamentals);
 
 export const getCandles = (symbol: string, period: string) =>
   apiGet<ApiCandleSeries>(
-    `/api/v1/company/${symbol}/candles?period=${period}`,
+    `/api/v1/company/${symbol}/candles?period=${period}&v=2`,
     REVALIDATE.candles,
   );
 
 export const getFinancials = (symbol: string) =>
-  apiGetOrNull<ApiFinancials>(`/api/v1/company/${symbol}/financials`, REVALIDATE.fundamentals);
+  apiGetOrNull<ApiFinancials>(`/api/v1/company/${symbol}/financials?v=4`, REVALIDATE.fundamentals);
 
 export const getValuation = (symbol: string) =>
-  apiGetOrNull<ApiValuation>(`/api/v1/company/${symbol}/valuation`, REVALIDATE.fundamentals);
+  apiGetOrNull<ApiValuation>(`/api/v1/company/${symbol}/valuation?v=2`, REVALIDATE.fundamentals);
 
 export const getQuant = (symbol: string) =>
   apiGetOrNull<ApiQuant>(`/api/v1/company/${symbol}/quant`, REVALIDATE.quant);
@@ -120,6 +122,8 @@ export const getMoversExplained = (direction: "gainers" | "losers", limit = 8) =
   apiGet<ApiMoverExplained[]>(`/api/v1/market/movers-explained?direction=${direction}&limit=${limit}`, REVALIDATE.movers);
 
 export const getStatus = () => apiGet<ApiStatus>("/api/v1/status", 10);
+export const getFeedHealth = () => apiGet<FeedHealth>("/api/v1/health/feeds", 10);
+export const getPulse = (index = "nifty50") => apiGet<ApiPulse>(`/api/v1/market/pulse?index=${index}`, REVALIDATE.movers);
 
 export const getPreIpo = (symbol: string) =>
   apiGetOrNull<ApiPreIpo>(`/api/v1/company/${encodeURIComponent(symbol)}/pre-ipo`, REVALIDATE.unlisted);
@@ -186,13 +190,13 @@ export const getCommodities = () => apiGet<ApiCommodities>("/api/v1/market/commo
 // -- shareholding -----------------------------------------------------------
 
 export const getShareholding = (symbol: string) =>
-  apiGet<ApiShareholding>(`/api/v1/company/${symbol}/shareholding`, 3600);
+  apiGet<ApiShareholding>(`/api/v1/company/${symbol}/shareholding?v=2`, 3600);
 
 // -- Yahoo Finance company sections -----------------------------------------
 
-export const getYStats = (symbol: string) => apiGet<ApiYStats>(`/api/v1/company/${symbol}/statistics?v=1`, 3600);
-export const getYStatements = (symbol: string) => apiGet<ApiYStatements>(`/api/v1/company/${symbol}/statements?v=1`, 3600);
-export const getYAnalysts = (symbol: string) => apiGet<ApiYAnalysts>(`/api/v1/company/${symbol}/analysts?v=1`, 3600);
+export const getYStats = (symbol: string) => apiGet<ApiYStats>(`/api/v1/company/${symbol}/statistics?v=2`, 3600);
+export const getYStatements = (symbol: string) => apiGet<ApiYStatements>(`/api/v1/company/${symbol}/statements?v=2`, 3600);
+export const getYAnalysts = (symbol: string) => apiGet<ApiYAnalysts>(`/api/v1/company/${symbol}/analysts?v=2`, 3600);
 export const getYHistory = (symbol: string, range = "5Y", interval = "1d") =>
   apiGet<ApiYHistory>(`/api/v1/company/${symbol}/history?range=${range}&interval=${interval}&v=1`, 900);
 export const getYCompare = (symbol: string, peers: string[], period = "1Y") =>

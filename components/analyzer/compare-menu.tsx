@@ -257,7 +257,7 @@ function Group({
 }) {
   return (
     <div className="pb-1">
-      <p className="px-3 pb-1 pt-2 text-2xs font-medium uppercase tracking-wider text-muted-foreground">{title}</p>
+      <p className="px-3 pb-1 pt-2 text-2xs font-medium text-muted-foreground">{title}</p>
       {items.length === 0 ? (
         empty ? <p className="px-3 py-2 text-2xs text-muted-foreground">{empty}</p> : null
       ) : (

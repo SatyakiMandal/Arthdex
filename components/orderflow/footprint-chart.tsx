@@ -77,7 +77,7 @@ export function FootprintChart({ data }: { data: ApiOrderflow }) {
                 return (
                   <td
                     key={b.i}
-                    className={cn("border-l border-border/40 px-1 py-[3px] text-center", isPoc && "outline outline-1 -outline-offset-1 outline-[#fbbf24]")}
+                    className={cn("border-l border-border/40 px-1 py-[3px] text-center", isPoc && "outline outline-1 -outline-offset-1 outline-gold")}
                     style={{ background: `hsl(var(--accent) / ${(0.05 + heat * 0.3).toFixed(3)})` }}
                     title={`${price.toFixed(decimals)}  sell ${lv.sell.toLocaleString("en-IN")} × buy ${lv.buy.toLocaleString("en-IN")}`}
                   >

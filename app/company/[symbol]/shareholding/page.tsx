@@ -1,4 +1,5 @@
 import { PageStamp } from "@/components/layout/refresh-control";
+import { SectionHead } from "@/components/ui/section-head";
 import type { Metadata } from "next";
 import { ShareholdingView } from "@/components/shareholding/shareholding-view";
 import { DataUnavailable, SourceLine } from "@/components/ui/data-provenance";
@@ -19,7 +20,8 @@ export default async function ShareholdingPage({ params }: PageProps) {
   const res = await getShareholding(upper);
 
   return (
-    <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6">
+    <div className="mx-auto max-w-[1600px] px-4 py-8 lg:py-10 sm:px-6">
+      <SectionHead title="Shareholding" note="Who owns the company, how that has changed and how much promoters have pledged" className="mb-8" />
       {res.ok ? (
         <>
           <ShareholdingView data={res.data} />

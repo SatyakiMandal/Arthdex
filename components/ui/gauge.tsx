@@ -58,7 +58,7 @@ export function Gauge({
       </svg>
       <div className="pointer-events-none absolute inset-x-0 bottom-0 text-center">
         <p className="font-mono text-4xl font-semibold leading-none tabular-nums">{v.toFixed(1)}</p>
-        <p className="mt-1 text-2xs uppercase tracking-[0.18em] text-muted-foreground">{label ?? "Conviction"}</p>
+        <p className="mt-1 text-2xs text-muted-foreground">{label ?? "Conviction"}</p>
       </div>
     </div>
   );

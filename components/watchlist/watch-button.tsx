@@ -23,7 +23,7 @@ export function WatchButton({
     <button
       type="button"
       aria-pressed={on}
-      aria-label={on ? `Remove ${name} from watchlist` : `Add ${name} to watchlist`}
+      aria-label={on ? `Watching ${name}, remove from watchlist` : `Watch ${name}`}
       title={on ? "On your watchlist" : "Add to watchlist"}
       onClick={() => toggle(kind, id, name)}
       className={cn(

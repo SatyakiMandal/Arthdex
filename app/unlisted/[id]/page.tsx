@@ -118,7 +118,7 @@ function Profile({
             </header>
             <div className="max-h-[26rem] overflow-auto">
               <table className="data-table data-table-sticky w-full text-sm">
-                <thead className="text-2xs uppercase tracking-wide text-muted-foreground">
+                <thead className="text-2xs text-muted-foreground">
                   <tr className="border-b border-border">
                     <th className="px-4 py-2 text-left font-medium">Date</th>
                     <th className="px-4 py-2 text-right font-medium">Price</th>
@@ -154,7 +154,7 @@ function Profile({
             <dl className="grid grid-cols-2 gap-px bg-border">
               {facts.map(([label, value]) => (
                 <div key={label} className="bg-surface px-4 py-3 odd:last:col-span-2">
-                  <dt className="text-2xs uppercase tracking-wide text-muted-foreground">{label}</dt>
+                  <dt className="text-2xs text-muted-foreground">{label}</dt>
                   <dd className={cn("mt-1 font-mono text-base font-semibold tabular-nums", value === "N/A" && "text-muted-foreground")}>
                     {value}
                   </dd>
@@ -162,7 +162,7 @@ function Profile({
               ))}
               {c.sinceFirstPct != null ? (
                 <div className="bg-surface px-4 py-3 odd:last:col-span-2">
-                  <dt className="text-2xs uppercase tracking-wide text-muted-foreground">Since {c.firstDate}</dt>
+                  <dt className="text-2xs text-muted-foreground">Since {c.firstDate}</dt>
                   <dd className={cn("mt-1 font-mono text-base font-semibold tabular-nums", c.sinceFirstPct >= 0 ? "text-up" : "text-down")}>
                     {formatPct(c.sinceFirstPct, 0)}
                   </dd>
@@ -217,7 +217,7 @@ function Lifecycle({ l }: { l: LifecycleData }) {
               </span>
             </span>
           </span>
-          <ArrowUpRight className="h-4 w-4 text-up transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+          <ArrowUpRight className="h-4 w-4 text-up transition-transform group-hover:translate-x-0.5" />
         </Link>
       ) : null}
       {ipo ? (
@@ -240,7 +240,7 @@ function Lifecycle({ l }: { l: LifecycleData }) {
               </span>
             </span>
           </span>
-          <ArrowUpRight className="h-4 w-4 text-accent transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+          <ArrowUpRight className="h-4 w-4 text-accent transition-transform group-hover:translate-x-0.5" />
         </Link>
       ) : null}
     </div>

@@ -8,11 +8,11 @@ import {
   Activity,
   ArrowLeftRight,
   Bell,
-  ClipboardCheck,
   Building2,
   CalendarDays,
   CandlestickChart,
   ChevronDown,
+  ClipboardCheck,
   Coins,
   FlaskConical,
   Gauge,
@@ -22,6 +22,7 @@ import {
   Rocket,
   ScanSearch,
   ScrollText,
+  Star,
   Sunrise,
   X,
   type LucideIcon,
@@ -32,92 +33,121 @@ import { UniversalSearch } from "@/components/search/universal-search";
 import { HeaderActions } from "./header-actions";
 import { cn } from "@/lib/utils";
 
-const NAV: { label: string; href: string; icon: LucideIcon }[] = [
-  { label: "Market Watch", href: "/market-watch", icon: CandlestickChart },
-  { label: "Commodities", href: "/commodities", icon: Coins },
-  { label: "Screener", href: "/screener", icon: ScanSearch },
-  { label: "IPO", href: "/ipo", icon: Rocket },
-  { label: "News", href: "/news", icon: Newspaper },
-  { label: "Unlisted", href: "/unlisted", icon: Building2 },
-  { label: "Analyzer", href: "/analyzer", icon: FlaskConical },
+type Item = { label: string; href: string; icon: LucideIcon; hint: string };
+type Group = { label: string; blurb: string; items: Item[] };
+
+/** Destinations grouped by the job a visitor came to do, so sixteen pages read as three choices. */
+const GROUPS: Group[] = [
+  {
+    label: "Markets",
+    blurb: "What the market is doing now",
+    items: [
+      { label: "Market watch", href: "/market-watch", icon: CandlestickChart, hint: "Indices, movers and breadth" },
+      { label: "Commodities", href: "/commodities", icon: Coins, hint: "Metals, energy and the rupee" },
+      { label: "Order flow", href: "/orderflow", icon: Activity, hint: "Profile, footprint, CVD and GEX" },
+      { label: "Bhavcopy", href: "/bhavcopy", icon: Layers, hint: "End-of-day delivery data" },
+      { label: "Bulk and block deals", href: "/deals", icon: ArrowLeftRight, hint: "Large trades disclosed today" },
+      { label: "Results calendar", href: "/calendar", icon: CalendarDays, hint: "Board meetings and actions, 30 days" },
+    ],
+  },
+  {
+    label: "Companies",
+    blurb: "Listed, unlisted and about to list",
+    items: [
+      { label: "IPO desk", href: "/ipo", icon: Rocket, hint: "Open, upcoming and listed issues" },
+      { label: "Unlisted", href: "/unlisted", icon: Building2, hint: "Dealer prices for private companies" },
+      { label: "News and filings", href: "/news", icon: Newspaper, hint: "Exchange filings and the press" },
+      { label: "Morning briefing", href: "/briefing", icon: Sunrise, hint: "Today in one page" },
+      { label: "Watchlist", href: "/watchlist", icon: Star, hint: "Your companies at a glance" },
+    ],
+  },
+  {
+    label: "Research",
+    blurb: "Models, screens and the record",
+    items: [
+      { label: "Screener", href: "/screener", icon: ScanSearch, hint: "Factor, momentum and MACD screens" },
+      { label: "Event analyzer", href: "/analyzer", icon: FlaskConical, hint: "What one event did to a stock" },
+      { label: "Track record", href: "/track-record", icon: ClipboardCheck, hint: "Every logged call, scored" },
+      { label: "Alerts", href: "/alerts", icon: Bell, hint: "Price levels and new filings" },
+      { label: "Methodology", href: "/methodology", icon: ScrollText, hint: "How each figure is computed" },
+      { label: "Data status", href: "/status", icon: Gauge, hint: "Feed freshness and the watchdog" },
+    ],
+  },
 ];
 
-/** Less frequent destinations, kept behind one menu so the bar stays on a single line. */
-const MORE: { label: string; href: string; icon: LucideIcon; hint: string }[] = [
-  { label: "Morning briefing", href: "/briefing", icon: Sunrise, hint: "Today in one page" },
-  { label: "Track record", href: "/track-record", icon: ClipboardCheck, hint: "Logged calls scored against Nifty" },
-  { label: "Order flow", href: "/orderflow", icon: Activity, hint: "Profile, footprint, CVD and GEX" },
-  { label: "Bulk & block deals", href: "/deals", icon: ArrowLeftRight, hint: "Large trades disclosed today" },
-  { label: "Results & actions calendar", href: "/calendar", icon: CalendarDays, hint: "Next 30 days" },
-  { label: "Bhavcopy", href: "/bhavcopy", icon: Layers, hint: "End-of-day delivery data" },
-  { label: "Alerts", href: "/alerts", icon: Bell, hint: "Price alerts and filings" },
-  { label: "Methodology", href: "/methodology", icon: ScrollText, hint: "How figures are computed" },
-  { label: "Data status", href: "/status", icon: Gauge, hint: "Feed freshness" },
-];
+const isActive = (pathname: string, href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
-function MoreMenu({ pathname }: { pathname: string }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const active = MORE.some((m) => pathname === m.href || pathname.startsWith(`${m.href}/`));
+const UNDERLINE = { type: "spring", stiffness: 500, damping: 40 } as const;
 
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => !ref.current?.contains(e.target as Node) && setOpen(false);
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
-  useEffect(() => setOpen(false), [pathname]);
+function GroupMenu({ group, pathname, open, onOpen, onClose }: { group: Group; pathname: string; open: boolean; onOpen: () => void; onClose: () => void }) {
+  const active = group.items.some((i) => isActive(pathname, i.href));
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  // Hover intent: open after a short pause and close after a longer one, so passing the cursor over does nothing
+  const enter = () => {
+    clearTimeout(timer.current);
+    timer.current = setTimeout(onOpen, 90);
+  };
+  const leave = () => {
+    clearTimeout(timer.current);
+    timer.current = setTimeout(onClose, 160);
+  };
+  useEffect(() => () => clearTimeout(timer.current), []);
 
   return (
-    <div ref={ref} className="relative">
+    <div className="flex" onMouseEnter={enter} onMouseLeave={leave}>
       <button
         type="button"
         aria-expanded={open}
-        aria-haspopup="menu"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => (open ? onClose() : onOpen())}
         className={cn(
-          "inline-flex items-center gap-1 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-sm transition-colors",
-          active || open ? "text-accent" : "text-muted-foreground hover:bg-surface-muted hover:text-foreground",
+          "relative inline-flex items-center gap-1 whitespace-nowrap px-3 text-sm transition-colors",
+          active || open ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+          active && "font-medium",
         )}
       >
-        More
-        <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")} />
+        {group.label}
+        <ChevronDown className={cn("h-3.5 w-3.5 opacity-60 transition-transform duration-200", open && "rotate-180")} aria-hidden />
+        {active ? <motion.span layoutId="nav-active" className="absolute inset-x-3 -bottom-px h-0.5 bg-gold" transition={UNDERLINE} /> : null}
       </button>
+
       <AnimatePresence>
         {open ? (
           <motion.div
-            role="menu"
-            initial={{ opacity: 0, y: -6, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: 0.98 }}
-            transition={{ duration: 0.14 }}
-            className="absolute left-0 top-[calc(100%+8px)] z-50 w-72 overflow-hidden rounded-xl border border-border bg-surface-raised p-1.5 shadow-xl"
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute left-0 top-full z-50 pt-2"
           >
-            {MORE.map((m) => {
-              const Icon = m.icon;
-              return (
-                <Link
-                  key={m.href}
-                  href={m.href}
-                  role="menuitem"
-                  className="group flex items-center gap-3 rounded-lg px-2.5 py-2 transition-colors hover:bg-surface-muted"
-                >
-                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-border bg-surface text-muted-foreground transition-colors group-hover:border-accent/40 group-hover:text-accent">
-                    <Icon className="h-4 w-4" />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block text-sm font-medium">{m.label}</span>
-                    <span className="block truncate text-2xs text-muted-foreground">{m.hint}</span>
-                  </span>
-                </Link>
-              );
-            })}
+            <div className="grid w-[38rem] grid-cols-[11rem_1fr] overflow-hidden rounded-lg border border-border bg-surface-raised shadow-xl">
+              <div className="border-r border-border bg-surface-muted/60 p-4">
+                <span className="block h-px w-6 bg-gold" aria-hidden />
+                <p className="mt-3 font-display text-lg font-semibold leading-tight">{group.label}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{group.blurb}</p>
+              </div>
+              <ul className="grid grid-cols-2 content-start gap-0.5 p-2">
+                {group.items.map((m) => {
+                  const Icon = m.icon;
+                  const here = isActive(pathname, m.href);
+                  return (
+                    <li key={m.href}>
+                      <Link
+                        href={m.href}
+                        onClick={onClose}
+                        aria-current={here ? "page" : undefined}
+                        className={cn("group flex items-start gap-2.5 rounded-md px-2.5 py-2 transition-colors hover:bg-surface-muted", here && "bg-surface-muted")}
+                      >
+                        <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-accent" strokeWidth={1.75} aria-hidden />
+                        <span className="min-w-0">
+                          <span className="block text-sm font-medium">{m.label}</span>
+                          <span className="block text-2xs leading-snug text-muted-foreground">{m.hint}</span>
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           </motion.div>
         ) : null}
       </AnimatePresence>
@@ -127,58 +157,61 @@ function MoreMenu({ pathname }: { pathname: string }) {
 
 export function HeaderBar() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
   const pathname = usePathname();
+  const navRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 6);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+    setMobileOpen(false);
+    setOpenGroup(null);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!openGroup) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpenGroup(null);
+    const onDown = (e: MouseEvent) => !navRef.current?.contains(e.target as Node) && setOpenGroup(null);
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onDown);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onDown);
+    };
+  }, [openGroup]);
+
+  const watchActive = isActive(pathname, "/market-watch");
 
   return (
-    <div
-      className={cn(
-        "glass-panel border-x-0 border-t-0 transition-shadow duration-300",
-        scrolled && "shadow-[0_10px_30px_-18px_hsl(224_40%_2%/0.6)]",
-      )}
-    >
-      <div className="mx-auto flex h-14 max-w-[1600px] items-center gap-4 px-4 sm:px-6">
-        <Link href="/" aria-label="Arthdex home" className="group flex shrink-0 items-center">
-          <Logo className="[&_img]:transition-transform [&_img]:duration-300 group-hover:[&_img]:scale-105" />
+    <div className="chrome border-b border-border">
+      <div className="mx-auto flex h-14 max-w-[1600px] items-stretch gap-2 px-4 sm:gap-4 sm:px-6">
+        <Link href="/" className="flex shrink-0 items-center">
+          <Logo />
         </Link>
 
-        <nav className="ml-3 hidden items-center gap-0.5 lg:flex">
-          {NAV.map((item) => {
-            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "group/nav relative inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-sm transition-colors",
-                  active ? "text-accent" : "text-muted-foreground hover:bg-surface-muted hover:text-foreground",
-                )}
-              >
-                {active ? (
-                  <motion.span
-                    layoutId="nav-active"
-                    className="absolute inset-0 rounded-lg border border-accent/25 bg-accent/10"
-                    transition={{ type: "spring", stiffness: 420, damping: 34 }}
-                  />
-                ) : null}
-                <Icon className={cn("relative hidden h-3.5 w-3.5 2xl:block", !active && "opacity-70 transition-opacity group-hover/nav:opacity-100")} />
-                <span className="relative">{item.label}</span>
-              </Link>
-            );
-          })}
-          <MoreMenu pathname={pathname} />
+        <nav ref={navRef} aria-label="Primary" className="relative ml-4 hidden items-stretch lg:flex">
+          <Link
+            href="/market-watch"
+            aria-current={watchActive ? "page" : undefined}
+            className={cn(
+              "relative inline-flex items-center whitespace-nowrap px-3 text-sm transition-colors",
+              watchActive ? "font-medium text-foreground" : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            Market watch
+            {watchActive ? <motion.span layoutId="nav-active" className="absolute inset-x-3 -bottom-px h-0.5 bg-gold" transition={UNDERLINE} /> : null}
+          </Link>
+          {GROUPS.map((g) => (
+            <GroupMenu
+              key={g.label}
+              group={g}
+              pathname={pathname}
+              open={openGroup === g.label}
+              onOpen={() => setOpenGroup(g.label)}
+              onClose={() => setOpenGroup((v) => (v === g.label ? null : v))}
+            />
+          ))}
         </nav>
 
-        <div className="ml-auto flex shrink-0 items-center gap-2 pl-4">
+        <div className="ml-auto flex shrink-0 items-center gap-1.5 pl-2 sm:gap-2 sm:pl-4">
           <UniversalSearch className="hidden md:block" />
           <HeaderActions />
           <ThemeToggle />
@@ -187,7 +220,7 @@ export function HeaderBar() {
             aria-label="Toggle navigation"
             aria-expanded={mobileOpen}
             onClick={() => setMobileOpen((v) => !v)}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface-muted text-muted-foreground transition-colors hover:text-foreground lg:hidden"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-surface text-muted-foreground transition-colors hover:text-foreground lg:hidden"
           >
             {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </button>
@@ -197,31 +230,38 @@ export function HeaderBar() {
       <AnimatePresence initial={false}>
         {mobileOpen ? (
           <motion.nav
+            aria-label="Mobile"
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden border-t border-border lg:hidden"
+            className="max-h-[calc(100dvh-5rem)] overflow-y-auto border-t border-border lg:hidden"
           >
-            <div className="grid grid-cols-2 gap-1 p-2 sm:grid-cols-3">
-              <UniversalSearch className="col-span-full mb-1" />
-              {[...NAV, ...MORE].map((item) => {
-                const Icon = item.icon;
-                const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setMobileOpen(false)}
-                    className={cn(
-                      "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm transition-colors",
-                      active ? "bg-accent/10 text-accent" : "text-muted-foreground hover:bg-surface-muted hover:text-foreground",
-                    )}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {item.label}
-                  </Link>
-                );
-              })}
+            <div className="p-3">
+              <UniversalSearch className="mb-3" />
+              {GROUPS.map((g) => (
+                <div key={g.label} className="mb-3">
+                  <p className="px-2 pb-1 text-2xs font-medium text-muted-foreground">{g.label}</p>
+                  <div className="grid grid-cols-2 gap-0.5">
+                    {g.items.map((item) => {
+                      const Icon = item.icon;
+                      const here = isActive(pathname, item.href);
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          className={cn(
+                            "flex items-center gap-2 rounded-md px-2 py-2.5 text-sm transition-colors",
+                            here ? "bg-surface-muted font-medium text-foreground" : "text-foreground/80 hover:bg-surface-muted",
+                          )}
+                        >
+                          <Icon className="h-4 w-4 text-muted-foreground" strokeWidth={1.75} aria-hidden />
+                          {item.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           </motion.nav>
         ) : null}

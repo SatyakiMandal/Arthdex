@@ -11,7 +11,7 @@ import { LineChart, num } from "./shared";
 type Mode = "price" | "compare";
 type Range = "1M" | "3M" | "6M" | "1Y" | "5Y";
 const DAYS: Record<Range, number> = { "1M": 31, "3M": 92, "6M": 183, "1Y": 366, "5Y": 1830 };
-const COLORS = ["hsl(var(--accent))", "#fb923c", "#22d3ee", "#a78bfa", "#f472b6", "#facc15", "#34d399"];
+const COLORS = ["hsl(var(--accent))", "hsl(var(--chart-clay))", "hsl(var(--chart-teal))", "hsl(var(--chart-plum))", "hsl(var(--chart-olive))", "hsl(var(--gold))", "hsl(var(--chart-sky))"];
 
 export function HistoryView({ history, compare }: { history: ApiYHistory; compare: ApiYCompare | null }) {
   const [range, setRange] = useState<Range>("1Y");
@@ -86,7 +86,7 @@ export function HistoryView({ history, compare }: { history: ApiYHistory; compar
             ["Sessions", String(asc.length), null],
           ].map(([k, v, tone]) => (
             <div key={String(k)} className="bg-surface px-3 py-2">
-              <p className="text-[0.625rem] uppercase tracking-wider text-muted-foreground">{k}</p>
+              <p className="text-[0.625rem] text-muted-foreground">{k}</p>
               <p className={cn("font-mono text-base font-semibold tabular-nums", tone != null && ((tone as number) >= 0 ? "text-up" : "text-down"))}>{v}</p>
             </div>
           ))}

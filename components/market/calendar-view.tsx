@@ -74,11 +74,11 @@ export function CalendarView({ calendar }: { calendar: ApiCalendar }) {
     [calendar.actions, kind, q],
   );
 
-  const label = "mb-1.5 block text-2xs font-medium uppercase tracking-wide text-muted-foreground";
+  const label = "mb-1.5 block text-2xs font-medium text-muted-foreground";
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end gap-x-5 gap-y-4 rounded-2xl border border-border bg-surface/70 p-4 backdrop-blur">
+      <div className="flex flex-wrap items-end gap-x-5 gap-y-4 rounded-2xl border border-border bg-surface p-4">
         <div>
           <span className={label}>Show</span>
           <SegmentedControl options={views} value={view} onChange={setView} layoutGroupId="cal-view" />

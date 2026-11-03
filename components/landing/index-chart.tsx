@@ -61,8 +61,7 @@ export function IndexChart({ candles, label }: { candles: ApiCandle[]; label: st
   }
 
   return (
-    <figure className="group/chart relative overflow-hidden rounded-2xl border border-border bg-surface/80 p-4 shadow-[0_30px_60px_-40px_hsl(var(--accent)/0.55)] backdrop-blur sm:p-5">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/50 to-transparent" aria-hidden />
+    <figure className="group/chart relative p-4 sm:p-5">
 
       <figcaption className="flex flex-wrap items-start justify-between gap-3">
         <div>
@@ -72,7 +71,7 @@ export function IndexChart({ candles, label }: { candles: ApiCandle[]; label: st
           </div>
         </div>
 
-        <div role="tablist" aria-label="Chart range" className="flex rounded-lg border border-border bg-surface-muted p-0.5">
+        <div role="tablist" aria-label="Chart range" className="flex gap-0.5">
           {RANGES.map((r) => (
             <button
               key={r.id}
@@ -83,8 +82,8 @@ export function IndexChart({ candles, label }: { candles: ApiCandle[]; label: st
                 setHover(null);
               }}
               className={cn(
-                "rounded-md px-2.5 py-1 font-mono text-2xs font-medium transition-all duration-200 active:scale-95",
-                range === r.id ? "bg-accent text-accent-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                "rounded-md px-2 py-1 font-mono text-2xs font-medium transition-colors duration-150",
+                range === r.id ? "bg-foreground text-background" : "text-muted-foreground hover:bg-surface-muted hover:text-foreground",
               )}
             >
               {r.id}
@@ -94,7 +93,7 @@ export function IndexChart({ candles, label }: { candles: ApiCandle[]; label: st
       </figcaption>
 
       <div className="mt-4 flex items-baseline gap-3">
-        <div className="font-mono text-3xl font-semibold tabular-nums">{formatINR(shown, 2)}</div>
+        <div className="font-mono text-[2rem] font-medium tracking-tight tabular-nums">{formatINR(shown, 2)}</div>
         <div className={cn("font-mono text-sm tabular-nums", shownPct >= 0 ? "text-up" : "text-down")}>
           {formatPct(shownPct, 2)} <span className="text-muted-foreground">since {view[0].date}</span>
         </div>
@@ -115,17 +114,17 @@ export function IndexChart({ candles, label }: { candles: ApiCandle[]; label: st
         >
           <defs>
             <linearGradient id="index-fill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={stroke} stopOpacity="0.22" />
+              <stop offset="0%" stopColor={stroke} stopOpacity="0.12" />
               <stop offset="100%" stopColor={stroke} stopOpacity="0" />
             </linearGradient>
           </defs>
-          <g stroke="hsl(var(--border))" strokeWidth="1" opacity="0.5" strokeDasharray="2 5">
+          <g stroke="hsl(var(--border))" strokeWidth="1">
             {gridValues.map((value) => (
               <line key={value} x1="0" y1={y(value)} x2={W} y2={y(value)} vectorEffect="non-scaling-stroke" />
             ))}
           </g>
           <path d={area} fill="url(#index-fill)" />
-          <path d={line} fill="none" stroke={stroke} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+          <path d={line} fill="none" stroke={stroke} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
         </svg>
 
         {hover !== null ? (
@@ -145,7 +144,7 @@ export function IndexChart({ candles, label }: { candles: ApiCandle[]; label: st
 
         <div className="pointer-events-none absolute inset-y-0 right-0 flex flex-col justify-between py-1">
           {[max, min].map((value) => (
-            <span key={value} className="rounded bg-surface/80 px-1 font-mono text-2xs text-muted-foreground">
+            <span key={value} className="bg-surface px-1 font-mono text-2xs text-muted-foreground">
               {formatINR(value, 0)}
             </span>
           ))}

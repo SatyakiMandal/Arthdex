@@ -1,4 +1,5 @@
 import { PageStamp } from "@/components/layout/refresh-control";
+import { SectionHead } from "@/components/ui/section-head";
 import type { Metadata } from "next";
 import { StatementsView } from "@/components/yahoo/statements-view";
 import { DataUnavailable, SourceLine } from "@/components/ui/data-provenance";
@@ -18,9 +19,17 @@ export default async function Page({ params }: PageProps) {
   const upper = symbol.toUpperCase();
   const res = await getYStatements(upper);
   return (
-    <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6">
+    <div className="mx-auto max-w-[1600px] px-4 py-8 lg:py-10 sm:px-6">
+      <SectionHead title="Financial statements" note="Income statement, balance sheet and cash flow, annual or quarterly" className="mb-8" />
       {res.ok ? (
         <>
+          {(res.data.latestQuarterAgeDays ?? 0) > 150 ? (
+            <p role="note" className="mb-6 rounded-lg border border-flat/40 bg-flat/10 px-4 py-3 text-sm">
+              The newest quarterly statement here ended on {res.data.latestQuarter}, {res.data.latestQuarterAgeDays} days
+              ago. Full line items come from a single source that is behind for this company; the Overview&apos;s
+              quarterly results use a second, current source.
+            </p>
+          ) : null}
           <StatementsView data={res.data} />
           <div className="mt-4">
 <PageStamp meta={res.meta} />

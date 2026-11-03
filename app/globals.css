@@ -3,59 +3,85 @@
 @tailwind utilities;
 
 @layer base {
+  /* A grid cell otherwise grows to its widest content (a wide table, a nowrap row), which
+     pushes the page sideways on a phone. Cells shrink to the track; tables scroll inside. */
+  .grid > * {
+    min-width: 0;
+  }
+
   :root {
-    --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-    --font-display: var(--font-sora), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+    --font-sans: var(--font-geist), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-display: var(--font-funnel), var(--font-geist), ui-sans-serif, system-ui, sans-serif;
     --font-deva: var(--font-noto-deva), "Noto Sans Devanagari", "Nirmala UI", sans-serif;
-    --font-mono: ui-monospace, "JetBrains Mono", "SFMono-Regular", Menlo, monospace;
+    --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", Menlo, monospace;
 
-    --radius: 0.75rem;
+    /* One shape scale: 6px controls, 8px panels, pills only for chips */
+    --radius: 0.5rem;
 
-    /* Light theme — paper-white desk with cool neutrals */
-    --background: 0 0% 100%;
-    --foreground: 222 25% 12%;
+    /* Light: ledger paper. Faintly green neutrals, ink text, one navy accent.
+       Green and red are reserved for direction, so the accent is never either. */
+    --background: 75 14% 96%;
+    --foreground: 150 18% 9%;
 
-    --surface: 0 0% 100%;
-    --surface-muted: 210 33% 96%;
-    --surface-raised: 220 24% 99%;
+    --surface: 60 20% 99%;
+    --surface-muted: 80 12% 93.5%;
+    --surface-raised: 60 25% 99.5%;
 
-    --muted: 210 33% 94%;
-    --muted-foreground: 220 10% 44%;
+    --muted: 80 10% 91%;
+    --muted-foreground: 150 6% 36%;
 
-    --border: 220 16% 89%;
-    --input: 220 16% 89%;
-    --ring: 215 70% 32%;
+    --border: 90 8% 85%;
+    --input: 90 8% 80%;
+    --ring: 213 72% 34%;
 
-    --accent: 215 78% 20%;
-    --accent-foreground: 0 0% 100%;
+    /* Brand navy (#0B2D5B), lifted to stay legible as link and control colour */
+    --accent: 213 72% 32%;
+    --accent-foreground: 60 25% 99%;
 
-    --up: 152 62% 33%;
-    --down: 348 72% 46%;
-    --flat: 40 89% 38%;
+    /* Brand gold (#F4B942): the logo's rule. Marks and highlights only, never text on paper */
+    --gold: 41 89% 55%;
+    /* Chart series beyond up, down, accent and gold: muted, brand-harmonised hues,
+       each distinct from the others in hue and lightness so lines stay legible. */
+    --chart-teal: 182 52% 32%;
+    --chart-clay: 16 62% 47%;
+    --chart-plum: 292 26% 45%;
+    --chart-olive: 70 38% 34%;
+    --chart-sky: 202 62% 44%;
+
+    --up: 154 62% 27%;
+    --down: 357 64% 44%;
+    --flat: 36 85% 34%;
   }
 
   .dark {
-    /* Dark theme — terminal slate, tuned for long-session density */
-    --background: 224 33% 6%;
-    --foreground: 210 20% 94%;
+    /* Dark: ink. Near-black with the same green cast, never pure black */
+    --background: 160 10% 5.5%;
+    --foreground: 80 12% 91%;
 
-    --surface: 224 28% 9%;
-    --surface-muted: 224 26% 12%;
-    --surface-raised: 224 24% 14%;
+    --surface: 160 8% 8%;
+    --surface-muted: 160 7% 10.5%;
+    --surface-raised: 160 6% 12%;
 
-    --muted: 224 22% 16%;
-    --muted-foreground: 218 12% 62%;
+    --muted: 160 6% 14%;
+    --muted-foreground: 100 5% 62%;
 
-    --border: 224 20% 18%;
-    --input: 224 20% 18%;
-    --ring: 174 85% 42%;
+    --border: 150 6% 16.5%;
+    --input: 150 6% 22%;
+    --ring: 211 80% 70%;
 
-    --accent: 174 100% 33%;
-    --accent-foreground: 224 33% 6%;
+    --accent: 211 80% 72%;
+    --accent-foreground: 160 10% 6%;
 
-    --up: 152 60% 52%;
-    --down: 350 82% 64%;
-    --flat: 40 89% 61%;
+    --gold: 41 89% 61%;
+    --chart-teal: 178 45% 58%;
+    --chart-clay: 18 78% 66%;
+    --chart-plum: 292 34% 74%;
+    --chart-olive: 68 38% 60%;
+    --chart-sky: 200 70% 68%;
+
+    --up: 150 55% 52%;
+    --down: 357 85% 71%;
+    --flat: 40 85% 60%;
   }
 
   * {
@@ -74,17 +100,18 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    font-feature-settings: "ss01", "cv11";
+    text-rendering: optimizeLegibility;
   }
 
   ::selection {
-    background: hsl(var(--accent) / 0.28);
+    background: hsl(var(--accent) / 0.22);
   }
 
   :focus-visible {
     outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
-    border-radius: 6px;
+    border-radius: 4px;
   }
 
   /* Slim themed scrollbars for the wide tables */
@@ -111,55 +138,54 @@
     }
   }
 
-  /* Display face for titles; Inter for running text; system mono for figures */
+  /* Headings: same family as text, set tight and heavy enough to lead without shouting */
   h1,
   h2 {
     font-family: var(--font-display);
-    letter-spacing: -0.028em;
+    font-weight: 600;
+    letter-spacing: -0.03em;
   }
   h3 {
     font-family: var(--font-display);
-    letter-spacing: -0.012em;
+    font-weight: 600;
+    letter-spacing: -0.015em;
   }
   body {
     font-family: var(--font-sans);
   }
 
   /* Tabular numerics everywhere a figure is rendered in mono */
-  .font-mono {
+  .font-mono,
+  .tabular {
     font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum", "zero";
   }
 }
 
 @layer components {
-  /* Headline gradient: foreground fading toward the accent */
-  .text-gradient {
-    background-image: linear-gradient(120deg, hsl(var(--foreground)) 35%, hsl(var(--accent)) 130%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
 
-  /* Faint engineering-paper grid, masked so it dissolves toward the edges */
+  /* Retired: decorative grid backdrop */
   .bg-grid {
-    background-image:
-      linear-gradient(hsl(var(--border) / 0.45) 1px, transparent 1px),
-      linear-gradient(90deg, hsl(var(--border) / 0.45) 1px, transparent 1px);
-    background-size: 44px 44px;
-    mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 30%, transparent 75%);
-    -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 30%, transparent 75%);
+    background: none;
   }
 
-  /* Shared dense-table treatment: hover row, accent edge, quiet zebra */
+  /* Ledger rule under a section heading */
+  .rule {
+    border-top: 1px solid hsl(var(--foreground) / 0.85);
+  }
+
+  /* Shared dense-table treatment: hairline rows, ink hover, no zebra */
   .data-table tbody tr {
     @apply transition-colors duration-150;
+    box-shadow: inset 0 -1px 0 hsl(var(--border) / 0.6);
   }
   .data-table tbody tr:hover {
-    background-color: hsl(var(--accent) / 0.06);
-    box-shadow: inset 2px 0 0 hsl(var(--accent));
+    background-color: hsl(var(--foreground) / 0.035);
+    box-shadow: inset 2px 0 0 hsl(var(--accent)), inset 0 -1px 0 hsl(var(--border) / 0.6);
   }
-  .data-table tbody tr:nth-child(even) {
-    background-color: hsl(var(--surface-muted) / 0.35);
+  .data-table thead th {
+    font-weight: 500;
+    color: hsl(var(--muted-foreground));
   }
   .data-table td,
   .data-table th {
@@ -184,10 +210,8 @@
   .yf-table thead th {
     padding-top: 0.55rem;
     padding-bottom: 0.55rem;
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     font-weight: 500;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
     color: hsl(var(--muted-foreground));
     border-bottom: 1px solid hsl(var(--border));
   }
@@ -253,47 +277,44 @@
   }
 
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md px-4 py-2.5 text-sm font-medium transition-[background-color,border-color,color,transform] duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
   }
   .btn-primary {
-    @apply btn bg-accent text-accent-foreground shadow-[0_8px_24px_-10px_hsl(var(--accent)/0.8)] hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-10px_hsl(var(--accent)/0.95)];
+    @apply btn bg-foreground text-background hover:bg-foreground/85;
   }
   .btn-ghost {
-    @apply btn border border-border bg-surface-muted hover:-translate-y-0.5 hover:border-accent/50 hover:bg-surface-raised;
+    @apply btn border border-border bg-surface text-foreground hover:border-foreground/40;
   }
 
-  /* Cursor-tracking light on cards: --mx/--my are written by SpotlightCard */
+  /* Retired: cursor-tracking glow on cards. The class stays as a positioning context. */
   .spotlight {
     position: relative;
-    isolation: isolate;
-    overflow: hidden;
-  }
-  .spotlight::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    opacity: 0;
-    transition: opacity 300ms ease;
-    background: radial-gradient(360px circle at var(--mx, 50%) var(--my, 50%), hsl(var(--accent) / 0.14), transparent 70%);
-    pointer-events: none;
-  }
-  .spotlight:hover::before {
-    opacity: 1;
   }
 
   /* Chart line wipes in from the left */
   .chart-draw {
-    animation: wipe-x 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: wipe-x 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
-  /* Slow drifting colour field behind the hero */
+  /* Retired: drifting colour field */
   .hero-aurora {
-    animation: aurora 18s ease-in-out infinite alternate;
+    display: none;
   }
 
+  /* Solid panel; blur and translucency retired */
   .glass-panel {
-    @apply border border-border/60 bg-surface/70 backdrop-blur-xl;
+    @apply border border-border bg-surface;
+  }
+
+  /* Header strip: solid enough to read over tables, faint blur only where supported */
+  .chrome {
+    background-color: hsl(var(--background) / 0.92);
+  }
+  @supports (backdrop-filter: blur(1px)) {
+    .chrome {
+      background-color: hsl(var(--background) / 0.82);
+      backdrop-filter: saturate(140%) blur(10px);
+    }
   }
 }
 
@@ -321,4 +342,32 @@
   [class*="animate-[wiggle"] {
     animation: none;
   }
+}
+
+/* Pulse tiles settle in one after another, largest company first (motion only where allowed) */
+@media (prefers-reduced-motion: no-preference) {
+  .pulse-tile {
+    animation: tile-in 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: calc(var(--i, 0) * 9ms);
+  }
+}
+@keyframes tile-in {
+  from { opacity: 0.15; transform: scale(0.94); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Scroll-driven reveal (components/landing/motion.tsx). Visible by default; animates only where supported. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 35%;
+    }
+  }
+}
+/* Transform only: text never sits half-transparent, so contrast holds at every scroll position */
+@keyframes reveal {
+  from { transform: translateY(18px); }
+  to { transform: none; }
 }

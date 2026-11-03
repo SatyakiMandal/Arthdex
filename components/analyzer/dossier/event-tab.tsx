@@ -160,7 +160,7 @@ export function EventTab({ s }: { s: ListedSummary }) {
           <ul className="divide-y divide-border">
             {es.unattributed.map((u, i) => (
               <li key={i} className="px-4 py-2.5 text-sm">
-                <span className="mr-2 font-mono text-2xs uppercase text-muted-foreground">{(u.source ?? "").replace(/_/g, " ")}</span>
+                <span className="mr-2 font-mono text-2xs text-muted-foreground">{(u.source ?? "").replace(/_/g, " ")}</span>
                 {u.url ? (
                   <a href={u.url} target="_blank" rel="noopener noreferrer" className="hover:text-accent hover:underline">
                     {u.headline}

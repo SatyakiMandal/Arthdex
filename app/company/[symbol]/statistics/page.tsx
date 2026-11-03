@@ -1,4 +1,5 @@
 import { PageStamp } from "@/components/layout/refresh-control";
+import { SectionHead } from "@/components/ui/section-head";
 import type { Metadata } from "next";
 import { StatisticsView } from "@/components/yahoo/statistics-view";
 import { DataUnavailable, SourceLine } from "@/components/ui/data-provenance";
@@ -18,7 +19,8 @@ export default async function Page({ params }: PageProps) {
   const upper = symbol.toUpperCase();
   const res = await getYStats(upper);
   return (
-    <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6">
+    <div className="mx-auto max-w-[1600px] px-4 py-8 lg:py-10 sm:px-6">
+      <SectionHead title="Statistics" note="Valuation, profitability, trading and dividend figures, trailing twelve months unless marked" className="mb-8" />
       {res.ok ? (
         <>
           <StatisticsView data={res.data} />

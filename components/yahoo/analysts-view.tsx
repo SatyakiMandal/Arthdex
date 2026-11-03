@@ -79,7 +79,7 @@ export function AnalystsView({ data }: { data: ApiYAnalysts }) {
               ["Mean rating (1 buy – 5 sell)", num(t.meanRating)],
             ].map(([k, v]) => (
               <div key={k} className="rounded-lg border border-border bg-surface-muted/40 px-3 py-2">
-                <p className="text-[0.625rem] uppercase tracking-wider text-muted-foreground">{k}</p>
+                <p className="text-[0.625rem] text-muted-foreground">{k}</p>
                 <p className={cn("font-mono text-lg font-semibold tabular-nums", k === "Implied move" && upside != null && (upside >= 0 ? "text-up" : "text-down"))}>{v}</p>
               </div>
             ))}
@@ -142,6 +142,7 @@ export function AnalystsView({ data }: { data: ApiYAnalysts }) {
           subtitle="Reported vs estimated EPS (dashed outline = estimate)"
           icon={TrendingUp}
           badge={data.earningsHistory.length ? <span className="text-2xs text-muted-foreground">{beats} of {data.earningsHistory.length} beat</span> : undefined}
+          footnote="EPS here is on the basis brokers estimate, often adjusted for one-off items or standalone, so it can differ from the consolidated EPS filed in the statements."
         >
           {data.earningsHistory.length === 0 ? (
             <p className="p-4 text-sm text-muted-foreground">No earnings history from Yahoo Finance.</p>

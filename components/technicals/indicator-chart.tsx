@@ -10,18 +10,18 @@ export type PaneId = "volume" | "rsi" | "macd" | "stoch" | "mfi" | "adx" | "atr"
 export const OVERLAYS: { id: OverlayId; label: string; color: string }[] = [
   { id: "sma20", label: "SMA 20", color: "hsl(var(--flat))" },
   { id: "sma50", label: "SMA 50", color: "hsl(var(--accent))" },
-  { id: "sma200", label: "SMA 200", color: "#a78bfa" },
-  { id: "ema20", label: "EMA 20", color: "#22d3ee" },
-  { id: "ema50", label: "EMA 50", color: "#f472b6" },
+  { id: "sma200", label: "SMA 200", color: "hsl(var(--chart-plum))" },
+  { id: "ema20", label: "EMA 20", color: "hsl(var(--chart-teal))" },
+  { id: "ema50", label: "EMA 50", color: "hsl(var(--chart-olive))" },
   { id: "bb", label: "Bollinger", color: "hsl(var(--muted-foreground))" },
   { id: "supertrend", label: "Supertrend", color: "hsl(var(--up))" },
-  { id: "vwap", label: "VWAP", color: "#fb923c" },
+  { id: "vwap", label: "VWAP", color: "hsl(var(--chart-clay))" },
   { id: "sr", label: "Support / resistance", color: "hsl(var(--muted-foreground))" },
   { id: "orderBlocks", label: "Order blocks", color: "hsl(var(--up))" },
-  { id: "fvg", label: "Fair value gaps", color: "#a78bfa" },
-  { id: "liquidity", label: "Liquidity sweeps", color: "#fb923c" },
-  { id: "donchian", label: "Donchian 20", color: "#38bdf8" },
-  { id: "vwapBands", label: "VWAP bands", color: "#fb923c" },
+  { id: "fvg", label: "Fair value gaps", color: "hsl(var(--chart-plum))" },
+  { id: "liquidity", label: "Liquidity sweeps", color: "hsl(var(--chart-clay))" },
+  { id: "donchian", label: "Donchian 20", color: "hsl(var(--chart-sky))" },
+  { id: "vwapBands", label: "VWAP bands", color: "hsl(var(--chart-clay))" },
 ];
 
 export const PANES: { id: PaneId; label: string }[] = [
@@ -63,7 +63,7 @@ const PANE_SPECS: Record<Exclude<PaneId, "volume">, PaneSpec> = {
     bands: [20, 80],
     range: [0, 100],
   },
-  mfi: { lines: [{ key: "mfi", label: "MFI", color: "#22d3ee" }], bands: [20, 80], range: [0, 100] },
+  mfi: { lines: [{ key: "mfi", label: "MFI", color: "hsl(var(--chart-teal))" }], bands: [20, 80], range: [0, 100] },
   adx: {
     lines: [
       { key: "adx", label: "ADX", color: "hsl(var(--foreground))" },
@@ -112,7 +112,7 @@ export function IndicatorChart({
 }) {
   const n = data.bars.length;
   const [hover, setHover] = useState<number | null>(null);
-  const idx = hover ?? n - 1;
+  const idx = hover != null && hover < n ? hover : n - 1;
   const step = W / Math.max(n, 1);
   const x = (i: number) => (i + 0.5) * step;
 
@@ -218,15 +218,15 @@ export function IndicatorChart({
                   ["vwapLower2", 0.3, "1 3"],
                 ] as const
               ).map(([key, op, dash]) => (
-                <path key={key} d={path(s[key], x, py)} fill="none" stroke="#fb923c" strokeOpacity={op} strokeWidth={1} strokeDasharray={dash} vectorEffect="non-scaling-stroke" />
+                <path key={key} d={path(s[key], x, py)} fill="none" stroke="hsl(var(--chart-clay))" strokeOpacity={op} strokeWidth={1} strokeDasharray={dash} vectorEffect="non-scaling-stroke" />
               ))
             : null}
 
           {overlays.has("donchian") ? (
             <>
-              <path d={path(s.donchianUpper, x, py)} fill="none" stroke="#38bdf8" strokeWidth={1.3} vectorEffect="non-scaling-stroke" />
-              <path d={path(s.donchianLower, x, py)} fill="none" stroke="#38bdf8" strokeWidth={1.3} vectorEffect="non-scaling-stroke" />
-              <path d={path(s.donchianMiddle, x, py)} fill="none" stroke="#38bdf8" strokeOpacity={0.45} strokeWidth={1} strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
+              <path d={path(s.donchianUpper, x, py)} fill="none" stroke="hsl(var(--chart-sky))" strokeWidth={1.3} vectorEffect="non-scaling-stroke" />
+              <path d={path(s.donchianLower, x, py)} fill="none" stroke="hsl(var(--chart-sky))" strokeWidth={1.3} vectorEffect="non-scaling-stroke" />
+              <path d={path(s.donchianMiddle, x, py)} fill="none" stroke="hsl(var(--chart-sky))" strokeOpacity={0.45} strokeWidth={1} strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
             </>
           ) : null}
 
@@ -331,13 +331,21 @@ export function IndicatorChart({
           </span>
         ))}
         {overlays.has("sr")
-          ? [...data.levels.support, ...data.levels.resistance]
+          ? // Every level keeps its line; only labels at least 6% of the pane apart are written,
+            // most-tested first, so a cluster of nearby levels does not print on top of itself.
+            [...data.levels.support, ...data.levels.resistance]
               .filter((l) => l.price > lo && l.price < hi)
-              .map((l, i) => (
+              .map((l) => ({ ...l, at: (py(l.price) / PRICE_H) * 100 }))
+              .sort((a, b) => b.touches - a.touches)
+              .reduce<{ price: number; touches: number; at: number }[]>(
+                (kept, l) => (kept.some((k) => Math.abs(k.at - l.at) < 6) ? kept : [...kept, l]),
+                [],
+              )
+              .map((l) => (
                 <span
-                  key={i}
-                  className="pointer-events-none absolute left-1 -translate-y-full font-mono text-2xs text-muted-foreground"
-                  style={{ top: `${(py(l.price) / PRICE_H) * 100}%` }}
+                  key={l.price}
+                  className="pointer-events-none absolute left-1 -translate-y-full bg-surface/80 px-0.5 font-mono text-2xs text-muted-foreground"
+                  style={{ top: `${l.at}%` }}
                 >
                   {fmt(l.price)} · {l.touches}×
                 </span>

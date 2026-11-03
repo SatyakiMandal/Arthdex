@@ -66,11 +66,12 @@ export function RiskCard({ symbol }: { symbol: string }) {
             <dd className="text-right">-{m.cvar95Pct}%</dd>
             <dt className="text-muted-foreground">ATR (14)</dt>
             <dd className="text-right">
-              {m.atr} <span className="text-2xs text-muted-foreground">({m.atrPct}%)</span>
+              {m.atr} <span className="text-2xs text-muted-foreground">({m.atrPct == null ? "—" : `${m.atrPct}%`})</span>
             </dd>
             <dt className="text-muted-foreground">2-ATR stop</dt>
             <dd className="text-right text-down">
-              {data.sizing.stopPrice} <span className="text-2xs text-muted-foreground">(-{data.sizing.stopPct}%)</span>
+              {data.sizing.stopPrice == null ? "—" : data.sizing.stopPrice}{" "}
+              <span className="text-2xs text-muted-foreground">{data.sizing.stopPct == null ? "" : `(-${data.sizing.stopPct}%)`}</span>
             </dd>
             <dt className="text-muted-foreground">Max position for 1% risk</dt>
             <dd className="text-right font-semibold">{data.sizing.maxPositionPct == null ? "—" : `${data.sizing.maxPositionPct}% of capital`}</dd>

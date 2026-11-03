@@ -19,7 +19,7 @@ const METRICS = [
   { id: "dayChangePct" as const, label: "Day change %" },
 ];
 
-const label = "mb-1.5 block text-2xs font-medium uppercase tracking-wide text-muted-foreground";
+const label = "mb-1.5 block text-2xs font-medium text-muted-foreground";
 
 export function MyAlerts() {
   const params = useSearchParams();

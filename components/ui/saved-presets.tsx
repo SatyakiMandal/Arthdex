@@ -44,7 +44,7 @@ export function SavedPresets<T>({
 
   return (
     <div className={cn("flex flex-wrap items-center gap-2", className)}>
-      <span className="inline-flex items-center gap-1.5 text-2xs font-medium uppercase tracking-wide text-muted-foreground">
+      <span className="inline-flex items-center gap-1.5 text-2xs font-medium text-muted-foreground">
         <Bookmark className="h-3.5 w-3.5" /> Saved screens
       </span>
 

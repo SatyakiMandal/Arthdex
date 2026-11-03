@@ -142,14 +142,14 @@ export function OrderflowWorkbench({
 
       <section className="rounded-xl border border-border bg-surface p-3">
         <div className="mb-3 flex flex-wrap items-center gap-1.5">
-          <span className="mr-1 self-center text-2xs uppercase tracking-wider text-muted-foreground">Profile</span>
+          <span className="mr-1 self-center text-2xs text-muted-foreground">Profile</span>
           <button type="button" aria-pressed={mode === "volume"} onClick={() => setMode("volume")} className={chip(mode === "volume")}>
             Volume profile
           </button>
           <button type="button" aria-pressed={mode === "delta"} onClick={() => setMode("delta")} className={chip(mode === "delta")}>
             Delta profile
           </button>
-          <span className="ml-3 mr-1 self-center text-2xs uppercase tracking-wider text-muted-foreground">Markers</span>
+          <span className="ml-3 mr-1 self-center text-2xs text-muted-foreground">Markers</span>
           <button type="button" aria-pressed={showAbsorption} onClick={() => setShowAbsorption((v) => !v)} className={chip(showAbsorption)}>
             Absorption
           </button>
@@ -234,7 +234,7 @@ export function OrderflowWorkbench({
                   <dt className="text-muted-foreground">VAH</dt>
                   <dd className="text-right text-accent">{f2(data.profile.vah)}</dd>
                   <dt className="text-muted-foreground">POC</dt>
-                  <dd className="text-right text-[#fbbf24]">{f2(data.profile.poc)}</dd>
+                  <dd className="text-right text-gold">{f2(data.profile.poc)}</dd>
                   <dt className="text-muted-foreground">VAL</dt>
                   <dd className="text-right text-accent">{f2(data.profile.val)}</dd>
                   <dt className="text-muted-foreground">Last</dt>

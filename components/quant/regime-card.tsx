@@ -8,7 +8,7 @@ export function RegimeCard({ regime }: { regime: ApiRegime }) {
   if (regime.note || regime.currentState === undefined) {
     return (
       <DataCard
-        title="Markov-Switching Regime"
+        title="Markov-switching regime"
         subtitle="Hamilton two-state model"
         icon={Waypoints}
       >
@@ -25,7 +25,7 @@ export function RegimeCard({ regime }: { regime: ApiRegime }) {
 
   return (
     <DataCard
-      title="Markov-Switching Regime"
+      title="Markov-switching regime"
       subtitle="Hamilton two-state model with regime-dependent variance"
       icon={Waypoints}
       badge={
@@ -38,7 +38,7 @@ export function RegimeCard({ regime }: { regime: ApiRegime }) {
     >
       <div className="grid grid-cols-2 gap-px bg-border">
         <div className="bg-surface px-4 py-3">
-          <div className="text-2xs uppercase tracking-wide text-muted-foreground">
+          <div className="text-2xs text-muted-foreground">
             Low-vol regime
           </div>
           <div className="mt-1 font-mono text-xl font-semibold tabular-nums text-up">
@@ -47,7 +47,7 @@ export function RegimeCard({ regime }: { regime: ApiRegime }) {
           <div className="mt-0.5 font-mono text-2xs text-muted-foreground">annualised</div>
         </div>
         <div className="bg-surface px-4 py-3">
-          <div className="text-2xs uppercase tracking-wide text-muted-foreground">
+          <div className="text-2xs text-muted-foreground">
             High-vol regime
           </div>
           <div className="mt-1 font-mono text-xl font-semibold tabular-nums text-down">
@@ -59,7 +59,7 @@ export function RegimeCard({ regime }: { regime: ApiRegime }) {
 
       <div className="border-t border-border px-4 py-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="text-2xs uppercase tracking-wide text-muted-foreground">
+          <span className="text-2xs text-muted-foreground">
             Current state probability
           </span>
           <span className="font-mono text-2xs text-muted-foreground">
@@ -132,13 +132,13 @@ export function MicrostructureCard({ micro }: { micro: ApiMicrostructure }) {
         />
         <dl className="mt-3 grid grid-cols-2 gap-px bg-border">
           <div className="bg-surface px-4 py-3">
-            <dt className="text-2xs uppercase tracking-wide text-muted-foreground">
+            <dt className="text-2xs text-muted-foreground">
               Kyle&rsquo;s λ
             </dt>
             <dd className="mt-1 font-mono text-lg font-semibold text-muted-foreground">—</dd>
           </div>
           <div className="bg-surface px-4 py-3">
-            <dt className="text-2xs uppercase tracking-wide text-muted-foreground">VPIN</dt>
+            <dt className="text-2xs text-muted-foreground">VPIN</dt>
             <dd className="mt-1 font-mono text-lg font-semibold text-muted-foreground">—</dd>
           </div>
         </dl>

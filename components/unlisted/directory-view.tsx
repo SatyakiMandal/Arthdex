@@ -47,11 +47,11 @@ export function DirectoryView({ companies, sectors }: { companies: ApiUnlistedLi
     });
   }, [companies, query, sector, sort]);
 
-  const label = "mb-1.5 block text-2xs font-medium uppercase tracking-wide text-muted-foreground";
+  const label = "mb-1.5 block text-2xs font-medium text-muted-foreground";
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-end gap-x-5 gap-y-4 rounded-2xl border border-border bg-surface/70 p-4 backdrop-blur">
+      <div className="flex flex-wrap items-end gap-x-5 gap-y-4 rounded-2xl border border-border bg-surface p-4">
         <div className="min-w-[14rem] flex-1">
           <label htmlFor="unlisted-search" className={label}>
             Company
@@ -133,9 +133,9 @@ export function DirectoryView({ companies, sectors }: { companies: ApiUnlistedLi
             <li key={c.id}>
               <Link
                 href={`/unlisted/${c.id}`}
-                className="group flex h-full items-center gap-3 rounded-2xl border border-border bg-surface p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/50 hover:shadow-[0_18px_36px_-26px_hsl(var(--accent)/0.6)]"
+                className="group flex h-full items-center gap-3 rounded-2xl border border-border bg-surface p-4 transition-all duration-300 hover:border-accent/50"
               >
-                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-accent/20 bg-gradient-to-br from-accent/15 to-accent/5 font-mono text-xs font-semibold text-accent">
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-accent/20 bg-accent/10 font-mono text-xs font-semibold text-accent">
                   {initials(c.name) || "?"}
                 </span>
                 <span className="min-w-0 flex-1">
@@ -146,7 +146,7 @@ export function DirectoryView({ companies, sectors }: { companies: ApiUnlistedLi
                   <span className={cn("block font-mono text-sm font-semibold tabular-nums", c.price == null && "text-muted-foreground")}>
                     {c.price == null ? "n/a" : `₹${formatINR(c.price, c.price < 100 ? 2 : 0)}`}
                   </span>
-                  <ArrowUpRight className="ml-auto mt-0.5 h-3.5 w-3.5 text-muted-foreground transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-accent" />
+                  <ArrowUpRight className="ml-auto mt-0.5 h-3.5 w-3.5 text-muted-foreground transition-all group-hover:translate-x-0.5 group-hover:text-accent" />
                 </span>
               </Link>
             </li>

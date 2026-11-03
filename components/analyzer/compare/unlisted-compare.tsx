@@ -35,8 +35,8 @@ export function UnlistedCompare({ a, b }: { a: UnlistedSummary; b: UnlistedSumma
   const names: string[] = [];
   for (const p of [...(va?.pillars ?? []), ...(vb?.pillars ?? [])]) if (p.name && !names.includes(p.name)) names.push(p.name);
   const pillarRows: CmpRow[] = names.map((name) => {
-    const x = va?.pillars.find((p) => p.name === name);
-    const y = vb?.pillars.find((p) => p.name === name);
+    const x = va?.pillars?.find((p) => p.name === name);
+    const y = vb?.pillars?.find((p) => p.name === name);
     const f = (p: typeof x) => (p ? (p.stance === "Not assessed" ? "Not assessed" : `${p.stance} (${p.score?.toFixed(0) ?? dash})`) : dash);
     return { label: name, a: f(x), b: f(y), av: x && x.stance !== "Not assessed" ? x.score : null, bv: y && y.stance !== "Not assessed" ? y.score : null, better: "high" };
   });
@@ -46,7 +46,10 @@ export function UnlistedCompare({ a, b }: { a: UnlistedSummary; b: UnlistedSumma
   const sizeRows: CmpRow[] = [
     numRow("Prescribed allocation", g(ra, "sizing", "prescribed_pct"), g(rb, "sizing", "prescribed_pct"), fPct(1)),
     numRow("Half-Kelly weight", g(ra, "sizing", "half_kelly_pct"), g(rb, "sizing", "half_kelly_pct"), fPct(1)),
-    ...sa.map((t, i): CmpRow => ({ label: `${t.portfolio_name} shares`, a: t.prescribed_shares?.toLocaleString("en-IN") ?? dash, b: sb[i]?.prescribed_shares?.toLocaleString("en-IN") ?? dash })),
+    ...sa.map((t): CmpRow => {
+      const tb = sb.find((x) => x.portfolio_name === t.portfolio_name);
+      return { label: `${t.portfolio_name} shares`, a: t.prescribed_shares?.toLocaleString("en-IN") ?? dash, b: tb?.prescribed_shares?.toLocaleString("en-IN") ?? dash };
+    }),
     numRow("Minimum ticket (one lot)", g(ra, "risk", "liquidity", "min_ticket_inr"), g(rb, "risk", "liquidity", "min_ticket_inr"), fInr(0), "low"),
     txtRow("Core holding", g(ra, "holding", "core"), g(rb, "holding", "core")),
   ];

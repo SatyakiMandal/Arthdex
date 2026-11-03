@@ -116,7 +116,7 @@ export function CustomAlertEngine({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setOpen(false)}
-              className="fixed inset-0 z-[60] bg-background/70 backdrop-blur-sm"
+              className="fixed inset-0 z-[60] bg-background/70"
             />
             <motion.aside
               role="dialog"
@@ -157,7 +157,7 @@ export function CustomAlertEngine({
               <div className="border-b border-border px-4 py-3">
                 <div className="grid gap-2">
                   <label className="flex flex-col gap-1">
-                    <span className="text-2xs uppercase tracking-wide text-muted-foreground">Metric</span>
+                    <span className="text-2xs text-muted-foreground">Metric</span>
                     <select
                       value={metricId}
                       onChange={(e) => setMetricId(e.target.value)}
@@ -179,7 +179,7 @@ export function CustomAlertEngine({
                   ) : (
                     <div className="flex items-end gap-2">
                       <label className="flex flex-1 flex-col gap-1">
-                        <span className="text-2xs uppercase tracking-wide text-muted-foreground">
+                        <span className="text-2xs text-muted-foreground">
                           Condition
                         </span>
                         <select
@@ -196,7 +196,7 @@ export function CustomAlertEngine({
                       </label>
 
                       <label className="flex flex-col gap-1">
-                        <span className="text-2xs uppercase tracking-wide text-muted-foreground">
+                        <span className="text-2xs text-muted-foreground">
                           {metric?.unit ?? "Value"}
                         </span>
                         <input

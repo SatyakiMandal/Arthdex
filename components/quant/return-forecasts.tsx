@@ -14,7 +14,7 @@ export function ReturnForecasts({ forecasts }: { forecasts: ApiForecast[] }) {
   if (forecasts.length === 0) {
     return (
       <DataCard
-        title="Multi-Horizon Return Forecasts"
+        title="Return forecasts by horizon"
         subtitle="Conformal prediction intervals"
         icon={Target}
       >
@@ -33,7 +33,7 @@ export function ReturnForecasts({ forecasts }: { forecasts: ApiForecast[] }) {
 
   return (
     <DataCard
-      title="Multi-Horizon Return Forecasts"
+      title="Return forecasts by horizon"
       subtitle="AR(1) point estimate with a 95% split-conformal interval"
       icon={Target}
       footnote="The interval half-width is the 95th percentile of absolute residuals on a held-out window, so it inherits the real tail of this series rather than assuming a Gaussian one. Signal confidence is the drift-to-width ratio. It rises with horizon because drift scales with time while the interval scales with its square root, not because long forecasts are more reliable."

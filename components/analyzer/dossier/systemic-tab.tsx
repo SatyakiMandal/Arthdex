@@ -132,7 +132,7 @@ export function SystemicTab({ s }: { s: ListedSummary }) {
           ) : (
             <>
               <div className="p-4">
-                <p className="mb-2 text-2xs uppercase tracking-wider text-muted-foreground">Where the variance comes from</p>
+                <p className="mb-2 text-2xs text-muted-foreground">Where the variance comes from</p>
                 <div className="flex h-3 overflow-hidden rounded-full bg-muted">
                   {attribution.map(([k, v], i) => (
                     <div key={k} title={`${k}: ${v.toFixed(1)}%`} style={{ width: `${Math.max(v, 0)}%`, background: `hsl(var(--accent) / ${(1 - i * 0.17).toFixed(2)})` }} />

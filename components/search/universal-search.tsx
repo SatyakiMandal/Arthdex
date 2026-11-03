@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Building2, Loader2, Search, TrendingUp, X } from "lucide-react";
+import { Building2, CornerDownRight, Loader2, Search, TrendingUp, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SearchHit {
@@ -12,8 +12,37 @@ interface SearchHit {
   name: string;
   series: string;
   isin: string | null;
-  kind: "listed" | "unlisted";
+  kind: "listed" | "unlisted" | "page";
   href: string;
+}
+
+/** Every tool, findable by name or by the words people use for it, so search doubles as navigation. */
+const PAGES: { name: string; href: string; words: string }[] = [
+  { name: "Market watch", href: "/market-watch", words: "indices movers gainers losers breadth nifty sensex" },
+  { name: "Commodities", href: "/commodities", words: "gold silver crude oil metals energy rupee usd" },
+  { name: "Screener", href: "/screener", words: "screen macd factor alpha beta momentum filter" },
+  { name: "IPO desk", href: "/ipo", words: "ipo listing issue subscription gmp primary" },
+  { name: "Unlisted", href: "/unlisted", words: "unlisted pre-ipo private shares" },
+  { name: "News and filings", href: "/news", words: "news filings announcements press" },
+  { name: "Event analyzer", href: "/analyzer", words: "analyzer event impact study sentiment" },
+  { name: "Morning briefing", href: "/briefing", words: "briefing today summary morning" },
+  { name: "Track record", href: "/track-record", words: "track record calls decisions performance" },
+  { name: "Order flow", href: "/orderflow", words: "order flow footprint cvd gex volume profile options" },
+  { name: "Bulk and block deals", href: "/deals", words: "deals bulk block short" },
+  { name: "Results calendar", href: "/calendar", words: "calendar results board meetings dividend split bonus" },
+  { name: "Bhavcopy", href: "/bhavcopy", words: "bhavcopy delivery eod end of day" },
+  { name: "Watchlist", href: "/watchlist", words: "watchlist saved favourites" },
+  { name: "Alerts", href: "/alerts", words: "alerts notify price" },
+  { name: "Methodology", href: "/methodology", words: "methodology how computed models" },
+  { name: "Data status", href: "/status", words: "status health feeds freshness watchdog" },
+];
+
+function matchPages(q: string): SearchHit[] {
+  const needle = q.toLowerCase();
+  if (needle.length < 2) return [];
+  return PAGES.filter((p) => p.name.toLowerCase().includes(needle) || p.words.split(" ").some((w) => w.startsWith(needle)))
+    .slice(0, 3)
+    .map((p) => ({ id: `page:${p.href}`, symbol: "", name: p.name, series: "", isin: null, kind: "page" as const, href: p.href }));
 }
 
 /**
@@ -72,7 +101,10 @@ export function UniversalSearch({ className }: { className?: string }) {
     return () => clearTimeout(timer);
   }, [trimmed]);
 
-  useEffect(() => setActiveIndex(0), [results]);
+  // Tools first: a few words of a page name should never be outranked by a ticker that happens to contain them
+  const hits = useMemo(() => [...matchPages(trimmed), ...results], [trimmed, results]);
+
+  useEffect(() => setActiveIndex(0), [hits]);
 
   useEffect(() => {
     function onPointerDown(event: MouseEvent) {
@@ -108,17 +140,17 @@ export function UniversalSearch({ className }: { className?: string }) {
       inputRef.current?.blur();
       return;
     }
-    if (!results.length) return;
+    if (!hits.length) return;
 
     if (event.key === "ArrowDown") {
       event.preventDefault();
-      setActiveIndex((i) => (i + 1) % results.length);
+      setActiveIndex((i) => (i + 1) % hits.length);
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
-      setActiveIndex((i) => (i - 1 + results.length) % results.length);
+      setActiveIndex((i) => (i - 1 + hits.length) % hits.length);
     } else if (event.key === "Enter") {
       event.preventDefault();
-      commit(results[activeIndex]);
+      commit(hits[activeIndex]);
     }
   }
 
@@ -158,8 +190,8 @@ export function UniversalSearch({ className }: { className?: string }) {
           }}
           onFocus={() => setOpen(true)}
           onKeyDown={onInputKeyDown}
-          placeholder="Search any company…"
-          aria-label="Search companies"
+          placeholder="Search companies or tools…"
+          aria-label="Search companies or tools"
           role="combobox"
           aria-expanded={showPanel}
           aria-controls="universal-search-results"
@@ -201,13 +233,13 @@ export function UniversalSearch({ className }: { className?: string }) {
           >
             {error ? (
               <p className="px-3 py-4 text-2xs text-down">{error}</p>
-            ) : results.length === 0 ? (
+            ) : hits.length === 0 ? (
               <p className="px-3 py-4 text-sm text-muted-foreground">
-                {loading ? "Searching…" : `No listed or unlisted company matches “${trimmed}”.`}
+                {loading ? "Searching…" : `No company or tool matches “${trimmed}”.`}
               </p>
             ) : (
               <ul className="max-h-80 overflow-y-auto py-1">
-                {results.map((hit, index) => (
+                {hits.map((hit, index) => (
                   <li key={hit.id}>
                     <button
                       type="button"
@@ -220,13 +252,17 @@ export function UniversalSearch({ className }: { className?: string }) {
                         index === activeIndex ? "bg-surface-muted" : "hover:bg-surface-muted",
                       )}
                     >
-                      {hit.kind === "unlisted" ? (
+                      {hit.kind === "page" ? (
+                        <CornerDownRight className="h-3.5 w-3.5 shrink-0 text-gold" />
+                      ) : hit.kind === "unlisted" ? (
                         <Building2 className="h-3.5 w-3.5 shrink-0 text-flat" />
                       ) : (
                         <TrendingUp className="h-3.5 w-3.5 shrink-0 text-accent" />
                       )}
                       <span className="min-w-0 flex-1">
-                        {hit.kind === "unlisted" ? (
+                        {hit.kind === "page" ? (
+                          <span className="block truncate text-sm font-medium">{hit.name}</span>
+                        ) : hit.kind === "unlisted" ? (
                           <>
                             <span className="block truncate text-sm font-medium">{hit.name}</span>
                             <span className="block truncate text-2xs text-muted-foreground">{hit.series}</span>
@@ -244,7 +280,7 @@ export function UniversalSearch({ className }: { className?: string }) {
                           hit.kind === "unlisted" ? "border-flat/40 bg-flat/10 text-flat" : "border-border text-muted-foreground",
                         )}
                       >
-                        {hit.kind === "unlisted" ? "Unlisted" : hit.series || "NSE"}
+                        {hit.kind === "page" ? "Go to" : hit.kind === "unlisted" ? "Unlisted" : hit.series || "NSE"}
                       </span>
                     </button>
                   </li>

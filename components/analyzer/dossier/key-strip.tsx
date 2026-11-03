@@ -5,7 +5,7 @@ import { Pill, dash, frac, inr, num, pct, stanceTone } from "./shared";
 function Tile({ label, value, sub, tone, className }: { label: string; value: React.ReactNode; sub?: React.ReactNode; tone?: string; className?: string }) {
   return (
     <div className={cn("min-w-0 border-l border-border/70 px-3 py-1.5 first:border-l-0", className)}>
-      <p className="truncate text-[0.625rem] uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="truncate text-[0.625rem] text-muted-foreground">{label}</p>
       <p className={cn("truncate font-mono text-sm font-semibold leading-tight tabular-nums", tone)}>{value}</p>
       {sub ? <p className="truncate font-mono text-[0.625rem] leading-tight text-muted-foreground">{sub}</p> : null}
     </div>
@@ -20,7 +20,7 @@ export function KeyStrip({ s }: { s: ListedSummary }) {
   if (v) {
     tiles.push(
       <div key="call" className="col-span-2 flex min-w-0 flex-col justify-center gap-1 px-3 py-1.5">
-        <p className="text-[0.625rem] uppercase tracking-wider text-muted-foreground">Call</p>
+        <p className="text-[0.625rem] text-muted-foreground">Call</p>
         {v.call ? <Pill label={v.call} tone={stanceTone(v.call)} /> : dash}
       </div>,
       <Tile key="conv" label="Conviction" value={`${num(v.conviction, 1)}`} sub="of 100" />,

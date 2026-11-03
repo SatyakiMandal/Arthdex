@@ -191,7 +191,7 @@ export function WatchlistView() {
       ) : (
         <div className="overflow-x-auto">
           <table className="data-table w-full text-sm">
-          <thead className="text-2xs uppercase tracking-wide text-muted-foreground">
+          <thead className="text-2xs text-muted-foreground">
             <tr className="border-b border-border">
               <th className="px-4 py-2 text-left font-medium">Company</th>
               <th className="px-4 py-2 text-right font-medium">Price</th>

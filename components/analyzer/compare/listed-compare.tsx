@@ -90,8 +90,8 @@ export function ListedCompare({ a, b }: { a: ListedSummary; b: ListedSummary }) 
   const pillarNames: string[] = [];
   for (const p of [...(va?.pillars ?? []), ...(vb?.pillars ?? [])]) if (p.name && !pillarNames.includes(p.name)) pillarNames.push(p.name);
   const pillarRows: CmpRow[] = pillarNames.map((name) => {
-    const pa_ = va?.pillars.find((p) => p.name === name);
-    const pb_ = vb?.pillars.find((p) => p.name === name);
+    const pa_ = va?.pillars?.find((p) => p.name === name);
+    const pb_ = vb?.pillars?.find((p) => p.name === name);
     const f = (p: typeof pa_) => (p ? (p.stance === "Not assessed" ? "Not assessed" : `${p.stance} (${p.score?.toFixed(0) ?? dash})`) : dash);
     return { label: name, a: f(pa_), b: f(pb_), av: pa_ && pa_.stance !== "Not assessed" ? pa_.score : null, bv: pb_ && pb_.stance !== "Not assessed" ? pb_.score : null, better: "high" };
   });
@@ -102,12 +102,18 @@ export function ListedCompare({ a, b }: { a: ListedSummary; b: ListedSummary }) 
     numRow("Prescribed allocation", g(da, "sizing", "prescribed_pct"), g(db, "sizing", "prescribed_pct"), fPct(1)),
     numRow("Half-Kelly weight", g(da, "sizing", "half_kelly_pct"), g(db, "sizing", "half_kelly_pct"), fPct(1)),
     numRow("Full-Kelly weight", g(da, "sizing", "raw_kelly_pct"), g(db, "sizing", "raw_kelly_pct"), fPct(1)),
-    ...sizeA.map((t, i): CmpRow => ({
-      label: `${t.portfolio_name} shares`,
-      a: t.prescribed_shares?.toLocaleString("en-IN") ?? dash,
-      b: sizeB[i]?.prescribed_shares?.toLocaleString("en-IN") ?? dash,
-    })),
-    ...sizeA.map((t, i) => numRow(`${String(t.portfolio_name).split("(")[0].trim()} book risk at stop`, t.portfolio_risk_pct, sizeB[i]?.portfolio_risk_pct, fPct(2), "low")),
+    ...sizeA.map((t): CmpRow => {
+      const tb = sizeB.find((x) => x.portfolio_name === t.portfolio_name);
+      return {
+        label: `${t.portfolio_name} shares`,
+        a: t.prescribed_shares?.toLocaleString("en-IN") ?? dash,
+        b: tb?.prescribed_shares?.toLocaleString("en-IN") ?? dash,
+      };
+    }),
+    ...sizeA.map((t) => {
+      const tb = sizeB.find((x) => x.portfolio_name === t.portfolio_name);
+      return numRow(`${String(t.portfolio_name).split("(")[0].trim()} book risk at stop`, t.portfolio_risk_pct, tb?.portfolio_risk_pct, fPct(2), "low");
+    }),
     txtRow("Core holding", g(da, "holding", "core"), g(db, "holding", "core")),
   ];
 

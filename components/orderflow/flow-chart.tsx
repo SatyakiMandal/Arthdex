@@ -38,7 +38,7 @@ export function FlowChart({
 }) {
   const n = data.bars.length;
   const [hover, setHover] = useState<number | null>(null);
-  const idx = hover ?? n - 1;
+  const idx = hover != null && hover < n ? hover : n - 1;
   const step = CHART_W / Math.max(n, 1);
   const x = (i: number) => (i + 0.5) * step;
   const bar = data.bars[idx];
@@ -55,6 +55,7 @@ export function FlowChart({
   }, [data.bars]);
   const py = (v: number) => 10 + (1 - (v - lo) / (hi - lo)) * (PRICE_H - 20);
 
+  const vwap = data.vwap ?? [];
   const prof = data.profile;
   const maxV = Math.max(1, ...prof.bins.map((b) => b.v));
   const maxD = Math.max(1, ...prof.bins.map((b) => Math.abs(b.delta)));
@@ -114,16 +115,16 @@ export function FlowChart({
           })}
 
           <path
-            d={data.vwap.map((v, i) => (v == null ? "" : `${i && data.vwap[i - 1] != null ? "L" : "M"}${x(i).toFixed(1)} ${py(v).toFixed(1)}`)).join("")}
+            d={vwap.map((v, i) => (v == null ? "" : `${i && vwap[i - 1] != null ? "L" : "M"}${x(i).toFixed(1)} ${py(v).toFixed(1)}`)).join("")}
             fill="none"
-            stroke="#fb923c"
+            stroke="hsl(var(--chart-clay))"
             strokeWidth={1.4}
             strokeDasharray="4 3"
             vectorEffect="non-scaling-stroke"
           />
 
           <g clipPath="url(#flow-clip)">
-            {keyLine(prof.poc, "#fbbf24")}
+            {keyLine(prof.poc, "hsl(var(--gold))")}
             {keyLine(prof.vah, "hsl(var(--accent))", "5 4")}
             {keyLine(prof.val, "hsl(var(--accent))", "5 4")}
           </g>
@@ -148,7 +149,7 @@ export function FlowChart({
 
           {showBig
             ? data.bigTrades.map((t, i) => (
-                <circle key={i} cx={x(t.at)} cy={py(t.price)} r={Math.min(3 + t.z, 9)} fill="none" stroke="#fb923c" strokeWidth={1.5} vectorEffect="non-scaling-stroke">
+                <circle key={i} cx={x(t.at)} cy={py(t.price)} r={Math.min(3 + t.z, 9)} fill="none" stroke="hsl(var(--chart-clay))" strokeWidth={1.5} vectorEffect="non-scaling-stroke">
                   <title>{`Large volume ${compact(t.volume)} (${t.z}σ), ${t.bias}-biased`}</title>
                 </circle>
               ))
@@ -173,7 +174,7 @@ export function FlowChart({
               <g key={i} opacity={inVa ? 1 : 0.5}>
                 <rect x={PX0} y={y0} width={Math.max(wb, 0)} height={h} fill="hsl(var(--up))" fillOpacity={0.8} />
                 <rect x={PX0 + wb} y={y0} width={Math.max(ws, 0)} height={h} fill="hsl(var(--down))" fillOpacity={0.8} />
-                {isPoc ? <rect x={PX0} y={y0} width={wb + ws} height={h} fill="none" stroke="#fbbf24" strokeWidth={1.2} vectorEffect="non-scaling-stroke" /> : null}
+                {isPoc ? <rect x={PX0} y={y0} width={wb + ws} height={h} fill="none" stroke="hsl(var(--gold))" strokeWidth={1.2} vectorEffect="non-scaling-stroke" /> : null}
               </g>
             );
           })}
@@ -183,7 +184,7 @@ export function FlowChart({
 
         {/* labels are HTML so they do not stretch with the SVG */}
         {[
-          { v: prof.poc, text: `POC ${fmt(prof.poc)}`, color: "#fbbf24" },
+          { v: prof.poc, text: `POC ${fmt(prof.poc)}`, color: "hsl(var(--gold))" },
           { v: prof.vah, text: `VAH ${fmt(prof.vah)}`, color: "hsl(var(--accent))" },
           { v: prof.val, text: `VAL ${fmt(prof.val)}`, color: "hsl(var(--accent))" },
         ].map((l) => (
@@ -191,7 +192,7 @@ export function FlowChart({
             {l.text}
           </span>
         ))}
-        <span className="pointer-events-none absolute left-2 top-5 font-mono text-2xs text-[#fb923c]">- - VWAP</span>
+        {vwap.length ? <span className="pointer-events-none absolute left-2 top-5 font-mono text-2xs text-[hsl(var(--chart-clay))]">- - VWAP</span> : null}
         <span className="pointer-events-none absolute right-1 top-1 font-mono text-2xs text-muted-foreground">{mode === "volume" ? "Volume profile" : "Delta profile"}</span>
       </div>
 

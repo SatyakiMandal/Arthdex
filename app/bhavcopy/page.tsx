@@ -25,7 +25,7 @@ interface PageProps {
 function Kpi({ label, value, hint }: { label: string; value: React.ReactNode; hint?: string }) {
   return (
     <div className="rounded-xl border border-border bg-surface px-4 py-3">
-      <p className="text-2xs uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="text-2xs text-muted-foreground">{label}</p>
       <p className="mt-1 font-mono text-xl font-semibold tabular-nums">{value}</p>
       {hint ? <p className="mt-0.5 text-2xs text-muted-foreground">{hint}</p> : null}
     </div>
@@ -39,7 +39,7 @@ function RowsTable({ rows, extra }: { rows: BhavRow[]; extra?: { label: string; 
   return (
     <div className="max-h-[28rem] overflow-auto">
       <table className="data-table data-table-sticky w-full min-w-[520px] border-collapse text-sm">
-        <thead className="text-2xs uppercase tracking-wide text-muted-foreground">
+        <thead className="text-2xs text-muted-foreground">
           <tr className="border-b border-border">
             <th className="px-3 py-2 text-left font-medium">Scrip</th>
             <th className="px-3 py-2 text-right font-medium">Close</th>
@@ -96,7 +96,7 @@ export default async function BhavcopyPage({ searchParams }: PageProps) {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="max-w-2xl">
             <Eyebrow icon={Layers}>NSE Bhavcopy</Eyebrow>
-            <h1 className="text-gradient mt-4 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">Delivery &amp; breadth</h1>
+            <h1 className="mt-4 text-balance text-4xl sm:text-5xl">Delivery &amp; breadth</h1>
             <p className="mt-3 text-muted-foreground">
               What the whole market did on one session: breadth, turnover, how much of it was taken into delivery, and
               where volume or price broke from the recent pattern.
@@ -104,7 +104,7 @@ export default async function BhavcopyPage({ searchParams }: PageProps) {
           </div>
           {/* A plain GET form, so the chosen date lives in the URL and works without client JS */}
           <form action="/bhavcopy" method="get" className="flex items-end gap-2">
-            <label className="text-2xs uppercase tracking-wide text-muted-foreground">
+            <label className="text-2xs text-muted-foreground">
               Trading date
               <input
                 type="date"
@@ -154,7 +154,7 @@ export default async function BhavcopyPage({ searchParams }: PageProps) {
             </div>
 
             <p className="mt-4 rounded-xl border border-border bg-surface px-4 py-3 text-sm text-muted-foreground">
-              <span className="mr-2 font-mono text-2xs uppercase tracking-wider text-accent">Session narrative</span>
+              <span className="mr-2 font-mono text-2xs text-accent">Session narrative</span>
               {res.data.narrative}
             </p>
 

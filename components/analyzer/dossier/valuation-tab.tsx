@@ -140,7 +140,7 @@ export function ValuationTab({ s }: { s: ListedSummary }) {
       >
         <div className="grid gap-6 p-4 lg:grid-cols-2">
           <div>
-            <p className="mb-3 text-2xs uppercase tracking-wider text-muted-foreground">Value per share, percentiles</p>
+            <p className="mb-3 text-2xs text-muted-foreground">Value per share, percentiles</p>
             <div className="space-y-3">
               {pctl.map((r, i) => {
                 const val = Number(r["Intrinsic Value (₹)"]);
@@ -163,7 +163,7 @@ export function ValuationTab({ s }: { s: ListedSummary }) {
             <p className="mt-2 text-2xs text-muted-foreground"><span className="mr-1 inline-block h-2.5 w-0.5 bg-flat align-middle" /> current price</p>
           </div>
           <div>
-            <p className="mb-2 text-2xs uppercase tracking-wider text-muted-foreground">Five-year revenue forecast (₹ Cr)</p>
+            <p className="mb-2 text-2xs text-muted-foreground">Five-year revenue forecast (₹ Cr)</p>
             <Table min={360} head={["Year", { label: "P10", right: true }, { label: "Median", right: true }, { label: "P90", right: true }]} className="-mx-4">
               {revenue.map((r, i) => (
                 <tr key={i} className="border-t border-border">

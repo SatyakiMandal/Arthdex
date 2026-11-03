@@ -32,11 +32,25 @@ const config: Config = {
         up: "hsl(var(--up))",
         down: "hsl(var(--down))",
         flat: "hsl(var(--flat))",
+        gold: "hsl(var(--gold))",
       },
+      /* Compressed scale: legacy rounded-xl/2xl/3xl land on the same 8-10px panel radius */
       borderRadius: {
+        "3xl": "calc(var(--radius) + 4px)",
+        "2xl": "calc(var(--radius) + 2px)",
+        xl: "var(--radius)",
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      /* Hairline elevation tinted to the ink, never a soft black blur */
+      boxShadow: {
+        sm: "0 1px 0 hsl(var(--foreground) / 0.04)",
+        DEFAULT: "0 1px 2px hsl(var(--foreground) / 0.05)",
+        md: "0 2px 6px -2px hsl(var(--foreground) / 0.08)",
+        lg: "0 8px 24px -12px hsl(var(--foreground) / 0.16)",
+        xl: "0 16px 40px -20px hsl(var(--foreground) / 0.22)",
+        "2xl": "0 24px 56px -24px hsl(var(--foreground) / 0.28)",
       },
       fontFamily: {
         sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
@@ -46,7 +60,8 @@ const config: Config = {
         mono: ["var(--font-mono)", "ui-monospace", "SFMono-Regular", "monospace"],
       },
       fontSize: {
-        "2xs": ["0.6875rem", { lineHeight: "0.875rem" }],
+        /* 12px floor: the old 11px size failed legibility on phones */
+        "2xs": ["0.75rem", { lineHeight: "1rem" }],
       },
       keyframes: {
         marquee: {
@@ -61,14 +76,9 @@ const config: Config = {
           from: { backgroundPosition: "200% 0" },
           to: { backgroundPosition: "-200% 0" },
         },
-        "pulse-glow": {
-          "0%, 100%": { opacity: "0.35" },
-          "50%": { opacity: "0.8" },
-        },
       },
       animation: {
         marquee: "marquee 60s linear infinite",
-        "pulse-glow": "pulse-glow 4s ease-in-out infinite",
         "fade-up": "fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both",
         shimmer: "shimmer 2.2s linear infinite",
       },

@@ -6,7 +6,7 @@ export function VolatilityEnsemble({ volatility }: { volatility: ApiVolatility }
   if (volatility.models.length === 0) {
     return (
       <DataCard
-        title="Volatility Ensemble"
+        title="Volatility ensemble"
         subtitle="Conditional-variance models"
         icon={Waves}
         footnote={volatility.note ?? undefined}
@@ -30,12 +30,12 @@ export function VolatilityEnsemble({ volatility }: { volatility: ApiVolatility }
 
   return (
     <DataCard
-      title="Volatility Ensemble"
+      title="Volatility ensemble"
       subtitle={`Fitted on ${volatility.observations} daily observations`}
       icon={Waves}
       badge={
         <div className="text-right">
-          <div className="font-mono text-2xs uppercase tracking-wide text-muted-foreground">
+          <div className="font-mono text-2xs text-muted-foreground">
             Consensus
           </div>
           <div className="font-mono text-xl font-semibold tabular-nums text-accent">
@@ -52,7 +52,7 @@ export function VolatilityEnsemble({ volatility }: { volatility: ApiVolatility }
       <div className="overflow-x-auto p-2">
         <table className="w-full min-w-[440px] border-collapse text-sm">
           <thead>
-            <tr className="border-b border-border text-2xs uppercase tracking-wide text-muted-foreground">
+            <tr className="border-b border-border text-2xs text-muted-foreground">
               <th className="px-3 py-2 text-left font-medium">Model</th>
               <th className="px-3 py-2 text-right font-medium">Ann. Vol</th>
               <th className="w-32 px-3 py-2 text-left font-medium">Weight</th>
@@ -96,7 +96,7 @@ export function VolatilityEnsemble({ volatility }: { volatility: ApiVolatility }
             <tr className="border-t border-border">
               <th
                 scope="row"
-                className="px-3 py-2 text-left text-2xs uppercase tracking-wide text-muted-foreground"
+                className="px-3 py-2 text-left text-2xs text-muted-foreground"
               >
                 Realised (sample)
               </th>

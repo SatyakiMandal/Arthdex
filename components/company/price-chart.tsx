@@ -208,10 +208,10 @@ export function PriceChart({
     <section className="rounded-xl border border-border bg-surface">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div className="flex items-baseline gap-3">
-          <h3 className="flex items-center gap-1.5 text-sm font-semibold tracking-tight">
+          <h2 className="flex items-center gap-1.5 font-sans text-sm font-semibold tracking-normal">
             Price
             {loading ? <Loader2 className="h-3 w-3 animate-spin text-accent" /> : null}
-          </h3>
+          </h2>
           <span className={cn("font-mono text-xs", deltaColor(periodChangePct))}>
             {formatPct(periodChangePct)} <span className="text-muted-foreground">over {period}</span>
           </span>
@@ -331,12 +331,12 @@ export function PriceChart({
         {active ? (
           <div
             className={cn(
-              "pointer-events-none absolute top-5 z-10 min-w-[190px] rounded-lg border border-border bg-surface-raised/95 p-2.5 shadow-lg backdrop-blur",
+              "pointer-events-none absolute top-5 z-10 min-w-[190px] rounded-lg border border-border bg-surface-raised/95 p-2.5 shadow-lg",
               tooltipOnLeft ? "translate-x-[-105%]" : "translate-x-[5%]",
             )}
             style={{ left: `${(activeX / VIEW_W) * 100}%` }}
           >
-            <div className="font-mono text-2xs uppercase tracking-wide text-muted-foreground">
+            <div className="font-mono text-2xs text-muted-foreground">
               {formatStamp(active.date)}
             </div>
             <dl className="mt-1.5 grid grid-cols-2 gap-x-3 gap-y-0.5 font-mono text-2xs">

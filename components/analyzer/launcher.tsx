@@ -154,7 +154,7 @@ export function Launcher() {
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <div className="relative">
-          <label htmlFor="an-company" className="text-2xs uppercase tracking-wider text-muted-foreground">
+          <label htmlFor="an-company" className="text-2xs text-muted-foreground">
             Listed or unlisted company
           </label>
           <div className="relative mt-1.5">
@@ -238,7 +238,7 @@ export function Launcher() {
 
         <div>
           <div className="flex items-center justify-between">
-            <span className="text-2xs uppercase tracking-wider text-muted-foreground">Window</span>
+            <span className="text-2xs text-muted-foreground">Window</span>
             <div className="flex gap-1">
               {PRESETS.map((p) => (
                 <button

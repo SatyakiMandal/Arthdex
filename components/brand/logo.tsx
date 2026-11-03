@@ -14,8 +14,8 @@ import { cn } from "@/lib/utils";
 export function LogoMark({ className }: { className?: string }) {
   return (
     <span className={cn("relative inline-block h-10 shrink-0", className)} style={{ aspectRatio: "539 / 381" }}>
-      <Image src="/brand/arthdex-mark.png" alt="Arthdex" width={539} height={381} priority className="h-full w-auto dark:hidden" />
-      <Image src="/brand/arthdex-mark-light.png" alt="Arthdex" width={539} height={381} priority className="hidden h-full w-auto dark:block" />
+      <Image src="/brand/arthdex-mark.png" alt="" width={539} height={381} priority className="h-full w-auto dark:hidden" />
+      <Image src="/brand/arthdex-mark-light.png" alt="" width={539} height={381} priority className="hidden h-full w-auto dark:block" />
     </span>
   );
 }
@@ -40,7 +40,7 @@ export function Logo({ tagline = true, className }: { tagline?: boolean; full?: 
       <span className="flex flex-col justify-center gap-[6px]">
         <Wordmark className="text-[1.4rem]" />
         {tagline ? (
-          <span className="hidden items-center gap-[0.4em] whitespace-nowrap font-sans text-[0.5rem] font-medium leading-none tracking-[0.17em] text-[#0B2D5B]/85 dark:text-[#E8EEF4]/75 xl:flex">
+          <span aria-hidden className="hidden items-center gap-[0.4em] whitespace-nowrap font-sans text-[0.5rem] font-medium leading-none tracking-[0.17em] text-[#0B2D5B]/85 dark:text-[#E8EEF4]/75 xl:flex">
             {TAGLINE.map((word, i) => (
               <span key={word} className="inline-flex items-center gap-[0.4em]">
                 {i > 0 ? <span aria-hidden className="h-[1.05em] w-px bg-[#F4B942]" /> : null}

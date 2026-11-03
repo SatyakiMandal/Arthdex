@@ -1,4 +1,5 @@
 import { PageStamp } from "@/components/layout/refresh-control";
+import { SectionHead } from "@/components/ui/section-head";
 import type { Metadata } from "next";
 import { HistoryView } from "@/components/yahoo/history-view";
 import { DataUnavailable, SourceLine } from "@/components/ui/data-provenance";
@@ -18,7 +19,8 @@ export default async function Page({ params }: PageProps) {
   const upper = symbol.toUpperCase();
   const [hist, cmp] = await Promise.all([getYHistory(upper, "5Y"), getYCompare(upper, [], "5Y")]);
   return (
-    <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6">
+    <div className="mx-auto max-w-[1600px] px-4 py-8 lg:py-10 sm:px-6">
+      <SectionHead title="Price history" note="Past prices for any range, and how the stock has done against the Nifty 50" className="mb-8" />
       {hist.ok ? (
         <>
           <HistoryView history={hist.data} compare={cmp.ok ? cmp.data : null} />

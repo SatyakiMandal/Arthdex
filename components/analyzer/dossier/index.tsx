@@ -43,7 +43,7 @@ export function ListedDossier({ s, hideEvent = false }: { s: ListedSummary; hide
   return (
     <div className="dossier">
       <KeyStrip s={s} />
-      <div role="tablist" aria-label="Research dossier sections" className="sticky top-[84px] z-30 -mx-1 mb-3 flex gap-0.5 overflow-x-auto border-b border-border bg-background/90 px-1 backdrop-blur-md">
+      <div role="tablist" aria-label="Research dossier sections" className="sticky top-[84px] z-30 -mx-1 mb-3 flex gap-0.5 overflow-x-auto border-b border-border bg-background/90 px-1">
         {tabs.map((t) => (
           <button
             key={t.id}
@@ -60,7 +60,7 @@ export function ListedDossier({ s, hideEvent = false }: { s: ListedSummary; hide
             {t.id === tab ? (
               <motion.span
                 layoutId="dossier-tab-underline"
-                className="absolute inset-x-1 -bottom-px h-0.5 rounded-full bg-accent shadow-[0_0_10px_hsl(var(--accent)/0.7)]"
+                className="absolute inset-x-1 -bottom-px h-0.5 rounded-full bg-accent"
                 transition={{ type: "spring", stiffness: 380, damping: 32 }}
               />
             ) : null}

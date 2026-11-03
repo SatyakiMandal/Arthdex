@@ -68,7 +68,7 @@ export function CompanyPicker({
 
   return (
     <div className="relative">
-      <label htmlFor={id} className="mb-1.5 block text-2xs font-medium uppercase tracking-wide text-muted-foreground">
+      <label htmlFor={id} className="mb-1.5 block text-2xs font-medium text-muted-foreground">
         {label}
       </label>
       <div className="relative">

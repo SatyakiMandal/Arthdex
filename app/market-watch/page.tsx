@@ -1,3 +1,4 @@
+import { GlobalSentiment } from "@/components/macro/global-sentiment";
 import { PageStamp } from "@/components/layout/refresh-control";
 import type { Metadata } from "next";
 import { CandlestickChart, TrendingDown, TrendingUp } from "lucide-react";
@@ -87,7 +88,7 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="max-w-2xl">
             <Eyebrow icon={CandlestickChart}>Market watch</Eyebrow>
-            <h1 className="text-gradient mt-4 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
+            <h1 className="mt-4 text-balance text-4xl sm:text-5xl">
               Top gainers &amp; losers
             </h1>
             <p className="mt-3 text-muted-foreground">
@@ -117,7 +118,7 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
         </nav>
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <span className="text-2xs uppercase tracking-wide text-muted-foreground">Window</span>
+          <span className="text-2xs text-muted-foreground">Window</span>
           {WINDOWS.map((option) => (
             <a
               key={option.id}
@@ -135,7 +136,7 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <span className="text-2xs uppercase tracking-wide text-muted-foreground">Price</span>
+          <span className="text-2xs text-muted-foreground">Price</span>
           {PRICE_BANDS.map((option) => (
             <a
               key={option.id}
@@ -154,7 +155,7 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
 
         {breadth && breadth.advances + breadth.declines > 0 ? (
           <div className="mt-6 flex flex-wrap items-center gap-4 rounded-xl border border-border bg-surface px-4 py-3">
-            <span className="text-2xs uppercase tracking-wide text-muted-foreground">
+            <span className="text-2xs text-muted-foreground">
               Index constituent breadth
             </span>
             <span className="font-mono text-sm">
@@ -236,7 +237,7 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
             <div className="overflow-x-auto p-2">
               <table className="data-table w-full min-w-[820px] border-collapse text-sm">
                 <thead>
-                  <tr className="border-b border-border text-2xs uppercase tracking-wide text-muted-foreground">
+                  <tr className="border-b border-border text-2xs text-muted-foreground">
                     <th className="px-3 py-2 text-left font-medium">Index</th>
                     <th className="px-3 py-2 text-right font-medium">Level</th>
                     <th className="px-3 py-2 text-right font-medium">% Chg</th>
@@ -315,6 +316,7 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
             </div>
           </div>
         ) : null}
+        <GlobalSentiment />
       </main>
 
       <SiteFooter />

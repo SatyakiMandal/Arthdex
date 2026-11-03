@@ -68,7 +68,7 @@ export function NewsFeed({
       subtitle={subtitle}
       icon={Newspaper}
       badge={
-        <span className="font-mono text-2xs uppercase tracking-wide text-muted-foreground">
+        <span className="font-mono text-2xs text-muted-foreground">
           {items.length} items
         </span>
       }
@@ -89,7 +89,7 @@ export function NewsFeed({
                 {item.kind === "filing" ? <FileText className="h-2.5 w-2.5" /> : null}
                 {item.kind === "filing" ? "Filing" : "Press"}
               </span>
-              <span className="font-mono text-2xs uppercase tracking-wide text-muted-foreground">
+              <span className="font-mono text-2xs text-muted-foreground">
                 {formatStamp(item.publishedAt)}
               </span>
               <span className="text-2xs text-muted-foreground">· {item.source}</span>
@@ -113,7 +113,7 @@ export function NewsFeed({
                 })}
             </div>
 
-            <h4 className="mt-1.5 text-pretty text-sm font-medium">
+            <h3 className="mt-1.5 text-pretty text-sm font-medium">
               {item.url ? (
                 <a
                   href={item.url}
@@ -127,7 +127,7 @@ export function NewsFeed({
               ) : (
                 item.headline
               )}
-            </h4>
+            </h3>
 
             {item.summary ? (
               <p className="mt-1 text-2xs leading-relaxed text-muted-foreground">{item.summary}</p>

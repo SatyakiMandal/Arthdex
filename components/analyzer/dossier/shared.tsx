@@ -22,7 +22,7 @@ export function stanceTone(stance: string | null | undefined): Tone {
 export function Stat({ label, value, tone, hint }: { label: string; value: React.ReactNode; tone?: string; hint?: string }) {
   return (
     <div>
-      <p className="text-2xs uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="text-2xs text-muted-foreground">{label}</p>
       <p className={cn("mt-0.5 font-mono text-sm", tone)}>{value}</p>
       {hint ? <p className="mt-0.5 text-2xs text-muted-foreground">{hint}</p> : null}
     </div>
@@ -53,7 +53,7 @@ export function Table({
   return (
     <div className={cn("overflow-x-auto", className)}>
       <table className="w-full text-left text-sm" style={{ minWidth: min }}>
-        <thead className="text-2xs uppercase tracking-wider text-muted-foreground">
+        <thead className="text-2xs text-muted-foreground">
           <tr className="border-b border-border">
             {head.map((h, i) => {
               const label = typeof h === "string" ? h : h.label;

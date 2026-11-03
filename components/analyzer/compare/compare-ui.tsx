@@ -81,7 +81,7 @@ export function CompareSection({
     <DataCard title={title} subtitle={subtitle} icon={icon} footnote={footnote}>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[520px] text-left text-sm">
-          <thead className="text-2xs uppercase tracking-wider text-muted-foreground">
+          <thead className="text-2xs text-muted-foreground">
             <tr className="border-b border-border">
               <th className="px-4 py-2 font-medium">Measure</th>
               <th className="px-4 py-2 text-right font-medium text-accent">{nameA}</th>

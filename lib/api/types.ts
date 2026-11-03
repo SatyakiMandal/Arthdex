@@ -113,6 +113,8 @@ export interface ApiQuarter {
   netProfit: number | null;
   netMarginPct: number | null;
   eps: number | null;
+  /** Set on screener.in rows for lenders, whose revenue there is gross interest earned. */
+  lender?: boolean;
 }
 
 export interface ApiAnnual {
@@ -157,11 +159,38 @@ export interface ApiRatios {
 }
 
 export interface ApiFinancials {
+  /** Days since the newest quarter on file ended; over ~150 means a filed quarter is missing upstream. */
+  latestQuarterAgeDays?: number | null;
   symbol: string;
   quarterly: ApiQuarter[];
   annual: ApiAnnual[];
   balanceSheet: ApiBalanceSheet[];
   ratios: ApiRatios;
+  /** Which source each series came from after vetting Yahoo against screener.in, and why. */
+  sources?: Partial<Record<"quarterly" | "annual" | "balanceSheet", ApiSeriesSource>>;
+}
+
+export interface ApiSourceDispute {
+  period: string;
+  field: string;
+  yahoo: number;
+  screener: number;
+  gapPct: number;
+  why: string;
+  /** The company's XBRL filing with NSE, where one was found: which source it bore out. */
+  settled?: { by: string; filed: number; correct: "yahoo" | "screener" | "neither" | "restated"; url?: string } | null;
+}
+
+export interface ApiSeriesSource {
+  used: "yahoo" | "screener" | "none";
+  reason: string;
+  yahooLatest: string | null;
+  screenerLatest: string | null;
+  overlap: number;
+  disagreements: ApiSourceDispute[];
+  /** Disagreements no NSE filing could settle. */
+  unresolved?: ApiSourceDispute[];
+  basis: { field: string; medianRatio: number; periods: number; confirmed: boolean }[];
 }
 
 export interface ApiValuation {
@@ -174,6 +203,8 @@ export interface ApiValuation {
   eps: number | null;
   bookValue: number | null;
   dividendYieldPct: number | null;
+  /** Dividends paid over the last year, by ex-date, including specials. */
+  dividendsTtm?: number | null;
 }
 
 // -- quant ------------------------------------------------------------------
@@ -615,7 +646,7 @@ export interface ApiYStats {
   >;
   trading: Record<"beta" | "high52w" | "low52w" | "change52w" | "ma50" | "ma200" | "avgVolume" | "avgVolume10d" | "sharesOutstanding" | "floatShares" | "heldByInsiders" | "heldByInstitutions" | "shortRatio", N>;
   dividends: {
-    rate: N; yieldPct: N; payoutRatio: N; fiveYearAvgYieldPct: N; exDividendDate: string | null; lastValue: N; lastDate: string | null;
+    rate: N; yieldPct: N; payoutRatio: N; trailing12m: N; trailingYieldPct: N; trailingPayoutPct: N; fiveYearAvgYieldPct: N; exDividendDate: string | null; lastValue: N; lastDate: string | null;
     lastSplitFactor: string | null; lastSplitDate: string | null;
     byYear: { year: number; amount: number }[]; recent: { date: string; amount: number }[]; splits: { date: string; ratio: number }[];
   };
@@ -627,6 +658,9 @@ export interface YStatementFrame {
   rows: { label: string; values: N[]; perShare: boolean }[];
 }
 export interface ApiYStatements {
+  /** Days since the newest quarterly statement ended; over ~150 means the source is behind. */
+  latestQuarterAgeDays?: number | null;
+  latestQuarter?: string | null;
   income: { annual: YStatementFrame | null; quarterly: YStatementFrame | null };
   balance: { annual: YStatementFrame | null; quarterly: YStatementFrame | null };
   cashflow: { annual: YStatementFrame | null; quarterly: YStatementFrame | null };
@@ -844,7 +878,8 @@ export interface ApiOrderflow {
   method: string;
   bars: { t: string; o: number; h: number; l: number; c: number; v: number; delta: number }[];
   cvd: number[];
-  vwap: (number | null)[];
+  /** Absent when the data service predates it. */
+  vwap?: (number | null)[];
   profile: { bins: ProfileBin[]; poc: number; vah: number; val: number; total: number; valueAreaPct: number };
   footprint: { step: number; bars: FootprintBar[] };
   imbalances: { i: number; t: string; price: number; side: "buy" | "sell"; ratio: number }[];
@@ -903,11 +938,11 @@ export interface ApiRisk {
     cvar95Pct: number;
     worstDayPct: number;
     atr: number;
-    atrPct: number;
+    atrPct: number | null;
     medianTradedCrore: number;
     liquidity: "High" | "Moderate" | "Low" | "Thin";
   };
-  sizing: { stopAtr: number; stopPrice: number; stopPct: number; riskPerTradePct: number; maxPositionPct: number | null };
+  sizing: { stopAtr: number; stopPrice: number | null; stopPct: number | null; riskPerTradePct: number; maxPositionPct: number | null };
   method: string;
 }
 
@@ -940,4 +975,42 @@ export interface ApiDecisions {
   summary: Record<string, { scored: number; hitRatePct: number | null; avgExcessPct: number | null }>;
   horizons: number[];
   note: string;
+}
+
+/** The feed watchdog's last run (backend/app/watchdog.py). */
+export interface FeedIncident {
+  feed: string;
+  path?: string;
+  kind: string;
+  problem: string;
+  advice: string;
+  firstSeen: string;
+  lastSeen: string;
+  occurrences: number;
+  critical: boolean;
+  repairsTried: string[];
+  resolvedAt?: string;
+  resolvedBy?: string;
+}
+
+export interface FeedHealth {
+  lastRun: string | null;
+  mode?: string;
+  summary?: { checked: number; passing: number; repaired: number; failing: number };
+  results: { feed: string; ok: boolean; seconds: number; kind: string | null; problem: string | null; repaired_by: string | null }[];
+  open: Record<string, FeedIncident>;
+  resolved: FeedIncident[];
+}
+
+/** Every constituent of an index with today's move, plus sector and market breadth. */
+export interface ApiPulse {
+  index: string;
+  label: string;
+  advances: number;
+  declines: number;
+  unchanged: number;
+  market: { advances: number; declines: number; unchanged: number; total: number };
+  stocks: { symbol: string; name: string; industry: string; last: number; changePct: number; marketCapCr: number | null }[];
+  sectors: { industry: string; count: number; marketCapCr: number; changePct: number }[];
+  asOf: string;
 }

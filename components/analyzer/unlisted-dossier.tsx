@@ -359,7 +359,7 @@ function MacroTab({ s }: { s: UnlistedSummary }) {
 function Tile({ label, value, sub, tone }: { label: string; value: React.ReactNode; sub?: React.ReactNode; tone?: string }) {
   return (
     <div className="min-w-0 border-l border-border/70 px-3 py-1.5 first:border-l-0">
-      <p className="truncate text-[0.625rem] uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="truncate text-[0.625rem] text-muted-foreground">{label}</p>
       <p className={cn("truncate font-mono text-sm font-semibold leading-tight tabular-nums", tone)}>{value}</p>
       {sub ? <p className="truncate font-mono text-[0.625rem] leading-tight text-muted-foreground">{sub}</p> : null}
     </div>
@@ -373,7 +373,7 @@ function KeyStrip({ s, r }: { s: UnlistedSummary; r: UnlistedResearch }) {
   if (v) {
     tiles.push(
       <div key="call" className="col-span-2 flex min-w-0 flex-col justify-center gap-1 px-3 py-1.5">
-        <p className="text-[0.625rem] uppercase tracking-wider text-muted-foreground">Call</p>
+        <p className="text-[0.625rem] text-muted-foreground">Call</p>
         {v.call ? <Pill label={v.call} tone={stanceTone(v.call)} /> : dash}
       </div>,
       <Tile key="conv" label="Conviction" value={num(v.conviction, 1)} sub="of 100" />,
@@ -422,7 +422,7 @@ export function UnlistedDossier({ s }: { s: UnlistedSummary }) {
           limited accordingly.
         </p>
       ) : null}
-      <div role="tablist" aria-label="Research dossier sections" className="sticky top-[84px] z-30 -mx-1 mb-3 flex gap-0.5 overflow-x-auto border-b border-border bg-background/90 px-1 backdrop-blur-md">
+      <div role="tablist" aria-label="Research dossier sections" className="sticky top-[84px] z-30 -mx-1 mb-3 flex gap-0.5 overflow-x-auto border-b border-border bg-background/90 px-1">
         {TABS.map((t) => (
           <button
             key={t}
@@ -434,7 +434,7 @@ export function UnlistedDossier({ s }: { s: UnlistedSummary }) {
           >
             {LABELS[t]}
             {t === tab ? (
-              <motion.span layoutId="unlisted-dossier-underline" className="absolute inset-x-1 -bottom-px h-0.5 rounded-full bg-accent shadow-[0_0_10px_hsl(var(--accent)/0.7)]" transition={{ type: "spring", stiffness: 380, damping: 32 }} />
+              <motion.span layoutId="unlisted-dossier-underline" className="absolute inset-x-1 -bottom-px h-0.5 rounded-full bg-accent" transition={{ type: "spring", stiffness: 380, damping: 32 }} />
             ) : null}
           </button>
         ))}

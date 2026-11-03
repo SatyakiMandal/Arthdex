@@ -1,4 +1,4 @@
-import { ArrowDownRight, ArrowUpRight, Info, Minus, Sparkles } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Info, ListChecks, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DeskInsights } from "@/lib/api/types";
 
@@ -28,23 +28,21 @@ export function DeskAnalysis({ insights, title = "Desk analysis", className }: {
   const { headline, metrics, findings, tables, method } = insights;
 
   return (
-    <section className={cn("animate-fade-up overflow-hidden rounded-xl border border-accent/25 bg-gradient-to-b from-accent/[0.06] to-surface shadow-[0_18px_40px_-28px_hsl(var(--accent)/0.5)]", className)}>
+    <section className={cn("overflow-hidden rounded-lg border border-border bg-surface", className)}>
       <header className="flex items-start gap-3 border-b border-border/70 px-4 py-3">
-        <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-accent/25 bg-accent/10 text-accent">
-          <Sparkles className="h-4 w-4" />
-        </span>
+        <ListChecks className="mt-0.5 h-4 w-4 shrink-0 text-accent" strokeWidth={1.75} aria-hidden />
         <div className="min-w-0">
-          <p className="font-mono text-2xs uppercase tracking-[0.18em] text-accent">{title}</p>
+          <p className="text-xs font-medium text-muted-foreground">{title}</p>
           <p className="mt-0.5 text-balance text-sm font-medium leading-snug sm:text-base">{headline}</p>
         </div>
       </header>
 
       {metrics.length > 0 ? (
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(10rem,1fr))] gap-px border-b border-border/70 bg-surface">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(10rem,1fr))] gap-px border-b border-border/70 bg-border">
           {metrics.map((m) => (
-            <div key={m.label} className="px-3 py-2.5 shadow-[0_0_0_0.5px_hsl(var(--border)/0.6)]">
-              <p className="truncate text-[0.625rem] uppercase tracking-wider text-muted-foreground">{m.label}</p>
-              <p className={cn("mt-0.5 truncate font-mono text-base font-semibold tabular-nums", TONE_TEXT[m.tone])}>{m.value}</p>
+            <div key={m.label} className="bg-surface px-3 py-2.5">
+              <p className="truncate text-2xs text-muted-foreground">{m.label}</p>
+              <p className={cn("mt-0.5 truncate font-mono text-base font-medium tabular-nums", TONE_TEXT[m.tone])}>{m.value}</p>
               {m.sub ? <p className="truncate text-2xs text-muted-foreground">{m.sub}</p> : null}
             </div>
           ))}
@@ -71,9 +69,9 @@ export function DeskAnalysis({ insights, title = "Desk analysis", className }: {
           <div className="space-y-3">
             {tables.map((t) => (
               <div key={t.title} className="overflow-x-auto rounded-lg border border-border bg-surface">
-                <p className="border-b border-border px-3 py-1.5 text-2xs font-medium uppercase tracking-wider text-muted-foreground">{t.title}</p>
+                <p className="border-b border-border px-3 py-1.5 text-2xs font-medium text-muted-foreground">{t.title}</p>
                 <table className="w-full min-w-[260px] text-left text-[0.8125rem]">
-                  <thead className="text-[0.625rem] uppercase tracking-wider text-muted-foreground">
+                  <thead className="text-[0.625rem] text-muted-foreground">
                     <tr className="border-b border-border">
                       {t.columns.map((c, i) => (
                         <th key={i} className={cn("whitespace-nowrap px-3 py-1.5 font-medium", i > 0 && "text-right")}>

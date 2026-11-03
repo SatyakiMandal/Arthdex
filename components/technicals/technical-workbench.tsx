@@ -44,7 +44,7 @@ export function TechnicalWorkbench({ symbol }: { symbol: string }) {
   const [data, setData] = useState<ApiTechnicals | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [overlays, setOverlays] = useState<Set<OverlayId>>(new Set(["sma20", "sma50", "supertrend", "vwap", "sr"]));
+  const [overlays, setOverlays] = useState<Set<OverlayId>>(new Set(["sma50", "sr"]));
   const [panes, setPanes] = useState<PaneId[]>(["volume", "rsi", "macd"]);
 
   useEffect(() => {
@@ -106,7 +106,7 @@ export function TechnicalWorkbench({ symbol }: { symbol: string }) {
 
       <section className="rounded-xl border border-border bg-surface p-3">
         <div className="mb-2 flex flex-wrap gap-1.5">
-          <span className="mr-1 self-center text-2xs uppercase tracking-wider text-muted-foreground">Overlays</span>
+          <span className="mr-1 self-center text-2xs text-muted-foreground">Overlays</span>
           {OVERLAYS.map((o) => (
             <button key={o.id} type="button" aria-pressed={overlays.has(o.id)} onClick={() => toggleOverlay(o.id)} className={chip(overlays.has(o.id))}>
               <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full align-middle" style={{ background: o.color }} />
@@ -115,7 +115,7 @@ export function TechnicalWorkbench({ symbol }: { symbol: string }) {
           ))}
         </div>
         <div className="mb-3 flex flex-wrap gap-1.5">
-          <span className="mr-1 self-center text-2xs uppercase tracking-wider text-muted-foreground">Panels</span>
+          <span className="mr-1 self-center text-2xs text-muted-foreground">Panels</span>
           {PANES.map((p) => (
             <button key={p.id} type="button" aria-pressed={panes.includes(p.id)} onClick={() => togglePane(p.id)} className={chip(panes.includes(p.id))}>
               {p.label}
@@ -152,6 +152,14 @@ export function TechnicalWorkbench({ symbol }: { symbol: string }) {
           >
             <div className="overflow-x-auto">
               <table className="w-full min-w-[520px] text-left text-sm">
+                <thead className="sr-only">
+                  <tr>
+                    <th scope="col">Indicator</th>
+                    <th scope="col">Reading</th>
+                    <th scope="col">What it says</th>
+                    <th scope="col">Signal</th>
+                  </tr>
+                </thead>
                 <tbody>
                   {Object.entries(data.signals).map(([name, sig]) => (
                     <tr key={name} className="border-b border-border last:border-0">
@@ -181,7 +189,7 @@ export function TechnicalWorkbench({ symbol }: { symbol: string }) {
                   ] as const
                 ).map(([title, levels, tone]) => (
                   <div key={title}>
-                    <p className="text-2xs uppercase tracking-wider text-muted-foreground">{title}</p>
+                    <p className="text-2xs text-muted-foreground">{title}</p>
                     {levels.length === 0 ? (
                       <p className="mt-1 text-2xs text-muted-foreground">None in range</p>
                     ) : (

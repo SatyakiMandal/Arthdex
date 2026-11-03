@@ -1,111 +1,38 @@
-"use client";
-
-import { useRef } from "react";
-import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-const EASE = [0.16, 1, 0.3, 1] as const;
+/*
+ * Scroll reveals, done in CSS rather than JavaScript.
+ *
+ * The `.reveal` class (globals.css) runs a short fade-and-rise on a scroll-driven
+ * timeline (`animation-timeline: view()`). Content is visible by default: a browser
+ * without scroll timelines, a reader who prefers reduced motion, a slow device or a
+ * page that never hydrates all get the finished layout instead of a blank section.
+ * These are server components, so no animation library ships with them.
+ */
 
-/** Fades and lifts its children in once, when they scroll into view. */
+/** Fades and lifts its children in as they scroll into view. */
 export function Reveal({
   children,
-  delay = 0,
   className,
 }: {
   children: React.ReactNode;
+  /** Kept for call-site compatibility; a scroll-driven reveal has no clock to delay. */
   delay?: number;
   className?: string;
 }) {
-  const reduce = useReducedMotion();
-  return (
-    <motion.div
-      className={className}
-      initial={reduce ? false : { opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.15 }}
-      transition={{ duration: 0.7, delay, ease: EASE }}
-    >
-      {children}
-    </motion.div>
-  );
+  return <div className={cn("reveal", className)}>{children}</div>;
 }
 
-/** Container that staggers the entrance of each direct StaggerItem. */
-export function Stagger({ children, className, gap = 0.07 }: { children: React.ReactNode; className?: string; gap?: number }) {
-  const reduce = useReducedMotion();
-  return (
-    <motion.div
-      className={className}
-      initial={reduce ? false : "hidden"}
-      whileInView="show"
-      viewport={{ once: true, amount: 0.1 }}
-      variants={{ hidden: {}, show: { transition: { staggerChildren: gap } } }}
-    >
-      {children}
-    </motion.div>
-  );
+/** Container for StaggerItems; each item reveals on its own position, which reads as a stagger. */
+export function Stagger({ children, className }: { children: React.ReactNode; className?: string; gap?: number }) {
+  return <div className={className}>{children}</div>;
 }
 
 export function StaggerItem({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <motion.div
-      className={className}
-      variants={{
-        hidden: { opacity: 0, y: 20 },
-        show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE } },
-      }}
-    >
-      {children}
-    </motion.div>
-  );
+  return <div className={cn("reveal", className)}>{children}</div>;
 }
 
-/**
- * A surface whose border and fill light up under the cursor. The pointer position
- * is written straight to CSS variables, so it never re-renders React.
- */
+/** Formerly a cursor-tracking glow; now a plain positioned surface. */
 export function SpotlightCard({ children, className }: { children: React.ReactNode; className?: string }) {
-  const ref = useRef<HTMLDivElement>(null);
-  return (
-    <div
-      ref={ref}
-      className={cn("spotlight", className)}
-      onPointerMove={(e) => {
-        const el = ref.current;
-        if (!el) return;
-        const box = el.getBoundingClientRect();
-        el.style.setProperty("--mx", `${e.clientX - box.left}px`);
-        el.style.setProperty("--my", `${e.clientY - box.top}px`);
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
-/** A section with a soft accent glow trailing the pointer behind its content. */
-export function GlowSection({ children, className }: { children: React.ReactNode; className?: string }) {
-  const glow = useRef<HTMLDivElement>(null);
-  return (
-    <section
-      className={cn("relative", className)}
-      onPointerMove={(e) => {
-        const el = glow.current;
-        if (!el) return;
-        const box = e.currentTarget.getBoundingClientRect();
-        el.style.transform = `translate(${e.clientX - box.left - 240}px, ${e.clientY - box.top - 240}px)`;
-        el.style.opacity = "1";
-      }}
-      onPointerLeave={() => {
-        if (glow.current) glow.current.style.opacity = "0";
-      }}
-    >
-      <div
-        ref={glow}
-        className="pointer-events-none absolute left-0 top-0 h-[30rem] w-[30rem] rounded-full bg-accent/10 opacity-0 blur-[100px] transition-opacity duration-500 will-change-transform"
-        aria-hidden
-      />
-      {children}
-    </section>
-  );
+  return <div className={cn("relative", className)}>{children}</div>;
 }

@@ -54,7 +54,7 @@ export default function MethodologyPage() {
       <main id="main" className="mx-auto max-w-[900px] px-4 py-12 sm:px-6">
         <Reveal>
           <Eyebrow icon={BookOpenCheck}>Methodology</Eyebrow>
-          <h1 className="text-gradient mt-4 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
+          <h1 className="mt-4 text-balance text-4xl sm:text-5xl">
             How the numbers are made
           </h1>
           <p className="mt-3 max-w-2xl text-muted-foreground">
@@ -73,7 +73,7 @@ export default function MethodologyPage() {
           </h2>
           <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-surface">
             <table className="w-full text-sm">
-              <thead className="text-2xs uppercase tracking-wide text-muted-foreground">
+              <thead className="text-2xs text-muted-foreground">
                 <tr className="border-b border-border bg-surface-muted/40">
                   <th className="px-4 py-2.5 text-left font-medium">Area</th>
                   <th className="px-4 py-2.5 text-left font-medium">Source</th>
