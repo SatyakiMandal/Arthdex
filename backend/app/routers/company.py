@@ -95,7 +95,11 @@ def get_candles(
         except Exception:
             candles = []
         if candles:
-            return {"candles": candles, "source": "yahoo", "vetting": _vet_closes(symbol, candles) if not intraday and exchange.upper() == "NSE" else None}
+            if intraday or exchange.upper() != "NSE":
+                return {"candles": candles, "source": "yahoo", "vetting": None}
+            daily = yahoo.PERIOD_MAP[period][1] == "1d"
+            candles, vetting = _vet_and_fill(symbol, candles, fill=daily)
+            return {"candles": candles, "source": "yahoo", "vetting": vetting}
         # The exchange's daily history backs up the daily periods (Yahoo's weekly and
         # intraday series have no exchange equivalent here)
         days = NSE_HISTORY_DAYS.get(period)
@@ -126,22 +130,35 @@ def get_candles(
 NSE_HISTORY_DAYS = {"1M": 31, "6M": 183, "1Y": 366}
 
 
-def _vet_closes(symbol: str, candles: list[dict]) -> dict | None:
+def _vet_and_fill(symbol: str, candles: list[dict], fill: bool) -> tuple[list[dict], dict | None]:
     """
-    Yahoo's recent daily closes against the exchange's. Only the last two weeks are
-    compared: older Yahoo prices are adjusted for later splits and the exchange's are not.
-    A failed NSE call leaves vetting empty rather than failing the chart.
+    Yahoo's recent daily closes against the exchange's, and, for daily series, any recent
+    sessions Yahoo is missing filled from the exchange (Cochin Shipyard's 3 November 2026
+    session was absent from Yahoo's history while its quote had it).
+
+    Only the last two weeks are compared: older Yahoo prices are adjusted for later splits
+    and the exchange's are not. A failed NSE call leaves the series as Yahoo gave it.
     """
     try:
-        exchange_rows = {r["date"]: r["close"] for r in nse.fetch_daily_history(symbol, 14)}
+        exchange_rows = nse.fetch_daily_history(symbol, 14)
     except Exception:
-        return None
-    pairs = [(c["date"][:10], c["close"], exchange_rows[c["date"][:10]]) for c in candles[-10:] if c["date"][:10] in exchange_rows]
+        return candles, None
+    by_date = {r["date"]: r for r in exchange_rows}
+    filled = 0
+    if fill and candles:
+        last = candles[-1]["date"][:10]
+        newer = [r for r in exchange_rows if r["date"] > last]
+        candles = candles + newer
+        filled = len(newer)
+    pairs = [(c["date"][:10], c["close"], by_date[c["date"][:10]]["close"]) for c in candles[-10:] if c["date"][:10] in by_date]
     if not pairs:
-        return None
+        return candles, None
     worst = max(pairs, key=lambda p: abs(p[1] - p[2]) / p[2])
     gap = abs(worst[1] - worst[2]) / worst[2]
-    return {"compared": len(pairs), "worstDate": worst[0], "yahoo": worst[1], "nse": worst[2], "gapPct": round(gap * 100, 3), "agree": gap <= 0.005}
+    return candles, {
+        "compared": len(pairs), "worstDate": worst[0], "yahoo": worst[1], "nse": worst[2],
+        "gapPct": round(gap * 100, 3), "agree": gap <= 0.005, "filledFromNse": filled,
+    }
 
 
 @router.get("/{symbol}/financials")

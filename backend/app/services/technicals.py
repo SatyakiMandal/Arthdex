@@ -48,8 +48,30 @@ def clean_frame(frame: pd.DataFrame) -> pd.DataFrame:
 
 def fetch_bars(symbol: str, interval: str) -> pd.DataFrame:
     period, yf_interval, _n, _intra = INTERVALS[interval]
-    frame = yf.Ticker(f"{symbol}.NS").history(period=period, interval=yf_interval, auto_adjust=False)
-    return clean_frame(frame)
+    frame = clean_frame(yf.Ticker(f"{symbol}.NS").history(period=period, interval=yf_interval, auto_adjust=False))
+    if yf_interval == "1d" and len(frame):
+        frame = _fill_recent_sessions(symbol, frame)
+    return frame
+
+
+def _fill_recent_sessions(symbol: str, frame: pd.DataFrame) -> pd.DataFrame:
+    """Daily sessions Yahoo has not published yet, from the exchange's own history."""
+    from ..providers import nse
+
+    try:
+        rows = nse.fetch_daily_history(symbol, 14)
+    except Exception:
+        return frame
+    last = pd.Timestamp(frame.index[-1]).tz_localize(None).normalize()
+    newer = [r for r in rows if pd.Timestamp(r["date"]) > last]
+    if not newer:
+        return frame
+    extra = pd.DataFrame(
+        {"Open": [r["open"] for r in newer], "High": [r["high"] for r in newer], "Low": [r["low"] for r in newer],
+         "Close": [r["close"] for r in newer], "Volume": [r["volume"] for r in newer]},
+        index=pd.DatetimeIndex([pd.Timestamp(r["date"]) for r in newer]).tz_localize(frame.index.tz),
+    )
+    return pd.concat([frame, extra[[c for c in frame.columns if c in extra.columns]]])
 
 
 def _tone(label: str, tone: str, detail: str = "") -> dict[str, str]:
