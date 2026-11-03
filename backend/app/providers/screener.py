@@ -155,13 +155,30 @@ def _balance(soup: BeautifulSoup) -> list[dict[str, Any]]:
     return rows
 
 
-def parse_company(html: str) -> dict[str, list[dict[str, Any]]]:
-    """Quarterly results, annual results and year-end balance sheets, oldest first."""
+def _classification(soup: BeautifulSoup) -> dict[str, Any] | None:
+    """Screener's four-level classification and the link to the company's industry page."""
+    links = soup.select("#peers p.sub a[title]")
+    levels = {a.get("title"): {"name": a.get_text(strip=True), "path": a.get("href")} for a in links}
+    industry = levels.get("Industry")
+    if not industry:
+        return None
+    return {
+        "broadSector": (levels.get("Broad Sector") or {}).get("name"),
+        "sector": (levels.get("Sector") or {}).get("name"),
+        "broadIndustry": (levels.get("Broad Industry") or {}).get("name"),
+        "industry": industry["name"],
+        "industryPath": industry["path"],
+    }
+
+
+def parse_company(html: str) -> dict[str, Any]:
+    """Quarterly results, annual results and year-end balance sheets, oldest first, and the classification."""
     soup = BeautifulSoup(html, "lxml")
     return {
         "quarterly": _pnl(soup, "#quarters", annual=False),
         "annual": _pnl(soup, "#profit-loss", annual=True),
         "balanceSheet": _balance(soup),
+        "classification": _classification(soup),
     }
 
 
@@ -170,6 +187,14 @@ def parse_quarters(html: str) -> list[dict[str, Any]]:
 
 
 def fetch_company(symbol: str) -> dict[str, Any]:
+    """The parsed company page, cached so financials and peers share one request."""
+    from ..cache import CACHE
+
+    data, _ = CACHE.get_or_fetch(f"screener:company:{symbol.upper()}", 6 * 3600, lambda: _fetch_company(symbol))
+    return data
+
+
+def _fetch_company(symbol: str) -> dict[str, Any]:
     """Consolidated results, falling back to standalone where a company files none."""
     for kind in ("consolidated", ""):
         url = URL.format(symbol=symbol.upper(), kind=kind).replace("//", "/").replace("https:/", "https://")
@@ -180,4 +205,42 @@ def fetch_company(symbol: str) -> dict[str, Any]:
         if parsed["quarterly"] or parsed["annual"]:
             # The same eight-quarter window the primary source gives
             return {**parsed, "quarterly": parsed["quarterly"][-8:], "url": url, "basis": kind or "standalone"}
-    return {"quarterly": [], "annual": [], "balanceSheet": [], "url": None, "basis": None}
+    return {"quarterly": [], "annual": [], "balanceSheet": [], "classification": None, "url": None, "basis": None}
+
+
+PEER_COLUMNS = {
+    "CMP Rs.": "price", "P/E": "pe", "Mar Cap Rs.Cr.": "marketCapCr", "Div Yld %": "dividendYieldPct",
+    "NP Qtr Rs.Cr.": "netProfitQtrCr", "Qtr Profit Var %": "profitGrowthQtrPct", "Sales Qtr Rs.Cr.": "salesQtrCr",
+    "Qtr Sales Var %": "salesGrowthQtrPct", "ROCE %": "rocePct",
+}
+
+
+def parse_industry(html: str) -> list[dict[str, Any]]:
+    """Companies on a screener.in industry page, with the symbol taken from each row's link."""
+    soup = BeautifulSoup(html, "lxml")
+    table = soup.select_one("table")
+    if table is None:
+        return []
+    rows = table.select("tr")
+    header = [c.get_text(" ", strip=True) for c in rows[0].select("th,td")] if rows else []
+    out = []
+    for tr in rows[1:]:
+        cells = tr.select("td")
+        link = tr.select_one("a[href^='/company/']")
+        if not cells or link is None:
+            continue
+        m = re.match(r"/company/([^/]+)/", link.get("href", ""))
+        if not m or m.group(1).isdigit():
+            continue  # listed only on BSE: screener links those by BSE code
+        row: dict[str, Any] = {"symbol": m.group(1).upper(), "name": link.get_text(" ", strip=True)}
+        for name, cell in zip(header, [c.get_text(" ", strip=True) for c in cells]):
+            if name in PEER_COLUMNS:
+                row[PEER_COLUMNS[name]] = _number(cell)
+        out.append(row)
+    return out
+
+
+def fetch_industry(path: str) -> list[dict[str, Any]]:
+    res = requests.get(f"https://www.screener.in{path}", headers=UA, timeout=30)
+    res.raise_for_status()
+    return parse_industry(res.text)

@@ -47,6 +47,7 @@ ENDPOINTS = {
     "shareholding": "shareholding",
     "technicals": "technicals?interval=1d",
     "statements": "statements?v=1",
+    "peers": "peers",
 }
 
 
@@ -257,6 +258,14 @@ def checks(d: dict[str, Any]) -> list[tuple[str, Callable[[], tuple[str, str]]]]
             return ("pass" if report["agree"] else "fail"), f"{name}: {json.dumps({k: v for k, v in report.items() if k not in ('agree', 'nseError', 'yahooError')})}"
         return thunk
 
+    def peers_self_row():
+        # screener.in's peer figures are taken as current only if its row for this company agrees
+        v = (d.get("peers") or {}).get("vetting") or {}
+        if not v.get("checks"):
+            return "skip", "peers: company not in its industry table"
+        bad = [c for c in v["checks"] if not c["agree"]]
+        return ("fail" if bad else "pass"), "peer table's own row: " + ", ".join(f"{c['field']} {c['gapPct']}%" for c in v["checks"])
+
     fin_sources = f.get("sources") or {}
     return [
         ("sources.quarterly_agree", agree("quarterly results, Yahoo vs screener.in", fin_sources.get("quarterly"), "series")),
@@ -265,6 +274,7 @@ def checks(d: dict[str, Any]) -> list[tuple[str, Callable[[], tuple[str, str]]]]
         ("sources.quote_agree", agree("price, NSE vs Yahoo", q.get("sources"), "pair")),
         ("sources.closes_agree", agree("recent daily closes, Yahoo vs NSE", c.get("vetting"), "pair")),
         ("sources.promoter_agree", agree("promoter holding, screener.in vs NSE filing", sh.get("vetting"), "pair")),
+        ("sources.peers_self_row", peers_self_row),
         ("price.last_close", last_close),
         ("price.high52", high52),
         ("price.low52", low52),

@@ -11,7 +11,8 @@ import { CompanyAbout, ValuationPanel } from "@/components/company/valuation-pan
 import { DataUnavailable, SourceLine } from "@/components/ui/data-provenance";
 import { SectionHead } from "@/components/ui/section-head";
 import { PreIpoPanel } from "@/components/company/pre-ipo-panel";
-import { getCandles, getFinancials, getPreIpo, getProfile, getUnlistedCompany, getValuation } from "@/lib/api/endpoints";
+import { PeBandRail, PeersPanel } from "@/components/company/peers-panel";
+import { getCandles, getFinancials, getPeBand, getPeers, getPreIpo, getProfile, getUnlistedCompany, getValuation } from "@/lib/api/endpoints";
 
 interface PageProps {
   params: Promise<{ symbol: string }>;
@@ -31,12 +32,14 @@ export default async function CompanyOverviewPage({ params }: PageProps) {
   const { symbol } = await params;
   const upper = symbol.toUpperCase();
 
-  const [candles, financials, valuation, profile, preIpoMatch] = await Promise.all([
+  const [candles, financials, valuation, profile, preIpoMatch, peers, band] = await Promise.all([
     getCandles(upper, "1Y"),
     getFinancials(upper),
     getValuation(upper),
     getProfile(upper),
     getPreIpo(upper),
+    getPeers(upper),
+    getPeBand(upper),
   ]);
   // A company that was once traded unlisted keeps its earlier price history on the same page
   const preIpoId = preIpoMatch?.data.id ?? null;
@@ -69,6 +72,16 @@ export default async function CompanyOverviewPage({ params }: PageProps) {
                 </div>
               </div>
             ) : null}
+          </div>
+        </section>
+      ) : null}
+
+      {peers || band ? (
+        <section aria-labelledby="peers">
+          <SectionHead id="peers" title="Against its peers and its past" note="Industry peers by market cap; P/E over five years" />
+          <div className="mt-6 grid gap-10 lg:grid-cols-[minmax(0,8fr)_minmax(0,4fr)] lg:gap-14">
+            {peers ? <PeersPanel peers={peers.data} symbol={upper} /> : <p className="text-sm text-muted-foreground">No industry peers are available for this company.</p>}
+            {band ? <PeBandRail band={band.data} /> : null}
           </div>
         </section>
       ) : null}

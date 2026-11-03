@@ -21,6 +21,8 @@ Two sources often define a line differently (revenue gross or net of excise, pro
 | Quarterly results | Yahoo Finance | screener.in, NSE XBRL filings to settle disputes | Every fetch: revenue and EPS over every quarter shown | Falls back when Yahoo is stale or gapped (HDFC Bank: Yahoo stopped at June 2025), and prefers screener.in's rupee filings where Yahoo's were converted from dollars (Infosys) |
 | Annual results | Yahoo Finance | screener.in, NSE XBRL filings to settle disputes | Every fetch: revenue and EPS over every year shown | Same rules |
 | Balance sheet | Yahoo Finance | screener.in, NSE XBRL filings to settle disputes | Every fetch: net worth, total assets, borrowings over every year-end shown | screener.in has no current assets or liabilities, so the current ratio is blank when it is the source |
+| Peers | screener.in industry classification and peer table | None for the other companies | Every fetch: the company's own row must match Arthdex's price, market cap and P/E, or the table is marked unvetted | Names from the NSE equity master |
+| P/E band (five years) | Computed: Yahoo weekly prices over screener.in annual EPS | Inherits both | Only EPS already published at each date (60 days after year end) | |
 | Valuation multiples | Derived | Statistics tab (Yahoo) | Daily: P/E and P/B equal price over EPS and book value | Re-derived from the live price on every request |
 | Daily price history | Yahoo Finance | NSE daily history (1M, 6M, 1Y) | Every fetch: last 10 closes within 0.5% | NSE prices are not adjusted for splits or bonus issues; the page says so when they are shown |
 | Weekly, monthly and intraday history | Yahoo Finance | None | Daily: last close against the quote | No free exchange equivalent |

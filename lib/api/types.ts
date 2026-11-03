@@ -1042,3 +1042,39 @@ export interface ApiFlows {
   days: number;
   directionCheck: { tradeDate: string; nseFii: number; nsdlReportedOn: string; nsdlFpi: number; agree: boolean }[];
 }
+
+// -- peers and valuation bands ------------------------------------------------
+
+export interface ApiPeerRow {
+  symbol: string;
+  name: string;
+  price?: number | null;
+  pe?: number | null;
+  marketCapCr?: number | null;
+  dividendYieldPct?: number | null;
+  netProfitQtrCr?: number | null;
+  profitGrowthQtrPct?: number | null;
+  salesQtrCr?: number | null;
+  salesGrowthQtrPct?: number | null;
+  rocePct?: number | null;
+}
+
+export interface ApiPeers {
+  classification: { broadSector: string | null; sector: string | null; broadIndustry: string | null; industry: string; industryPath: string };
+  industrySize: number;
+  peers: ApiPeerRow[];
+  self: ApiPeerRow | null;
+  medians: Record<string, number | null>;
+  ranks: Record<string, { position: number; of: number }>;
+  vetting: { checks: { field: string; screener: number; arthdex: number; gapPct: number; agree: boolean }[]; vetted: boolean };
+}
+
+export interface ApiPeBand {
+  basis: string;
+  epsYear: string | null;
+  points: { date: string; pe: number; epsYear: string }[];
+  stats: { min: number; p25: number; median: number; p75: number; max: number };
+  current: number;
+  percentile: number;
+  since: string;
+}

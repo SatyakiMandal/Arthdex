@@ -78,9 +78,9 @@ Written 3 November 2026. Status reflects the code on that date. Related: [paid-f
 | Statistics | Valuation, profitability, trading, dividends | Built | Free | P1 |
 | Valuation | Reverse DCF: what growth the price implies | New | Free | P1 |
 | | DCF with editable assumptions and a sensitivity table | Partial (analyzer valuation tab) | Free | P2 |
-| | Relative valuation against peers and against its own 5- and 10-year range (P/E, EV/EBITDA bands) | New | Free | P1 |
+| | Relative valuation against peers and against its own five-year P/E range | Built (P/E; EV/EBITDA bands not yet) | Free | P1 |
 | | Monte Carlo valuation | Built (analyzer) | Free | P3 |
-| Peers | Peer table: size, growth, margins, returns, valuation, with the company ranked | New | Free | P1 |
+| Peers | Peer table: size, growth, returns, valuation, with the company ranked, vetted through its own row | Built | Free | P1 |
 | | Peer charts: any metric over time against peers | New | Free | P2 |
 | Quality and forensics | Piotroski F-score, Altman Z, Beneish M, accruals, cash conversion, with each input shown | New | Free | P1 |
 | | Red-flag panel: pledge rising, auditor change, related-party transactions, contingent liabilities, frequent equity dilution | New | Free-new (filings, annual reports) | P2 |

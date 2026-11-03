@@ -448,3 +448,50 @@ def get_compare(symbol: str, peers: str = Query(""), period: str = Query("1Y")):
     sym = symbol.upper()
     plist = [p.strip().upper() for p in peers.split(",") if p.strip()][:6]
     return _yahoo(f"company:ycmp:{sym}:{','.join(plist)}:{per}", 900, lambda: yahoo_company.compare(sym, plist, per), "Comparison")
+
+
+@router.get("/{symbol}/peers")
+def get_peers(symbol: str):
+    """The company's industry peers from screener.in, vetted through the company's own row."""
+    sym = symbol.upper()
+
+    def build():
+        from ..services import peers
+
+        quote, _ = CACHE.get_or_fetch(f"company:quote:NSE:{sym}", SETTINGS.quote_ttl, lambda: _quote(sym, "NSE"))
+        try:
+            valuation = get_valuation(sym, "NSE")["data"]
+        except Exception:
+            valuation = None
+        return peers.peers(sym, quote, valuation)
+
+    try:
+        data, age = CACHE.get_or_fetch(f"company:peers:{sym}", 6 * 3600, build)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Peers unavailable: {exc}") from exc
+    return envelope(
+        data, age, source="screener.in industry classification and peer figures", delayed_minutes=0,
+        note=None if data["vetting"]["vetted"] else "The company's own row did not agree with Arthdex's vetted figures, so the peer figures are unvetted.",
+    )
+
+
+@router.get("/{symbol}/valuation-bands")
+def get_valuation_bands(symbol: str):
+    """P/E over five years on the full-year EPS known at each date, and where today's sits."""
+    sym = symbol.upper()
+
+    def build():
+        from ..services import peers
+
+        quote, _ = CACHE.get_or_fetch(f"company:quote:NSE:{sym}", SETTINGS.quote_ttl, lambda: _quote(sym, "NSE"))
+        return peers.pe_band(sym, (quote or {}).get("cmp"))
+
+    try:
+        data, age = CACHE.get_or_fetch(f"company:pe-band:{sym}", 6 * 3600, build)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Valuation bands unavailable: {exc}") from exc
+    return envelope(data, age, source="Yahoo Finance weekly prices; screener.in annual EPS", delayed_minutes=0)
