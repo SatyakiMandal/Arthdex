@@ -154,7 +154,6 @@ export interface ListedSummary {
  * blocks whose shape varies by run (regime, XAI, macro) stay loosely typed and
  * are read defensively in the dossier tabs.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Blk = Record<string, any>;
 
 export interface SizingTier {

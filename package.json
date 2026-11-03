@@ -3,11 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/dev.mjs",
+    "dev:web": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "feeds:check": "cd backend && .venv/Scripts/python -m app.watchdog",
+    "data:reconcile": "cd backend && .venv/Scripts/python -m app.reconcile"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -16,19 +19,19 @@
     "clsx": "2.1.1",
     "framer-motion": "11.18.2",
     "lucide-react": "0.474.0",
-    "next": "^15.5.26",
+    "next": "^16.4.4",
     "next-themes": "0.4.4",
-    "react": "19.0.0",
-    "react-dom": "19.0.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "tailwind-merge": "2.6.0"
   },
   "devDependencies": {
     "@types/node": "22.13.1",
-    "@types/react": "19.0.8",
-    "@types/react-dom": "19.0.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "autoprefixer": "10.4.20",
-    "eslint": "8.57.1",
-    "eslint-config-next": "^15.5.26",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.4.4",
     "postcss": "8.5.1",
     "tailwindcss": "3.4.17",
     "typescript": "5.7.3"

@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 
 import { backendHeaders } from "@/lib/api/auth";
 
@@ -22,9 +22,9 @@ export async function refreshData(path: string, prefixes: string[], symbol: stri
   } catch {
     ok = false;
   }
-  // Every data fetch is tagged "api". Dropping Next's copies is cheap: pages refill from the backend,
-  // which still serves its own cache for anything not expired above.
-  revalidateTag("api");
+  // Every data fetch is tagged "api". updateTag expires it immediately (Next 16's read-your-writes form,
+  // valid only in a Server Action), so the refreshed page never serves the stale copy first.
+  updateTag("api");
   revalidatePath(path, "layout");
   return { ok, expired };
 }
