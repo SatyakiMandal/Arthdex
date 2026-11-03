@@ -4,7 +4,7 @@
 |---|---|
 | Status | Draft for the owner's review |
 | Date | 4 November 2026 |
-| Branch | `feature/redesign-and-data-trust` (16 commits ahead of `main`, not pushed) |
+| Branch | `feature/redesign-and-data-trust` (ahead of `main`, not pushed) |
 | Related | [product-roadmap.md](product-roadmap.md) (the full feature catalogue), [data-sources.md](data-sources.md) (every feed, its backup and vetting), [paid-feed-roadmap.md](paid-feed-roadmap.md), [site-audit-2026-11-03.md](site-audit-2026-11-03.md) |
 
 This document specifies everything Arthdex still needs to be a product a paying user would trust: what each piece does, why it matters, where in the code it goes, how to build it, what data it needs and whether that data may be shown, how to know it is done, and what it depends on. It is written so any one workstream can be picked up and built without rereading the history.
