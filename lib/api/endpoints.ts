@@ -74,7 +74,7 @@ export const getProfile = (symbol: string) =>
 
 export const getCandles = (symbol: string, period: string) =>
   apiGet<ApiCandleSeries>(
-    `/api/v1/company/${symbol}/candles?period=${period}&v=2`,
+    `/api/v1/company/${symbol}/candles?period=${period}&v=3`,
     REVALIDATE.candles,
   );
 

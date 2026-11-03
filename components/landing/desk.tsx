@@ -34,12 +34,12 @@ export async function Desk() {
 
   return (
     <section className="border-y border-border bg-surface-muted/50">
-      <div className="mx-auto max-w-[1600px] px-4 py-16 sm:px-6 lg:py-24">
+      <div className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6 lg:py-14">
         <Reveal>
           <h2 className="max-w-2xl text-balance text-3xl sm:text-4xl">One desk for listed, unlisted and new issues</h2>
         </Reveal>
 
-        <div className="mt-10 grid gap-4 lg:auto-rows-[minmax(15rem,auto)] lg:grid-cols-12">
+        <div className="mt-6 grid gap-4 lg:auto-rows-[minmax(11rem,auto)] lg:grid-cols-12">
           {/* Brand block: the analyzer, in the logo's navy with its gold rule */}
           <Reveal className="relative flex flex-col overflow-hidden rounded-xl bg-[#0B2D5B] p-6 text-[#E8EEF4] sm:p-8 lg:col-span-5 lg:row-span-2">
             <span className="font-deva text-[9rem] leading-none text-white/[0.06] absolute -bottom-6 -right-2 select-none" aria-hidden>

@@ -119,6 +119,14 @@ TICKER_INDICES: list[tuple[str, str, str]] = [
 ]
 
 
+def _session_date(stamp: str | None) -> str | None:
+    """NSE's index timestamp ("03-Nov-2026 15:30") as an ISO trade date."""
+    try:
+        return datetime.strptime((stamp or "").split(" ")[0], "%d-%b-%Y").date().isoformat()
+    except ValueError:
+        return None
+
+
 def fetch_indices() -> list[dict[str, Any]]:
     payload = nse_get("/api/allIndices")
     rows = {row.get("index"): row for row in payload.get("data", [])}
@@ -158,6 +166,14 @@ def fetch_indices() -> list[dict[str, Any]]:
                 "high52w": _num(row.get("yearHigh")),
                 "low52w": _num(row.get("yearLow")),
                 "asOf": payload.get("timestamp") or datetime.now(timezone.utc).isoformat(),
+                # The session's own bar, so a chart whose history source lags can be completed
+                "session": {
+                    "date": _session_date(payload.get("timestamp")),
+                    "open": _num(row.get("open")),
+                    "high": _num(row.get("high")),
+                    "low": _num(row.get("low")),
+                    "close": round(level, 2),
+                },
             }
         )
     return out

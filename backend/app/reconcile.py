@@ -353,6 +353,14 @@ def reconcile_market(base: str) -> list[Result]:
         status, detail = compare(f"{row['name']} level, served vs Yahoo", row["level"], backup[key]["level"], tol)
         out.append(Result("MARKET", f"sources.index.{key}", status, detail))
     out += _reconcile_flows(base)
+    # The home page's Nifty chart must end on the session the ticker shows
+    try:
+        with urllib.request.urlopen(urllib.request.Request(f"{base}/api/v1/company/%5ENSEI/candles?period=1Y"), timeout=90) as res:
+            last = (json.load(res).get("data") or {}).get("candles", [])[-1]
+        status, detail = compare("Nifty 50 chart's last close vs NSE level", last.get("close"), (served.get("nifty-50") or {}).get("level"), 0.002)
+        out.append(Result("MARKET", "index.chart_current", status, f"{detail}, chart ends {last.get('date')}"))
+    except Exception as exc:
+        out.append(Result("MARKET", "index.chart_current", "fail", f"index chart: {exc}"))
     return out
 
 

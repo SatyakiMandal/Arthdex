@@ -17,33 +17,28 @@ const STEPS = [
   },
 ];
 
-/** Method as a ledger: the heading holds the left column while the three steps read down the right. */
+/** Method as a compact strip: the heading on the left, the three steps side by side. */
 export function Methodology() {
   return (
-    <section id="methodology" className="mx-auto max-w-[1600px] scroll-mt-28 px-4 py-16 sm:px-6 lg:py-24">
-      <div className="grid gap-10 lg:grid-cols-12">
-        <Reveal className="lg:col-span-4">
-          <div className="lg:sticky lg:top-32">
-            <h2 className="text-balance text-3xl sm:text-4xl">How an analysis is built</h2>
-            <p className="mt-4 max-w-sm text-muted-foreground">The same three steps sit behind every dossier the analyzer produces.</p>
-            <Link
-              href="/methodology"
-              className="mt-6 inline-flex items-center gap-1 text-sm font-medium text-accent underline-offset-4 hover:underline"
-            >
-              Full methodology
-              <ArrowUpRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
+    <section id="methodology" className="mx-auto max-w-[1600px] scroll-mt-28 px-4 py-10 sm:px-6 lg:py-14">
+      <div className="grid gap-8 lg:grid-cols-12">
+        <Reveal className="lg:col-span-3">
+          <h2 className="text-balance text-3xl sm:text-4xl">How an analysis is built</h2>
+          <p className="mt-3 max-w-sm text-sm text-muted-foreground">The same three steps sit behind every dossier the analyzer produces.</p>
+          <Link href="/methodology" className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-accent underline-offset-4 hover:underline">
+            Full methodology
+            <ArrowUpRight className="h-3.5 w-3.5" />
+          </Link>
         </Reveal>
 
-        <Stagger className="lg:col-span-8" gap={0.08}>
-          <div role="list" className="border-t border-foreground/80">
+        <Stagger className="lg:col-span-9" gap={0.08}>
+          <div role="list" className="grid gap-x-8 gap-y-6 md:grid-cols-3">
             {STEPS.map((step, i) => (
               <StaggerItem key={step.title}>
-                <div role="listitem" className="grid gap-3 border-b border-border py-7 sm:grid-cols-[4rem_14rem_1fr] sm:gap-6">
-                  <span className="font-mono text-sm text-muted-foreground tabular-nums">{String(i + 1).padStart(2, "0")}</span>
-                  <h3 className="text-lg">{step.title}</h3>
-                  <p className="max-w-[60ch] leading-relaxed text-muted-foreground">{step.body}</p>
+                <div role="listitem" className="border-t border-foreground/80 pt-3">
+                  <p className="font-mono text-xs text-muted-foreground tabular-nums">{String(i + 1).padStart(2, "0")}</p>
+                  <h3 className="mt-1 text-lg">{step.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.body}</p>
                 </div>
               </StaggerItem>
             ))}

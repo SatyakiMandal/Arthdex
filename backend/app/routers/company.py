@@ -95,6 +95,9 @@ def get_candles(
         except Exception:
             candles = []
         if candles:
+            if symbol.startswith("^"):
+                daily_index = not intraday and yahoo.PERIOD_MAP[period][1] == "1d"
+                return {"candles": _fill_index_session(symbol, candles) if daily_index else candles, "source": "yahoo", "vetting": None}
             if intraday or exchange.upper() != "NSE":
                 return {"candles": candles, "source": "yahoo", "vetting": None}
             daily = yahoo.PERIOD_MAP[period][1] == "1d"
@@ -128,6 +131,26 @@ def get_candles(
 
 
 NSE_HISTORY_DAYS = {"1M": 31, "6M": 183, "1Y": 366}
+
+
+def _fill_index_session(symbol: str, candles: list[dict]) -> list[dict]:
+    """
+    Add the latest session from NSE's index feed when Yahoo's index history lacks it
+    (^NSEI's history ended on 2 November 2026 while NSE showed the 3 November close).
+    Only daily series, and only a session newer than Yahoo's last bar.
+    """
+    index_id = {v: k for k, v in yahoo.NSE_INDEX_SYMBOLS.items()}.get(symbol.upper())
+    if not index_id or not candles or len(candles[-1]["date"]) > 10:
+        return candles
+    try:
+        levels, _ = CACHE.get_or_fetch("market:indices", SETTINGS.index_ttl, nse.fetch_indices)
+    except Exception:
+        return candles
+    row = next((r for r in levels if r["id"] == index_id), None)
+    session = (row or {}).get("session") or {}
+    if not session.get("date") or session["date"] <= candles[-1]["date"][:10] or None in (session.get("open"), session.get("high"), session.get("low")):
+        return candles
+    return candles + [{**session, "volume": 0}]
 
 
 def _vet_and_fill(symbol: str, candles: list[dict], fill: bool) -> tuple[list[dict], dict | None]:
