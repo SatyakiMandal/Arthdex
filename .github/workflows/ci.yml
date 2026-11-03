@@ -42,6 +42,7 @@ jobs:
       # The language models are optional and about 1 GB; CI runs the documented lighter install
       ARTHDEX_ML: "off"
       ARTHDEX_WATCHDOG_MINUTES: "0"
+      ARTHDEX_SCHEDULER: "off"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

@@ -86,6 +86,10 @@ openpyxl==3.1.5  # Excel workbook export
 #
 # Alpha Vantage price fallback is enabled by setting ALPHAVANTAGE_API_KEY in the
 # environment. It needs no extra package.
+#
+# Postgres for the store (app/store.py), e.g. Supabase. Without it, or without
+# DATABASE_URL, the store is a SQLite file in app_data/ and needs nothing installed.
+# psycopg[binary]==3.2.13
 
 
 # -----------------------------------------------------------------------------

@@ -35,6 +35,20 @@ def feed_health():
     )
 
 
+@router.get("/health/jobs")
+def job_health():
+    """Scheduled data jobs: when each last ran, whether it succeeded, and the store in use."""
+    from .. import jobs, scheduler  # noqa: F401  (importing jobs registers them)
+    from ..store import STORE
+
+    return envelope(
+        {"store": STORE.kind, "jobs": scheduler.status()},
+        0,
+        source="Arthdex scheduler",
+        note="Daily jobs run once after their IST time on each day; a failed job is retried after 15 minutes.",
+    )
+
+
 @router.post("/health/feeds/run")
 def feed_health_run():
     """Probe every feed now, repairing what can be repaired. Takes up to a minute on a cold cache."""

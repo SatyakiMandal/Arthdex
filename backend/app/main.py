@@ -84,6 +84,14 @@ def _feed_watchdog() -> None:
     watchdog.start_background()
 
 
+@app.on_event("startup")
+def _scheduler() -> None:
+    # Daily and periodic data jobs (flows, snapshots) recorded in the store; see app/scheduler.py
+    from . import jobs, scheduler  # noqa: F401  (importing jobs registers them)
+
+    scheduler.start_background()
+
+
 @app.get("/")
 def root():
     return {
