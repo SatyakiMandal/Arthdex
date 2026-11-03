@@ -21,7 +21,7 @@ Written 3 November 2026. Status reflects the code on that date. Related: [paid-f
 | | Year chart beside a sector board | Built | Free | P1 |
 | | Personalised home once signed in (your watchlist, your alerts, your portfolio's day) | New | Free | P2 |
 | Market watch | Indices, movers, global sentiment | Built | Free | P1 |
-| | Sector and industry heatmap with drill-down to stocks (Nifty 500, by market cap) | Partial (Nifty 50 grid only) | Free | P1 |
+| | Sector and industry heatmap with drill-down to stocks (Nifty 500, by market cap) | Built (treemap on market watch) | Free | P1 |
 | | Breadth dashboard: advance/decline line, new 52-week highs and lows, % above 50/200-day averages, McClellan oscillator | New | Free | P2 |
 | | Market regime card: trend, volatility and breadth state, with how it was decided | Partial (per-stock regime in quant) | Free | P2 |
 | Flows | FII and DII cash flows, daily and cumulative, with NSDL's FPI report beside them | Built (history recorded from 3 Nov 2026) | Free | P1 |

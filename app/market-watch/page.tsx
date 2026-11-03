@@ -13,8 +13,9 @@ import { WindowedMovers } from "@/components/market/windowed-movers";
 import { MoversExplained } from "@/components/market/movers-explained";
 import { ExportCsv } from "@/components/ui/export-csv";
 import { InstitutionalFlows } from "@/components/market/institutional-flows";
+import { SectorTreemap } from "@/components/market/sector-treemap";
 import { SectionHead } from "@/components/ui/section-head";
-import { getFactorScreens, getFlows, getIndices, getMovers, getMoversExplained, getWindowedMovers } from "@/lib/api/endpoints";
+import { getFactorScreens, getFlows, getIndices, getPulse, getMovers, getMoversExplained, getWindowedMovers } from "@/lib/api/endpoints";
 import { cn, deltaColor, formatINR, formatPct } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -61,7 +62,7 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
 
   // Daily comes straight from NSE's live variation feed; weekly and monthly are
   // computed from index-constituent history, because NSE publishes daily only.
-  const [gainers, losers, indices, windowed, factors, explainedUp, explainedDown, flows] = await Promise.all([
+  const [gainers, losers, indices, windowed, factors, explainedUp, explainedDown, flows, pulse500] = await Promise.all([
     getMovers("gainers", universe, band.id === "all" ? 15 : 50),
     getMovers("losers", universe, band.id === "all" ? 15 : 50),
     getIndices(),
@@ -70,6 +71,7 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
     getMoversExplained("gainers", 8),
     getMoversExplained("losers", 8),
     getFlows(90),
+    getPulse("nifty500"),
   ]);
 
   // Advances and declines are reported per index constituent set
@@ -90,13 +92,11 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
       <main id="main" className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="max-w-2xl">
-            <Eyebrow icon={CandlestickChart}>Market watch</Eyebrow>
-            <h1 className="mt-4 text-balance text-4xl sm:text-5xl">
-              Top gainers &amp; losers
-            </h1>
+            <Eyebrow icon={CandlestickChart}>Markets</Eyebrow>
+            <h1 className="mt-4 text-balance text-4xl sm:text-5xl">Market watch</h1>
             <p className="mt-3 text-muted-foreground">
-              Live NSE variation lists. Rights entitlements are excluded, since they are not
-              shares in the company.
+              The day&apos;s movers, the whole Nifty 500 by sector, and what institutions bought and sold. Rights entitlements are left out of the
+              movers, since they are not shares in the company.
             </p>
           </div>
           {gainers.ok ? <FreshnessBadge meta={gainers.meta} /> : null}
@@ -167,6 +167,16 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
               <span className="text-down">{breadth.declines} declining</span>
             </span>
           </div>
+        ) : null}
+
+        {pulse500.ok ? (
+          <section aria-labelledby="sector-map" className="mt-12">
+            <SectionHead id="sector-map" title="Sector map" note={`Nifty 500 today: ${pulse500.data.advances} up, ${pulse500.data.declines} down`} />
+            <div className="mt-6">
+              <SectorTreemap pulse={pulse500.data} />
+            </div>
+            <SourceLine meta={pulse500.meta} className="mt-2" />
+          </section>
         ) : null}
 
         {flows ? (
