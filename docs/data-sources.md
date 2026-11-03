@@ -36,6 +36,7 @@ Two sources often define a line differently (revenue gross or net of excise, pro
 | Feed | Primary | Second source | Vetting | Notes |
 |---|---|---|---|---|
 | Ticker indices (16) | NSE | Yahoo Finance | Daily: every level within 0.2% (VIX 1%) | Vetted 3 Nov 2026: all 16 matched to the paisa. Breadth and index valuation are NSE-only and blank on the backup |
+| Institutional flows (FII/FPI, DII) | NSE provisional, all exchanges, by trade date | NSDL custodial FPI report, a day later | Every record: buy minus sell equals net, plausible size; daily: freshness, and direction agrees with NSDL on large days | Two different measures, shown side by side. NSE keeps one day, so history is recorded daily by the scheduler from 3 Nov 2026 |
 | Market pulse (Nifty 50 grid, breadth) | NSE traded list and index constituents | None | Feed watchdog | NSE's equity-stockIndices endpoint was retired; this uses its replacement |
 | Movers | NSE | None | Feed watchdog | |
 | News and filings | NSE announcements | Indian financial press RSS | Both always merged | Two sources by design |

@@ -462,3 +462,30 @@ def fetch_daily_history(symbol: str, days: int) -> list[dict[str, Any]]:
             }
         cursor = chunk_end + timedelta(days=1)
     return [rows[k] for k in sorted(rows)]
+
+
+def fetch_institutional_flows() -> dict[str, Any]:
+    """
+    Provisional cash-market flows of foreign (FII/FPI) and domestic (DII) institutions for
+    the latest trading day, in rupees crore: across all exchanges and on NSE alone.
+    NSE keeps only the latest day; history is built by the scheduler (app/jobs.py).
+    """
+
+    def parse(rows: Any) -> dict[str, Any]:
+        out: dict[str, Any] = {}
+        for r in rows if isinstance(rows, list) else []:
+            who = "fii" if "FII" in str(r.get("category", "")).upper() else "dii" if "DII" in str(r.get("category", "")).upper() else None
+            if who:
+                out[who] = {"buy": _num(r.get("buyValue")), "sell": _num(r.get("sellValue")), "net": _num(r.get("netValue"))}
+                out["date"] = datetime.strptime(r["date"], "%d-%b-%Y").date().isoformat()
+        return out
+
+    combined = parse(nse_get("/api/fiidiiTradeReact"))
+    try:
+        nse_only = parse(nse_get("/api/fiidiiTradeNse"))
+    except Exception:
+        nse_only = {}
+    if not combined.get("fii") or not combined.get("dii"):
+        raise ValueError("NSE returned no FII/DII rows")
+    return {"date": combined["date"], "allExchanges": {k: combined[k] for k in ("fii", "dii")},
+            "nseOnly": {k: nse_only[k] for k in ("fii", "dii") if k in nse_only} or None}

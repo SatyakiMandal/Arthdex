@@ -24,7 +24,7 @@ Written 3 November 2026. Status reflects the code on that date. Related: [paid-f
 | | Sector and industry heatmap with drill-down to stocks (Nifty 500, by market cap) | Partial (Nifty 50 grid only) | Free | P1 |
 | | Breadth dashboard: advance/decline line, new 52-week highs and lows, % above 50/200-day averages, McClellan oscillator | New | Free | P2 |
 | | Market regime card: trend, volatility and breadth state, with how it was decided | Partial (per-stock regime in quant) | Free | P2 |
-| Flows | FII and DII cash flows, daily and cumulative, against Nifty | New | Free-new (NSE/NSDL) | P1 |
+| Flows | FII and DII cash flows, daily and cumulative, with NSDL's FPI report beside them | Built (history recorded from 3 Nov 2026) | Free | P1 |
 | | FII derivative positioning: index futures and options long/short ratio | New | Free-new (NSE participant OI) | P2 |
 | | Mutual fund flows (AMFI monthly) and sector allocation shifts | New | Free-new (AMFI) | P3 |
 | Derivatives overview | Index option chain summary: PCR, max pain, OI build-up by strike, IV | Partial (GEX panel on order flow) | Free-new (NSE option chain) / Licence for live | P1 |
@@ -190,8 +190,10 @@ Written 3 November 2026. Status reflects the code on that date. Related: [paid-f
 | | Native apps | New | — | P3 |
 | Language | Hindi interface and number formats; later Gujarati, Marathi, Tamil | New | — | P3 |
 | Quality | Lighthouse 100 for accessibility, SEO and best practices; performance over 90 on phones | Partial (82 to 91 on phones) | — | P1 |
-| | Self-hosted fonts, React Compiler warnings cleared, error tracking (Sentry), product analytics | New | — | P1 |
-| Operations | Persistent database, job scheduler, object store for filings, backups | New | Infrastructure | P1 |
+| | Self-hosted fonts and CI | Built | — | P1 |
+| | React Compiler warnings cleared, error tracking (Sentry), product analytics | New | — | P1 |
+| Operations | Point-in-time store and job scheduler (SQLite locally, Supabase Postgres via DATABASE_URL) | Built | — | P1 |
+| | Object store for filings, backups | New | Infrastructure | P1 |
 | | Admin console: users, plans, feed health, incident history, content flags | New | — | P2 |
 | Compliance | Disclaimers, terms, privacy policy (DPDP Act 2023), cookie consent | Partial (disclaimer) | Legal review | P1 |
 | | SEBI position: whether any feature amounts to research analyst or investment adviser activity | New | Legal review | P1 |

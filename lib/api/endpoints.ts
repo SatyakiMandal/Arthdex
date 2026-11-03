@@ -39,8 +39,7 @@ import type {
   ApiSensitivity,
   ApiWindowedMovers,
   ApiValuation,
-  GlobalIndexCard,
-} from "./types";
+  GlobalIndexCard, ApiFlows } from "./types";
 
 // -- market -----------------------------------------------------------------
 
@@ -201,3 +200,5 @@ export const getYHistory = (symbol: string, range = "5Y", interval = "1d") =>
   apiGet<ApiYHistory>(`/api/v1/company/${symbol}/history?range=${range}&interval=${interval}&v=1`, 900);
 export const getYCompare = (symbol: string, peers: string[], period = "1Y") =>
   apiGet<ApiYCompare>(`/api/v1/company/${symbol}/compare?peers=${peers.join(",")}&period=${period}&v=1`, 900);
+
+export const getFlows = (days = 90) => apiGetOrNull<ApiFlows>(`/api/v1/market/flows?days=${days}`, 1800);

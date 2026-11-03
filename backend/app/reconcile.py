@@ -328,6 +328,31 @@ def reconcile_market(base: str) -> list[Result]:
         tol = 0.01 if key == "india-vix" else 0.002
         status, detail = compare(f"{row['name']} level, served vs Yahoo", row["level"], backup[key]["level"], tol)
         out.append(Result("MARKET", f"sources.index.{key}", status, detail))
+    out += _reconcile_flows(base)
+    return out
+
+
+def _reconcile_flows(base: str) -> list[Result]:
+    """Institutional flows: recorded cleanly, recent, and foreign flows pointing the same way on NSE and NSDL."""
+    try:
+        with urllib.request.urlopen(urllib.request.Request(f"{base}/api/v1/market/flows"), timeout=90) as res:
+            data = json.load(res).get("data") or {}
+    except Exception as exc:
+        return [Result("MARKET", "flows.available", "fail", f"flows endpoint: {exc}")]
+    latest = data.get("latest") or {}
+    out = []
+    problems = latest.get("problems") or []
+    out.append(Result("MARKET", "flows.vetted", "fail" if problems else "pass", "; ".join(problems) or f"{latest.get('date')} reconciles"))
+    age = (date.today() - date.fromisoformat(latest["date"])).days if latest.get("date") else None
+    # Weekends and holidays: up to four calendar days without a new trading day is normal
+    out.append(Result("MARKET", "flows.fresh", "pass" if age is not None and age <= 4 else "fail", f"latest trade date {latest.get('date')} ({age} days ago)"))
+    checks = data.get("directionCheck") or []
+    bad = [c for c in checks if not c["agree"]]
+    if not checks:
+        out.append(Result("MARKET", "flows.direction", "skip", "no NSDL report paired with an NSE trade date yet"))
+    else:
+        out.append(Result("MARKET", "flows.direction", "fail" if bad else "pass",
+                          f"{len(checks) - len(bad)} of {len(checks)} days agree" + (f"; e.g. {bad[0]['tradeDate']}: NSE {bad[0]['nseFii']:g} vs NSDL {bad[0]['nsdlFpi']:g}" if bad else "")))
     return out
 
 

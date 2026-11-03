@@ -1014,3 +1014,31 @@ export interface ApiPulse {
   sectors: { industry: string; count: number; marketCapCr: number; changePct: number }[];
   asOf: string;
 }
+
+// -- institutional flows ------------------------------------------------------
+
+export interface ApiFlowLeg {
+  buy: number | null;
+  sell: number | null;
+  net: number | null;
+}
+
+export interface ApiFlows {
+  latest: {
+    date: string;
+    allExchanges: { fii: ApiFlowLeg; dii: ApiFlowLeg };
+    nseOnly: { fii?: ApiFlowLeg; dii?: ApiFlowLeg } | null;
+    problems: string[];
+  };
+  latestNsdl: {
+    reportedOn: string;
+    equity: { stockExchange: ApiFlowLeg & { netUsdMn: number | null }; primaryAndOthers: ApiFlowLeg & { netUsdMn: number | null }; total: ApiFlowLeg & { netUsdMn: number | null } };
+    usdInr: number | null;
+  } | null;
+  series: { date: string; fii: number | null; dii: number | null }[];
+  totals: { fii5d: number | null; dii5d: number | null; fii20d: number | null; dii20d: number | null; fiiMonth: number; diiMonth: number };
+  streak: { fii: number; dii: number };
+  historyStarts: string | null;
+  days: number;
+  directionCheck: { tradeDate: string; nseFii: number; nsdlReportedOn: string; nsdlFpi: number; agree: boolean }[];
+}

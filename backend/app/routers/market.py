@@ -180,3 +180,32 @@ def get_pulse(index: str = Query("nifty50", pattern="^(nifty50|nifty100|nifty200
         delayed_minutes=1,
         note="Sector moves are weighted by market capitalisation.",
     )
+
+
+@router.get("/flows")
+def get_flows(days: int = Query(90, ge=5, le=730)):
+    """
+    Foreign and domestic institutional cash flows: NSE's provisional figure by trade date,
+    and NSDL's custodial FPI figure, side by side, with the history recorded so far.
+    """
+    from ..services import flows
+
+    def build():
+        # Record the latest day if the scheduler has not yet: the page should never be empty
+        # just because the service started after the evening run
+        try:
+            flows.record()
+        except Exception:
+            pass
+        return flows.summary(days)
+
+    try:
+        data, age = CACHE.get_or_fetch(f"market:flows:{days}", 1800, build)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Institutional flows unavailable: {exc}") from exc
+    if not data.get("latest"):
+        raise HTTPException(status_code=503, detail="No institutional flow data recorded yet")
+    return envelope(
+        data, age, source="NSE provisional (trade date); NSDL FPI report (custodial, a day later)", delayed_minutes=0,
+        note=f"History recorded daily since {data.get('historyStarts')}; NSE publishes only the latest day.",
+    )
