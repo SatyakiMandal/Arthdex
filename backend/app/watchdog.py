@@ -107,6 +107,8 @@ CHECKS: tuple[Check, ...] = (
     Check("Deals", "/api/v1/deals", _keys(bulk=0, block=0), ("deals",), nse=True, critical=False),
     Check("Calendar", "/api/v1/calendar", _keys(meetings=0, actions=0), ("calendar",), nse=True, critical=False),
     Check("Bhavcopy", "/api/v1/bhavcopy", _keys(kpis=1, accumulation=1), ("bhavcopy",), nse=True),
+    Check("Option chains", "/api/v1/derivatives/chain?symbol=NIFTY", _keys(rows=10), ("options:chain",), nse=True, critical=False),
+    Check("F&O build-up", "/api/v1/derivatives/buildup", _keys(buckets=1), ("options:buildup",), nse=True, critical=False),
     Check("Institutional flows", "/api/v1/market/flows", _keys(latest=1), ("market:flows",), nse=True, critical=False),
     Check("Screener factors", "/api/v1/screener/factors", _keys(alpha=1), ("screener",)),
 )

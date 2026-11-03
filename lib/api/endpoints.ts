@@ -39,7 +39,7 @@ import type {
   ApiSensitivity,
   ApiWindowedMovers,
   ApiValuation,
-  GlobalIndexCard, ApiFlows, ApiPeers, ApiPeBand, ApiForensics } from "./types";
+  GlobalIndexCard, ApiFlows, ApiPeers, ApiPeBand, ApiForensics, ApiOptionChain, ApiBuildUp } from "./types";
 
 // -- market -----------------------------------------------------------------
 
@@ -210,3 +210,8 @@ export const getPeBand = (symbol: string) =>
 
 export const getForensics = (symbol: string) =>
   apiGetOrNull<ApiForensics>(`/api/v1/company/${symbol}/forensics`, REVALIDATE.fundamentals);
+
+export const getOptionChain = (symbol: string, expiry?: string) =>
+  apiGetOrNull<ApiOptionChain>(`/api/v1/derivatives/chain?symbol=${encodeURIComponent(symbol)}${expiry ? `&expiry=${expiry}` : ""}`, 120);
+
+export const getBuildUp = () => apiGetOrNull<ApiBuildUp>("/api/v1/derivatives/buildup", 300);

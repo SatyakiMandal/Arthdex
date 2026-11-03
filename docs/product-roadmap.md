@@ -120,12 +120,12 @@ Written 3 November 2026. Status reflects the code on that date. Related: [paid-f
 |---|---|---|---|---|
 | Charting | Price chart with indicators | Built | Free | P1 |
 | | Full charting: multi-pane, drawing tools, multi-timeframe, saved layouts, compare overlay | New | Free (EOD) / Licence for live intraday | P1 |
-| Options | Option chain with Greeks, IV, OI change | New | Free-new / Licence | P1 |
+| Options | Option chain with Greeks, IV, OI change, stale quotes marked | Built (index and stock chains) | Free | P1 |
 | | Strategy builder with payoff diagram, probability of profit, margin estimate | New | Free-new | P2 |
 | | IV surface and skew, IV rank and percentile | New | Free-new | P2 |
 | | Options-exposure (GEX, max pain, gamma flip) | Built | Free / Paid for depth | P2 |
 | Scanners | Intraday scanners (breakouts, volume spikes, VWAP reclaim, opening range) | New | Licence for live | P2 |
-| | F&O scanners: long and short build-up, unwinding, OI spikes | New | Free-new | P1 |
+| | F&O scanners: long and short build-up, unwinding, short covering | Built (/derivatives) | Free | P1 |
 | Risk | Position sizing and risk plan | Built | Free | P1 |
 | | Trade-level risk: stop, target, reward-to-risk, expected value | Partial | Free | P2 |
 | Journal | Trade journal with tags, screenshots, mistakes and lessons | New | — | P2 |

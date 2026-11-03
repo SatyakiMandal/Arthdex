@@ -1108,3 +1108,55 @@ export interface ApiForensics {
     fcfToProfit: number | null;
   } | null;
 }
+
+// -- derivatives ----------------------------------------------------------------
+
+export interface ApiOptionLeg {
+  ltp: number | null;
+  change: number | null;
+  oi: number | null;
+  oiChange: number | null;
+  volume: number | null;
+  iv: number | null;
+  bid: number | null;
+  ask: number | null;
+  greeks?: { delta: number; gamma: number; theta: number; vega: number } | null;
+  /** The leg's own IV is far from its strike's out-of-the-money IV: its last price is stale. */
+  stale?: boolean;
+}
+
+export interface ApiOptionChain {
+  symbol: string;
+  expiry: string;
+  expiries: string[];
+  timestamp: string | null;
+  underlying: number;
+  daysToExpiry: number;
+  pcr: number | null;
+  maxPain: number | null;
+  atmStrike: number;
+  atmIv: number | null;
+  impliedMove: { points: number; pct: number } | null;
+  resistance: { strike: number; oi: number }[];
+  support: { strike: number; oi: number }[];
+  totals: { ceOi: number; peOi: number };
+  rows: { strike: number; iv: number | null; ce: ApiOptionLeg | null; pe: ApiOptionLeg | null }[];
+  staleLegs: number;
+  vetting: { checks: { check: string; chain: number; arthdex: number; gapPct: number; ok: boolean }[]; ok: boolean | null };
+}
+
+export interface ApiBuildUpRow {
+  symbol: string;
+  latestOi: number | null;
+  oiChange: number | null;
+  oiChangePct: number | null;
+  underlying: number | null;
+  priceChangePct: number;
+}
+
+export interface ApiBuildUp {
+  buckets: { longBuildUp: ApiBuildUpRow[]; shortBuildUp: ApiBuildUpRow[]; shortCovering: ApiBuildUpRow[]; longUnwinding: ApiBuildUpRow[] };
+  classified: number;
+  of: number;
+  asOf: string | null;
+}

@@ -25,8 +25,7 @@ import {
   Star,
   Sunrise,
   X,
-  type LucideIcon,
-} from "lucide-react";
+  type LucideIcon, Sigma } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { UniversalSearch } from "@/components/search/universal-search";
@@ -43,6 +42,7 @@ const GROUPS: Group[] = [
     blurb: "What the market is doing now",
     items: [
       { label: "Market watch", href: "/market-watch", icon: CandlestickChart, hint: "Indices, movers and breadth" },
+      { label: "Derivatives", href: "/derivatives", icon: Sigma, hint: "Option chains, open interest, F&O build-up" },
       { label: "Commodities", href: "/commodities", icon: Coins, hint: "Metals, energy and the rupee" },
       { label: "Order flow", href: "/orderflow", icon: Activity, hint: "Profile, footprint, CVD and GEX" },
       { label: "Bhavcopy", href: "/bhavcopy", icon: Layers, hint: "End-of-day delivery data" },
