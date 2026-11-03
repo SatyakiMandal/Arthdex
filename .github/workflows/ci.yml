@@ -1,0 +1,56 @@
+# Runs on every push and pull request: the site must typecheck, lint and build with
+# no data service available, and the data service's tests must pass.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: Site (typecheck, lint, build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npx eslint . --max-warnings=40
+      # No data service in CI: pages must still build, rendering their offline states.
+      # Fonts are bundled in app/fonts, so the build makes no network request for them.
+      - run: npx next build
+        env:
+          ARTHDEX_API_URL: http://127.0.0.1:9
+          NEXT_TELEMETRY_DISABLED: "1"
+
+  backend:
+    name: Data service (tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      # The language models are optional and about 1 GB; CI runs the documented lighter install
+      ARTHDEX_ML: "off"
+      ARTHDEX_WATCHDOG_MINUTES: "0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - name: Install without the language models
+        run: |
+          grep -v -E '^(torch|transformers)==|\[ml-only\]' requirements.txt > requirements-ci.txt
+          python -m pip install -r requirements-ci.txt
+      - run: python -m unittest discover -s tests -v

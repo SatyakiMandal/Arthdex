@@ -1,16 +1,20 @@
 import type { Metadata, Viewport } from "next";
-import { Funnel_Display, Geist, Geist_Mono, Noto_Sans_Devanagari, Source_Serif_4 } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { RefreshControl } from "@/components/layout/refresh-control";
 
+// Fonts are bundled (app/fonts, built from the Google Fonts sources, SIL OFL) rather than
+// downloaded at build time: a transient fetch failure once broke a production build.
+// Each file covers Latin and Latin Extended, which is where the rupee sign lives.
+
 // One family carries text, headings and figures; Geist Mono sets every number in tabular columns
-const sans = Geist({ subsets: ["latin"], variable: "--font-geist", display: "swap" });
-const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono", display: "swap" });
+const sans = localFont({ src: "./fonts/geist.woff2", weight: "100 900", variable: "--font-geist", display: "swap" });
+const mono = localFont({ src: "./fonts/geist-mono.woff2", weight: "100 900", variable: "--font-geist-mono", display: "swap" });
 // Display cut for page titles only: a grotesk with enough character to carry the brand
-const display = Funnel_Display({ subsets: ["latin"], weight: ["500", "600", "700"], variable: "--font-funnel", display: "swap" });
-const brand = Source_Serif_4({ subsets: ["latin"], weight: ["700"], variable: "--font-brand", display: "swap" });
-const deva = Noto_Sans_Devanagari({ subsets: ["devanagari", "latin"], weight: ["400", "600"], variable: "--font-noto-deva", display: "swap", preload: false });
+const display = localFont({ src: "./fonts/funnel-display.woff2", weight: "500 700", variable: "--font-funnel", display: "swap" });
+const brand = localFont({ src: "./fonts/source-serif-4-bold.woff2", weight: "700", variable: "--font-brand", display: "swap" });
+const deva = localFont({ src: "./fonts/noto-sans-devanagari.woff2", weight: "400 600", variable: "--font-noto-deva", display: "swap", preload: false });
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 

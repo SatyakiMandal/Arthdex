@@ -372,6 +372,21 @@ def get_statistics(symbol: str):
             data = dict(res["data"])
             data["trading"] = {**(data.get("trading") or {}), "high52w": quote["high52w"], "low52w": quote["low52w"]}
             res = {**res, "data": data}
+        # Price-based multiples from the live quote, as in the masthead (Yahoo's are cached
+        # for hours: Cochin Shipyard's P/E read 44.35 here against a live 46.44)
+        price = (quote or {}).get("cmp")
+        if price:
+            data = dict(res["data"])
+            highlights, valuation = data.get("highlights") or {}, dict(data.get("valuation") or {})
+            eps, book = highlights.get("eps"), highlights.get("bookValue")
+            if eps and eps > 0:
+                valuation["trailingPE"] = round(price / eps, 2)
+            if book and book > 0:
+                valuation["priceToBook"] = round(price / book, 2)
+            if quote.get("marketCapCr"):
+                valuation["marketCap"] = quote["marketCapCr"]
+            data["valuation"] = valuation
+            res = {**res, "data": data}
     except Exception:
         pass
     return res
