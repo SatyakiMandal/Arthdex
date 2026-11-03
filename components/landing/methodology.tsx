@@ -20,7 +20,7 @@ const STEPS = [
 /** Method as a compact strip: the heading on the left, the three steps side by side. */
 export function Methodology() {
   return (
-    <section id="methodology" className="mx-auto max-w-[1600px] scroll-mt-28 px-4 py-10 sm:px-6 lg:py-14">
+    <section id="methodology" className="mx-auto max-w-[1600px] scroll-mt-28 px-4 pb-10 pt-8 sm:px-6 lg:pb-12 lg:pt-10">
       <div className="grid gap-8 lg:grid-cols-12">
         <Reveal className="lg:col-span-3">
           <h2 className="text-balance text-3xl sm:text-4xl">How an analysis is built</h2>

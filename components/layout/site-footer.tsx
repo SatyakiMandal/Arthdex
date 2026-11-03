@@ -48,7 +48,7 @@ const COLUMNS = [
 
 export function SiteFooter() {
   return (
-    <footer className="mt-16 border-t border-border bg-surface-muted/40">
+    <footer className="border-t border-border bg-surface-muted/40">
       <div className="mx-auto grid max-w-[1600px] gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.2fr_repeat(2,0.6fr)_1.6fr]">
         <div>
           <Link href="/" className="inline-flex">

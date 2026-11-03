@@ -77,7 +77,7 @@ export async function MarketToday() {
   const o = chain?.data;
 
   return (
-    <section className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6 lg:py-14">
+    <section className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6 lg:py-10">
       <Reveal className="flex flex-wrap items-end justify-between gap-4">
         <h2 className="text-balance text-3xl sm:text-4xl">Market today</h2>
         <Link href="/market-watch" className="inline-flex items-center gap-1 text-sm font-medium text-accent underline-offset-4 hover:underline">

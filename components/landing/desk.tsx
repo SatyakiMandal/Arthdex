@@ -30,13 +30,21 @@ export async function Desk() {
   const issues = ipo.ok
     ? ipo.data.issues.filter((i) => i.status === "ongoing" || i.status === "upcoming").slice(0, 4)
     : [];
+  // The rows left over show the latest listings and how they have done since, so the card
+  // is never half empty in a quiet week
+  const listed = ipo.ok
+    ? ipo.data.issues
+        .filter((i) => i.status === "listed" && i.listingDate && typeof i.cmpVsIssuePct === "number")
+        .sort((a, b) => (b.listingDate ?? "").localeCompare(a.listingDate ?? ""))
+        .slice(0, Math.max(2, 6 - issues.length))
+    : [];
   const priced = unlisted.ok ? unlisted.data.companies.filter((c) => c.price !== null).slice(0, 4) : [];
 
   return (
     <section className="border-y border-border bg-surface-muted/50">
-      <div className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6 lg:py-14">
+      <div className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6 lg:py-10">
         <Reveal>
-          <h2 className="max-w-2xl text-balance text-3xl sm:text-4xl">One desk for listed, unlisted and new issues</h2>
+          <h2 className="text-balance text-3xl sm:text-4xl">One desk for listed, unlisted and new issues</h2>
         </Reveal>
 
         <div className="mt-6 grid gap-4 lg:auto-rows-[minmax(11rem,auto)] lg:grid-cols-12">
@@ -118,6 +126,24 @@ export async function Desk() {
             ) : (
               <p className="mt-5 text-sm text-muted-foreground">No issue is open or announced right now.</p>
             )}
+            {listed.length ? (
+              <>
+                <p className="mt-5 border-t border-border pt-3 text-xs text-muted-foreground">Recently listed, against the issue price</p>
+                <ul className="mt-2 space-y-1.5">
+                  {listed.map((i) => (
+                    <li key={i.id} className="flex items-baseline justify-between gap-3 text-sm">
+                      <span className="min-w-0 truncate">
+                        {i.name ?? i.symbol}
+                        <span className="ml-2 text-xs text-muted-foreground">{dateFmt(i.listingDate)}</span>
+                      </span>
+                      <span className={cn("shrink-0 font-mono text-xs tabular-nums", (i.cmpVsIssuePct ?? 0) >= 0 ? "text-up" : "text-down")}>
+                        {formatPct(i.cmpVsIssuePct ?? 0, 1)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
           </Reveal>
 
           {/* Unlisted directory: the count leads */}
