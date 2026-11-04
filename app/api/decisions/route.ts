@@ -14,6 +14,17 @@ export async function GET() {
 
 /** Logs a call. The browser sends only a symbol; the data service builds the snapshot itself. */
 export async function POST(request: Request) {
+  const origin = request.headers.get("origin");
+  const host = request.headers.get("host");
+  if (origin && host) {
+    try {
+      if (new URL(origin).host !== host) {
+        return NextResponse.json({ error: "Cross-origin request forbidden" }, { status: 403 });
+      }
+    } catch {
+      return NextResponse.json({ error: "Invalid origin header" }, { status: 403 });
+    }
+  }
   let symbol: unknown;
   try {
     symbol = ((await request.json()) as { symbol?: unknown }).symbol;

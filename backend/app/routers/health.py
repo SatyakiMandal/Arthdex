@@ -78,7 +78,8 @@ def refresh(body: RefreshRequest):
     for key, age in CACHE.stats().items():
         if key.startswith("analyzer:") or age < MIN_REFRESH_AGE:
             continue
-        if any(key.startswith(p) for p in body.prefixes) or (sym and sym in key.split(":")):
+        valid_prefixes = [p for p in body.prefixes if p and p.strip()]
+        if any(key.startswith(p) for p in valid_prefixes) or (sym and sym in key.split(":")):
             CACHE.expire(key)
             expired += 1
     return {"expired": expired}

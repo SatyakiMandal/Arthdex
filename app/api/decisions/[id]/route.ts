@@ -5,7 +5,18 @@ export const dynamic = "force-dynamic";
 
 const BASE_URL = process.env.ARTHDEX_API_URL ?? "http://127.0.0.1:8000";
 
-export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const origin = request.headers.get("origin");
+  const host = request.headers.get("host");
+  if (origin && host) {
+    try {
+      if (new URL(origin).host !== host) {
+        return NextResponse.json({ error: "Cross-origin request forbidden" }, { status: 403 });
+      }
+    } catch {
+      return NextResponse.json({ error: "Invalid origin header" }, { status: 403 });
+    }
+  }
   const { id } = await params;
   if (!/^\d{1,9}$/.test(id)) return NextResponse.json({ error: "invalid id" }, { status: 400 });
   try {

@@ -8,13 +8,39 @@ route degrades to a clear error rather than inventing a value.
 
 from __future__ import annotations
 
-from fastapi import FastAPI
+from contextlib import asynccontextmanager
+import hmac
+import os
+from typing import AsyncIterator
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from .config import SETTINGS
 from .routers import analyzer, bhavcopy, company, decisions, derivatives, health, ipo, market, news, orderflow, quant, screener, search, unlisted, desk
 from .services import analyzer as analyzer_service
 from .services import unlisted as unlisted_service
+
+
+def _startup() -> None:
+    _analyzer_startup()
+    _models_status()
+    _unlisted_warmup()
+    _feed_watchdog()
+    _scheduler()
+    if (
+        os.environ.get("ARTHDEX_WATCHDOG_MINUTES") != "0"
+        and os.environ.get("ARTHDEX_SCHEDULER", "").lower() not in ("0", "false", "off")
+    ):
+        _prewarm()
+
+
+@asynccontextmanager
+async def _lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    _startup()
+    yield
+
 
 app = FastAPI(
     title="Arthdex Data Service",
@@ -23,15 +49,32 @@ app = FastAPI(
         "Live Indian market data for the Arthdex front end. "
         "Prices are delayed; see each response's meta block for source and age."
     ),
+    lifespan=_lifespan,
 )
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=list(SETTINGS.allowed_origins),
     allow_credentials=False,
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["*"],
 )
+
+_AUTH_EXEMPT_PATHS = {"/", "/docs", "/openapi.json", "/api/v1/health"}
+
+
+@app.middleware("http")
+async def _enforce_api_token(request: Request, call_next):
+    expected = os.environ.get("ARTHDEX_API_TOKEN", "")
+    if expected:
+        if request.method != "OPTIONS" and not (
+            request.method == "GET" and request.url.path in _AUTH_EXEMPT_PATHS
+        ):
+            auth_header = request.headers.get("authorization", "")
+            if not hmac.compare_digest(auth_header, f"Bearer {expected}"):
+                return JSONResponse({"detail": "Unauthorized"}, status_code=401)
+    return await call_next(request)
+
 
 app.include_router(health.router)
 app.include_router(market.router)
@@ -50,14 +93,12 @@ app.include_router(decisions.router)
 app.include_router(derivatives.router)
 
 
-@app.on_event("startup")
 def _analyzer_startup() -> None:
     analyzer_service.RUNS_DIR.mkdir(parents=True, exist_ok=True)
     analyzer_service.recover_interrupted()
     analyzer_service.seed_samples()
 
 
-@app.on_event("startup")
 def _models_status() -> None:
     # Say plainly which sentiment engine analyses will use, so a missing model is visible at start-up
     import logging
@@ -70,14 +111,12 @@ def _models_status() -> None:
     )
 
 
-@app.on_event("startup")
 def _unlisted_warmup() -> None:
     # A cold directory is about half a minute of polite fetching, so build it in the
     # background rather than on the first visitor's request.
     unlisted_service.ensure_warm()
 
 
-@app.on_event("startup")
 def _feed_watchdog() -> None:
     # Probe every feed on a timer, repair what it can, and log the rest (see app/watchdog.py)
     from . import watchdog
@@ -85,7 +124,6 @@ def _feed_watchdog() -> None:
     watchdog.start_background()
 
 
-@app.on_event("startup")
 def _scheduler() -> None:
     # Daily and periodic data jobs (flows, snapshots) recorded in the store; see app/scheduler.py
     from . import jobs, scheduler  # noqa: F401  (importing jobs registers them)
@@ -117,6 +155,3 @@ def _prewarm() -> None:
             pass
 
     threading.Thread(target=run, name="prewarm-ipo", daemon=True).start()
-
-
-_prewarm()

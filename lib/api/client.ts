@@ -64,7 +64,7 @@ export async function apiGet<T>(
     });
 
     if (!response.ok) {
-      let detail = response.statusText;
+      let detail = `API ${response.status} on ${path}`;
       try {
         const body = (await response.json()) as { detail?: string };
         if (body?.detail) detail = body.detail;
@@ -77,14 +77,14 @@ export async function apiGet<T>(
     const body = (await response.json()) as Envelope<T>;
     return { ok: true, data: body.data, meta: body.meta };
   } catch (error) {
-    // Almost always the data service not running — say so plainly
+    // Almost always the data service not running — say so plainly without exposing internal BASE_URL
     return {
       ok: false,
       status: 0,
       message:
         error instanceof Error
-          ? `Cannot reach the data service at ${BASE_URL}: ${error.message}`
-          : "Cannot reach the data service",
+          ? `Cannot reach the data service on ${path}: ${error.message}`
+          : `Cannot reach the data service on ${path}`,
     };
   }
 }

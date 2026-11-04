@@ -94,6 +94,8 @@ def create_run(body: RunRequest):
         raise HTTPException(422, f"Window too long: at most {MAX_SPAN_DAYS} days per run.")
     if body.kind == "listed" and not body.ticker:
         raise HTTPException(422, "A listed run needs a ticker; pick one from the search results.")
+    if body.kind == "unlisted" and not body.url:
+        raise HTTPException(400, "url is required for unlisted runs")
 
     live = [r for r in svc.list_runs(limit=200, origin="run") if r["status"] in ("QUEUED", "RUNNING")]
     if len(live) >= 8:
@@ -263,7 +265,13 @@ def get_report(run_id: str):
     path = svc.artefact(run_id, "report.html")
     if path is None:
         raise HTTPException(404, "Report not found")
-    return HTMLResponse(path.read_text(encoding="utf-8"))
+    headers = {
+        "Content-Security-Policy": (
+            "sandbox allow-same-origin allow-scripts; default-src 'none'; "
+            "img-src data: https:; style-src 'unsafe-inline'; script-src 'unsafe-inline'"
+        )
+    }
+    return HTMLResponse(path.read_text(encoding="utf-8"), headers=headers)
 
 
 @router.get("/runs/{run_id}/download/{name}")

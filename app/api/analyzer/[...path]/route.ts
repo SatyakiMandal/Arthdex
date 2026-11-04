@@ -12,29 +12,41 @@ import { backendHeaders } from "@/lib/api/auth";
 export const dynamic = "force-dynamic";
 
 const SEG = "[A-Za-z0-9._-]+";
-const ALLOWED = [
+const GET_ALLOWED = [
   new RegExp(`^search$`),
   new RegExp(`^models$`),
   new RegExp(`^runs$`),
+  new RegExp(`^runs/${SEG}$`),
+  new RegExp(`^runs/${SEG}/(summary|report|peers)$`),
+  new RegExp(`^runs/${SEG}/download/${SEG}$`),
+];
+const POST_ALLOWED = [
+  new RegExp(`^runs$`),
   new RegExp(`^runs/clear-unsuccessful$`),
   new RegExp(`^snapshots/${SEG}$`),
+  new RegExp(`^runs/${SEG}/cancel$`),
+];
+const DELETE_ALLOWED = [
   new RegExp(`^runs/${SEG}$`),
-  new RegExp(`^runs/${SEG}/(cancel|summary|report|peers)$`),
-  new RegExp(`^runs/${SEG}/download/${SEG}$`),
 ];
 
 type Ctx = { params: Promise<{ path: string[] }> };
 
 async function forward(request: Request, ctx: Ctx, method: "GET" | "POST" | "DELETE") {
   const { path } = await ctx.params;
+  if (!Array.isArray(path) || path.length === 0 || path.some((seg) => !seg || seg === "." || seg === "..")) {
+    return NextResponse.json({ detail: "Invalid path" }, { status: 400 });
+  }
   const joined = path.join("/");
-  if (!ALLOWED.some((re) => re.test(joined))) {
+  const allowlist = method === "GET" ? GET_ALLOWED : method === "POST" ? POST_ALLOWED : DELETE_ALLOWED;
+  if (!allowlist.some((re) => re.test(joined))) {
     return NextResponse.json({ detail: "Not found" }, { status: 404 });
   }
+  const upstreamPath = path.map((seg) => encodeURIComponent(seg)).join("/");
 
   const search = new URL(request.url).search;
   try {
-    const upstream = await fetch(`${analyzerBaseUrl}/api/v1/analyzer/${joined}${search}`, {
+    const upstream = await fetch(`${analyzerBaseUrl}/api/v1/analyzer/${upstreamPath}${search}`, {
       method,
       cache: "no-store",
       headers: backendHeaders({ "Content-Type": "application/json" }),
