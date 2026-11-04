@@ -70,6 +70,8 @@ class Store:
             self.sqlite_path.parent.mkdir(parents=True, exist_ok=True)
             conn = sqlite3.connect(self.sqlite_path, timeout=30)
             try:
+                conn.execute("PRAGMA journal_mode=WAL")
+                conn.execute("PRAGMA busy_timeout=5000")
                 yield conn
                 conn.commit()
             finally:
@@ -93,10 +95,13 @@ class Store:
     def ensure_schema(self) -> None:
         if self._ready:
             return
-        with self._lock, self._conn() as conn:
-            for statement in _SCHEMA:
-                conn.execute(statement)
-        self._ready = True
+        with self._lock:
+            if self._ready:
+                return
+            with self._conn() as conn:
+                for statement in _SCHEMA:
+                    conn.execute(statement)
+            self._ready = True
 
     # -- series --------------------------------------------------------------------
 

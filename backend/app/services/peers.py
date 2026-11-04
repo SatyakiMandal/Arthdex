@@ -18,6 +18,8 @@ from datetime import date, timedelta
 from statistics import median
 from typing import Any
 
+import numpy as np
+
 from ..cache import CACHE
 from ..providers import screener, yahoo
 
@@ -120,7 +122,7 @@ def pe_band(symbol: str, live_price: float | None) -> dict[str, Any]:
         raise ValueError(f"Too little history with positive earnings to draw a band for {sym}")
 
     values = sorted(p["pe"] for p in points)
-    q = lambda f: values[min(len(values) - 1, int(f * (len(values) - 1)))]
+    q = lambda f: round(float(np.quantile(values, f)), 2)
     latest_eps = known[-1] if known[-1][0] <= date.today() else next((k for k in reversed(known) if k[0] <= date.today()), None)
     current = round(live_price / latest_eps[1], 2) if live_price and latest_eps and latest_eps[1] > 0 else points[-1]["pe"]
     return {

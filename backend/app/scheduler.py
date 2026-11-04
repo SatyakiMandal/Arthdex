@@ -89,9 +89,10 @@ def run_job(job: Job, store: Store = STORE) -> bool:
     except Exception as exc:  # recorded, retried at the next due time
         ok, error = False, f"{type(exc).__name__}: {str(exc)[:300]}"
         LOG.warning("Scheduler: %s failed: %s", job.name, error)
+    finished = datetime.now(timezone.utc).isoformat() if ok else None
     store.execute(
-        "UPDATE job_runs SET last_finished = ?, last_ok = ?, last_error = ?, runs = runs + 1 WHERE job = ?",
-        (datetime.now(timezone.utc).isoformat() if ok else None, 1 if ok else 0, error, job.name),
+        "UPDATE job_runs SET last_finished = COALESCE(?, last_finished), last_ok = ?, last_error = ?, runs = runs + 1 WHERE job = ?",
+        (finished, 1 if ok else 0, error, job.name),
     )
     return ok
 
@@ -127,7 +128,7 @@ def status(store: Store = STORE) -> list[dict]:
 
 
 def start_background() -> None:
-    if os.environ.get("ARTHDEX_SCHEDULER", "on").lower() == "off":
+    if os.environ.get("ARTHDEX_SCHEDULER", "on").lower() in ("0", "false", "off"):
         return
 
     def loop() -> None:

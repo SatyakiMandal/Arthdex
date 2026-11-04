@@ -85,9 +85,10 @@ def commodity_insights(
     for name, rs in groups.items():
         g_rows.append([name, len(rs), _f(avg(rs, "1M"), 1), _f(avg(rs, "3M"), 1), _f(avg(rs, "1Y"), 1)])
     g_rows.sort(key=lambda x: (x[2] is None, -(x[2] or 0)))
-    lead, lag = g_rows[0], g_rows[-1]
-    metrics.append(tile("Strongest group (1M)", lead[0], f"{lead[2]:+.1f}% average", _sign(lead[2])))
-    metrics.append(tile("Weakest group (1M)", lag[0], f"{lag[2]:+.1f}% average", _sign(lag[2])))
+    lead, lag = (g_rows[0], g_rows[-1]) if g_rows else ([None, 0, None, None, None], [None, 0, None, None, None])
+    if lead[2] is not None and lag[2] is not None:
+        metrics.append(tile("Strongest group (1M)", lead[0], f"{lead[2]:+.1f}% average", _sign(lead[2])))
+        metrics.append(tile("Weakest group (1M)", lag[0], f"{lag[2]:+.1f}% average", _sign(lag[2])))
 
     pos1m = [r for r in rows if (r["change"].get("1M") or 0) > 0]
     pos3m = [r for r in rows if (r["change"].get("3M") or 0) > 0]
@@ -191,7 +192,10 @@ def commodity_insights(
             tone = "down" if binr > 8 else "up" if binr < -8 else "flat"
             findings.append(finding(tone, "Crude import bill", f"Brent is {b3:+.1f}% in dollars and {binr:+.1f}% in rupees over three months. Rupee crude moves feed through to inflation, the current account and oil marketing company margins."))
 
-    headline = f"{lead[0]} lead over the past month ({lead[2]:+.1f}% on average) while {lag[0].lower()} lag ({lag[2]:+.1f}%); {len(pos1m)} of {len(rows)} commodities are higher."
+    if lead[2] is not None and lag[2] is not None:
+        headline = f"{lead[0]} lead over the past month ({lead[2]:+.1f}% on average) while {lag[0].lower()} lag ({lag[2]:+.1f}%); {len(pos1m)} of {len(rows)} commodities are higher."
+    else:
+        headline = f"{len(pos1m)} of {len(rows)} commodities are higher over the past month."
     return {
         "headline": headline,
         "metrics": metrics,

@@ -82,11 +82,20 @@ def snapshot(symbol: str) -> dict[str, Any]:
     call = "Bullish" if net >= BULL_AT else "Bearish" if net <= -BULL_AT else "Neutral"
     risk = risk_layer.assess(symbol, df)
     nifty = _daily(NIFTY)
+    nifty_close = None
+    if len(nifty):
+        as_of_str = str(t.get("asOf") or "")[:10]
+        nifty_dates = nifty.index.strftime("%Y-%m-%d")
+        matched = nifty[nifty_dates == as_of_str]
+        if not matched.empty:
+            nifty_close = _f(matched["Close"].iloc[-1])
+        else:
+            nifty_close = _f(nifty["Close"].iloc[-1])
     return {
         "symbol": symbol,
         "asOf": t["asOf"],
         "price": t["lastClose"],
-        "nifty": _f(nifty["Close"].iloc[-1]) if len(nifty) else None,
+        "nifty": nifty_close,
         "call": call,
         "net": round(net, 3),
         "bullish": tally["bullish"],

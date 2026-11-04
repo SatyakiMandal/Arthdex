@@ -13,6 +13,7 @@ illustrative rather than pretending it was captured.
 from __future__ import annotations
 
 import re
+import urllib.parse
 from datetime import date, datetime
 from typing import Any
 
@@ -143,9 +144,10 @@ def fetch_listing_performance(symbol: str, listing_date: str | None) -> dict[str
 
 def fetch_final_subscription(symbol: str, segment: str) -> float | None:
     """Total subscription multiple of a closed issue, on the same basis as the live feed."""
+    qsym = urllib.parse.quote(symbol.upper(), safe="")
     for series in (("SME", "SM") if segment == "sme" else ("EQ", "BE")):
         try:
-            d = nse.nse_get(f"/api/ipo-detail?symbol={symbol}&series={series}")
+            d = nse.nse_get(f"/api/ipo-detail?symbol={qsym}&series={series}")
         except Exception:
             continue
         for row in (d or {}).get("bidDetails", []) if isinstance(d, dict) else []:

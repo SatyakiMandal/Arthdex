@@ -93,7 +93,7 @@ def fiscal_quarter(period_end: str) -> str:
     d = date.fromisoformat(period_end[:10])
     q = {6: 1, 9: 2, 12: 3, 3: 4}.get(d.month)
     fy = d.year + 1 if d.month >= 4 else d.year
-    return f"Q{q} FY{fy % 100:02d}" if q else "?"
+    return f"Q{q} FY{fy % 100:02d}" if q else d.strftime("%b %Y")
 
 
 def checks(d: dict[str, Any]) -> list[tuple[str, Callable[[], tuple[str, str]]]]:

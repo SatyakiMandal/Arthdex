@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
 from fastapi import APIRouter, HTTPException, Query
 
 from ..cache import CACHE
@@ -44,14 +47,13 @@ def get_expiries(symbol: str = Query("NIFTY")):
 @router.get("/chain")
 def get_chain(symbol: str = Query("NIFTY"), expiry: str | None = Query(None, pattern=r"^\d{4}-\d{2}-\d{2}$")):
     """One expiry's chain with PCR, max pain, ATM IV, implied move, OI walls and Greeks, vetted for consistency."""
-    from datetime import date
-
     sym = symbol.upper()
     try:
         expiries, _ = CACHE.get_or_fetch(f"options:expiries:{sym}", 3600, lambda: nse_options.expiries(sym))
     except Exception as exc:
         raise HTTPException(status_code=503, detail=f"Expiries unavailable: {exc}") from exc
-    upcoming = [e for e in expiries if e >= date.today().isoformat()]
+    today_ist = datetime.now(ZoneInfo("Asia/Kolkata")).date().isoformat()
+    upcoming = [e for e in expiries if e >= today_ist]
     if not upcoming:
         raise HTTPException(status_code=404, detail=f"{sym} has no upcoming expiry")
     chosen = expiry if expiry in upcoming else upcoming[0]
@@ -77,9 +79,17 @@ def get_buildup():
 
     def build():
         spurts = nse_options.oi_spurts()
-        traded = nse.fetch_stocks_traded()
-        # rows is keyed by symbol
+        traded, _ = CACHE.get_or_fetch("market:traded", 60, nse.fetch_stocks_traded)
         changes = {sym: r.get("changePct") for sym, r in (traded.get("rows") or {}).items() if r.get("changePct") is not None}
+        try:
+            indices, _ = CACHE.get_or_fetch("market:indices", 45, nse.fetch_indices)
+            underlying = {"NIFTY 50": "NIFTY", "NIFTY BANK": "BANKNIFTY", "NIFTY FINANCIAL SERVICES": "FINNIFTY", "NIFTY MIDCAP SELECT": "MIDCPNIFTY", "NIFTY NEXT 50": "NIFTYNXT50"}
+            for idx in indices or []:
+                sym = underlying.get((idx.get("name") or "").strip().upper())
+                if sym and idx.get("changePercent") is not None:
+                    changes[sym] = idx["changePercent"]
+        except Exception:
+            pass
         return {**options.build_up(spurts, changes), "asOf": traded.get("asOf")}
 
     try:

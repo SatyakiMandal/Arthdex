@@ -98,8 +98,10 @@ def compute_sensitivities(stock_frame: pd.DataFrame) -> dict[str, Any]:
         alpha_daily = float(model.params.iloc[0])
         r_squared = float(model.rsquared)
 
-        stock_total = float(joined["stock"].sum())
-        index_total = float(joined["index"].sum())
+        stock_log_sum = float(joined["stock"].sum())
+        index_log_sum = float(joined["index"].sum())
+        stock_total = round(100.0 * (math.exp(stock_log_sum / 100.0) - 1.0), 2)
+        index_total = round(100.0 * (math.exp(index_log_sum / 100.0) - 1.0), 2)
 
         rows.append(
             {
@@ -140,10 +142,3 @@ def compute_sensitivities(stock_frame: pd.DataFrame) -> dict[str, Any]:
             "have no usable history on the free data source, so they are not shown."
         ),
     }
-
-
-def annualised_vol_pct(stock_frame: pd.DataFrame) -> float | None:
-    stock = _stock_returns(stock_frame)
-    if len(stock) < 30:
-        return None
-    return _round(float(stock.std()) * math.sqrt(TRADING_DAYS))

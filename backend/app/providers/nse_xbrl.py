@@ -20,9 +20,11 @@ Values are in rupees and are returned in crore.
 
 from __future__ import annotations
 
-import xml.etree.ElementTree as ET
 from datetime import date, datetime
 from typing import Any
+import urllib.parse
+from urllib.parse import urlparse
+import xml.etree.ElementTree as ET
 
 from ..cache import CACHE
 from .nse import _get_session, nse_get
@@ -31,6 +33,8 @@ CRORE = 1e7
 # A filing never changes once published; revisions are new filings with new URLs
 FILING_TTL = 30 * 24 * 3600
 LIST_TTL = 12 * 3600
+MAX_XML_BYTES = 15 * 1024 * 1024
+ALLOWED_XML_HOSTS = ("nsearchives.nseindia.com", "www.nseindia.com")
 
 # Facts read, in priority order where the taxonomies differ (banks file their own lines)
 REVENUE = ("RevenueFromOperations", "TotalIncomeFromOperations", "InterestEarned")
@@ -65,13 +69,40 @@ def _day(text: str | None) -> date | None:
     return None
 
 
+def _broadcast_iso(text: str | None) -> str:
+    if not text:
+        return ""
+    s = str(text).strip()
+    for fmt in ("%d-%b-%Y %H:%M:%S", "%d-%b-%Y %H:%M", "%d-%b-%Y", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(s, fmt).isoformat()
+        except ValueError:
+            continue
+    return s
+
+
+def _fetch_xml(url: str) -> bytes:
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https") or parsed.hostname not in ALLOWED_XML_HOSTS:
+        raise ValueError(f"Refusing XBRL download from untrusted host: {url}")
+    res = _get_session().get(url, timeout=60)
+    res.raise_for_status()
+    content = res.content
+    if len(content) > MAX_XML_BYTES:
+        raise ValueError(f"XBRL payload exceeds {MAX_XML_BYTES} bytes: {url}")
+    if b"<!ENTITY" in content.upper():
+        raise ValueError("Refusing XML payload containing <!ENTITY declaration")
+    return content
+
+
 def list_filings(symbol: str) -> list[dict[str, Any]]:
     """Every results filing NSE lists for a company: period end, basis and XBRL link, newest first."""
+    encoded = urllib.parse.quote(symbol.upper(), safe="")
 
     def fetch() -> list[dict[str, Any]]:
         out: list[dict[str, Any]] = []
         try:
-            recent = nse_get(f"/api/integrated-filing-results?index=equities&symbol={symbol}&period_ended=all&type=Integrated%20Filing-%20Financials")
+            recent = nse_get(f"/api/integrated-filing-results?index=equities&symbol={encoded}&period_ended=all&type=Integrated%20Filing-%20Financials")
             for r in (recent or {}).get("data") or []:
                 end = _day(r.get("qe_Date"))
                 if end and r.get("xbrl"):
@@ -80,7 +111,7 @@ def list_filings(symbol: str) -> list[dict[str, Any]]:
         except Exception:
             pass
         try:
-            older = nse_get(f"/api/corporates-financial-results?index=equities&symbol={symbol}&period=Quarterly")
+            older = nse_get(f"/api/corporates-financial-results?index=equities&symbol={encoded}&period=Quarterly")
             for r in older if isinstance(older, list) else []:
                 end = _day(r.get("toDate"))
                 if end and r.get("xbrl") and str(r["xbrl"]).endswith(".xml"):
@@ -96,6 +127,11 @@ def list_filings(symbol: str) -> list[dict[str, Any]]:
 
 def parse(xml: bytes | str) -> dict[str, Any]:
     """Quarter, full-year and balance-sheet figures from one XBRL instance, in crore."""
+    raw_bytes = xml.encode("utf-8", errors="ignore") if isinstance(xml, str) else xml
+    if len(raw_bytes) > MAX_XML_BYTES:
+        raise ValueError("XBRL payload exceeds size limit")
+    if b"<!ENTITY" in raw_bytes.upper():
+        raise ValueError("Refusing XML payload containing <!ENTITY declaration")
     root = ET.fromstring(xml)
 
     def local(tag: str) -> str:
@@ -209,13 +245,21 @@ def figures_for(symbol: str, period_end: str, consolidated: bool = True) -> dict
     filings = [f for f in list_filings(symbol) if f["periodEnd"] == period_end[:10]]
     if not filings:
         return None
-    filings.sort(key=lambda f: (f["consolidated"] == consolidated, f["revised"], f.get("filed") or ""), reverse=True)
+    filings.sort(
+        key=lambda f: (f["consolidated"] == consolidated, f["revised"], _broadcast_iso(f.get("filed"))),
+        reverse=True,
+    )
     url = filings[0]["url"]
 
     def fetch() -> dict[str, Any]:
-        res = _get_session().get(url, timeout=60)
-        res.raise_for_status()
-        return {**parse(res.content), "url": url}
+        content = _fetch_xml(url)
+        data = parse(content)
+        if not data or not data.get("periodEnd"):
+            raise ValueError(f"Empty or unparsable XBRL filing: {url}")
+        return {**data, "url": url}
 
-    parsed, _ = CACHE.get_or_fetch(f"xbrl:filing:{url}", FILING_TTL, fetch)
-    return parsed or None
+    try:
+        parsed, _ = CACHE.get_or_fetch(f"xbrl:filing:{url}", FILING_TTL, fetch)
+        return parsed or None
+    except Exception:
+        return None

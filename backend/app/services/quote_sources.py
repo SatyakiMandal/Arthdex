@@ -57,5 +57,19 @@ def fetch(symbol: str, exchange: str = "NSE") -> dict[str, Any] | None:
     from ..providers import nse, yahoo
 
     if exchange.upper() != "NSE":
-        return yahoo.fetch_quote(symbol, exchange)
+        q = yahoo.fetch_quote(symbol, exchange)
+        if q is None:
+            return None
+        return {
+            **q,
+            "sources": {
+                "used": "yahoo",
+                "nsePrice": None,
+                "yahooPrice": q.get("cmp"),
+                "nseError": None,
+                "yahooError": None,
+                "agree": None,
+                "gapPct": None,
+            },
+        }
     return choose(lambda: nse.fetch_quote(symbol), lambda: yahoo.fetch_quote(symbol, exchange))

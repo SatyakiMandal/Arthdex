@@ -19,9 +19,11 @@ operating fields are left empty rather than approximated.
 from __future__ import annotations
 
 import calendar
-import re
+from collections import Counter
 from datetime import date
+import re
 from typing import Any
+import urllib.parse
 
 import requests
 from bs4 import BeautifulSoup
@@ -55,6 +57,13 @@ def _fiscal_label(d: date) -> str:
     if q is None:
         return d.strftime("%b %Y")
     return f"Q{q} FY{str(d.year + 1 if d.month >= 6 else d.year)[-2:]}"
+
+
+def _annual_month(periods: list[date | None]) -> int:
+    valid = [d.month for d in periods if d is not None]
+    if not valid or 3 in valid:
+        return 3
+    return Counter(valid).most_common(1)[0][0]
 
 
 def _table(soup: BeautifulSoup, section: str) -> tuple[list[date | None], dict[str, list[float | None]]] | None:
@@ -91,10 +100,11 @@ def _pnl(soup: BeautifulSoup, section: str, annual: bool) -> list[dict[str, Any]
     net = _line(lines, n, "Net Profit")
     eps = _line(lines, n, "EPS in Rs")
     lender = "Financing Profit" in lines
+    fy_month = _annual_month(periods) if annual else None
 
     rows: list[dict[str, Any]] = []
     for i, end in enumerate(periods):
-        if end is None or not revenue[i] or (annual and end.month != 3):
+        if end is None or not revenue[i] or (annual and end.month != fy_month):
             continue
         ebit = None if lender or op[i] is None else round(op[i] - (depreciation[i] or 0), 2)
         row: dict[str, Any] = {
@@ -132,9 +142,10 @@ def _balance(soup: BeautifulSoup) -> list[dict[str, Any]]:
     reserves = _line(lines, n, "Reserves")
     borrowings = _line(lines, n, "Borrowings", "Borrowing")
     assets = _line(lines, n, "Total Assets")
+    fy_month = _annual_month(periods)
     rows: list[dict[str, Any]] = []
     for i, end in enumerate(periods):
-        if end is None or end.month != 3 or capital[i] is None or reserves[i] is None:
+        if end is None or end.month != fy_month or capital[i] is None or reserves[i] is None:
             continue
         worth = capital[i] + reserves[i]
         rows.append(
@@ -196,9 +207,12 @@ def fetch_company(symbol: str) -> dict[str, Any]:
 
 def _fetch_company(symbol: str) -> dict[str, Any]:
     """Consolidated results, falling back to standalone where a company files none."""
+    encoded = urllib.parse.quote(symbol.upper(), safe="")
     for kind in ("consolidated", ""):
-        url = URL.format(symbol=symbol.upper(), kind=kind).replace("//", "/").replace("https:/", "https://")
+        url = URL.format(symbol=encoded, kind=kind).replace("//", "/").replace("https:/", "https://")
         res = requests.get(url, headers=UA, timeout=30)
+        if res.status_code == 429 or res.status_code >= 500:
+            res.raise_for_status()
         if res.status_code != 200:
             continue
         parsed = parse_company(res.text)

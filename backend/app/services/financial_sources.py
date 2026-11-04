@@ -194,9 +194,8 @@ def settle(kind: str, rows: list[dict[str, Any]], used: str, found: list[dict[st
             verdict = "neither"
         restated = (y if verdict == "yahoo" else s_ if verdict == "screener" else None) == "restated"
         d["settled"] = {"by": "NSE XBRL filing", "filed": filed, "correct": verdict, "restated": restated, "url": (filing or {}).get("url")}
-        if verdict == "neither" and d["field"] == "eps":
-            # A per-share figure matching neither source, even after a split factor, is not
-            # safe to show in place of either: leave it open
+        if verdict == "neither":
+            # A figure matching neither source is not safe to overwrite with: leave it open
             unresolved.append(d)
             continue
         row = by_end.get(d["period"])

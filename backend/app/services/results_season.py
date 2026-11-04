@@ -113,7 +113,7 @@ def build(snapshots: dict[str, dict[str, Any]], scheduled: list[dict[str, Any]],
         "season": season,
         "quarter": (next(iter(reported), {}) or {}).get("quarter"),
         "covered": len(snapshots),
-        "reported": sorted(reported, key=lambda r: -(r["netProfit"] or 0)),
+        "reported": sorted(reported, key=lambda r: (r.get("netProfit") is not None, r.get("netProfit") or 0.0), reverse=True),
         "summary": {
             "reported": len(reported),
             "comparable": len(comparable),

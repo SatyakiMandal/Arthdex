@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Any
+import urllib.parse
 
 from .nse import _num, nse_get
 
@@ -23,7 +24,8 @@ def kind_of(symbol: str) -> str:
 
 def expiries(symbol: str) -> list[str]:
     """Expiry dates, nearest first, as ISO dates."""
-    data = nse_get(f"/api/option-chain-contract-info?symbol={symbol.upper()}")
+    encoded = urllib.parse.quote(symbol.upper(), safe="")
+    data = nse_get(f"/api/option-chain-contract-info?symbol={encoded}")
     out = []
     for e in (data or {}).get("expiryDates") or []:
         try:
@@ -51,7 +53,8 @@ def _leg(raw: dict[str, Any] | None) -> dict[str, Any] | None:
 def chain(symbol: str, expiry_iso: str) -> dict[str, Any]:
     """One expiry's chain: per-strike call and put legs, the underlying, and NSE's own totals."""
     expiry = datetime.fromisoformat(expiry_iso).strftime("%d-%b-%Y")
-    data = nse_get(f"/api/option-chain-v3?type={kind_of(symbol)}&symbol={symbol.upper()}&expiry={expiry}")
+    encoded = urllib.parse.quote(symbol.upper(), safe="")
+    data = nse_get(f"/api/option-chain-v3?type={kind_of(symbol)}&symbol={encoded}&expiry={expiry}")
     records = (data or {}).get("records") or {}
     rows = []
     for r in records.get("data") or []:

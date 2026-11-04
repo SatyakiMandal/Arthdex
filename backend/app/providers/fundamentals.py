@@ -150,7 +150,7 @@ def fetch_balance_sheet(symbol: str, exchange: str = "NSE", limit: int = 4) -> l
         if equity is None and total_assets is None:
             continue
 
-        debt = _val(frame, "Total Debt", col) or 0.0
+        debt = _first_available(frame, ["Total Debt", "Long Term Debt"], col)
         current_assets = _val(frame, "Current Assets", col)
         current_liabilities = _val(frame, "Current Liabilities", col)
         ts = pd.Timestamp(col)
@@ -168,7 +168,7 @@ def fetch_balance_sheet(symbol: str, exchange: str = "NSE", limit: int = 4) -> l
                 # Needed as the short-term leg of the Merton default barrier
                 "currentLiabilities": _cr(current_liabilities),
                 "debtToEquity": (
-                    round(debt / equity, 3) if equity not in (None, 0) else None
+                    round(debt / equity, 3) if debt is not None and equity not in (None, 0) else None
                 ),
                 "currentRatio": (
                     round(current_assets / current_liabilities, 2)

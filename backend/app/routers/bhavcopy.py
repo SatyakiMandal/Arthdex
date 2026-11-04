@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import date
+from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query
 
@@ -16,7 +17,7 @@ SOURCE = "NSE security-wise Bhavcopy (nsearchives.nseindia.com)"
 
 
 @router.get("")
-def get_bhavcopy(on: date | None = Query(None, description="Trading date; defaults to the latest session")):
+def get_bhavcopy(on: Annotated[date | None, Query(description="Trading date; defaults to the latest session")] = None):
     try:
         session = svc.latest_session() if on is None else (on if svc.load_day(on) is not None else None)
         if session is None:

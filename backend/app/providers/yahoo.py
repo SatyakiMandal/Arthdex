@@ -8,8 +8,9 @@ unofficial — both facts are surfaced to the client rather than hidden.
 
 from __future__ import annotations
 
-import math
 from datetime import datetime, timezone
+import math
+import threading
 from typing import Any
 
 import pandas as pd
@@ -42,6 +43,7 @@ def to_yahoo_symbol(symbol: str, exchange: str = "NSE") -> str:
 # Rows of a statement frame that are not amounts of money: counts, ratios and rates.
 _NON_MONEY = ("EPS", "Shares", "Rate", "Ratio")
 _FX_CACHE: dict[str, tuple[float, pd.Series]] = {}
+_FX_LOCK = threading.Lock()
 
 
 def statement_currency(ticker: yf.Ticker) -> str:
@@ -74,6 +76,21 @@ def statement_currency(ticker: yf.Ticker) -> str:
     return "INR" if stated / summary > 8 else cur
 
 
+def _get_fx_series(cur: str) -> pd.Series:
+    now_ts = datetime.now(timezone.utc).timestamp()
+    with _FX_LOCK:
+        cached = _FX_CACHE.get(cur)
+        if cached is not None and now_ts - cached[0] <= 6 * 3600:
+            return cached[1]
+    closes = yf.Ticker(f"{cur}INR=X").history(period="10y")["Close"].dropna()
+    if closes.empty:
+        raise ValueError(f"No {cur}/INR rate available to convert statements")
+    closes.index = closes.index.tz_localize(None)
+    with _FX_LOCK:
+        _FX_CACHE[cur] = (datetime.now(timezone.utc).timestamp(), closes)
+        return _FX_CACHE[cur][1]
+
+
 def inr_rate(currency: str, on: Any = None) -> float:
     """
     Rupees per unit of `currency` on a date (the latest close when no date is given).
@@ -84,14 +101,7 @@ def inr_rate(currency: str, on: Any = None) -> float:
     cur = (currency or "INR").upper()
     if cur == "INR":
         return 1.0
-    cached = _FX_CACHE.get(cur)
-    if cached is None or datetime.now(timezone.utc).timestamp() - cached[0] > 6 * 3600:
-        closes = yf.Ticker(f"{cur}INR=X").history(period="10y")["Close"].dropna()
-        if closes.empty:
-            raise ValueError(f"No {cur}/INR rate available to convert statements")
-        closes.index = closes.index.tz_localize(None)
-        _FX_CACHE[cur] = (datetime.now(timezone.utc).timestamp(), closes)
-    closes = _FX_CACHE[cur][1]
+    closes = _get_fx_series(cur)
     if on is None:
         return float(closes.iloc[-1])
     before = closes[closes.index <= pd.Timestamp(on).tz_localize(None)]
@@ -104,7 +114,9 @@ def inr_rate_average(currency: str, end: Any, days: int) -> float:
     if cur == "INR":
         return 1.0
     inr_rate(cur)  # fills the cache
-    closes = _FX_CACHE[cur][1]
+    with _FX_LOCK:
+        cached = _FX_CACHE.get(cur)
+    closes = cached[1] if cached is not None else _get_fx_series(cur)
     stop = pd.Timestamp(end).tz_localize(None)
     window = closes[(closes.index > stop - pd.Timedelta(days=days)) & (closes.index <= stop)]
     return float(window.mean()) if len(window) else inr_rate(cur, end)
@@ -305,12 +317,23 @@ def fetch_valuation(symbol: str, exchange: str = "NSE") -> dict[str, Any]:
     except Exception:
         dividends_ttm = None
 
+    # Yahoo divides a rupee enterprise value by revenue and EBITDA in the filing currency,
+    # so for USD filers (Infosys, HCLTech) these two ratios come out about 88 times too high
+    try:
+        ev_fx = inr_rate(info.get("financialCurrency") or "INR")
+    except Exception:
+        ev_fx = None
+
+    def ev_multiple(key: str) -> float | None:
+        v = _clean_number(info.get(key))
+        return None if v is None or not ev_fx else round(v / ev_fx, 2)
+
     return {
         "dividendsTtm": dividends_ttm,
         "peRatio": _clean_number(info.get("trailingPE")),
         "pbRatio": _clean_number(info.get("priceToBook")),
-        "evToEbitda": _clean_number(info.get("enterpriseToEbitda")),
-        "evToSales": _clean_number(info.get("enterpriseToRevenue")),
+        "evToEbitda": ev_multiple("enterpriseToEbitda"),
+        "evToSales": ev_multiple("enterpriseToRevenue"),
         # Frequently absent for Indian tickers; computed from statements as a
         # fallback in the fundamentals service.
         "roePct": as_pct_from_fraction(info.get("returnOnEquity")),

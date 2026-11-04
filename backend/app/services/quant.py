@@ -274,6 +274,9 @@ def merton_default_risk(
     if market_cap_cr in (None, 0) or equity_vol_pct in (None, 0):
         return {"note": "Market capitalisation or equity volatility unavailable."}
 
+    if total_debt_cr is None and current_liabilities_cr is None:
+        return {"available": False, "reason": "No debt or liability figures available", "note": "No debt or liability figures available"}
+
     debt = total_debt_cr or 0.0
     short_term = current_liabilities_cr or 0.0
     barrier = short_term + 0.5 * debt

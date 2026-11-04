@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 import time
+import urllib.parse
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
 from typing import Any
@@ -250,7 +251,8 @@ def _symbol_filings(symbol: str) -> list[dict[str, Any]]:
     """
 
     def fetch() -> list[dict[str, Any]]:
-        rows = nse.nse_get(f"/api/corporate-announcements?index=equities&symbol={symbol}") or []
+        encoded = urllib.parse.quote(symbol.upper(), safe="")
+        rows = nse.nse_get(f"/api/corporate-announcements?index=equities&symbol={encoded}") or []
         cutoff = time.time() - FILING_WINDOW_DAYS * 86_400
         out = []
         for r in rows[:40]:
@@ -370,7 +372,7 @@ _FEEDS: list[tuple[str, str, str, int]] = [
     ("Movers", "market:movers", "NSE", SETTINGS.movers_ttl),
     ("Company quotes", "company:quote", "NSE, Yahoo Finance backup", SETTINGS.quote_ttl),
     ("Price candles", "company:candles", "Yahoo Finance, NSE daily backup", SETTINGS.candles_ttl),
-    ("Fundamentals", "company:profile", "Yahoo Finance", SETTINGS.fundamentals_ttl),
+    ("Fundamentals", "company:financials", "Yahoo Finance, screener.in, NSE XBRL", SETTINGS.fundamentals_ttl),
     ("News and filings", "news:feed", "NSE filings and press RSS", SETTINGS.news_ttl),
     ("IPO pipeline", "ipo:pipeline", "NSE IPO desk", SETTINGS.ipo_ttl),
     ("Listed universe", "universe:equity", "NSE equity master list", 86_400),

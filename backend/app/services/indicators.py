@@ -102,6 +102,8 @@ def adx(df: pd.DataFrame, n: int = 14) -> pd.DataFrame:
     plus_di = 100.0 * _rma(plus_dm, n) / atr_n
     minus_di = 100.0 * _rma(minus_dm, n) / atr_n
     dx = 100.0 * (plus_di - minus_di).abs() / (plus_di + minus_di).replace(0.0, np.nan)
+    if len(dx) >= n:
+        dx.iloc[n - 1 :] = dx.iloc[n - 1 :].fillna(0.0)
     return pd.DataFrame({"adx": _rma(dx.dropna(), n).reindex(df.index), "plusDI": plus_di, "minusDI": minus_di})
 
 
@@ -285,15 +287,19 @@ def fair_value_gaps(df: pd.DataFrame, min_gap_atr: float = 0.1, max_each: int = 
         if disp is None:
             continue
         if l[i] > h[i - 2] and (l[i] - h[i - 2]) >= min_gap_atr * disp:
-            gaps.append({"type": "bullish", "start": i - 2, "end": i, "high": float(l[i]), "low": float(h[i - 2]), "filled": None})
+            gaps.append({"type": "bullish", "start": i - 2, "end": i, "high": float(l[i]), "low": float(h[i - 2]), "filled": None, "partiallyMitigated": False})
         if h[i] < l[i - 2] and (l[i - 2] - h[i]) >= min_gap_atr * disp:
-            gaps.append({"type": "bearish", "start": i - 2, "end": i, "high": float(l[i - 2]), "low": float(h[i]), "filled": None})
+            gaps.append({"type": "bearish", "start": i - 2, "end": i, "high": float(l[i - 2]), "low": float(h[i]), "filled": None, "partiallyMitigated": False})
 
     for g in gaps:
+        touched = False
         for k in range(g["end"] + 1, n):
             if l[k] <= g["high"] and h[k] >= g["low"]:
+                touched = True
+            if (g["type"] == "bullish" and l[k] <= g["low"]) or (g["type"] == "bearish" and h[k] >= g["high"]):
                 g["filled"] = k
                 break
+        g["partiallyMitigated"] = bool(touched and g["filled"] is None)
 
     bullish = [g for g in gaps if g["type"] == "bullish"][-max_each:]
     bearish = [g for g in gaps if g["type"] == "bearish"][-max_each:]

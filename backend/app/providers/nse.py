@@ -10,9 +10,9 @@ degrade gracefully rather than assume a shape.
 from __future__ import annotations
 
 import html
-
 import threading
 import time
+import urllib.parse
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -21,7 +21,10 @@ from curl_cffi import requests as curl_requests
 from ..config import SETTINGS
 
 _SESSION_LOCK = threading.Lock()
-_session: Any = None
+_local = threading.local()
+_session_epoch: int = 0
+_last_reprime: float = 0.0
+_REPRIME_COOLDOWN = 5.0
 
 
 def _build_session() -> Any:
@@ -44,11 +47,25 @@ def _build_session() -> Any:
 
 
 def _get_session(force_new: bool = False) -> Any:
-    global _session
-    with _SESSION_LOCK:
-        if _session is None or force_new:
-            _session = _build_session()
-        return _session
+    global _session_epoch, _last_reprime
+    session = getattr(_local, "session", None)
+    epoch = getattr(_local, "epoch", -1)
+
+    if force_new:
+        with _SESSION_LOCK:
+            now = time.monotonic()
+            if session is None or (now - _last_reprime) >= _REPRIME_COOLDOWN:
+                _session_epoch += 1
+                _last_reprime = now
+            target_epoch = _session_epoch
+    else:
+        target_epoch = _session_epoch
+
+    if session is None or epoch != target_epoch:
+        session = _build_session()
+        _local.session = session
+        _local.epoch = target_epoch
+    return session
 
 
 def nse_get(path: str, attempts: int = 3) -> Any:
@@ -77,7 +94,8 @@ def nse_get(path: str, attempts: int = 3) -> Any:
             last_error = f"status={response.status_code}"
             if response.status_code in (401, 403, 429, 503):
                 # Exponential backoff with a small floor; NSE throttles bursts
-                time.sleep(0.75 * (2**attempt))
+                if attempt < attempts - 1:
+                    time.sleep(0.75 * (2**attempt))
                 continue
         except Exception as exc:
             last_error = f"{type(exc).__name__}: {exc}"
@@ -283,15 +301,9 @@ def _text(value: Any) -> str | None:
     return html.unescape(html.unescape(str(value))).strip()
 
 
-def fetch_announcements(limit: int = 60) -> list[dict[str, Any]]:
-    """
-    Corporate announcements — the primary-source LODR filings that the news
-    flags in this app are actually about.
-    """
-    payload = nse_get("/api/corporate-announcements?index=equities")
+def _announcement_rows(payload: Any, limit: int) -> list[dict[str, Any]]:
     if not isinstance(payload, list):
         return []
-
     out: list[dict[str, Any]] = []
     for row in payload[:limit]:
         out.append(
@@ -310,6 +322,15 @@ def fetch_announcements(limit: int = 60) -> list[dict[str, Any]]:
             }
         )
     return out
+
+
+def fetch_announcements(limit: int = 60) -> list[dict[str, Any]]:
+    """
+    Corporate announcements — the primary-source LODR filings that the news
+    flags in this app are actually about.
+    """
+    payload = nse_get("/api/corporate-announcements?index=equities")
+    return _announcement_rows(payload, limit)
 
 
 def fetch_upcoming_ipos() -> list[dict[str, Any]]:
@@ -401,6 +422,8 @@ def fetch_stocks_traded() -> dict[str, Any]:
     }
 
 
+fetch_all_traded = fetch_stocks_traded
+
 _QUOTE_API = "/api/NextApi/apiClient/GetQuoteApi?functionName={fn}&marketType=N&series=EQ&symbol={symbol}"
 
 
@@ -411,7 +434,8 @@ def fetch_quote(symbol: str) -> dict[str, Any] | None:
     The older /api/quote-equity endpoint answers 403 since NSE's site rebuild; this is
     the call the current quote page makes.
     """
-    payload = nse_get(_QUOTE_API.format(fn="getSymbolData", symbol=symbol.upper()))
+    encoded_symbol = urllib.parse.quote(symbol.upper(), safe="")
+    payload = nse_get(_QUOTE_API.format(fn="getSymbolData", symbol=encoded_symbol))
     rows = (payload or {}).get("equityResponse") or []
     if not rows:
         return None
@@ -447,6 +471,7 @@ def fetch_quote(symbol: str) -> dict[str, Any] | None:
         "name": meta.get("companyName"),
         "sector": (sec.get("sector") or "").strip() or None,
         "basicIndustry": (sec.get("basicIndustry") or "").strip() or None,
+        "asOf": datetime.now(timezone.utc).isoformat(),
     }
 
 
@@ -458,6 +483,7 @@ def fetch_daily_history(symbol: str, days: int) -> list[dict[str, Any]]:
     bonus issues, so a series that spans one shows the step. Callers say so on screen.
     The endpoint answers up to a year per request, so longer spans are fetched in years.
     """
+    encoded_symbol = urllib.parse.quote(symbol.upper(), safe="")
     end = datetime.now(timezone.utc).date()
     start = end - timedelta(days=days)
     rows: dict[str, dict[str, Any]] = {}
@@ -465,7 +491,7 @@ def fetch_daily_history(symbol: str, days: int) -> list[dict[str, Any]]:
     while cursor <= end:
         chunk_end = min(cursor + timedelta(days=364), end)
         payload = nse_get(
-            _QUOTE_API.format(fn="getHistoricalTradeData", symbol=symbol.upper())
+            _QUOTE_API.format(fn="getHistoricalTradeData", symbol=encoded_symbol)
             + f"&fromDate={cursor:%d-%m-%Y}&toDate={chunk_end:%d-%m-%Y}"
         )
         for r in payload if isinstance(payload, list) else (payload or {}).get("data") or []:
@@ -511,3 +537,29 @@ def fetch_institutional_flows() -> dict[str, Any]:
         raise ValueError("NSE returned no FII/DII rows")
     return {"date": combined["date"], "allExchanges": {k: combined[k] for k in ("fii", "dii")},
             "nseOnly": {k: nse_only[k] for k in ("fii", "dii") if k in nse_only} or None}
+
+
+def fetch_symbol_announcements(symbol: str, limit: int = 40) -> list[dict[str, Any]]:
+    """
+    Corporate announcements filed under LODR for a specific symbol.
+    """
+    encoded_symbol = urllib.parse.quote(symbol.upper(), safe="")
+    try:
+        data = nse_get(f"/api/corporate-announcements?index=equities&symbol={encoded_symbol}")
+    except Exception:
+        return []
+    rows = data if isinstance(data, list) else (data or {}).get("data") or []
+    out = []
+    for r in rows[:limit]:
+        sub = r.get("desc") or r.get("subject") or r.get("an_dt") or ""
+        out.append({
+            "symbol": symbol.upper(),
+            "company": r.get("sm_name") or r.get("companyName") or symbol.upper(),
+            "subject": sub,
+            "detail": _text(r.get("attchmntText")) or r.get("desc") or "",
+            "broadcastDate": r.get("an_dt") or r.get("dt") or "",
+            "attachment": r.get("attchmntFile") or None,
+            "seqId": r.get("seq_id") or r.get("seqId"),
+        })
+    return out
+

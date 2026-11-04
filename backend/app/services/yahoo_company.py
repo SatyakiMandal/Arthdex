@@ -116,14 +116,17 @@ def profile_stats(symbol: str) -> dict[str, Any]:
         cal = {}
 
     # Statement totals in `info` (revenue, profit, cash, debt, cash flow) are in the
-    # filing currency; prices and per-share price fields are in rupees.
+    # filing currency; prices, per-share fields (EPS, book value) and enterprise value
+    # are already in rupees, even for USD filers such as Infosys.
     fx = inr_rate(info.get("financialCurrency") or "INR")
     _raw = info.get
     money_keys = {"totalRevenue", "grossProfits", "ebitda", "netIncomeToCommon", "totalCash", "totalDebt", "operatingCashflow", "freeCashflow"}
 
     def g(key: str) -> Any:
         v = _raw(key)
-        return v * fx if key in money_keys and isinstance(v, (int, float)) else v
+        if not isinstance(v, (int, float)):
+            return v
+        return v * fx if key in money_keys else v
 
     price = g("currentPrice") or g("regularMarketPrice")
     eps = g("trailingEps")
@@ -149,10 +152,11 @@ def profile_stats(symbol: str) -> dict[str, Any]:
             "trailingPE": _n(g("trailingPE"), 2),
             "forwardPE": _n(g("forwardPE"), 2),
             "pegRatio": _n(g("trailingPegRatio") or g("pegRatio"), 2),
-            "priceToSales": _n(g("priceToSalesTrailing12Months"), 2),
+            # Yahoo divides a rupee market cap by revenue in the filing currency (USD for Infosys)
+            "priceToSales": _n(g("marketCap") / g("totalRevenue"), 2) if g("marketCap") and g("totalRevenue") else None,
             "priceToBook": _n(g("priceToBook"), 2),
-            "evToRevenue": _n(g("enterpriseToRevenue"), 2),
-            "evToEbitda": _n(g("enterpriseToEbitda"), 2),
+            "evToRevenue": _n(_raw("enterpriseToRevenue") / fx, 2) if isinstance(_raw("enterpriseToRevenue"), (int, float)) else None,
+            "evToEbitda": _n(_raw("enterpriseToEbitda") / fx, 2) if isinstance(_raw("enterpriseToEbitda"), (int, float)) else None,
         },
         "highlights": {
             "profitMargin": _n(g("profitMargins"), 4),
@@ -257,14 +261,16 @@ def statements(symbol: str) -> dict[str, Any]:
 PERIOD_LABEL = {"0q": "Current quarter", "+1q": "Next quarter", "0y": "Current year", "+1y": "Next year"}
 
 
-def _table(df: pd.DataFrame | None, cr_cols: tuple[str, ...] = ()) -> list[dict[str, Any]]:
+def _table(df: pd.DataFrame | None, cr_cols: tuple[str, ...] = (), fx: float = 1.0) -> list[dict[str, Any]]:
     if df is None or df.empty:
         return []
     out = []
     for idx, r in df.iterrows():
         row: dict[str, Any] = {"period": PERIOD_LABEL.get(str(idx), str(idx)), "key": str(idx)}
         for c in df.columns:
-            v = r[c]
+            v = _clean(r[c])
+            if isinstance(v, (int, float)) and fx != 1.0:
+                v = v * fx
             row[str(c)] = _cr(v) if c in cr_cols else _n(v, 4)
         out.append(row)
     return out

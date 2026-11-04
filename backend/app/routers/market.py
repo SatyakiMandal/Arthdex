@@ -194,7 +194,7 @@ def get_flows(days: int = Query(90, ge=5, le=730)):
         # Record the latest day if the scheduler has not yet: the page should never be empty
         # just because the service started after the evening run
         try:
-            flows.record()
+            CACHE.get_or_fetch("market:flows:record", 1800, flows.record)
         except Exception:
             pass
         return flows.summary(days)

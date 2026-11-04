@@ -172,3 +172,133 @@ def build_feed(
         },
         "errors": errors or None,
     }
+
+
+def classify_filing(subject: str, desc: str = "") -> str:
+    """Classify corporate filing into standard investment categories."""
+    txt = f"{subject} {desc}".lower()
+    if any(k in txt for k in ("presentation", "investor meet", "concall", "transcript", "analyst")):
+        return "Investor Presentation"
+    if any(k in txt for k in ("financial result", "financials", "quarterly result", "audited result", "unaudited result", "q1", "q2", "q3", "q4")):
+        return "Results"
+    if any(k in txt for k in ("order", "contract", "bagged", "letter of award", "loa", "won order", "awarded")):
+        return "Order Win"
+    if any(k in txt for k in ("acquisition", "amalgamation", "merger", "takeover", "slump sale", "joint venture", "jv")):
+        return "Acquisition / M&A"
+    if any(k in txt for k in ("dividend", "bonus", "split", "buyback", "rights issue", "record date", "book closure")):
+        return "Dividend / Action"
+    if any(k in txt for k in ("director", "kmp", "cfo", "ceo", "auditor", "resignation", "appointment", "board meeting")):
+        return "Board / KMP / Auditor"
+    if any(k in txt for k in ("rating", "crisil", "icra", "care", "india ratings", "fitch", "moody")):
+        return "Credit Rating"
+    if any(k in txt for k in ("litigation", "dispute", "court", "tribunal", "nclt", "sebi", "penalty", "tax notice")):
+        return "Litigation / Regulatory"
+    return "General"
+
+
+def company_filings_with_reaction(symbol: str, limit: int = 40) -> dict[str, Any]:
+    """
+    Fetch corporate announcements for a symbol and calculate the 1-day stock and
+    benchmark market reaction (abnormal return) around each filing date.
+    """
+    from . import technicals
+
+    sym = symbol.upper()
+    announcements = nse.fetch_symbol_announcements(sym, limit=limit)
+    if not announcements:
+        return {"symbol": sym, "asOf": datetime.now(timezone.utc).isoformat(), "filings": [], "categoryCounts": {}}
+
+    try:
+        stock_df = technicals.fetch_bars(sym, "1d")
+    except Exception:
+        stock_df = None
+    try:
+        import yfinance as yf
+
+        nifty_df = technicals.clean_frame(yf.Ticker("^NSEI").history(period=technicals.INTERVALS["1d"][0], interval="1d", auto_adjust=False))
+    except Exception:
+        nifty_df = None
+
+    stock_closes: dict[str, float] = {}
+    if stock_df is not None and not stock_df.empty:
+        for idx, row in stock_df.iterrows():
+            d_str = idx.strftime("%Y-%m-%d") if hasattr(idx, "strftime") else str(idx)[:10]
+            val = float(row.get("Close") or 0.0)
+            if val > 0:
+                stock_closes[d_str] = val
+
+    nifty_closes: dict[str, float] = {}
+    if nifty_df is not None and not nifty_df.empty:
+        for idx, row in nifty_df.iterrows():
+            d_str = idx.strftime("%Y-%m-%d") if hasattr(idx, "strftime") else str(idx)[:10]
+            val = float(row.get("Close") or 0.0)
+            if val > 0:
+                nifty_closes[d_str] = val
+
+    trading_days = sorted(stock_closes.keys())
+    day_indices = {d: i for i, d in enumerate(trading_days)}
+
+    filings_out = []
+    category_counts: dict[str, int] = {}
+
+    for a in announcements:
+        cat = classify_filing(a.get("subject") or "", a.get("detail") or "")
+        category_counts[cat] = category_counts.get(cat, 0) + 1
+
+        bdate_raw = a.get("broadcastDate") or ""
+        filing_dt: datetime | None = None
+        for fmt in ("%d-%b-%Y %H:%M:%S", "%d-%b-%Y %H:%M", "%d-%b-%Y", "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S"):
+            try:
+                filing_dt = datetime.strptime(bdate_raw, fmt)
+                break
+            except Exception:
+                pass
+
+        reaction_date: str | None = None
+        stock_ret: float | None = None
+        nifty_ret: float | None = None
+        abnormal_ret: float | None = None
+
+        if filing_dt and trading_days:
+            after_hours = filing_dt.time() >= datetime.strptime("15:30", "%H:%M").time()
+            f_date_str = filing_dt.strftime("%Y-%m-%d")
+            candidates = [d for d in trading_days if (d > f_date_str if after_hours else d >= f_date_str)]
+            if candidates:
+                reaction_date = candidates[0]
+                t_idx = day_indices[reaction_date]
+                if t_idx > 0:
+                    prev_date = trading_days[t_idx - 1]
+                    s_curr = stock_closes.get(reaction_date)
+                    s_prev = stock_closes.get(prev_date)
+                    if s_curr and s_prev and s_prev > 0:
+                        stock_ret = round(((s_curr / s_prev) - 1.0) * 100.0, 2)
+                    
+                    n_curr = nifty_closes.get(reaction_date)
+                    n_prev = nifty_closes.get(prev_date)
+                    if n_curr and n_prev and n_prev > 0:
+                        nifty_ret = round(((n_curr / n_prev) - 1.0) * 100.0, 2)
+
+                    if stock_ret is not None and nifty_ret is not None:
+                        abnormal_ret = round(stock_ret - nifty_ret, 2)
+
+        filings_out.append({
+            "symbol": sym,
+            "company": a.get("company"),
+            "category": cat,
+            "subject": a.get("subject"),
+            "detail": a.get("detail"),
+            "broadcastDate": bdate_raw,
+            "reactionDate": reaction_date,
+            "attachment": a.get("attachment"),
+            "stockReturnPct": stock_ret,
+            "niftyReturnPct": nifty_ret,
+            "abnormalReturnPct": abnormal_ret,
+            "seqId": a.get("seqId"),
+        })
+
+    return {
+        "symbol": sym,
+        "asOf": datetime.now(timezone.utc).isoformat(),
+        "filings": filings_out,
+        "categoryCounts": category_counts,
+    }

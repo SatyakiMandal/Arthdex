@@ -18,6 +18,7 @@ sense; their scores are not computed and the page says why.
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 # How far Yahoo's headline lines may sit from the vetted figures for the same year
@@ -63,7 +64,7 @@ def piotroski(l: Lines) -> dict[str, Any]:
     ni = [l.first(("Net Income", "Net Income Common Stockholders"), i) for i in range(3)]
     ta = [l.get("Total Assets", i) for i in range(3)]
     cfo = l.get("Operating Cash Flow", 0)
-    ltd = [l.first(("Long Term Debt And Capital Lease Obligation", "Long Term Debt"), i) or 0.0 for i in range(2)]
+    ltd = [l.first(("Long Term Debt And Capital Lease Obligation", "Long Term Debt"), i) for i in range(2)]
     ca = [l.get("Current Assets", i) for i in range(2)]
     cl = [l.get("Current Liabilities", i) for i in range(2)]
     shares = [l.first(("Ordinary Shares Number", "Share Issued"), i) for i in range(2)]
@@ -71,12 +72,19 @@ def piotroski(l: Lines) -> dict[str, Any]:
     gp = [l.get("Gross Profit", i) for i in range(2)]
 
     roa = [_div(ni[0], ta[1]), _div(ni[1], ta[2])]
+    if ltd[0] == 0 and ltd[1] == 0:
+        lev_fell: bool | None = True
+    elif ltd[0] is not None and ltd[1] is not None and ta[0] and ta[1]:
+        lev_fell = (ltd[0] / ta[0]) < (ltd[1] / ta[1])
+    else:
+        lev_fell = None
+
     signals = [
         ("Return on assets is positive", None if roa[0] is None else roa[0] > 0, roa[0]),
         ("Operating cash flow is positive", None if cfo is None else cfo > 0, cfo),
         ("Return on assets improved", None if None in roa else roa[0] > roa[1], roa),
         ("Cash flow exceeds profit (earnings backed by cash)", None if None in (cfo, ni[0]) else cfo > ni[0], [cfo, ni[0]]),
-        ("Long-term leverage fell", None if None in (ta[0], ta[1]) else ltd[0] / ta[0] < ltd[1] / ta[1], [_div(ltd[0], ta[0]), _div(ltd[1], ta[1])]),
+        ("Long-term leverage fell", lev_fell, [_div(ltd[0], ta[0]), _div(ltd[1], ta[1])]),
         ("Current ratio improved", None if None in (*ca, *cl) else ca[0] / cl[0] > ca[1] / cl[1], [_div(ca[0], cl[0]), _div(ca[1], cl[1])]),
         ("No new shares issued", None if None in shares else shares[0] <= shares[1] * 1.001, shares),
         ("Gross margin improved", None if None in (*gp, rev[0], rev[1]) else gp[0] / rev[0] > gp[1] / rev[1], [_div(gp[0], rev[0]), _div(gp[1], rev[1])]),
@@ -169,11 +177,18 @@ def reverse_dcf_inputs(l: Lines, market_cap_cr: float | None, annual_revenue: li
         return None
     revs = [r for r in annual_revenue if isinstance(r.get("revenue"), (int, float)) and r["revenue"] > 0]
 
+    def _year(row: dict[str, Any]) -> int | None:
+        m = re.search(r"(20\d{2}|19\d{2})", str(row.get("period") or row.get("periodEnd") or ""))
+        return int(m.group(1)) if m else None
+
     def cagr(n: int) -> float | None:
         if len(revs) <= n:
             return None
-        start, end = revs[-1 - n]["revenue"], revs[-1]["revenue"]
-        return round(((end / start) ** (1 / n) - 1) * 100, 2)
+        first_row, last_row = revs[-1 - n], revs[-1]
+        first, last = first_row["revenue"], last_row["revenue"]
+        y_start, y_end = _year(first_row), _year(last_row)
+        span = max(1, y_end - y_start) if (y_start is not None and y_end is not None) else n
+        return round(((last / first) ** (1.0 / span) - 1.0) * 100, 2)
 
     ni = l.first(("Net Income", "Net Income Common Stockholders"), 0)
     return {

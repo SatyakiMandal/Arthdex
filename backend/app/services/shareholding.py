@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import logging
 import re
+import urllib.parse
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -39,9 +40,18 @@ def _pct(text: str) -> float | None:
     return float(m.group()) if m else None
 
 
-def _int(text: str) -> int | None:
-    digits = re.sub(r"[^\d]", "", text or "")
-    return int(digits) if digits else None
+def _int(text: str | int | float | None) -> int | None:
+    if text is None:
+        return None
+    if isinstance(text, (int, float)):
+        return int(round(float(text)))
+    cleaned = re.sub(r"[^\d.-]", "", str(text))
+    if not cleaned or cleaned in ("-", ".", "-."):
+        return None
+    try:
+        return int(round(float(cleaned)))
+    except ValueError:
+        return None
 
 
 def _parse_table(table: Any) -> dict[str, Any]:
@@ -69,8 +79,9 @@ def _parse_table(table: Any) -> dict[str, Any]:
 
 
 def _screener(symbol: str) -> dict[str, Any] | None:
+    qsym = urllib.parse.quote(symbol.upper(), safe="")
     for kind in ("consolidated", ""):
-        url = SCREENER.format(symbol=symbol, kind=kind).replace("//", "/").replace("https:/", "https://")
+        url = SCREENER.format(symbol=qsym, kind=kind).replace("//", "/").replace("https:/", "https://")
         res = requests.get(url, headers=UA, timeout=30)
         if res.status_code != 200:
             continue
@@ -94,7 +105,8 @@ def _nse_pattern(symbol: str) -> dict[str, Any] | None:
     DII split. Used to vet screener.in's promoter figure and, if screener.in fails, as
     a pattern of its own in the same shape (`labels`, `promoters`, `public`), oldest first.
     """
-    rows = nse_get(f"/api/corporate-share-holdings-master?index=equities&symbol={symbol}") or []
+    qsym = urllib.parse.quote(symbol.upper(), safe="")
+    rows = nse_get(f"/api/corporate-share-holdings-master?index=equities&symbol={qsym}") or []
     rows = [r for r in rows if isinstance(r, dict) and r.get("date") and r.get("pr_and_prgrp") not in (None, "", "-")]
     if not rows:
         return None
@@ -114,7 +126,8 @@ def _nse_pattern(symbol: str) -> dict[str, Any] | None:
 
 
 def _nse_pledge(symbol: str) -> dict[str, Any] | None:
-    data = nse_get(f"/api/corporate-pledgedata?index=equities&symbol={symbol}").get("data") or []
+    qsym = urllib.parse.quote(symbol.upper(), safe="")
+    data = nse_get(f"/api/corporate-pledgedata?index=equities&symbol={qsym}").get("data") or []
     if not data:
         return None
     r = data[0]
@@ -139,7 +152,8 @@ def _date(s: str | None) -> datetime | None:
 
 
 def _nse_sast(symbol: str) -> list[dict[str, Any]]:
-    rows = nse_get(f"/api/corporate-sast-reg29?index=equities&symbol={symbol}").get("data") or []
+    qsym = urllib.parse.quote(symbol.upper(), safe="")
+    rows = nse_get(f"/api/corporate-sast-reg29?index=equities&symbol={qsym}").get("data") or []
     out = []
     for r in rows:
         acq = (r.get("acqSaleType") or "").lower().startswith("acq")
@@ -161,12 +175,13 @@ def _nse_sast(symbol: str) -> list[dict[str, Any]]:
         )
     out.sort(key=lambda x: x["_ts"] or datetime.min, reverse=True)
     for r in out:
-        r.pop("_ts")
+        r.pop("_ts", None)
     return out[:15]
 
 
 def _nse_insiders(symbol: str) -> list[dict[str, Any]]:
-    rows = nse_get(f"/api/corporates-pit?index=equities&symbol={symbol}").get("data") or []
+    qsym = urllib.parse.quote(symbol.upper(), safe="")
+    rows = nse_get(f"/api/corporates-pit?index=equities&symbol={qsym}").get("data") or []
     out = []
     for r in rows:
         kind = (r.get("tdpTransactionType") or "").strip()
@@ -188,7 +203,7 @@ def _nse_insiders(symbol: str) -> list[dict[str, Any]]:
         )
     out.sort(key=lambda x: x["_ts"] or datetime.min, reverse=True)
     for r in out:
-        r["_ts"] = r["_ts"].isoformat() if r["_ts"] else None
+        r.pop("_ts", None)
     return out[:25]
 
 
@@ -256,11 +271,13 @@ def analytics(pattern: dict[str, Any], pledge: dict[str, Any] | None, insiders: 
         )
 
     by = {c["key"]: c for c in out["categories"]}
-    inst_now = sum((by[k]["latest"] or 0) for k in ("fiis", "diis") if k in by)
-    inst_yoy = sum((by[k]["yoy"] or 0) for k in ("fiis", "diis") if k in by and by[k]["yoy"] is not None)
-    out["institutionalPct"] = round(inst_now, 2)
-    out["institutionalYoy"] = round(inst_yoy, 2)
-    out["freeFloatPct"] = round((by.get("public", {}).get("latest") or 0) + inst_now + (by.get("government", {}).get("latest") or 0), 2)
+    has_inst_now = any(k in by and by[k].get("latest") is not None for k in ("fiis", "diis"))
+    has_inst_yoy = any(k in by and by[k].get("yoy") is not None for k in ("fiis", "diis"))
+    inst_now = sum((by[k]["latest"] or 0) for k in ("fiis", "diis") if k in by and by[k].get("latest") is not None) if has_inst_now else None
+    inst_yoy = sum((by[k]["yoy"] or 0) for k in ("fiis", "diis") if k in by and by[k].get("yoy") is not None) if has_inst_yoy else None
+    out["institutionalPct"] = round(inst_now, 2) if inst_now is not None else None
+    out["institutionalYoy"] = round(inst_yoy, 2) if inst_yoy is not None else None
+    out["freeFloatPct"] = round((by.get("public", {}).get("latest") or 0) + (inst_now or 0) + (by.get("government", {}).get("latest") or 0), 2)
 
     sh = q.get("shareholders") or []
     if len(sh) >= 5 and sh[-1] and sh[-5]:
@@ -273,8 +290,22 @@ def analytics(pattern: dict[str, Any], pledge: dict[str, Any] | None, insiders: 
         out["pledgeTier"] = "None" if p == 0 else "Low" if p < 5 else "Moderate" if p < 20 else "High"
 
     # Net insider flow over the disclosures returned (Buy vs Sell, by value)
-    cutoff = (datetime.now().replace(microsecond=0) - timedelta(days=365)).isoformat()
-    recent = [r for r in insiders if r.get("_ts") and r["_ts"] >= cutoff]
+    cutoff_dt = datetime.now().replace(microsecond=0) - timedelta(days=365)
+
+    def _row_ts(r: dict[str, Any]) -> datetime | None:
+        ts = r.get("_ts")
+        if isinstance(ts, datetime):
+            return ts
+        if isinstance(ts, str):
+            try:
+                return datetime.fromisoformat(ts)
+            except ValueError:
+                pass
+        return _date(r.get("tradedOn") or r.get("filedOn"))
+
+    recent = [r for r in insiders if (_row_ts(r) or datetime.min) >= cutoff_dt]
+    for r in insiders:
+        r.pop("_ts", None)
     buys = sum(r["valueInr"] or 0 for r in recent if r["action"] == "Buy")
     sells = sum(r["valueInr"] or 0 for r in recent if r["action"] == "Sell")
     if buys or sells:

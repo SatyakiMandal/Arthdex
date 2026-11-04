@@ -96,8 +96,6 @@ def search(universe: list[dict[str, Any]], query: str, limit: int = 12) -> list[
             continue
 
         scored.append((rank, row))
-        if len(scored) > 400:
-            break
 
     scored.sort(key=lambda pair: (pair[0], len(pair[1]["symbol"])))
     return [

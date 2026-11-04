@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, HTTPException, Query
 
@@ -107,8 +108,10 @@ def get_candles(
         # intraday series have no exchange equivalent here)
         days = NSE_HISTORY_DAYS.get(period)
         if days and exchange.upper() == "NSE":
-            return {"candles": nse.fetch_daily_history(symbol, days), "source": "nse"}
-        return {"candles": [], "source": "yahoo"}
+            nse_candles = nse.fetch_daily_history(symbol, days)
+            if nse_candles:
+                return {"candles": nse_candles, "source": "nse"}
+        raise ValueError(f"No price history for {symbol.upper()} over {period}")
 
     try:
         data, age = CACHE.get_or_fetch(key, SETTINGS.candles_ttl, fetch)
@@ -215,7 +218,7 @@ def get_financials(symbol: str, exchange: str = Query("NSE", pattern="^(NSE|BSE)
         for kind in ("quarterly", "annual", "balanceSheet"):
             chosen[kind], sources[kind] = financial_sources.choose(kind, primary[kind], backup.get(kind) or [], filing_for=filing_for)
         sources["screenerUrl"] = backup.get("url")
-        quote = _quote(symbol, exchange)
+        quote, _ = CACHE.get_or_fetch(f"company:quote:{exchange}:{symbol.upper()}", SETTINGS.quote_ttl, lambda: _quote(symbol, exchange))
         market_cap = quote.get("marketCapCr") if quote else None
         return {
             "symbol": symbol.upper(),
@@ -236,7 +239,8 @@ def get_financials(symbol: str, exchange: str = Query("NSE", pattern="^(NSE|BSE)
 
     # Computed per request, not cached: the panel warns when the newest quarter is overdue
     latest = data["quarterly"][-1]["periodEnd"] if data["quarterly"] else None
-    data = {**data, "latestQuarterAgeDays": (date.today() - date.fromisoformat(latest)).days if latest else None}
+    today_ist = datetime.now(ZoneInfo("Asia/Kolkata")).date()
+    data = {**data, "latestQuarterAgeDays": (today_ist - date.fromisoformat(latest)).days if latest else None}
 
     used = {k: data.get("sources", {}).get(k, {}).get("used") for k in ("quarterly", "annual", "balanceSheet")}
     names = {"yahoo": "Yahoo Finance", "screener": "screener.in"}
@@ -542,3 +546,22 @@ def get_forensics(symbol: str):
     except Exception as exc:
         raise HTTPException(status_code=503, detail=f"Quality checks unavailable: {exc}") from exc
     return envelope(data, age, source="Yahoo Finance line items, vetted against Yahoo, screener.in and NSE filings", delayed_minutes=0)
+
+
+@router.get("/{symbol}/filings")
+def get_company_filings(symbol: str, limit: int = Query(40, ge=1, le=100)):
+    """Exchange disclosures classified by category with event-day abnormal returns."""
+    sym = symbol.upper()
+    from ..services import news as news_service
+
+    def build():
+        fn = getattr(news_service, "company_filings_with_reaction", None)
+        if callable(fn):
+            return fn(sym, limit=limit)
+        return {"symbol": sym, "asOf": None, "filings": [], "categoryCounts": {}}
+
+    try:
+        data, age = CACHE.get_or_fetch(f"company:filings:{sym}:{limit}", 300, build)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Filings unavailable: {exc}") from exc
+    return envelope(data, age, source="NSE corporate announcements + 1D price reaction", delayed_minutes=0)

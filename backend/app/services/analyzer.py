@@ -41,6 +41,7 @@ LOG_TAIL_LINES = 400
 
 _SLOTS = threading.BoundedSemaphore(MAX_CONCURRENT)
 _LOCK = threading.Lock()
+_SNAPSHOT_LOCK = threading.Lock()
 _PROCS: dict[str, subprocess.Popen] = {}
 
 ID_RE = re.compile(r"^[A-Za-z0-9_-]{4,64}$")
@@ -133,6 +134,10 @@ def snapshot_for(ticker: str) -> dict[str, Any] | None:
 
 
 def ensure_snapshot(symbol: str, company: str) -> dict[str, Any]:
+    with _SNAPSHOT_LOCK:
+        return _ensure_snapshot_impl(symbol, company)
+
+def _ensure_snapshot_impl(symbol: str, company: str) -> dict[str, Any]:
     """Return the current snapshot for a listed company, starting one if needed.
 
     A completed snapshot is reused for SNAPSHOT_TTL_SECONDS (prices move daily, the
@@ -196,6 +201,7 @@ def _public(meta: dict[str, Any]) -> dict[str, Any]:
         "kind": meta.get("kind", "listed"),
         "company": meta.get("company", ""),
         "ticker": meta.get("ticker") or None,
+        "url": meta.get("url"),
         "start": meta.get("start"),
         "end": meta.get("end"),
         "status": meta.get("status", "FAILED"),
@@ -384,7 +390,7 @@ def _worker(run_id: str) -> None:
                 return
         _update(run_id, stage="Starting")
         try:
-            with logfile.open("w", encoding="utf-8", errors="replace") as fh:
+            with logfile.open("a", encoding="utf-8", errors="replace") as fh:
                 proc = subprocess.Popen(
                     _command(meta, d),
                     cwd=str(DATA_DIR),
@@ -610,9 +616,22 @@ def summarise(run_id: str) -> dict[str, Any] | None:
     path = artefact(run_id, "analysis.json")
     if not meta or not path:
         return None
+    d = run_dir(run_id)
+    summary_path = d / "summary.json"
+    built_by = max(Path(__file__).stat().st_mtime, (Path(__file__).parent / "analyzer_extra.py").stat().st_mtime)
+    if summary_path.exists() and summary_path.stat().st_mtime >= max(path.stat().st_mtime, built_by):
+        try:
+            return json.loads(summary_path.read_text(encoding="utf-8"))
+        except Exception:
+            pass
     raw = json.loads(path.read_text(encoding="utf-8"))
     body = _summarise_unlisted(raw) if meta.get("kind") == "unlisted" else _summarise_listed(raw)
-    return _finite({"kind": meta.get("kind", "listed"), **body})
+    out = _finite({"kind": meta.get("kind", "listed"), **body})
+    try:
+        summary_path.write_text(json.dumps(out, default=str), encoding="utf-8")
+    except Exception:
+        pass
+    return out
 
 
 def _verdict_view(v: dict[str, Any] | None) -> dict[str, Any] | None:
@@ -804,7 +823,7 @@ def _summarise_unlisted(a: dict[str, Any]) -> dict[str, Any]:
                 "to": m.get("end_date"),
                 "startPrice": _num(m.get("start_price")),
                 "endPrice": _num(m.get("end_price")),
-                "changePct": (_num(m.get("change")) or 0) * 100,
+                "changePct": (_num(m.get("change")) * 100) if m.get("change") is not None else None,
                 "headlines": [
                     {"source": h.get("source"), "headline": h.get("headline"), "url": h.get("url")}
                     for h in (m.get("headlines") or [])[:3]

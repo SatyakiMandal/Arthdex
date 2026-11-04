@@ -90,21 +90,19 @@ def valuation_suite(a: dict[str, Any]) -> dict[str, Any] | None:
         return None
     # Latest quarter, taxed at 25% and annualised: the same shortcut the HTML report takes
     base_nopat = op_latest * 0.75 * 4
-    book_equity = float((_num(bs.get("equity_capital")) or 0.0) + (_num(bs.get("reserves")) or 0.0))
-    if book_equity <= 0:
-        book_equity = max(100.0, market_cap * 0.4)
-    net_income = _latest(fin.get("net_profit"))
-    if net_income is None:
-        net_income = market_cap * 0.06
-    beta = _num((a.get("prices") or {}).get("beta")) or 1.0
     is_bank = vm.is_financial_institution(fin, a.get("ticker") or "")
+    book_equity = float((_num(bs.get("equity_capital")) or 0.0) + (_num(bs.get("reserves")) or 0.0))
+    if is_bank and (book_equity <= 0 or _latest(fin.get("net_profit")) is None):
+        return None
+    net_income = _latest(fin.get("net_profit"))
+    beta = _num((a.get("prices") or {}).get("beta")) or 1.0
 
-    np.random.seed(42)  # the Monte Carlo is reproducible between page views
-    wacc = vm.compute_wacc(market_cap=market_cap, total_debt=debt, beta=beta, risk_free_rate=0.068)
+    rng = np.random.default_rng(42)
+    wacc = vm.compute_wacc(market_cap=market_cap, total_debt=debt, beta=beta, risk_free_rate=0.065)
     if is_bank:
         core = vm.compute_residual_income_valuation(
             current_price=price, shares_outstanding=shares, book_value_equity=book_equity,
-            latest_net_income=net_income, beta=beta, risk_free_rate=0.068,
+            latest_net_income=net_income, beta=beta, risk_free_rate=0.065,
         )
     else:
         core = vm.compute_dcf_valuation(

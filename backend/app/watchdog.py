@@ -90,23 +90,23 @@ class Check:
 
 
 CHECKS: tuple[Check, ...] = (
-    Check("Indices and ticker", "/api/v1/market/indices", _list(5), ("indices",), nse=True),
-    Check("Movers", "/api/v1/market/movers?direction=gainers&limit=10", _list(3), ("movers",), nse=True),
-    Check("Market pulse", "/api/v1/market/pulse", _keys(stocks=40, sectors=5), ("market:traded", "constituents"), nse=True),
-    Check("Global indices", "/api/v1/market/global", _list(3), ("global",)),
-    Check("Commodities", "/api/v1/market/commodities", _keys(rows=3), ("commodities",)),
-    Check("Company quotes", "/api/v1/company/RELIANCE/quote", _keys(cmp=1, asOf=1), ("quote",)),
-    Check("Price candles", "/api/v1/company/RELIANCE/candles?period=1M", _keys(candles=5), ("candles",)),
-    Check("Fundamentals", "/api/v1/company/RELIANCE/financials", _keys(quarterly=1, annual=1), ("financials", "fundamentals")),
-    Check("Quant models", "/api/v1/company/RELIANCE/quant", _keys(volatility=1, forecasts=1), ("quant",)),
-    Check("Shareholding", "/api/v1/company/RELIANCE/shareholding", _keys(pattern=1), ("shareholding",)),
+    Check("Indices and ticker", "/api/v1/market/indices", _list(5), ("market:indices", "market:movers", "market:pulse"), nse=True),
+    Check("Movers", "/api/v1/market/movers?direction=gainers&limit=10", _list(3), ("market:movers",), nse=True),
+    Check("Market pulse", "/api/v1/market/pulse", _keys(stocks=40, sectors=5), ("market:traded", "constituents", "market:pulse"), nse=True),
+    Check("Global indices", "/api/v1/market/global", _list(3), ("market:global",)),
+    Check("Commodities", "/api/v1/market/commodities", _keys(rows=3), ("market:commodities",)),
+    Check("Company quotes", "/api/v1/company/RELIANCE/quote", _keys(cmp=1, asOf=1), ("company:quote",), nse=True),
+    Check("Price candles", "/api/v1/company/RELIANCE/candles?period=1M", _keys(candles=5), ("company:candles",)),
+    Check("Fundamentals", "/api/v1/company/RELIANCE/financials", _keys(quarterly=1, annual=1), ("company:financials", "screener:company"), nse=True),
+    Check("Quant models", "/api/v1/company/RELIANCE/quant", _keys(volatility=1, forecasts=1), ("company:quant",)),
+    Check("Shareholding", "/api/v1/company/RELIANCE/shareholding", _keys(pattern=1), ("company:shareholding",), nse=True),
     Check("News and filings", "/api/v1/news?limit=20", _keys(items=3), ("news",), nse=True),
     Check("IPO pipeline", "/api/v1/ipo", _keys(issues=1), ("ipo",), nse=True),
     Check("Listed universe", "/api/v1/search?q=tata", _list(1), ("universe",), nse=True),
     Check("Unlisted directory", "/api/v1/unlisted", _keys(companies=20), ("unlisted",)),
-    Check("Deals", "/api/v1/deals", _keys(bulk=0, block=0), ("deals",), nse=True, critical=False),
-    Check("Calendar", "/api/v1/calendar", _keys(meetings=0, actions=0), ("calendar",), nse=True, critical=False),
-    Check("Bhavcopy", "/api/v1/bhavcopy", _keys(kpis=1, accumulation=1), ("bhavcopy",), nse=True),
+    Check("Deals", "/api/v1/deals", _keys(bulk=0, block=0), ("desk:deals",), nse=True, critical=False),
+    Check("Calendar", "/api/v1/calendar", _keys(meetings=0, actions=0), ("desk:calendar",), nse=True, critical=False),
+    Check("Bhavcopy", "/api/v1/bhavcopy", _keys(kpis=1, accumulation=1), ("bhav:analysis", "bhav:day"), nse=True),
     Check("Option chains", "/api/v1/derivatives/chain?symbol=NIFTY", _keys(rows=10), ("options:chain",), nse=True, critical=False),
     Check("F&O build-up", "/api/v1/derivatives/buildup", _keys(buckets=1), ("options:buildup",), nse=True, critical=False),
     Check("Institutional flows", "/api/v1/market/flows", _keys(latest=1), ("market:flows",), nse=True, critical=False),
@@ -123,10 +123,14 @@ def asgi_caller() -> Caller:
 
     def call(method: str, path: str) -> tuple[int, Any]:
         raw_path, _, query = path.partition("?")
+        headers = [(b"host", b"watchdog"), (b"accept", b"application/json")]
+        token = os.environ.get("ARTHDEX_API_TOKEN")
+        if token:
+            headers.append((b"authorization", f"Bearer {token}".encode()))
         scope = {
             "type": "http", "asgi": {"version": "3.0"}, "http_version": "1.1", "method": method,
             "scheme": "http", "path": raw_path, "raw_path": raw_path.encode(), "query_string": query.encode(),
-            "headers": [(b"host", b"watchdog"), (b"accept", b"application/json")], "client": ("127.0.0.1", 0),
+            "headers": headers, "client": ("127.0.0.1", 0),
             "server": ("watchdog", 80), "root_path": "",
         }
         status = 0
@@ -387,7 +391,13 @@ def reconcile_figures(base: str | None = None) -> dict[str, Any]:
     failing: dict[str, list[str]] = {}
     for r in results:
         # A dead endpoint is the feed checks' business, not a figure mismatch
-        if r.status == "fail" and not r.check.startswith("endpoint."):
+        detail_str = str(getattr(r, "detail", None) or "")
+        if (
+            r.status == "fail"
+            and not r.check.startswith("endpoint.")
+            and not detail_str.startswith(("timeout", "HTTP "))
+            and "HTTP Error " not in detail_str
+        ):
             failing.setdefault(f"Figures: {r.check}", []).append(f"{r.symbol}: {r.detail}")
 
     with _RUN_LOCK:
