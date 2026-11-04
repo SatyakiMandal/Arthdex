@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Activity,
@@ -72,7 +72,6 @@ function fmtCompact(val: number | null | undefined): string {
 function fmtDateLabel(ts: string, intraday: boolean): string {
   if (!ts) return "";
   if (intraday) {
-    // "2026-11-04T15:15:00+05:30" -> "04 Nov 15:15"
     const d = new Date(ts);
     if (isNaN(d.getTime())) return ts.slice(5, 16).replace("T", " ");
     return d.toLocaleDateString("en-IN", {
@@ -112,11 +111,11 @@ export function LiveVolumeProfile({
 
   // SVG Chart Dimensions
   const W = 1100;
-  const H = 500;
-  const PROFILE_WIDTH = 260; // Right volume profile zone
-  const CHART_WIDTH = W - PROFILE_WIDTH - 60; // Main candlestick canvas
+  const H = 480;
+  const PROFILE_WIDTH = 250;
+  const CHART_WIDTH = W - PROFILE_WIDTH - 60;
   const PADDING_TOP = 25;
-  const PADDING_BOTTOM = 35;
+  const PADDING_BOTTOM = 30;
   const USABLE_H = H - PADDING_TOP - PADDING_BOTTOM;
 
   // Load Orderflow Data
@@ -240,7 +239,6 @@ export function LiveVolumeProfile({
     let hvn = profile.bins[0];
     let lvn = profile.bins[0];
 
-    // Exclude outer boundary bins which naturally have low counts
     const innerBins = profile.bins.slice(3, -3);
     for (const b of innerBins) {
       if (b.v > highestV) {
@@ -270,8 +268,7 @@ export function LiveVolumeProfile({
       return {
         regime: "CALCULATING",
         label: "Analyzing Profile",
-        color: "text-muted-foreground",
-        badgeBg: "bg-muted text-muted-foreground border-border",
+        badgeBg: "bg-surface-muted text-muted-foreground border-border",
         desc: "Compiling visible range auction volume...",
         distancePoc: 0,
         distancePocPct: 0,
@@ -285,8 +282,7 @@ export function LiveVolumeProfile({
       return {
         regime: "ABOVE_VALUE",
         label: "ABOVE VALUE AREA (VAH)",
-        color: "text-emerald-400",
-        badgeBg: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+        badgeBg: "bg-up/10 text-up border-up/30",
         desc: "Bullish imbalance / premium extension. Acceptance above VAH searches for higher liquidity; rejection risks swift mean-reversion back to POC.",
         distancePoc: distPoc,
         distancePocPct: distPocPct,
@@ -296,8 +292,7 @@ export function LiveVolumeProfile({
       return {
         regime: "BELOW_VALUE",
         label: "BELOW VALUE AREA (VAL)",
-        color: "text-rose-400",
-        badgeBg: "bg-rose-500/10 text-rose-400 border-rose-500/30",
+        badgeBg: "bg-down/10 text-down border-down/30",
         desc: "Bearish auction / discount territory. Heavy selling pressure below VAL; watch for responsive buyer absorption back into value.",
         distancePoc: distPoc,
         distancePocPct: distPocPct,
@@ -306,8 +301,7 @@ export function LiveVolumeProfile({
     return {
       regime: "INSIDE_VALUE",
       label: "INSIDE VALUE AREA (FAIR VALUE)",
-      color: "text-amber-400",
-      badgeBg: "bg-amber-500/10 text-amber-400 border-amber-500/30",
+      badgeBg: "bg-gold/10 text-gold border-gold/30",
       desc: "Rotational balance. 70% of market volume transacted here; price is rotating around the high-liquidity Point of Control (POC).",
       distancePoc: distPoc,
       distancePocPct: distPocPct,
@@ -339,13 +333,11 @@ export function LiveVolumeProfile({
     const relX = (e.clientX - rect.left) / rect.width;
     const svgX = relX * W;
 
-    // Check if within candlestick zone
     if (svgX >= 15 && svgX <= CHART_WIDTH + 15) {
       const barIndex = Math.floor((svgX - 15) / stepX);
       setHoverBarIdx(Math.max(0, Math.min(nBars - 1, barIndex)));
       setHoverBinIdx(null);
     } else if (svgX > CHART_WIDTH + 15) {
-      // Hovering volume profile
       setHoverBarIdx(null);
       const relY = (e.clientY - rect.top) / rect.height;
       const svgY = relY * H;
@@ -373,41 +365,40 @@ export function LiveVolumeProfile({
     }
   };
 
-  // Profile X Offsets
   const profileStartX = CHART_WIDTH + 20;
 
   return (
-    <div className="space-y-4 rounded-none">
-      {/* 1. Header Toolbar & Quick Ticker Selector */}
-      <div className="border border-neutral-800 bg-[#090b0e] p-3 sm:p-4 rounded-none shadow-xl space-y-3">
+    <div className="space-y-4 rounded-none font-sans">
+      {/* 1. Header Toolbar & Quick Ticker Selector (Arthdex Theme) */}
+      <div className="border border-border bg-surface p-3 sm:p-3.5 rounded-none shadow-sm space-y-2.5">
         {/* Top bar: Title + Bellwether Chips */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-800/80 pb-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-2.5">
           <div className="flex items-center gap-2.5">
-            <div className="flex items-center gap-1.5 bg-primary/10 border border-primary/30 px-2.5 py-1 text-2xs font-mono font-bold text-primary rounded-none">
+            <div className="flex items-center gap-1.5 bg-accent/10 border border-accent/30 px-2 py-0.5 text-2xs font-mono font-bold text-accent rounded-none">
               <BarChart2 className="h-3.5 w-3.5" />
-              <span>TRADINGVIEW VRVP</span>
+              <span>VOLUME PROFILE VRVP</span>
             </div>
             <div>
-              <h2 className="text-sm sm:text-base font-serif font-bold text-white tracking-tight flex items-center gap-2">
+              <h2 className="text-sm sm:text-base font-serif font-bold text-foreground tracking-tight flex items-center gap-2">
                 <span>{symbol}</span>
-                <span className="text-xs font-mono font-normal text-neutral-400">
-                  {BELLWETHERS.find((b) => b.symbol === symbol)?.name ?? "NSE Live Equities"}
+                <span className="text-xs font-mono font-normal text-muted-foreground">
+                  {BELLWETHERS.find((b) => b.symbol === symbol)?.name ?? "NSE Equities"}
                 </span>
               </h2>
             </div>
           </div>
 
           {/* Timeframe Chips */}
-          <div className="flex items-center gap-1 bg-[#131722] border border-neutral-800 p-0.5 rounded-none">
+          <div className="flex items-center gap-1 bg-surface-muted border border-border p-0.5 rounded-none">
             {TIMEFRAMES.map((tf) => (
               <button
                 key={tf.id}
                 onClick={() => setInterval(tf.id)}
                 className={cn(
-                  "px-2.5 py-1 text-2xs font-mono font-semibold transition-all rounded-none",
+                  "px-2 py-0.5 text-2xs font-mono font-semibold transition-all rounded-none",
                   interval === tf.id
-                    ? "bg-primary text-black font-bold shadow-xs"
-                    : "text-neutral-400 hover:text-white hover:bg-neutral-800/60",
+                    ? "bg-accent text-accent-foreground font-bold shadow-xs"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
                 title={tf.sub}
               >
@@ -418,10 +409,10 @@ export function LiveVolumeProfile({
         </div>
 
         {/* Bellwethers Quick Selector Row */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-3xs font-mono uppercase tracking-wider text-neutral-400 mr-1 flex items-center gap-1">
-              <Zap className="h-3 w-3 text-amber-400" /> Bellwethers:
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-1">
+            <span className="text-3xs font-mono uppercase tracking-wider text-muted-foreground mr-1 flex items-center gap-1">
+              <Zap className="h-3 w-3 text-gold" /> Bellwethers:
             </span>
             {BELLWETHERS.map((b) => (
               <button
@@ -430,8 +421,8 @@ export function LiveVolumeProfile({
                 className={cn(
                   "border px-2 py-0.5 text-2xs font-mono font-semibold transition-all rounded-none",
                   symbol === b.symbol
-                    ? "border-primary bg-primary/20 text-primary font-bold"
-                    : "border-neutral-800 bg-[#131722] text-neutral-400 hover:border-neutral-700 hover:text-neutral-200",
+                    ? "border-accent bg-accent/15 text-accent font-bold"
+                    : "border-border/80 bg-surface-muted/50 text-muted-foreground hover:bg-surface-muted hover:text-foreground",
                 )}
               >
                 {b.symbol}
@@ -442,18 +433,18 @@ export function LiveVolumeProfile({
           {/* Search Custom Ticker Form */}
           <form onSubmit={handleCustomSubmit} className="flex items-center gap-1">
             <div className="relative">
-              <Search className="absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-neutral-500" />
+              <Search className="absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="NSE Ticker (e.g. INFY)"
+                placeholder="Ticker (e.g. INFY)"
                 value={customInput}
                 onChange={(e) => setCustomInput(e.target.value)}
-                className="h-7 w-32 sm:w-40 bg-[#131722] border border-neutral-800 pl-7 pr-2 font-mono text-2xs uppercase text-white placeholder:text-neutral-600 focus:border-primary focus:outline-none rounded-none"
+                className="h-6.5 w-28 sm:w-36 bg-surface-muted/70 border border-border pl-6 pr-2 font-mono text-2xs uppercase text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none rounded-none"
               />
             </div>
             <button
               type="submit"
-              className="h-7 border border-neutral-700 bg-neutral-800 px-2.5 font-mono text-2xs text-white hover:bg-neutral-700 rounded-none transition-colors"
+              className="h-6.5 border border-border bg-surface-raised px-2 font-mono text-2xs text-foreground hover:bg-surface-muted rounded-none transition-colors"
             >
               Load
             </button>
@@ -461,27 +452,27 @@ export function LiveVolumeProfile({
               type="button"
               onClick={() => void refreshLiveProfile(symbol, interval)}
               disabled={loading}
-              className="h-7 border border-neutral-800 bg-[#131722] px-2 text-neutral-400 hover:text-white rounded-none transition-colors"
+              className="h-6.5 border border-border bg-surface-raised px-1.5 text-muted-foreground hover:text-foreground rounded-none transition-colors"
               title="Refresh Live Data"
             >
-              <RefreshCw className={cn("h-3 w-3", loading && "animate-spin text-primary")} />
+              <RefreshCw className={cn("h-3 w-3", loading && "animate-spin text-accent")} />
             </button>
           </form>
         </div>
 
         {/* Display Toggles & Controls Row */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-800/80 pt-2 text-2xs font-mono text-neutral-400">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/70 pt-2 text-2xs font-mono text-muted-foreground">
           <div className="flex flex-wrap items-center gap-3">
-            <span className="text-3xs uppercase tracking-wider text-neutral-400">Terminals:</span>
+            <span className="text-3xs uppercase tracking-wider text-muted-foreground">Terminals:</span>
             {/* Profile Mode Toggle */}
-            <div className="flex items-center border border-neutral-800 bg-[#131722] rounded-none p-0.5">
+            <div className="flex items-center border border-border bg-surface-muted rounded-none p-0.5">
               <button
                 onClick={() => setProfileMode("tradingview")}
                 className={cn(
                   "px-2 py-0.5 text-3xs font-semibold rounded-none transition-colors",
                   profileMode === "tradingview"
-                    ? "bg-neutral-800 text-amber-400 font-bold"
-                    : "text-neutral-400 hover:text-white",
+                    ? "bg-surface text-gold font-bold shadow-xs"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 VRVP (Buy Gold / Sell Blue)
@@ -491,8 +482,8 @@ export function LiveVolumeProfile({
                 className={cn(
                   "px-2 py-0.5 text-3xs font-semibold rounded-none transition-colors",
                   profileMode === "delta"
-                    ? "bg-neutral-800 text-cyan-400 font-bold"
-                    : "text-neutral-400 hover:text-white",
+                    ? "bg-surface text-accent font-bold shadow-xs"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 Net Delta Profile
@@ -500,80 +491,80 @@ export function LiveVolumeProfile({
             </div>
 
             {/* Feature Toggles */}
-            <label className="flex items-center gap-1.5 cursor-pointer text-3xs hover:text-white">
+            <label className="flex items-center gap-1 cursor-pointer text-3xs hover:text-foreground">
               <input
                 type="checkbox"
                 checked={showPocLine}
                 onChange={(e) => setShowPocLine(e.target.checked)}
-                className="accent-amber-400 rounded-none"
+                className="accent-gold rounded-none"
               />
-              <span className="text-amber-400 font-bold">POC Line</span>
+              <span className="text-gold font-bold">POC Line</span>
             </label>
 
-            <label className="flex items-center gap-1.5 cursor-pointer text-3xs hover:text-white">
+            <label className="flex items-center gap-1 cursor-pointer text-3xs hover:text-foreground">
               <input
                 type="checkbox"
                 checked={showValueArea}
                 onChange={(e) => setShowValueArea(e.target.checked)}
-                className="accent-primary rounded-none"
+                className="accent-accent rounded-none"
               />
               <span>Value Area (70%)</span>
             </label>
 
-            <label className="flex items-center gap-1.5 cursor-pointer text-3xs hover:text-white">
+            <label className="flex items-center gap-1 cursor-pointer text-3xs hover:text-foreground">
               <input
                 type="checkbox"
                 checked={showVwap}
                 onChange={(e) => setShowVwap(e.target.checked)}
-                className="accent-purple-400 rounded-none"
+                className="accent-accent rounded-none"
               />
               <span>VWAP</span>
             </label>
 
-            <label className="flex items-center gap-1.5 cursor-pointer text-3xs hover:text-white">
+            <label className="flex items-center gap-1 cursor-pointer text-3xs hover:text-foreground">
               <input
                 type="checkbox"
                 checked={showSessions}
                 onChange={(e) => setShowSessions(e.target.checked)}
-                className="accent-blue-400 rounded-none"
+                className="accent-accent rounded-none"
               />
               <span>Session Boxes</span>
             </label>
           </div>
 
           <div className="flex items-center gap-2 text-3xs font-mono">
-            <span className="text-emerald-400 flex items-center gap-1 font-semibold">
+            <span className="text-up flex items-center gap-1 font-semibold">
               <ShieldCheck className="h-3 w-3" /> 100% Genuine Live Exchange Bars
             </span>
-            <span className="text-neutral-700">|</span>
-            <span className="text-neutral-400">
+            <span className="text-border">|</span>
+            <span className="text-muted-foreground">
               Sync: {lastRefreshed.toLocaleTimeString("en-IN")}
             </span>
           </div>
         </div>
       </div>
 
-      {/* 2. Main Pitch-Black TradingView Profile Terminal Canvas */}
-      <div className="relative border border-neutral-800 bg-[#06080a] p-1 rounded-none shadow-2xl overflow-hidden">
+      {/* 2. Main Profile Terminal Canvas (Arthdex Palette) */}
+      <div className="relative border border-border bg-surface p-1 rounded-none shadow-sm overflow-hidden">
         {loading && (
-          <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/75 backdrop-blur-xs font-mono text-xs text-primary">
-            <div className="flex items-center gap-2 border border-neutral-800 bg-[#0c0d10] px-4 py-2 rounded-none shadow-lg">
-              <RefreshCw className="h-4 w-4 animate-spin text-primary" />
-              <span>Fetching live {symbol} tick stream &amp; order-flow bins...</span>
+          <div className="absolute inset-0 z-30 flex items-center justify-center bg-background/80 backdrop-blur-xs font-mono text-xs text-accent">
+            <div className="flex items-center gap-2 border border-border bg-surface px-4 py-2 rounded-none shadow-sm">
+              <RefreshCw className="h-4 w-4 animate-spin text-accent" />
+              <span>Fetching live {symbol} order-flow stream...</span>
             </div>
           </div>
         )}
 
         {error && (
-          <div className="p-8 text-center font-mono text-xs text-rose-400 bg-rose-950/20 border border-rose-900/40 rounded-none m-3">
+          <div className="p-6 text-center font-mono text-xs text-down bg-down/5 border border-down/30 rounded-none m-3">
             <p className="font-bold text-sm">Failed to Load Profile for {symbol}</p>
-            <p className="mt-1 text-neutral-400">{error}</p>
+            <p className="mt-1 text-muted-foreground">{error}</p>
             <button
               onClick={() => {
                 setSymbol("RELIANCE");
                 void refreshLiveProfile("RELIANCE", interval);
               }}
-              className="mt-3 border border-neutral-700 bg-neutral-800 px-3 py-1 text-2xs text-white hover:bg-neutral-700 rounded-none"
+              className="mt-3 border border-border bg-surface px-3 py-1 text-2xs text-foreground hover:bg-surface-muted rounded-none"
             >
               Reset to Reliance Industries
             </button>
@@ -582,30 +573,22 @@ export function LiveVolumeProfile({
 
         {/* Top Candlestick Readout HUD */}
         {activeBar && (
-          <div className="absolute top-2 left-3 z-20 flex flex-wrap items-center gap-x-4 gap-y-1 bg-black/90 border border-neutral-800/80 px-2.5 py-1 text-2xs font-mono text-neutral-300 rounded-none shadow-md pointer-events-none">
-            <span className="text-white font-bold">{symbol}</span>
-            <span className="text-neutral-400">{fmtDateLabel(activeBar.t, data?.intraday ?? true)}</span>
-            <span>
-              O: <strong className="text-white">{fmtINR(activeBar.o)}</strong>
-            </span>
-            <span>
-              H: <strong className="text-emerald-400">{fmtINR(activeBar.h)}</strong>
-            </span>
-            <span>
-              L: <strong className="text-rose-400">{fmtINR(activeBar.l)}</strong>
-            </span>
+          <div className="absolute top-2 left-3 z-20 flex flex-wrap items-center gap-x-3.5 gap-y-1 bg-surface-raised/95 border border-border px-2.5 py-1 text-2xs font-mono text-foreground rounded-none shadow-xs pointer-events-none">
+            <span className="font-bold">{symbol}</span>
+            <span className="text-muted-foreground">{fmtDateLabel(activeBar.t, data?.intraday ?? true)}</span>
+            <span>O: <strong>{fmtINR(activeBar.o)}</strong></span>
+            <span>H: <strong className="text-up">{fmtINR(activeBar.h)}</strong></span>
+            <span>L: <strong className="text-down">{fmtINR(activeBar.l)}</strong></span>
             <span>
               C:{" "}
-              <strong className={activeBar.c >= activeBar.o ? "text-emerald-400" : "text-rose-400"}>
+              <strong className={activeBar.c >= activeBar.o ? "text-up" : "text-down"}>
                 {fmtINR(activeBar.c)}
               </strong>
             </span>
-            <span>
-              Vol: <strong className="text-amber-400">{fmtCompact(activeBar.v)}</strong>
-            </span>
+            <span>Vol: <strong className="text-gold">{fmtCompact(activeBar.v)}</strong></span>
             <span>
               Δ:{" "}
-              <strong className={activeBar.delta >= 0 ? "text-emerald-400" : "text-rose-400"}>
+              <strong className={activeBar.delta >= 0 ? "text-up" : "text-down"}>
                 {activeBar.delta >= 0 ? "+" : ""}
                 {fmtCompact(activeBar.delta)}
               </strong>
@@ -615,19 +598,11 @@ export function LiveVolumeProfile({
 
         {/* Profile Stats HUD Overlay (Top-Right) */}
         {profile && (
-          <div className="absolute top-2 right-3 z-20 hidden md:flex items-center gap-3 bg-black/90 border border-neutral-800/80 px-2.5 py-1 text-2xs font-mono text-neutral-400 rounded-none shadow-md pointer-events-none">
-            <span>
-              Rows: <strong className="text-neutral-200">{profile.bins.length}</strong>
-            </span>
-            <span>
-              VA: <strong className="text-primary">70%</strong>
-            </span>
-            <span>
-              POC: <strong className="text-amber-400 font-bold">{fmtINR(profile.poc)}</strong>
-            </span>
-            <span>
-              Total Vol: <strong className="text-white">{fmtCompact(profile.total)}</strong>
-            </span>
+          <div className="absolute top-2 right-3 z-20 hidden md:flex items-center gap-3 bg-surface-raised/95 border border-border px-2.5 py-1 text-2xs font-mono text-muted-foreground rounded-none shadow-xs pointer-events-none">
+            <span>Rows: <strong className="text-foreground">{profile.bins.length}</strong></span>
+            <span>VA: <strong className="text-accent">70%</strong></span>
+            <span>POC: <strong className="text-gold font-bold">{fmtINR(profile.poc)}</strong></span>
+            <span>Total Vol: <strong className="text-foreground">{fmtCompact(profile.total)}</strong></span>
           </div>
         )}
 
@@ -640,28 +615,26 @@ export function LiveVolumeProfile({
         >
           <svg
             viewBox={`0 0 ${W} ${H}`}
-            className="w-full h-auto min-h-[460px] max-h-[620px] block"
+            className="w-full h-auto min-h-[440px] max-h-[580px] block"
             preserveAspectRatio="none"
           >
             <defs>
-              {/* Value Area Gradient Fill */}
               <linearGradient id="tv-value-area-grad" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#2962ff" stopOpacity="0.04" />
-                <stop offset="70%" stopColor="#2962ff" stopOpacity="0.08" />
-                <stop offset="100%" stopColor="#f5c518" stopOpacity="0.12" />
+                <stop offset="0%" stopColor="hsl(var(--accent))" stopOpacity="0.04" />
+                <stop offset="70%" stopColor="hsl(var(--accent))" stopOpacity="0.08" />
+                <stop offset="100%" stopColor="hsl(var(--gold))" stopOpacity="0.12" />
               </linearGradient>
 
-              {/* Grid pattern */}
               <pattern id="tv-grid" width="60" height="40" patternUnits="userSpaceOnUse">
-                <path d="M 60 0 L 0 0 0 40" fill="none" stroke="#161b22" strokeWidth="0.8" />
+                <path d="M 60 0 L 0 0 0 40" fill="none" stroke="hsl(var(--border))" strokeOpacity="0.5" strokeWidth="0.8" />
               </pattern>
             </defs>
 
-            {/* Background Grid */}
-            <rect width={W} height={H} fill="#090b0e" />
+            {/* Background Canvas & Grid */}
+            <rect width={W} height={H} fill="hsl(var(--surface))" />
             <rect width={W} height={H} fill="url(#tv-grid)" />
 
-            {/* Session Delimiters and Shaded Boxes */}
+            {/* Session Delimiters */}
             {showSessions &&
               sessionDivisions.map((sd) => {
                 const sx = indexToX(sd.idx);
@@ -672,14 +645,14 @@ export function LiveVolumeProfile({
                       y1={PADDING_TOP}
                       x2={sx}
                       y2={H - PADDING_BOTTOM}
-                      stroke="#222b38"
+                      stroke="hsl(var(--border))"
                       strokeWidth="1"
                       strokeDasharray="3 3"
                     />
                     <text
                       x={sx + 4}
                       y={PADDING_TOP + 12}
-                      fill="#4b5563"
+                      fill="hsl(var(--muted-foreground))"
                       fontSize="9"
                       fontFamily="monospace"
                       fontWeight="bold"
@@ -706,7 +679,7 @@ export function LiveVolumeProfile({
                   y1={priceToY(vahPrice)}
                   x2={CHART_WIDTH + 15}
                   y2={priceToY(vahPrice)}
-                  stroke="#38bdf8"
+                  stroke="hsl(var(--accent))"
                   strokeWidth="1.2"
                   strokeDasharray="4 3"
                 />
@@ -716,7 +689,7 @@ export function LiveVolumeProfile({
                   y1={priceToY(valPrice)}
                   x2={CHART_WIDTH + 15}
                   y2={priceToY(valPrice)}
-                  stroke="#38bdf8"
+                  stroke="hsl(var(--accent))"
                   strokeWidth="1.2"
                   strokeDasharray="4 3"
                 />
@@ -731,14 +704,13 @@ export function LiveVolumeProfile({
               const highY = priceToY(b.h);
               const lowY = priceToY(b.l);
               const isBull = b.c >= b.o;
-              const color = isBull ? "#089981" : "#f23645"; // TradingView green / red
+              const color = isBull ? "hsl(var(--up))" : "hsl(var(--down))";
               const candleW = Math.max(stepX * 0.65, 1.2);
               const bodyTop = Math.min(openY, closeY);
               const bodyHeight = Math.max(Math.abs(openY - closeY), 1.2);
 
               return (
                 <g key={i}>
-                  {/* Needle Wick */}
                   <line
                     x1={xPos}
                     y1={highY}
@@ -747,7 +719,6 @@ export function LiveVolumeProfile({
                     stroke={color}
                     strokeWidth="1"
                   />
-                  {/* Candle Body: STRICT ZERO ROUNDED EDGES */}
                   <rect
                     x={xPos - candleW / 2}
                     y={bodyTop}
@@ -775,13 +746,13 @@ export function LiveVolumeProfile({
                   })
                   .join(" ")}
                 fill="none"
-                stroke="#c084fc"
+                stroke="hsl(var(--chart-clay))"
                 strokeWidth="1.2"
                 strokeDasharray="5 3"
               />
             )}
 
-            {/* Point of Control (POC) Bold Horizontal Line Stretching Across Chart */}
+            {/* Point of Control (POC) Bold Horizontal Line */}
             {showPocLine && pocPrice !== null && (
               <g>
                 <line
@@ -789,16 +760,15 @@ export function LiveVolumeProfile({
                   y1={priceToY(pocPrice)}
                   x2={W - 60}
                   y2={priceToY(pocPrice)}
-                  stroke="#f5a623"
+                  stroke="hsl(var(--gold))"
                   strokeWidth="1.8"
                 />
-                {/* Micro Dash highlight */}
                 <line
                   x1={15}
                   y1={priceToY(pocPrice)}
                   x2={CHART_WIDTH + 15}
                   y2={priceToY(pocPrice)}
-                  stroke="#ffffff"
+                  stroke="hsl(var(--surface))"
                   strokeWidth="0.8"
                   strokeDasharray="2 6"
                   opacity="0.8"
@@ -813,10 +783,10 @@ export function LiveVolumeProfile({
                 y1={priceToY(lastClose)}
                 x2={W - 60}
                 y2={priceToY(lastClose)}
-                stroke="#ffffff"
+                stroke="hsl(var(--foreground))"
                 strokeWidth="1"
                 strokeDasharray="2 3"
-                opacity="0.85"
+                opacity="0.75"
               />
             )}
 
@@ -826,12 +796,12 @@ export function LiveVolumeProfile({
               y1={PADDING_TOP}
               x2={profileStartX - 5}
               y2={H - PADDING_BOTTOM}
-              stroke="#21262d"
+              stroke="hsl(var(--border))"
               strokeWidth="1.2"
             />
 
             {/* ======================================================== */}
-            {/* TRADINGVIEW VOLUME PROFILE (VRVP) HISTOGRAM (Right Zone)  */}
+            {/* VOLUME PROFILE (VRVP) HISTOGRAM (Right Zone)             */}
             {/* ======================================================== */}
             {profile?.bins &&
               profile.bins.map((bin, i) => {
@@ -847,8 +817,6 @@ export function LiveVolumeProfile({
                 const isHovered = hoverBinIdx === i;
 
                 if (profileMode === "tradingview") {
-                  // Up-Volume (Buy) in Gold/Yellow + Down-Volume (Sell) in Royal Blue
-                  // Exactly as in TradingView Screenshot
                   const buyWidth = (bin.buy / maxBinVolume) * PROFILE_WIDTH;
                   const sellWidth = (bin.sell / maxBinVolume) * PROFILE_WIDTH;
                   const totalW = buyWidth + sellWidth;
@@ -860,27 +828,24 @@ export function LiveVolumeProfile({
                       className="cursor-pointer transition-opacity"
                       opacity={isHovered ? 1 : opacity}
                     >
-                      {/* Buy Volume Bar (TradingView Gold/Yellow) - Strict Zero Rounded Edges */}
                       <rect
                         x={profileStartX}
                         y={binTopY}
                         width={Math.max(buyWidth, 0)}
                         height={barH}
-                        fill="#f5a623"
+                        fill="hsl(var(--gold))"
                         rx="0"
                         ry="0"
                       />
-                      {/* Sell Volume Bar (TradingView Royal Blue) - Strict Zero Rounded Edges */}
                       <rect
                         x={profileStartX + buyWidth}
                         y={binTopY}
                         width={Math.max(sellWidth, 0)}
                         height={barH}
-                        fill="#2962ff"
+                        fill="hsl(var(--accent))"
                         rx="0"
                         ry="0"
                       />
-                      {/* POC Highlight border if peak bin */}
                       {isPocBin && (
                         <rect
                           x={profileStartX}
@@ -888,7 +853,7 @@ export function LiveVolumeProfile({
                           width={Math.min(totalW + 6, PROFILE_WIDTH)}
                           height={barH}
                           fill="none"
-                          stroke="#ffffff"
+                          stroke="hsl(var(--foreground))"
                           strokeWidth="1.2"
                           rx="0"
                           ry="0"
@@ -897,10 +862,9 @@ export function LiveVolumeProfile({
                     </g>
                   );
                 } else {
-                  // Delta Profile Mode: Positive Delta (Green) vs Negative Delta (Red)
                   const deltaW = (Math.abs(bin.delta) / maxBinDelta) * (PROFILE_WIDTH * 0.8);
                   const isPos = bin.delta >= 0;
-                  const color = isPos ? "#089981" : "#f23645";
+                  const color = isPos ? "hsl(var(--up))" : "hsl(var(--down))";
                   const opacity = isInsideVA ? 0.9 : 0.45;
 
                   return (
@@ -926,7 +890,7 @@ export function LiveVolumeProfile({
                 y1={PADDING_TOP}
                 x2={indexToX(hoverBarIdx)}
                 y2={H - PADDING_BOTTOM}
-                stroke="#6e7681"
+                stroke="hsl(var(--muted-foreground))"
                 strokeWidth="1"
                 strokeDasharray="2 2"
               />
@@ -934,27 +898,25 @@ export function LiveVolumeProfile({
 
             {/* Horizontal Price Axis on Far Right */}
             <g transform={`translate(${W - 60}, 0)`}>
-              {/* Vertical Scale Border */}
               <line
                 x1={0}
                 y1={PADDING_TOP}
                 x2={0}
                 y2={H - PADDING_BOTTOM}
-                stroke="#21262d"
+                stroke="hsl(var(--border))"
                 strokeWidth="1"
               />
 
-              {/* Price Ticks */}
               {[0, 0.25, 0.5, 0.75, 1].map((pct) => {
                 const tickPrice = minPrice + (1 - pct) * priceRange;
                 const tickY = PADDING_TOP + pct * USABLE_H;
                 return (
                   <g key={pct}>
-                    <line x1={0} y1={tickY} x2={5} y2={tickY} stroke="#30363d" strokeWidth="1" />
+                    <line x1={0} y1={tickY} x2={5} y2={tickY} stroke="hsl(var(--border))" strokeWidth="1" />
                     <text
                       x={8}
                       y={tickY + 3}
-                      fill="#8b949e"
+                      fill="hsl(var(--muted-foreground))"
                       fontSize="9"
                       fontFamily="monospace"
                     >
@@ -967,48 +929,18 @@ export function LiveVolumeProfile({
               {/* VAH Price Tag */}
               {showValueArea && vahPrice !== null && (
                 <g transform={`translate(0, ${priceToY(vahPrice)})`}>
-                  <rect
-                    x={0}
-                    y={-7}
-                    width={56}
-                    height={14}
-                    fill="#0284c7"
-                    rx="0"
-                    ry="0"
-                  />
-                  <text
-                    x={4}
-                    y={3}
-                    fill="#ffffff"
-                    fontSize="8.5"
-                    fontFamily="monospace"
-                    fontWeight="bold"
-                  >
+                  <rect x={0} y={-7} width={56} height={14} fill="hsl(var(--accent))" rx="0" ry="0" />
+                  <text x={4} y={3} fill="hsl(var(--accent-foreground))" fontSize="8.5" fontFamily="monospace" fontWeight="bold">
                     VAH {vahPrice.toFixed(1)}
                   </text>
                 </g>
               )}
 
-              {/* POC Price Tag (High Contrast Gold) */}
+              {/* POC Price Tag */}
               {showPocLine && pocPrice !== null && (
                 <g transform={`translate(0, ${priceToY(pocPrice)})`}>
-                  <rect
-                    x={0}
-                    y={-8}
-                    width={58}
-                    height={16}
-                    fill="#d97706"
-                    rx="0"
-                    ry="0"
-                  />
-                  <text
-                    x={4}
-                    y={3.5}
-                    fill="#ffffff"
-                    fontSize="9"
-                    fontFamily="monospace"
-                    fontWeight="bold"
-                  >
+                  <rect x={0} y={-8} width={58} height={16} fill="hsl(var(--gold))" rx="0" ry="0" />
+                  <text x={4} y={3.5} fill="hsl(var(--surface-raised))" fontSize="9" fontFamily="monospace" fontWeight="bold">
                     POC {pocPrice.toFixed(1)}
                   </text>
                 </g>
@@ -1017,23 +949,8 @@ export function LiveVolumeProfile({
               {/* VAL Price Tag */}
               {showValueArea && valPrice !== null && (
                 <g transform={`translate(0, ${priceToY(valPrice)})`}>
-                  <rect
-                    x={0}
-                    y={-7}
-                    width={56}
-                    height={14}
-                    fill="#0284c7"
-                    rx="0"
-                    ry="0"
-                  />
-                  <text
-                    x={4}
-                    y={3}
-                    fill="#ffffff"
-                    fontSize="8.5"
-                    fontFamily="monospace"
-                    fontWeight="bold"
-                  >
+                  <rect x={0} y={-7} width={56} height={14} fill="hsl(var(--accent))" rx="0" ry="0" />
+                  <text x={4} y={3} fill="hsl(var(--accent-foreground))" fontSize="8.5" fontFamily="monospace" fontWeight="bold">
                     VAL {valPrice.toFixed(1)}
                   </text>
                 </g>
@@ -1042,23 +959,8 @@ export function LiveVolumeProfile({
               {/* Current LTP Badge */}
               {lastClose !== null && (
                 <g transform={`translate(0, ${priceToY(lastClose)})`}>
-                  <rect
-                    x={0}
-                    y={-8}
-                    width={58}
-                    height={16}
-                    fill="#ffffff"
-                    rx="0"
-                    ry="0"
-                  />
-                  <text
-                    x={4}
-                    y={3.5}
-                    fill="#000000"
-                    fontSize="9"
-                    fontFamily="monospace"
-                    fontWeight="bold"
-                  >
+                  <rect x={0} y={-8} width={58} height={16} fill="hsl(var(--foreground))" rx="0" ry="0" />
+                  <text x={4} y={3.5} fill="hsl(var(--background))" fontSize="9" fontFamily="monospace" fontWeight="bold">
                     LTP {lastClose.toFixed(1)}
                   </text>
                 </g>
@@ -1069,20 +971,20 @@ export function LiveVolumeProfile({
           {/* Hover Volume Bin Tooltip Popup */}
           {hoverBinIdx !== null && profile?.bins && profile.bins[hoverBinIdx] && (
             <div
-              className="pointer-events-none absolute z-30 border border-neutral-700 bg-black/95 p-2 font-mono text-xs text-white shadow-xl rounded-none"
+              className="pointer-events-none absolute z-30 border border-border bg-surface-raised p-2 font-mono text-xs text-foreground shadow-md rounded-none"
               style={{
                 right: "120px",
                 top: `${priceToY(profile.bins[hoverBinIdx].mid) - 30}px`,
               }}
             >
-              <div className="font-bold text-amber-400">
+              <div className="font-bold text-gold">
                 Level: {fmtINR(profile.bins[hoverBinIdx].mid)}
               </div>
-              <div className="mt-1 flex items-center gap-3 text-3xs text-neutral-300">
-                <span>Total: <strong className="text-white">{fmtCompact(profile.bins[hoverBinIdx].v)}</strong></span>
-                <span>Buy: <strong className="text-[#f5a623]">{fmtCompact(profile.bins[hoverBinIdx].buy)}</strong></span>
-                <span>Sell: <strong className="text-[#2962ff]">{fmtCompact(profile.bins[hoverBinIdx].sell)}</strong></span>
-                <span>Δ: <strong className={profile.bins[hoverBinIdx].delta >= 0 ? "text-emerald-400" : "text-rose-400"}>
+              <div className="mt-1 flex items-center gap-3 text-3xs text-muted-foreground">
+                <span>Total: <strong className="text-foreground">{fmtCompact(profile.bins[hoverBinIdx].v)}</strong></span>
+                <span>Buy: <strong className="text-gold">{fmtCompact(profile.bins[hoverBinIdx].buy)}</strong></span>
+                <span>Sell: <strong className="text-accent">{fmtCompact(profile.bins[hoverBinIdx].sell)}</strong></span>
+                <span>Δ: <strong className={profile.bins[hoverBinIdx].delta >= 0 ? "text-up" : "text-down"}>
                   {fmtCompact(profile.bins[hoverBinIdx].delta)}
                 </strong></span>
               </div>
@@ -1091,66 +993,66 @@ export function LiveVolumeProfile({
         </div>
 
         {/* Bottom Legend & Scale Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-800 bg-[#080a0d] px-3 py-2 text-2xs font-mono text-neutral-400 rounded-none">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-surface-muted/50 px-3 py-2 text-2xs font-mono text-muted-foreground rounded-none">
           <div className="flex flex-wrap items-center gap-4">
             <span className="flex items-center gap-1.5">
-              <span className="h-2 w-3 bg-[#f5a623] inline-block rounded-none" />
+              <span className="h-2 w-3 bg-gold inline-block rounded-none" />
               <span>Up-Volume (Buy)</span>
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="h-2 w-3 bg-[#2962ff] inline-block rounded-none" />
+              <span className="h-2 w-3 bg-accent inline-block rounded-none" />
               <span>Down-Volume (Sell)</span>
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="h-2 w-4 border-t-2 border-[#f5a623] inline-block" />
-              <span className="text-amber-400 font-bold">POC Line</span>
+              <span className="h-2 w-4 border-t-2 border-gold inline-block" />
+              <span className="text-gold font-bold">POC Line</span>
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="h-2 w-4 border-t-2 border-dashed border-[#38bdf8] inline-block" />
-              <span className="text-[#38bdf8]">VAH / VAL (70%)</span>
+              <span className="h-2 w-4 border-t-2 border-dashed border-accent inline-block" />
+              <span className="text-accent">VAH / VAL (70%)</span>
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="h-2 w-4 border-t-2 border-dashed border-[#c084fc] inline-block" />
-              <span className="text-[#c084fc]">VWAP</span>
+              <span className="h-2 w-4 border-t-2 border-dashed border-chart-clay inline-block" />
+              <span>VWAP</span>
             </span>
           </div>
 
-          <div className="text-3xs text-neutral-500">
-            Visible Window: {bars.length} {data?.intervalLabel ?? interval} bars · All sharp rectangular geometries
+          <div className="text-3xs text-muted-foreground">
+            Visible Window: {bars.length} {data?.intervalLabel ?? interval} bars · Sharp rectangular geometry
           </div>
         </div>
       </div>
 
       {/* 3. Microstructure Intelligence & Auction Theory Dashboard */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {/* Regime Status Card */}
-        <div className="border border-neutral-800 bg-[#0c0d10] p-3.5 rounded-none space-y-2">
-          <div className="flex items-center justify-between text-2xs font-mono uppercase tracking-wider text-neutral-400">
+        <div className="border border-border bg-surface p-3 rounded-none space-y-1.5 font-sans">
+          <div className="flex items-center justify-between text-2xs font-mono uppercase tracking-wider text-muted-foreground">
             <span>Market Regime</span>
-            <span className="text-3xs text-neutral-500">Auction Market Theory</span>
+            <span className="text-3xs">Auction Theory</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div>
             <span className={cn("px-2 py-0.5 text-xs font-mono font-bold rounded-none border", marketStructure.badgeBg)}>
               {marketStructure.label}
             </span>
           </div>
-          <p className="text-3xs text-neutral-400 leading-relaxed">
+          <p className="text-3xs text-muted-foreground leading-relaxed">
             {marketStructure.desc}
           </p>
         </div>
 
         {/* POC Proximity Card */}
-        <div className="border border-neutral-800 bg-[#0c0d10] p-3.5 rounded-none space-y-2">
-          <div className="flex items-center justify-between text-2xs font-mono uppercase tracking-wider text-neutral-400">
-            <span>Point of Control (POC) Anchor</span>
-            <span className="text-amber-400 font-bold">{fmtINR(pocPrice)}</span>
+        <div className="border border-border bg-surface p-3 rounded-none space-y-1.5 font-mono">
+          <div className="flex items-center justify-between text-2xs uppercase tracking-wider text-muted-foreground">
+            <span>Point of Control Anchor</span>
+            <span className="text-gold font-bold">{fmtINR(pocPrice)}</span>
           </div>
-          <div className="flex items-baseline justify-between font-mono">
-            <span className="text-sm text-neutral-300">Distance to POC:</span>
+          <div className="flex items-baseline justify-between">
+            <span className="text-xs text-muted-foreground">Distance to POC:</span>
             <span
               className={cn(
-                "text-base font-bold",
-                marketStructure.distancePoc >= 0 ? "text-emerald-400" : "text-rose-400",
+                "text-sm font-bold",
+                marketStructure.distancePoc >= 0 ? "text-up" : "text-down",
               )}
             >
               {marketStructure.distancePoc >= 0 ? "+" : ""}
@@ -1158,28 +1060,28 @@ export function LiveVolumeProfile({
               {marketStructure.distancePocPct.toFixed(2)}%)
             </span>
           </div>
-          <div className="text-3xs text-neutral-400 leading-tight">
+          <div className="text-3xs text-muted-foreground leading-tight">
             POC serves as the primary magnetic attractor during balanced consolidation periods.
           </div>
         </div>
 
         {/* High Volume Node (HVN) vs Low Volume Node (LVN) */}
-        <div className="border border-neutral-800 bg-[#0c0d10] p-3.5 rounded-none space-y-2">
-          <div className="flex items-center justify-between text-2xs font-mono uppercase tracking-wider text-neutral-400">
+        <div className="border border-border bg-surface p-3 rounded-none space-y-1.5 font-mono">
+          <div className="flex items-center justify-between text-2xs uppercase tracking-wider text-muted-foreground">
             <span>Volume Nodes (Structure)</span>
-            <span className="text-primary font-mono text-3xs">Liquidity Profiler</span>
+            <span className="text-accent text-3xs">Liquidity Shelf</span>
           </div>
-          <div className="space-y-1 font-mono text-2xs">
+          <div className="space-y-1 text-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-emerald-400 font-semibold">HVN (Support Shelf):</span>
-              <span className="text-white font-bold">{hvnBin ? fmtINR(hvnBin.mid) : "—"}</span>
+              <span className="text-up font-semibold">HVN (Support Shelf):</span>
+              <span className="text-foreground font-bold">{hvnBin ? fmtINR(hvnBin.mid) : "—"}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-rose-400 font-semibold">LVN (Fast Vacuum):</span>
-              <span className="text-white font-bold">{lvnBin ? fmtINR(lvnBin.mid) : "—"}</span>
+              <span className="text-down font-semibold">LVN (Fast Vacuum):</span>
+              <span className="text-foreground font-bold">{lvnBin ? fmtINR(lvnBin.mid) : "—"}</span>
             </div>
           </div>
-          <div className="text-3xs text-neutral-400 leading-tight">
+          <div className="text-3xs text-muted-foreground leading-tight">
             HVNs represent strong institutional absorption; LVNs are low-volume voids prone to rapid slippage.
           </div>
         </div>

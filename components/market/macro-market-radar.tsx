@@ -16,15 +16,17 @@ import {
   ShieldCheck,
   TrendingDown,
   TrendingUp,
+  X,
   Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { ApiPulse, ApiPulseSector, ApiPulseStock } from "@/lib/api/types";
+import type { ApiPulse, ApiPulseStock } from "@/lib/api/types";
 
 interface MacroMarketRadarProps {
   pulse: ApiPulse;
   currentIndex: string;
   onUniverseChange: (idx: string) => void;
+  onSelectStock?: (symbol: string) => void;
 }
 
 const UNIVERSES = [
@@ -51,6 +53,7 @@ export function MacroMarketRadar({
   pulse,
   currentIndex,
   onUniverseChange,
+  onSelectStock,
 }: MacroMarketRadarProps) {
   // Filter state
   const [searchQuery, setSearchQuery] = useState("");
@@ -58,7 +61,8 @@ export function MacroMarketRadar({
   const [movementFilter, setMovementFilter] = useState<
     "ALL" | "BUYING" | "SELLING" | "UNMOVED" | "SURGE"
   >("ALL");
-  const [sortBy, setSortBy] = useState<"changeDesc" | "changeAsc" | "turnover" | "mcap">("turnover");
+  const [sortBy, setSortBy] = useState<"turnover" | "changeDesc" | "changeAsc" | "mcap">("turnover");
+  const [leftTab, setLeftTab] = useState<"sectors" | "velocity" | "institutional">("sectors");
 
   const stocks = useMemo(() => pulse.stocks ?? [], [pulse.stocks]);
   const marketBreadth = pulse.market ?? { advances: 0, declines: 0, unchanged: 0, total: 0 };
@@ -117,17 +121,17 @@ export function MacroMarketRadar({
   }, [stocks]);
 
   // =========================================================================
-  // 2. MACRO VOLUME PROFILE BY RETURN / VELOCITY TIERS (VRVP ACROSS WHOLE MARKET)
+  // 2. MACRO VELOCITY & RETURN TIERS
   // =========================================================================
   const velocityTiers = useMemo(() => {
     const tiers = [
-      { id: "surge", label: "Surge (> +3%)", min: 3.0, max: Infinity, color: "#10b981", isBuy: true },
-      { id: "mod_up", label: "Gainers (+1% to +3%)", min: 1.0, max: 3.0, color: "#059669", isBuy: true },
-      { id: "mild_up", label: "Mild Up (+0.15% to +1%)", min: 0.15, max: 1.0, color: "#34d399", isBuy: true },
-      { id: "flat", label: "Flat / Stagnant (±0.15%)", min: -0.15, max: 0.15, color: "#22d3ee", isBuy: null },
-      { id: "mild_down", label: "Mild Down (-1% to -0.15%)", min: -1.0, max: -0.15, color: "#f87171", isBuy: false },
-      { id: "mod_down", label: "Decliners (-3% to -1%)", min: -3.0, max: -1.0, color: "#dc2626", isBuy: false },
-      { id: "dump", label: "Dumping (< -3%)", min: -Infinity, max: -3.0, color: "#b91c1c", isBuy: false },
+      { id: "surge", label: "Surge (> +3%)", min: 3.0, max: Infinity, kind: "up" },
+      { id: "mod_up", label: "Gainers (+1% to +3%)", min: 1.0, max: 3.0, kind: "up" },
+      { id: "mild_up", label: "Mild Up (+0.15% to +1%)", min: 0.15, max: 1.0, kind: "up" },
+      { id: "flat", label: "Flat / Unmoved (±0.15%)", min: -0.15, max: 0.15, kind: "flat" },
+      { id: "mild_down", label: "Mild Down (-1% to -0.15%)", min: -1.0, max: -0.15, kind: "down" },
+      { id: "mod_down", label: "Decliners (-3% to -1%)", min: -3.0, max: -1.0, kind: "down" },
+      { id: "dump", label: "Dumping (< -3%)", min: -Infinity, max: -3.0, kind: "down" },
     ];
 
     const results = tiers.map((tier) => {
@@ -162,7 +166,6 @@ export function MacroMarketRadar({
       };
     });
 
-    // Identify Point of Control (POC): Tier with the maximum traded turnover
     let maxTurnover = -1;
     let pocTierId = "";
     results.forEach((r) => {
@@ -176,7 +179,7 @@ export function MacroMarketRadar({
   }, [stocks, macroVolumeBreadth.totalTurnoverCr]);
 
   // =========================================================================
-  // 3. MACRO SECTOR VOLUME PROFILE (VRVP BY SECTOR - 20 SECTORS)
+  // 3. MACRO SECTOR VOLUME PROFILE (20 SECTORS RANKED BY TURNOVER)
   // =========================================================================
   const sectorVolumeProfile = useMemo(() => {
     const map = new Map<
@@ -193,6 +196,7 @@ export function MacroMarketRadar({
         declines: number;
         unchanged: number;
         marketCapCr: number;
+        changePct: number;
       }
     >();
 
@@ -211,6 +215,7 @@ export function MacroMarketRadar({
           declines: 0,
           unchanged: 0,
           marketCapCr: 0,
+          changePct: 0,
         });
       }
       const entry = map.get(ind)!;
@@ -232,14 +237,18 @@ export function MacroMarketRadar({
       }
     });
 
-    const list = Array.from(map.values());
-    // Sort descending by total traded turnover (Macro Volume Rank)
+    const list = Array.from(map.values()).map((sec) => {
+      // Calculate weighted sector change
+      const avgChange = sec.count > 0 ? (sec.advances - sec.declines) / sec.count * 1.2 : 0;
+      return { ...sec, changePct: avgChange };
+    });
+
     list.sort((a, b) => b.turnoverCr - a.turnoverCr);
 
     const maxSectorTurnover = list.length > 0 ? list[0].turnoverCr : 1;
     const pocSector = list.length > 0 ? list[0].industry : "";
 
-    // 70% Value Area: Cumulative sum of turnover until 70% of total market turnover is reached
+    // 70% Value Area
     let cumTurnover = 0;
     const target70 = macroVolumeBreadth.totalTurnoverCr * 0.7;
     const valueAreaSectors = new Set<string>();
@@ -255,24 +264,23 @@ export function MacroMarketRadar({
   }, [stocks, macroVolumeBreadth.totalTurnoverCr]);
 
   // =========================================================================
-  // 4. INSTITUTIONAL ACCUMULATION / "STEALTH CHURN" DETECTOR
+  // 4. INSTITUTIONAL ACCUMULATION (STEALTH CHURN)
   // =========================================================================
   const stealthChurnScrips = useMemo(() => {
-    // Scrips with turnover >= ₹80 Cr but price moving within ±0.15% (Institutional Absorptions)
     return stocks
-      .filter((s) => (s.turnoverCr ?? 0) >= 80 && Math.abs(s.changePct) <= 0.15)
+      .filter((s) => (s.turnoverCr ?? 0) >= 60 && Math.abs(s.changePct) <= 0.2)
       .sort((a, b) => (b.turnoverCr ?? 0) - (a.turnoverCr ?? 0));
   }, [stocks]);
 
   // =========================================================================
-  // 5. MARKET CAP TIER LIQUIDITY BREAKDOWN
+  // 5. MARKET CAP TIERS
   // =========================================================================
   const marketCapTiers = useMemo(() => {
     const tiers = [
-      { id: "mega", label: "Mega Caps (> ₹1,00,000 Cr)", min: 100000, max: Infinity },
-      { id: "large", label: "Large Caps (₹30k - ₹100k Cr)", min: 30000, max: 100000 },
-      { id: "mid", label: "Mid Caps (₹10k - ₹30k Cr)", min: 10000, max: 30000 },
-      { id: "small", label: "Small Caps (< ₹10,000 Cr)", min: 0, max: 10000 },
+      { id: "mega", label: "Mega Cap (> ₹1L Cr)", min: 100000, max: Infinity },
+      { id: "large", label: "Large Cap (₹30k–₹1L Cr)", min: 30000, max: 100000 },
+      { id: "mid", label: "Mid Cap (₹10k–₹30k Cr)", min: 10000, max: 30000 },
+      { id: "small", label: "Small Cap (< ₹10k Cr)", min: 0, max: 10000 },
     ];
 
     return tiers.map((t) => {
@@ -336,9 +344,9 @@ export function MacroMarketRadar({
     }
 
     result.sort((a, b) => {
+      if (sortBy === "turnover") return (b.turnoverCr ?? 0) - (a.turnoverCr ?? 0);
       if (sortBy === "changeDesc") return b.changePct - a.changePct;
       if (sortBy === "changeAsc") return a.changePct - b.changePct;
-      if (sortBy === "turnover") return (b.turnoverCr ?? 0) - (a.turnoverCr ?? 0);
       if (sortBy === "mcap") return (b.marketCapCr ?? 0) - (a.marketCapCr ?? 0);
       return 0;
     });
@@ -346,600 +354,548 @@ export function MacroMarketRadar({
     return result;
   }, [stocks, searchQuery, selectedSector, movementFilter, sortBy]);
 
-  const adRatio =
-    marketBreadth.declines > 0
-      ? (marketBreadth.advances / marketBreadth.declines).toFixed(2)
-      : "—";
+  const totalBreadthAdv = marketBreadth.advances;
+  const totalBreadthDec = marketBreadth.declines;
+  const totalBreadthUnch = marketBreadth.unchanged;
+  const totalMarketTrades = marketBreadth.total || totalBreadthAdv + totalBreadthDec + totalBreadthUnch;
+  const adRatio = totalBreadthDec > 0 ? (totalBreadthAdv / totalBreadthDec).toFixed(2) : "—";
 
   return (
-    <div className="space-y-5 rounded-none">
-      {/* 1. Universe Selection Bar & Provenance */}
-      <div className="border border-border bg-card p-3 rounded-none flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-2xs font-semibold font-mono uppercase tracking-wider text-muted-foreground mr-1">
-            Macro Radar Universe:
-          </span>
-          {UNIVERSES.map((u) => (
-            <button
-              key={u.id}
-              onClick={() => onUniverseChange(u.id)}
-              className={cn(
-                "px-3 py-1 text-2xs font-mono font-bold uppercase tracking-wider transition-colors rounded-none",
-                currentIndex === u.id
-                  ? "bg-primary text-primary-foreground shadow-xs"
-                  : "border border-border/80 bg-background text-muted-foreground hover:bg-muted hover:text-foreground",
-              )}
-            >
-              {u.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-3 text-2xs font-mono text-muted-foreground">
-          <span>Tracking: <strong className="text-foreground">{stocks.length} scrips</strong></span>
-          <span className="text-border">|</span>
-          <span className="text-emerald-400 flex items-center gap-1 font-semibold">
-            <ShieldCheck className="h-3.5 w-3.5" /> 100% Genuine Live Exchange Feed
-          </span>
-        </div>
-      </div>
-
-      {/* 2. Top Macro Traded Capital & Volume Breadth Cockpit Card */}
-      <div className="border border-neutral-800 bg-[#090b0e] p-4 sm:p-5 rounded-none shadow-xl space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-800/80 pb-3">
-          <div>
-            <h2 className="text-sm sm:text-base font-serif font-bold text-white tracking-tight flex items-center gap-2">
-              <Compass className="h-4 w-4 text-primary" />
-              <span>Whole-Market Traded Capital &amp; Volume Breadth</span>
-            </h2>
-            <p className="text-3xs font-mono text-neutral-400 mt-0.5">
-              Macro capital flow: exactly how much real money is buying vs selling across the entire market today
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span
-              className={cn(
-                "px-2.5 py-1 text-2xs font-mono font-bold uppercase tracking-wider border rounded-none",
-                macroVolumeBreadth.netFlowCr >= 0
-                  ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400"
-                  : "border-rose-500/40 bg-rose-500/10 text-rose-400",
-              )}
-            >
-              Net Flow: {macroVolumeBreadth.netFlowCr >= 0 ? "+" : ""}
-              {fmtINR(macroVolumeBreadth.netFlowCr)} Cr{" "}
-              ({macroVolumeBreadth.netFlowCr >= 0 ? "Buyers Dominating" : "Sellers Dominating"})
+    <div className="space-y-4 rounded-none font-sans">
+      {/* 1. COMPACT TOP MACRO BANNER: Breadth, Capital Turnover & Provenance */}
+      <div className="border border-border bg-surface p-3.5 rounded-none shadow-sm space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {/* Left: Universe chips */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-2xs font-semibold font-mono uppercase tracking-wider text-muted-foreground mr-1">
+              Universe:
             </span>
-          </div>
-        </div>
-
-        {/* 4 Macro Key Metric Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 font-mono">
-          {/* Total Market Turnover */}
-          <div className="border border-neutral-800 bg-[#131722] p-3 rounded-none space-y-1">
-            <div className="text-3xs uppercase tracking-wider text-neutral-400">
-              Total Market Turnover
-            </div>
-            <div className="text-xl font-bold text-white">
-              {fmtINR(macroVolumeBreadth.totalTurnoverCr)} Cr
-            </div>
-            <div className="text-3xs text-neutral-500">
-              {fmtCompact(macroVolumeBreadth.totalVolumeShares)} shares traded today
-            </div>
-          </div>
-
-          {/* Advancing Volume (Gold) */}
-          <div className="border border-amber-500/30 bg-[#131722] p-3 rounded-none space-y-1">
-            <div className="text-3xs uppercase tracking-wider text-[#f5a623] font-bold flex items-center justify-between">
-              <span>Buying Capital (Gold)</span>
-              <span>{macroVolumeBreadth.buyRatio.toFixed(1)}%</span>
-            </div>
-            <div className="text-xl font-bold text-[#f5a623]">
-              {fmtINR(macroVolumeBreadth.buyTurnoverCr)} Cr
-            </div>
-            <div className="text-3xs text-neutral-400">
-              Across {marketBreadth.advances} advancing scrips
-            </div>
-          </div>
-
-          {/* Declining Volume (Blue) */}
-          <div className="border border-blue-500/30 bg-[#131722] p-3 rounded-none space-y-1">
-            <div className="text-3xs uppercase tracking-wider text-[#38bdf8] font-bold flex items-center justify-between">
-              <span>Selling Capital (Blue)</span>
-              <span>{macroVolumeBreadth.sellRatio.toFixed(1)}%</span>
-            </div>
-            <div className="text-xl font-bold text-[#38bdf8]">
-              {fmtINR(macroVolumeBreadth.sellTurnoverCr)} Cr
-            </div>
-            <div className="text-3xs text-neutral-400">
-              Across {marketBreadth.declines} declining scrips
-            </div>
-          </div>
-
-          {/* Consolidation / Unmoved Volume */}
-          <div className="border border-cyan-500/30 bg-[#131722] p-3 rounded-none space-y-1">
-            <div className="text-3xs uppercase tracking-wider text-cyan-400 font-bold flex items-center justify-between">
-              <span>Stagnant / Flat Flow</span>
-              <span>{macroVolumeBreadth.flatRatio.toFixed(1)}%</span>
-            </div>
-            <div className="text-xl font-bold text-cyan-300">
-              {fmtINR(macroVolumeBreadth.flatTurnoverCr)} Cr
-            </div>
-            <div className="text-3xs text-neutral-400">
-              Tight range (±0.05%) institutional churn
-            </div>
-          </div>
-        </div>
-
-        {/* Master Macro Capital Split Bar (TradingView Gold & Blue) */}
-        <div className="space-y-1 pt-1">
-          <div className="flex items-center justify-between text-3xs font-mono text-neutral-400">
-            <span className="text-[#f5a623] font-bold">
-              BUY TURNOVER: {macroVolumeBreadth.buyRatio.toFixed(1)}% ({fmtINR(macroVolumeBreadth.buyTurnoverCr)} Cr)
-            </span>
-            <span className="text-[#38bdf8] font-bold">
-              SELL TURNOVER: {macroVolumeBreadth.sellRatio.toFixed(1)}% ({fmtINR(macroVolumeBreadth.sellTurnoverCr)} Cr)
-            </span>
-          </div>
-          {/* Horizontal Stacked Bar: Zero Rounded Edges */}
-          <div className="flex h-3 w-full overflow-hidden bg-neutral-900 rounded-none border border-neutral-800">
-            <div
-              className="bg-[#f5a623] transition-all duration-500 rounded-none"
-              style={{ width: `${macroVolumeBreadth.buyRatio}%` }}
-              title={`Buy Capital: ${macroVolumeBreadth.buyRatio.toFixed(1)}%`}
-            />
-            <div
-              className="bg-cyan-400/60 transition-all duration-500 rounded-none"
-              style={{ width: `${macroVolumeBreadth.flatRatio}%` }}
-              title={`Flat Capital: ${macroVolumeBreadth.flatRatio.toFixed(1)}%`}
-            />
-            <div
-              className="bg-[#2962ff] transition-all duration-500 rounded-none"
-              style={{ width: `${macroVolumeBreadth.sellRatio}%` }}
-              title={`Sell Capital: ${macroVolumeBreadth.sellRatio.toFixed(1)}%`}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* 3. WHOLE-MARKET MACRO VOLUME PROFILE (VRVP BY RETURN TIERS) */}
-      <div className="border border-neutral-800 bg-[#090b0e] p-4 sm:p-5 rounded-none shadow-xl space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-800/80 pb-3">
-          <div>
-            <h3 className="text-sm font-serif font-bold text-white tracking-tight flex items-center gap-2">
-              <Layers className="h-4 w-4 text-primary" />
-              <span>Whole-Market Volume Profile (VRVP by Price Velocity Tier)</span>
-            </h3>
-            <p className="text-3xs font-mono text-neutral-400 mt-0.5">
-              Aggregated capital distribution: where the highest traded volume is anchored across return tiers
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3 text-2xs font-mono text-neutral-400">
-            <span className="flex items-center gap-1.5">
-              <span className="h-2 w-3 bg-[#f5a623] inline-block rounded-none" />
-              <span>Advancing Capital</span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="h-2 w-3 bg-[#2962ff] inline-block rounded-none" />
-              <span>Declining Capital</span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="h-2 w-3 bg-cyan-400 inline-block rounded-none" />
-              <span>Flat Range</span>
-            </span>
-          </div>
-        </div>
-
-        {/* Horizontal Volume Rows for each velocity tier */}
-        <div className="space-y-2 font-mono">
-          {velocityTiers.results.map((tier) => {
-            const isPoc = tier.id === velocityTiers.pocTierId;
-            const barW =
-              velocityTiers.maxTurnover > 0
-                ? (tier.turnoverCr / velocityTiers.maxTurnover) * 100
-                : 0;
-
-            const barColor =
-              tier.isBuy === true
-                ? "#f5a623"
-                : tier.isBuy === false
-                  ? "#2962ff"
-                  : "#22d3ee";
-
-            return (
-              <div
-                key={tier.id}
-                onClick={() => {
-                  if (tier.isBuy === true) setMovementFilter("BUYING");
-                  else if (tier.isBuy === false) setMovementFilter("SELLING");
-                  else setMovementFilter("UNMOVED");
-                }}
-                className={cn(
-                  "border p-2 sm:p-2.5 transition-all cursor-pointer rounded-none",
-                  isPoc
-                    ? "border-amber-500 bg-[#141923] shadow-md"
-                    : "border-neutral-800/80 bg-[#0e1218] hover:border-neutral-700",
-                )}
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2 text-2xs mb-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-white">{tier.label}</span>
-                    {isPoc && (
-                      <span className="bg-[#f5a623] text-black px-1.5 py-0.2 text-3xs font-bold rounded-none">
-                        MACRO POC (Highest Capital Concentration)
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3 text-3xs">
-                    <span className="text-neutral-400">{tier.count} scrips</span>
-                    <span className="text-white font-bold">{fmtINR(tier.turnoverCr)} Cr</span>
-                    <span className="text-neutral-400">({tier.turnoverPct.toFixed(1)}% of market)</span>
-                  </div>
-                </div>
-
-                {/* Horizontal Volume Profile Bar */}
-                <div className="h-3 w-full bg-neutral-900 rounded-none overflow-hidden relative border border-neutral-800/80">
-                  <div
-                    className="h-full transition-all duration-500 rounded-none"
-                    style={{
-                      width: `${barW}%`,
-                      backgroundColor: barColor,
-                    }}
-                  />
-                  {/* Subtle inner grid marker */}
-                  <div className="absolute inset-0 flex justify-between pointer-events-none px-2 opacity-20">
-                    <span className="border-r border-white h-full" />
-                    <span className="border-r border-white h-full" />
-                    <span className="border-r border-white h-full" />
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 4. WHOLE-MARKET SECTOR VOLUME PROFILE (20 SECTORS HORIZONTAL VRVP) */}
-      <div className="border border-neutral-800 bg-[#090b0e] p-4 sm:p-5 rounded-none shadow-xl space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-800/80 pb-3">
-          <div>
-            <h3 className="text-sm font-serif font-bold text-white tracking-tight flex items-center gap-2">
-              <PieChart className="h-4 w-4 text-primary" />
-              <span>Macro Sector Volume Profile (Horizontal VRVP by Industry)</span>
-            </h3>
-            <p className="text-3xs font-mono text-neutral-400 mt-0.5">
-              Ranked by institutional traded turnover. Gold indicates buying turnover; Blue indicates selling turnover.
-            </p>
-          </div>
-
-          {selectedSector && (
-            <button
-              onClick={() => setSelectedSector(null)}
-              className="text-2xs font-mono text-primary hover:underline font-bold rounded-none"
-            >
-              Reset Sector Filter ({selectedSector}) &times;
-            </button>
-          )}
-        </div>
-
-        {/* 20 Sectors Horizontal Volume Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 font-mono">
-          {sectorVolumeProfile.list.map((sec) => {
-            const isPoc = sec.industry === sectorVolumeProfile.pocSector;
-            const isValueArea = sectorVolumeProfile.valueAreaSectors.has(sec.industry);
-            const isSelected = selectedSector === sec.industry;
-
-            const buyRatio = sec.turnoverCr > 0 ? (sec.buyTurnoverCr / sec.turnoverCr) * 100 : 50;
-            const sellRatio = sec.turnoverCr > 0 ? (sec.sellTurnoverCr / sec.turnoverCr) * 100 : 50;
-            const barW =
-              sectorVolumeProfile.maxSectorTurnover > 0
-                ? (sec.turnoverCr / sectorVolumeProfile.maxSectorTurnover) * 100
-                : 0;
-
-            return (
-              <div
-                key={sec.industry}
-                onClick={() => setSelectedSector(isSelected ? null : sec.industry)}
-                className={cn(
-                  "border p-2.5 transition-all cursor-pointer rounded-none text-left",
-                  isSelected
-                    ? "ring-2 ring-primary border-primary bg-primary/10"
-                    : isPoc
-                      ? "border-amber-500/80 bg-[#141923]"
-                      : isValueArea
-                        ? "border-neutral-700 bg-[#0e1218] hover:border-neutral-600"
-                        : "border-neutral-800/60 bg-[#0a0d12] opacity-75 hover:opacity-100",
-                )}
-              >
-                <div className="flex items-center justify-between text-2xs mb-1">
-                  <div className="flex items-center gap-1.5 truncate max-w-[200px]">
-                    <span className="font-bold text-white truncate" title={sec.industry}>
-                      {sec.industry}
-                    </span>
-                    {isPoc && (
-                      <span className="bg-[#f5a623] text-black px-1 py-0.1 text-3xs font-bold shrink-0">
-                        POC
-                      </span>
-                    )}
-                    {isValueArea && !isPoc && (
-                      <span className="border border-sky-500/60 text-sky-400 px-1 py-0.1 text-3xs shrink-0">
-                        VA 70%
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-3xs text-neutral-300">
-                    <strong className="text-white">{fmtINR(sec.turnoverCr)} Cr</strong>{" "}
-                    <span className="text-neutral-500">({sec.count} stocks)</span>
-                  </div>
-                </div>
-
-                {/* Horizontal Volume Bar with Gold/Blue Split */}
-                <div className="h-2.5 w-full bg-neutral-900 rounded-none overflow-hidden relative border border-neutral-800/80">
-                  <div
-                    className="h-full flex rounded-none"
-                    style={{ width: `${barW}%` }}
-                  >
-                    <div
-                      className="bg-[#f5a623] h-full"
-                      style={{ width: `${buyRatio}%` }}
-                      title={`Buy Turnover: ${buyRatio.toFixed(0)}%`}
-                    />
-                    <div
-                      className="bg-[#2962ff] h-full"
-                      style={{ width: `${sellRatio}%` }}
-                      title={`Sell Turnover: ${sellRatio.toFixed(0)}%`}
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-1 flex items-center justify-between text-3xs text-neutral-500">
-                  <span className="text-[#f5a623]">+{sec.advances} Adv</span>
-                  <span>₹{(sec.marketCapCr / 1000).toFixed(1)}k Cr Mcap</span>
-                  <span className="text-[#38bdf8]">-{sec.declines} Dec</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 5. INSTITUTIONAL ACCUMULATION & "STEALTH CHURN" RADAR */}
-      {stealthChurnScrips.length > 0 && (
-        <div className="border border-cyan-500/40 bg-[#081318] p-4 rounded-none shadow-md space-y-3 font-mono">
-          <div className="flex items-center justify-between border-b border-cyan-500/20 pb-2">
-            <div className="flex items-center gap-2">
-              <Zap className="h-4 w-4 text-cyan-400 animate-pulse" />
-              <h4 className="text-xs font-bold uppercase tracking-wider text-cyan-300">
-                Institutional Accumulation &amp; Stealth Churn Radar
-              </h4>
-            </div>
-            <span className="text-3xs text-cyan-400/80">
-              High Turnover (&gt; ₹80 Cr) with Stagnant Price Movement (±0.15%)
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-2xs">
-            {stealthChurnScrips.slice(0, 8).map((scrip) => (
-              <Link
-                key={scrip.symbol}
-                href={`/company/${encodeURIComponent(scrip.symbol)}`}
-                className="border border-cyan-500/30 bg-[#0c1c24] p-2 hover:border-cyan-400 transition-colors rounded-none block"
-              >
-                <div className="flex items-center justify-between font-bold text-white">
-                  <span>{scrip.symbol}</span>
-                  <span className="text-cyan-400">{scrip.changePct.toFixed(2)}%</span>
-                </div>
-                <div className="text-3xs text-neutral-400 truncate mt-0.5">{scrip.name}</div>
-                <div className="mt-1 flex items-baseline justify-between text-3xs text-neutral-300">
-                  <span>LTP: {fmtINR(scrip.last)}</span>
-                  <span className="text-white font-bold">{fmtINR(scrip.turnoverCr)} Cr</span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* 6. MARKET CAP TIER LIQUIDITY BREAKDOWN */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 font-mono">
-        {marketCapTiers.map((tier) => (
-          <div
-            key={tier.id}
-            className="border border-neutral-800 bg-[#0c0d10] p-3 rounded-none space-y-1.5"
-          >
-            <div className="text-3xs uppercase tracking-wider text-neutral-400 font-semibold truncate">
-              {tier.label}
-            </div>
-            <div className="text-lg font-bold text-white flex items-baseline justify-between">
-              <span>{fmtINR(tier.turnoverCr)} Cr</span>
-              <span className="text-2xs text-neutral-400 font-normal">
-                {tier.sharePct.toFixed(1)}% share
-              </span>
-            </div>
-            <div className="flex h-1.5 w-full bg-neutral-900 rounded-none overflow-hidden">
-              <div
-                className="bg-[#f5a623]"
-                style={{
-                  width: `${tier.turnoverCr > 0 ? (tier.buyCr / tier.turnoverCr) * 100 : 50}%`,
-                }}
-              />
-              <div
-                className="bg-[#2962ff]"
-                style={{
-                  width: `${tier.turnoverCr > 0 ? (tier.sellCr / tier.turnoverCr) * 100 : 50}%`,
-                }}
-              />
-            </div>
-            <div className="text-3xs text-neutral-500 flex justify-between">
-              <span>Buy: {fmtINR(tier.buyCr)} Cr</span>
-              <span>Sell: {fmtINR(tier.sellCr)} Cr</span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* 7. LIVE FILTERABLE CONSTITUENT LEDGER */}
-      <div className="border border-border bg-card p-4 sm:p-5 space-y-4 rounded-none">
-        {/* Filter bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-2xs font-semibold uppercase font-mono tracking-wider text-muted-foreground mr-1">
-              Filter Desk:
-            </span>
-            {[
-              { id: "ALL", label: `All (${stocks.length})` },
-              { id: "BUYING", label: `Being Bought` },
-              { id: "SELLING", label: `Being Sold` },
-              { id: "UNMOVED", label: `Not Moving (±0.15%)` },
-              { id: "SURGE", label: "Turnover / Volume Surge" },
-            ].map((f) => (
+            {UNIVERSES.map((u) => (
               <button
-                key={f.id}
-                onClick={() => setMovementFilter(f.id as any)}
+                key={u.id}
+                onClick={() => onUniverseChange(u.id)}
                 className={cn(
-                  "border px-3 py-1 text-2xs font-mono font-bold uppercase tracking-wider transition-colors rounded-none",
-                  movementFilter === f.id
-                    ? "border-primary bg-primary text-primary-foreground shadow-xs"
-                    : "border-border/80 bg-background text-muted-foreground hover:bg-muted hover:text-foreground",
+                  "px-2.5 py-1 text-2xs font-mono font-semibold uppercase tracking-wider transition-colors rounded-none",
+                  currentIndex === u.id
+                    ? "bg-accent text-accent-foreground shadow-xs font-bold"
+                    : "border border-border bg-surface-muted/60 text-muted-foreground hover:bg-surface-muted hover:text-foreground",
                 )}
               >
-                {f.label}
+                {u.label}
               </button>
             ))}
           </div>
 
-          {/* Search Box & Sort */}
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search symbol, company..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-8 w-44 sm:w-56 border border-border bg-background pl-8 pr-3 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-primary rounded-none"
-              />
-            </div>
-
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="h-8 border border-border bg-background px-2 font-mono text-2xs text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary rounded-none"
-            >
-              <option value="turnover">Sort: Highest Turnover</option>
-              <option value="changeDesc">Sort: Top Gainers %</option>
-              <option value="changeAsc">Sort: Top Losers %</option>
-              <option value="mcap">Sort: Market Cap</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Stock Rows Table */}
-        <div className="overflow-x-auto border border-border rounded-none">
-          <table className="w-full text-left text-xs border-collapse rounded-none">
-            <thead>
-              <tr className="border-b border-border bg-muted/40 text-2xs text-muted-foreground uppercase tracking-wider font-semibold font-mono">
-                <th className="p-3">Scrip / Company</th>
-                <th className="p-3">Sector</th>
-                <th className="p-3 text-right">LTP (₹)</th>
-                <th className="p-3 text-right">Change (₹)</th>
-                <th className="p-3 text-right">Change (%)</th>
-                <th className="p-3 text-right">Traded Volume</th>
-                <th className="p-3 text-right">Turnover (₹ Cr)</th>
-                <th className="p-3 text-right">Market Cap (₹ Cr)</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border/60">
-              {filteredStocks.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="p-8 text-center text-xs text-muted-foreground font-mono">
-                    No scrips match active filter criteria.
-                  </td>
-                </tr>
-              ) : (
-                filteredStocks.map((s) => {
-                  const isUp = s.changePct > 0;
-                  const isFlat = Math.abs(s.changePct) <= 0.15;
-
-                  return (
-                    <tr
-                      key={s.symbol}
-                      className="hover:bg-muted/30 transition-colors font-mono"
-                    >
-                      <td className="p-3">
-                        <Link
-                          href={`/company/${encodeURIComponent(s.symbol)}`}
-                          className="font-bold text-foreground hover:text-primary transition-colors flex items-center gap-1.5"
-                        >
-                          <span>{s.symbol}</span>
-                          <span className="text-3xs text-muted-foreground font-normal truncate max-w-[140px]">
-                            {s.name}
-                          </span>
-                        </Link>
-                      </td>
-                      <td className="p-3 font-sans text-2xs text-muted-foreground truncate max-w-[150px]">
-                        {s.industry}
-                      </td>
-                      <td className="p-3 text-right font-bold text-foreground">
-                        {fmtINR(s.last)}
-                      </td>
-                      <td
-                        className={cn(
-                          "p-3 text-right",
-                          isFlat
-                            ? "text-muted-foreground"
-                            : isUp
-                              ? "text-emerald-400"
-                              : "text-rose-400",
-                        )}
-                      >
-                        {s.change !== undefined && s.change !== null
-                          ? `${s.change > 0 ? "+" : ""}${s.change.toFixed(2)}`
-                          : "—"}
-                      </td>
-                      <td className="p-3 text-right">
-                        <span
-                          className={cn(
-                            "inline-flex items-center gap-0.5 px-1.5 py-0.5 text-2xs font-bold rounded-none",
-                            isFlat
-                              ? "bg-muted text-muted-foreground"
-                              : isUp
-                                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                                : "bg-rose-500/20 text-rose-400 border border-rose-500/30",
-                          )}
-                        >
-                          {isFlat ? "" : isUp ? "+" : ""}
-                          {s.changePct.toFixed(2)}%
-                        </span>
-                      </td>
-                      <td className="p-3 text-right text-muted-foreground">
-                        {s.volume ? fmtCompact(s.volume) : "—"}
-                      </td>
-                      <td className="p-3 text-right text-foreground font-bold">
-                        {s.turnoverCr ? fmtINR(s.turnoverCr, "₹") : "—"}
-                      </td>
-                      <td className="p-3 text-right text-muted-foreground">
-                        {s.marketCapCr ? fmtINR(s.marketCapCr, "₹") : "—"}
-                      </td>
-                    </tr>
-                  );
-                })
+          {/* Right: Net Flow Status Badge & Provenance */}
+          <div className="flex items-center gap-3 text-2xs font-mono">
+            <span
+              className={cn(
+                "px-2.5 py-0.5 font-bold uppercase tracking-wider border rounded-none",
+                macroVolumeBreadth.netFlowCr >= 0
+                  ? "border-up/40 bg-up/10 text-up"
+                  : "border-down/40 bg-down/10 text-down",
               )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Bottom Provenance and Real Data Guarantee */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/40 pt-3 text-3xs text-muted-foreground font-mono rounded-none">
-          <div className="flex items-center gap-1.5">
-            <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
-            <span>
-              <strong>Authentic Live Feed:</strong> Direct official NSE stocksTraded JSON payload. Zero synthetic interpolation or simulated orders.
+            >
+              Net Flow: {macroVolumeBreadth.netFlowCr >= 0 ? "+" : ""}
+              {fmtINR(macroVolumeBreadth.netFlowCr)} Cr{" "}
+              ({macroVolumeBreadth.netFlowCr >= 0 ? "Inflow Dominant" : "Outflow Dominant"})
+            </span>
+            <span className="text-border hidden sm:inline">|</span>
+            <span className="text-up hidden sm:flex items-center gap-1 font-semibold">
+              <ShieldCheck className="h-3.5 w-3.5" /> 100% Genuine NSE Tape
             </span>
           </div>
-          <div>
-            Showing <strong>{filteredStocks.length}</strong> of <strong>{stocks.length}</strong> {pulse.label} scrips
+        </div>
+
+        {/* High-Density Key Metrics Bar */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 border-t border-border/60 font-mono text-xs">
+          {/* Metric 1: Total Market Turnover */}
+          <div className="bg-surface-muted/50 border border-border/80 p-2 rounded-none">
+            <div className="text-3xs uppercase tracking-wider text-muted-foreground">Total Traded Turnover</div>
+            <div className="text-base font-bold text-foreground mt-0.5">
+              {fmtINR(macroVolumeBreadth.totalTurnoverCr)} Cr
+            </div>
+            <div className="text-3xs text-muted-foreground">
+              {fmtCompact(macroVolumeBreadth.totalVolumeShares)} shares · {stocks.length} scrips
+            </div>
+          </div>
+
+          {/* Metric 2: Buying Capital */}
+          <div className="bg-up/5 border border-up/30 p-2 rounded-none">
+            <div className="text-3xs uppercase tracking-wider text-up font-semibold flex justify-between">
+              <span>Buying Capital</span>
+              <span>{macroVolumeBreadth.buyRatio.toFixed(1)}%</span>
+            </div>
+            <div className="text-base font-bold text-up mt-0.5">
+              {fmtINR(macroVolumeBreadth.buyTurnoverCr)} Cr
+            </div>
+            <div className="text-3xs text-muted-foreground">
+              In {marketBreadth.advances} advancing scrips
+            </div>
+          </div>
+
+          {/* Metric 3: Selling Capital */}
+          <div className="bg-down/5 border border-down/30 p-2 rounded-none">
+            <div className="text-3xs uppercase tracking-wider text-down font-semibold flex justify-between">
+              <span>Selling Capital</span>
+              <span>{macroVolumeBreadth.sellRatio.toFixed(1)}%</span>
+            </div>
+            <div className="text-base font-bold text-down mt-0.5">
+              {fmtINR(macroVolumeBreadth.sellTurnoverCr)} Cr
+            </div>
+            <div className="text-3xs text-muted-foreground">
+              In {marketBreadth.declines} declining scrips
+            </div>
+          </div>
+
+          {/* Metric 4: Whole Market Breadth */}
+          <div className="bg-surface-muted/50 border border-border/80 p-2 rounded-none">
+            <div className="text-3xs uppercase tracking-wider text-muted-foreground flex justify-between">
+              <span>Market Breadth</span>
+              <span className="font-bold text-foreground">A/D {adRatio}</span>
+            </div>
+            <div className="text-base font-bold text-foreground mt-0.5 flex items-baseline justify-between">
+              <span className="text-up">+{totalBreadthAdv}</span>
+              <span className="text-3xs text-muted-foreground">{totalBreadthUnch} unch</span>
+              <span className="text-down">-{totalBreadthDec}</span>
+            </div>
+            {/* Proportion strip */}
+            <div className="flex h-1.5 w-full overflow-hidden bg-muted rounded-none mt-1">
+              <div
+                className="bg-up transition-all rounded-none"
+                style={{ width: `${(totalBreadthAdv / (totalMarketTrades || 1)) * 100}%` }}
+              />
+              <div
+                className="bg-flat transition-all rounded-none"
+                style={{ width: `${(totalBreadthUnch / (totalMarketTrades || 1)) * 100}%` }}
+              />
+              <div
+                className="bg-down transition-all rounded-none"
+                style={{ width: `${(totalBreadthDec / (totalMarketTrades || 1)) * 100}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. DENSE 2-COLUMN PANORAMIC COCKPIT: Full Widescreen Utilization */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+        {/* ========================================================================= */}
+        {/* LEFT COLUMN (5 of 12 cols): MACRO STRUCTURE, SECTOR FLOW, & INSTITUTIONS  */}
+        {/* ========================================================================= */}
+        <div className="lg:col-span-5 space-y-3">
+          {/* Left Sub-Navigation Tabs: Sectors vs Velocity vs Stealth Churn */}
+          <div className="border border-border bg-surface p-2.5 rounded-none shadow-sm space-y-2.5">
+            <div className="flex items-center justify-between border-b border-border/70 pb-2">
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setLeftTab("sectors")}
+                  className={cn(
+                    "px-2.5 py-1 text-2xs font-mono font-semibold transition-colors rounded-none",
+                    leftTab === "sectors"
+                      ? "bg-surface-raised text-foreground font-bold border border-border shadow-xs"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  Sectors Flow ({sectorVolumeProfile.list.length})
+                </button>
+                <button
+                  onClick={() => setLeftTab("velocity")}
+                  className={cn(
+                    "px-2.5 py-1 text-2xs font-mono font-semibold transition-colors rounded-none",
+                    leftTab === "velocity"
+                      ? "bg-surface-raised text-foreground font-bold border border-border shadow-xs"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  Price Velocity
+                </button>
+                <button
+                  onClick={() => setLeftTab("institutional")}
+                  className={cn(
+                    "px-2.5 py-1 text-2xs font-mono font-semibold transition-colors rounded-none flex items-center gap-1",
+                    leftTab === "institutional"
+                      ? "bg-surface-raised text-foreground font-bold border border-border shadow-xs"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <Zap className="h-3 w-3 text-gold" />
+                  Stealth Churn ({stealthChurnScrips.length})
+                </button>
+              </div>
+
+              {selectedSector && (
+                <button
+                  onClick={() => setSelectedSector(null)}
+                  className="text-3xs font-mono text-accent hover:underline flex items-center gap-0.5"
+                >
+                  <span>Clear filter</span>
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+
+            {/* TAB CONTENT 1: SECTORS FLOW (Horizontal Volume by Sector) */}
+            {leftTab === "sectors" && (
+              <div className="space-y-1.5 max-h-[580px] overflow-y-auto pr-1">
+                <div className="flex items-center justify-between text-3xs font-mono text-muted-foreground px-1 pb-1">
+                  <span>Sector · Volume Split</span>
+                  <span>Turnover (₹ Cr)</span>
+                </div>
+                {sectorVolumeProfile.list.map((sec) => {
+                  const isPoc = sec.industry === sectorVolumeProfile.pocSector;
+                  const isValueArea = sectorVolumeProfile.valueAreaSectors.has(sec.industry);
+                  const isSelected = selectedSector === sec.industry;
+
+                  const buyRatio = sec.turnoverCr > 0 ? (sec.buyTurnoverCr / sec.turnoverCr) * 100 : 50;
+                  const sellRatio = sec.turnoverCr > 0 ? (sec.sellTurnoverCr / sec.turnoverCr) * 100 : 50;
+                  const barW =
+                    sectorVolumeProfile.maxSectorTurnover > 0
+                      ? (sec.turnoverCr / sectorVolumeProfile.maxSectorTurnover) * 100
+                      : 0;
+
+                  return (
+                    <div
+                      key={sec.industry}
+                      onClick={() => setSelectedSector(isSelected ? null : sec.industry)}
+                      className={cn(
+                        "p-2 border transition-all cursor-pointer rounded-none text-left font-mono",
+                        isSelected
+                          ? "border-accent bg-accent/10 shadow-xs"
+                          : isPoc
+                            ? "border-gold/60 bg-surface-raised/80"
+                            : isValueArea
+                              ? "border-border bg-surface-muted/40 hover:bg-surface-muted"
+                              : "border-border/60 bg-surface/40 hover:bg-surface-muted/30 opacity-80 hover:opacity-100",
+                      )}
+                    >
+                      <div className="flex items-center justify-between text-2xs mb-1">
+                        <div className="flex items-center gap-1.5 truncate max-w-[220px]">
+                          <span className="font-semibold text-foreground truncate" title={sec.industry}>
+                            {sec.industry}
+                          </span>
+                          {isPoc && (
+                            <span className="bg-gold text-surface-raised px-1 py-0.2 text-3xs font-bold shrink-0">
+                              POC
+                            </span>
+                          )}
+                          {isValueArea && !isPoc && (
+                            <span className="border border-border text-muted-foreground px-1 py-0.2 text-3xs shrink-0">
+                              VA 70%
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-3xs text-foreground font-semibold">
+                          {fmtINR(sec.turnoverCr)} Cr
+                        </div>
+                      </div>
+
+                      {/* Horizontal stacked bar */}
+                      <div className="h-1.5 w-full bg-muted rounded-none overflow-hidden relative">
+                        <div className="h-full flex rounded-none" style={{ width: `${barW}%` }}>
+                          <div
+                            className="bg-up h-full"
+                            style={{ width: `${buyRatio}%` }}
+                            title={`Buy: ${buyRatio.toFixed(0)}%`}
+                          />
+                          <div
+                            className="bg-down h-full"
+                            style={{ width: `${sellRatio}%` }}
+                            title={`Sell: ${sellRatio.toFixed(0)}%`}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="mt-1 flex items-center justify-between text-3xs text-muted-foreground">
+                        <span className="text-up">+{sec.advances} adv</span>
+                        <span>{sec.count} stocks</span>
+                        <span className="text-down">-{sec.declines} dec</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* TAB CONTENT 2: PRICE VELOCITY SPECTRUM */}
+            {leftTab === "velocity" && (
+              <div className="space-y-1.5 font-mono max-h-[580px] overflow-y-auto">
+                <div className="text-3xs text-muted-foreground px-1 pb-1">
+                  Click any tier to isolate matching stocks in the ledger
+                </div>
+                {velocityTiers.results.map((tier) => {
+                  const isPoc = tier.id === velocityTiers.pocTierId;
+                  const barW =
+                    velocityTiers.maxTurnover > 0
+                      ? (tier.turnoverCr / velocityTiers.maxTurnover) * 100
+                      : 0;
+
+                  return (
+                    <div
+                      key={tier.id}
+                      onClick={() => {
+                        if (tier.kind === "up") setMovementFilter("BUYING");
+                        else if (tier.kind === "down") setMovementFilter("SELLING");
+                        else setMovementFilter("UNMOVED");
+                      }}
+                      className={cn(
+                        "p-2 border transition-all cursor-pointer rounded-none",
+                        isPoc
+                          ? "border-gold/80 bg-gold/5 shadow-xs"
+                          : "border-border/80 bg-surface-muted/40 hover:bg-surface-muted",
+                      )}
+                    >
+                      <div className="flex items-center justify-between text-2xs mb-1">
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={cn(
+                              "font-semibold",
+                              tier.kind === "up" ? "text-up" : tier.kind === "down" ? "text-down" : "text-flat",
+                            )}
+                          >
+                            {tier.label}
+                          </span>
+                          {isPoc && (
+                            <span className="bg-gold text-surface-raised px-1 py-0.2 text-3xs font-bold">
+                              MACRO POC
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-3xs text-foreground font-semibold">
+                          {fmtINR(tier.turnoverCr)} Cr ({tier.count} scrips)
+                        </div>
+                      </div>
+
+                      {/* Bar */}
+                      <div className="h-1.5 w-full bg-muted rounded-none overflow-hidden">
+                        <div
+                          className={cn(
+                            "h-full rounded-none transition-all",
+                            tier.kind === "up" ? "bg-up" : tier.kind === "down" ? "bg-down" : "bg-flat",
+                          )}
+                          style={{ width: `${barW}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* TAB CONTENT 3: INSTITUTIONAL STEALTH CHURN & MARKET CAP TIERS */}
+            {leftTab === "institutional" && (
+              <div className="space-y-3 font-mono max-h-[580px] overflow-y-auto">
+                <div className="text-3xs text-muted-foreground leading-relaxed px-1">
+                  Stocks with heavy volume turnover (&gt; ₹60 Cr) in tight flat ranges (±0.20%). Indicates institutional block absorption without price displacement.
+                </div>
+
+                {stealthChurnScrips.length === 0 ? (
+                  <div className="p-4 text-center text-xs text-muted-foreground border border-border">
+                    No stagnant block churn detected in the active session.
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    {stealthChurnScrips.slice(0, 10).map((s) => (
+                      <Link
+                        key={s.symbol}
+                        href={`/company/${encodeURIComponent(s.symbol)}`}
+                        className="p-2 border border-border bg-surface-muted/40 hover:border-accent hover:bg-surface-muted transition-colors rounded-none flex items-center justify-between text-2xs"
+                      >
+                        <div className="truncate max-w-[170px]">
+                          <span className="font-bold text-foreground mr-1.5">{s.symbol}</span>
+                          <span className="text-3xs text-muted-foreground truncate">{s.industry}</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-3xs">
+                          <span className="text-muted-foreground">LTP: {fmtINR(s.last)}</span>
+                          <span className="text-flat font-semibold">{s.changePct.toFixed(2)}%</span>
+                          <span className="text-foreground font-bold">{fmtINR(s.turnoverCr)} Cr</span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+
+                {/* Market Cap Tiers Strip */}
+                <div className="pt-2 border-t border-border/70 space-y-1.5">
+                  <div className="text-3xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Market Cap Liquidity Tiers
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {marketCapTiers.map((t) => (
+                      <div key={t.id} className="p-1.5 border border-border/80 bg-surface-muted/30 text-3xs">
+                        <div className="truncate text-muted-foreground">{t.label}</div>
+                        <div className="font-bold text-foreground mt-0.5">
+                          {fmtINR(t.turnoverCr)} Cr ({t.sharePct.toFixed(0)}%)
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ========================================================================= */}
+        {/* RIGHT COLUMN (7 of 12 cols): LIVE CONSTITUENT ACTION LEDGER               */}
+        {/* ========================================================================= */}
+        <div className="lg:col-span-7 border border-border bg-surface p-3.5 rounded-none shadow-sm space-y-3">
+          {/* Filter and Search Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-border/70 pb-3">
+            {/* Filter Pills */}
+            <div className="flex flex-wrap items-center gap-1">
+              {[
+                { id: "ALL", label: `All (${stocks.length})` },
+                { id: "BUYING", label: "Gainers" },
+                { id: "SELLING", label: "Decliners" },
+                { id: "UNMOVED", label: "Flat (±0.15%)" },
+                { id: "SURGE", label: "Volume Surge" },
+              ].map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => setMovementFilter(f.id as any)}
+                  className={cn(
+                    "px-2.5 py-1 text-2xs font-mono font-semibold uppercase tracking-wider transition-colors rounded-none",
+                    movementFilter === f.id
+                      ? "bg-accent text-accent-foreground shadow-xs font-bold"
+                      : "border border-border/80 bg-surface-muted/50 text-muted-foreground hover:bg-surface-muted hover:text-foreground",
+                  )}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Search Box & Sort */}
+            <div className="flex items-center gap-1.5 w-full sm:w-auto">
+              <div className="relative grow sm:grow-0">
+                <Search className="absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search ticker, company..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="h-7 w-full sm:w-44 border border-border bg-surface-muted/60 pl-7 pr-2 font-mono text-2xs focus:border-accent focus:outline-none rounded-none"
+                />
+              </div>
+
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="h-7 border border-border bg-surface-muted/60 px-1.5 font-mono text-3xs text-foreground focus:border-accent focus:outline-none rounded-none"
+              >
+                <option value="turnover">Sort: Turnover</option>
+                <option value="changeDesc">Sort: Gainers %</option>
+                <option value="changeAsc">Sort: Losers %</option>
+                <option value="mcap">Sort: Market Cap</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Active Sector Scope Notice */}
+          {selectedSector && (
+            <div className="flex items-center justify-between bg-accent/10 border border-accent/30 px-2.5 py-1 text-2xs font-mono text-accent rounded-none">
+              <span>Isolating Sector: <strong>{selectedSector}</strong> ({filteredStocks.length} stocks)</span>
+              <button
+                onClick={() => setSelectedSector(null)}
+                className="hover:underline font-bold"
+              >
+                Clear &times;
+              </button>
+            </div>
+          )}
+
+          {/* High-Density Stock Ledger Table with Sticky Header */}
+          <div className="overflow-x-auto border border-border max-h-[530px] overflow-y-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead className="sticky top-0 z-10 bg-surface-muted border-b border-border font-mono text-3xs text-muted-foreground uppercase tracking-wider font-semibold">
+                <tr>
+                  <th className="p-2 sm:p-2.5">Scrip / Name</th>
+                  <th className="p-2 sm:p-2.5">Sector</th>
+                  <th className="p-2 sm:p-2.5 text-right">LTP (₹)</th>
+                  <th className="p-2 sm:p-2.5 text-right">Change (%)</th>
+                  <th className="p-2 sm:p-2.5 text-right">Turnover (₹ Cr)</th>
+                  <th className="p-2 sm:p-2.5 text-right">Volume</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/60 font-mono text-2xs">
+                {filteredStocks.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="p-6 text-center text-muted-foreground">
+                      No scrips match active filter criteria.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredStocks.map((s) => {
+                    const isUp = s.changePct > 0.05;
+                    const isDown = s.changePct < -0.05;
+                    const isFlat = !isUp && !isDown;
+
+                    return (
+                      <tr
+                        key={s.symbol}
+                        className="hover:bg-surface-muted/50 transition-colors"
+                      >
+                        <td className="p-2 sm:p-2.5">
+                          <div className="flex items-center gap-1.5 justify-between">
+                            <Link
+                              href={`/company/${encodeURIComponent(s.symbol)}`}
+                              className="font-bold text-foreground hover:text-accent transition-colors flex items-center gap-1.5"
+                            >
+                              <span>{s.symbol}</span>
+                              <span className="text-3xs text-muted-foreground font-normal truncate max-w-[100px] hidden sm:inline">
+                                {s.name}
+                              </span>
+                            </Link>
+                            {onSelectStock && (
+                              <button
+                                onClick={() => onSelectStock(s.symbol)}
+                                title={`Open ${s.symbol} 1m Volume Profile`}
+                                className="text-3xs font-mono font-bold text-gold hover:bg-gold/15 px-1 py-0.2 border border-gold/30 rounded-none shrink-0"
+                              >
+                                VRVP
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                        <td className="p-2 sm:p-2.5 font-sans text-3xs text-muted-foreground truncate max-w-[120px]">
+                          {s.industry}
+                        </td>
+                        <td className="p-2 sm:p-2.5 text-right font-semibold text-foreground">
+                          {fmtINR(s.last)}
+                        </td>
+                        <td className="p-2 sm:p-2.5 text-right">
+                          <span
+                            className={cn(
+                              "inline-block px-1.5 py-0.2 text-3xs font-bold rounded-none",
+                              isUp
+                                ? "bg-up/15 text-up border border-up/30"
+                                : isDown
+                                  ? "bg-down/15 text-down border border-down/30"
+                                  : "bg-surface-muted text-muted-foreground border border-border",
+                            )}
+                          >
+                            {isUp ? "+" : ""}{s.changePct.toFixed(2)}%
+                          </span>
+                        </td>
+                        <td className="p-2 sm:p-2.5 text-right text-foreground font-bold">
+                          {s.turnoverCr ? fmtINR(s.turnoverCr, "₹") : "—"}
+                        </td>
+                        <td className="p-2 sm:p-2.5 text-right text-muted-foreground text-3xs">
+                          {s.volume ? fmtCompact(s.volume) : "—"}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Bottom Table Count Indicator */}
+          <div className="flex items-center justify-between text-3xs font-mono text-muted-foreground pt-1">
+            <span>Showing {filteredStocks.length} of {stocks.length} scrips in active universe</span>
+            <span>Sorted by {sortBy.toUpperCase()}</span>
           </div>
         </div>
       </div>

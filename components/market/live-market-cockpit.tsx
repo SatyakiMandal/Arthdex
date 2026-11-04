@@ -2,20 +2,26 @@
 
 import { useCallback, useEffect, useState, useTransition } from "react";
 import {
+  Activity,
+  ArrowDownRight,
+  ArrowUpRight,
   BarChart2,
   Compass,
   Gauge,
   Radio,
   RefreshCw,
   ShieldCheck,
+  TrendingDown,
+  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { ApiPulse } from "@/lib/api/types";
+import type { ApiIndex, ApiPulse } from "@/lib/api/types";
 import { LiveVolumeProfile } from "./live-volume-profile";
 import { MacroMarketRadar } from "./macro-market-radar";
 
 interface LiveMarketCockpitProps {
   initialPulse: ApiPulse;
+  initialIndices?: ApiIndex[];
   initialIndex?: string;
 }
 
@@ -66,20 +72,32 @@ function getMarketSession(): { session: MarketSession; label: string; detail: st
   };
 }
 
+const KEY_INDEX_IDS = [
+  "nifty-50",
+  "nifty-bank",
+  "nifty-it",
+  "india-vix",
+  "nifty-midcap-100",
+  "nifty-smallcap-100",
+];
+
 export function LiveMarketCockpit({
   initialPulse,
+  initialIndices = [],
   initialIndex = "nifty500",
 }: LiveMarketCockpitProps) {
   const [pulse, setPulse] = useState<ApiPulse>(initialPulse);
+  const [indices, setIndices] = useState<ApiIndex[]>(initialIndices);
   const [currentIndex, setCurrentIndex] = useState<string>(initialIndex);
   const [, startTransition] = useTransition();
   const [loading, setLoading] = useState<boolean>(false);
-  const [refreshInterval, setRefreshInterval] = useState<number>(15); // in seconds, 0 = paused
+  const [refreshInterval, setRefreshInterval] = useState<number>(15);
   const [countdown, setCountdown] = useState<number>(15);
   const [marketStatus, setMarketStatus] = useState(getMarketSession());
 
-  // Master Cockpit View Switcher: Whole-Market God's-Eye Radar vs TradingView Volume Profile
+  // Master Cockpit View Switcher
   const [cockpitView, setCockpitView] = useState<"radar" | "volume_profile">("radar");
+  const [activeProfileSymbol, setActiveProfileSymbol] = useState<string>("RELIANCE");
 
   // Keep market status updated every 10 seconds
   useEffect(() => {
@@ -89,18 +107,22 @@ export function LiveMarketCockpit({
     return () => clearInterval(timer);
   }, []);
 
-  // Fetch updated data from API
+  // Fetch updated data from API (both pulse and indices)
   const refreshData = useCallback(async (idx = currentIndex) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/pulse?index=${encodeURIComponent(idx)}`, {
-        cache: "no-store",
-      });
-      if (res.ok) {
-        const json = await res.json();
-        if (json.data) {
-          setPulse(json.data);
-        }
+      const [pulseRes, indicesRes] = await Promise.all([
+        fetch(`/api/pulse?index=${encodeURIComponent(idx)}`, { cache: "no-store" }),
+        fetch("/api/indices", { cache: "no-store" }),
+      ]);
+
+      if (pulseRes.ok) {
+        const json = await pulseRes.json();
+        if (json.data) setPulse(json.data);
+      }
+      if (indicesRes.ok) {
+        const json = await indicesRes.json();
+        if (json.data) setIndices(json.data);
       }
     } catch {
       // Retain active state
@@ -127,7 +149,6 @@ export function LiveMarketCockpit({
     return () => clearInterval(interval);
   }, [refreshInterval, refreshData]);
 
-  // Handle universe switch
   function handleUniverseChange(newIdx: string) {
     setCurrentIndex(newIdx);
     startTransition(() => {
@@ -135,47 +156,91 @@ export function LiveMarketCockpit({
     });
   }
 
+  function handleOpenVolumeProfile(sym: string) {
+    setActiveProfileSymbol(sym);
+    setCockpitView("volume_profile");
+  }
+
+  // Filter key benchmark indices for ribbon
+  const ribbonIndices = indices.length > 0
+    ? indices.filter((idx) => KEY_INDEX_IDS.includes(idx.id))
+    : [];
+
   return (
-    <div className="space-y-6 rounded-none">
-      {/* 1. Cockpit Header Control Panel & Master View Switcher */}
-      <div className="border border-border bg-card p-4 sm:p-5 shadow-sm space-y-4 rounded-none">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 pb-4">
-          {/* Market Status Pill (Sharp, Zero Rounded Corners) */}
-          <div className="flex items-center gap-3">
+    <div className="space-y-4 rounded-none font-sans">
+      {/* 1. TOP MACRO INDEX HUD RIBBON (Zero dead space, high-density live ticker) */}
+      {ribbonIndices.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-1.5 font-mono text-xs">
+          {ribbonIndices.map((idx) => {
+            const pct = idx.change?.percent ?? 0;
+            const pts = idx.change?.absolute ?? 0;
+            const isUp = pct > 0;
+            const isDown = pct < 0;
+
+            return (
+              <div
+                key={idx.id}
+                className="border border-border bg-surface p-2 rounded-none shadow-xs flex flex-col justify-between"
+              >
+                <div className="text-3xs text-muted-foreground uppercase tracking-wider font-semibold truncate">
+                  {idx.name}
+                </div>
+                <div className="text-sm font-bold text-foreground mt-0.5">
+                  {idx.level.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                </div>
+                <div className="flex items-center justify-between text-3xs mt-0.5">
+                  <span className={cn("font-bold", isUp ? "text-up" : isDown ? "text-down" : "text-flat")}>
+                    {isUp ? "+" : ""}{pct.toFixed(2)}%
+                  </span>
+                  <span className="text-muted-foreground">
+                    {pts > 0 ? "+" : ""}{pts.toFixed(1)} pts
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* 2. Cockpit Master Header & View Switcher */}
+      <div className="border border-border bg-surface p-3 sm:p-3.5 shadow-sm space-y-3 rounded-none">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-3">
+          {/* Market Status Pill */}
+          <div className="flex items-center gap-2.5">
             <div
               className={cn(
-                "flex items-center gap-2 px-3 py-1 text-xs font-semibold uppercase tracking-wider border rounded-none font-mono",
+                "flex items-center gap-1.5 px-2.5 py-1 text-2xs font-bold uppercase tracking-wider border rounded-none font-mono",
                 marketStatus.session === "OPEN"
-                  ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-400"
+                  ? "border-up/40 bg-up/10 text-up"
                   : marketStatus.session === "PRE_OPEN"
-                    ? "border-amber-500/50 bg-amber-500/10 text-amber-400"
-                    : "border-border/80 bg-muted/60 text-muted-foreground",
+                    ? "border-gold/40 bg-gold/10 text-gold"
+                    : "border-border bg-surface-muted text-muted-foreground",
               )}
             >
               <span
                 className={cn(
-                  "h-2 w-2 rounded-none",
+                  "h-1.5 w-1.5 rounded-none",
                   marketStatus.session === "OPEN"
-                    ? "bg-emerald-400 animate-pulse"
+                    ? "bg-up animate-pulse"
                     : marketStatus.session === "PRE_OPEN"
-                      ? "bg-amber-400 animate-ping"
+                      ? "bg-gold animate-ping"
                       : "bg-muted-foreground",
                 )}
               />
               {marketStatus.label}
             </div>
 
-            <span className="text-xs text-muted-foreground hidden sm:inline">
+            <span className="text-2xs text-muted-foreground hidden sm:inline">
               {marketStatus.detail}
             </span>
           </div>
 
           {/* Right Controls: Auto-Refresh & Trigger */}
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Live Auto-Refresh Selector */}
-            <div className="flex items-center gap-1.5 border border-border bg-background p-1 text-xs rounded-none">
-              <span className="px-2 text-2xs uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1">
-                <Radio className="h-3 w-3 text-primary animate-pulse" /> Refresh:
+            <div className="flex items-center gap-1 border border-border bg-surface-muted p-0.5 text-xs rounded-none">
+              <span className="px-1.5 text-3xs uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1 font-mono">
+                <Radio className="h-3 w-3 text-accent animate-pulse" /> Sync:
               </span>
               {[
                 { sec: 10, label: "10s" },
@@ -190,9 +255,9 @@ export function LiveMarketCockpit({
                     setCountdown(opt.sec);
                   }}
                   className={cn(
-                    "px-2 py-0.5 text-2xs font-mono font-medium transition-colors rounded-none",
+                    "px-2 py-0.5 text-3xs font-mono font-medium transition-colors rounded-none",
                     refreshInterval === opt.sec
-                      ? "bg-primary text-primary-foreground font-semibold shadow-xs"
+                      ? "bg-surface text-foreground font-bold shadow-xs border border-border"
                       : "text-muted-foreground hover:text-foreground",
                   )}
                 >
@@ -201,68 +266,72 @@ export function LiveMarketCockpit({
               ))}
             </div>
 
-            {/* Manual Trigger */}
+            {/* Manual Sync */}
             <button
               onClick={() => void refreshData()}
               disabled={loading}
-              className="flex items-center gap-1.5 border border-border bg-background px-3 py-1.5 text-xs font-mono font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50 rounded-none"
+              className="flex items-center gap-1.5 border border-border bg-surface-raised px-2.5 py-1 text-2xs font-mono font-medium text-foreground hover:bg-surface-muted transition-colors disabled:opacity-50 rounded-none shadow-xs"
             >
-              <RefreshCw className={cn("h-3.5 w-3.5 text-primary", loading && "animate-spin")} />
-              <span>{loading ? "Fetching..." : `Sync (${countdown}s)`}</span>
+              <RefreshCw className={cn("h-3 w-3 text-accent", loading && "animate-spin")} />
+              <span>{loading ? "Syncing..." : `Sync (${countdown}s)`}</span>
             </button>
           </div>
         </div>
 
-        {/* Master View Navigation Tabs (Sharp Square Tabs) */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-          <div className="flex items-center border border-border bg-muted/40 p-1 rounded-none">
+        {/* Master Navigation Switcher: Whole Market Radar vs TradingView Volume Profile */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5">
+          <div className="flex items-center border border-border bg-surface-muted p-0.5 rounded-none">
             <button
               onClick={() => setCockpitView("radar")}
               className={cn(
-                "flex items-center gap-2 px-4 py-1.5 text-xs font-mono font-bold uppercase tracking-wider transition-all rounded-none",
+                "flex items-center gap-1.5 px-3 py-1.5 text-2xs font-mono font-bold uppercase tracking-wider transition-all rounded-none",
                 cockpitView === "radar"
-                  ? "bg-card text-foreground shadow-sm border border-border"
-                  : "text-muted-foreground hover:text-foreground hover:bg-card/50",
+                  ? "bg-surface text-foreground shadow-xs border border-border"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
-              <Gauge className="h-3.5 w-3.5 text-primary" />
+              <Gauge className="h-3.5 w-3.5 text-accent" />
               <span>WHOLE-MARKET GOD&apos;S-EYE RADAR</span>
             </button>
             <button
               onClick={() => setCockpitView("volume_profile")}
               className={cn(
-                "flex items-center gap-2 px-4 py-1.5 text-xs font-mono font-bold uppercase tracking-wider transition-all rounded-none",
+                "flex items-center gap-1.5 px-3 py-1.5 text-2xs font-mono font-bold uppercase tracking-wider transition-all rounded-none",
                 cockpitView === "volume_profile"
-                  ? "bg-card text-primary shadow-sm border border-border"
-                  : "text-muted-foreground hover:text-foreground hover:bg-card/50",
+                  ? "bg-surface text-gold shadow-xs border border-border"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
-              <BarChart2 className="h-3.5 w-3.5 text-amber-400" />
+              <BarChart2 className="h-3.5 w-3.5 text-gold" />
               <span>TRADINGVIEW VOLUME PROFILE (VRVP)</span>
             </button>
           </div>
 
-          <div className="flex items-center gap-2 text-2xs font-mono text-muted-foreground">
+          <div className="flex items-center gap-2 text-3xs font-mono text-muted-foreground">
             <span>Exchange Session: <strong className="text-foreground">{pulse.asOf}</strong></span>
             <span className="text-border">|</span>
-            <span className="flex items-center gap-1 text-emerald-400">
-              <ShieldCheck className="h-3 w-3" /> 100% Genuine Live NSE Data
+            <span className="flex items-center gap-1 text-up font-semibold">
+              <ShieldCheck className="h-3 w-3" /> 100% Genuine Official NSE Data
             </span>
           </div>
         </div>
       </div>
 
-      {/* Render View: Macro Market Radar or TradingView Volume Profile */}
+      {/* Render Active View */}
       {cockpitView === "volume_profile" ? (
-        <div className="space-y-6 animate-in fade-in-50">
-          <LiveVolumeProfile initialSymbol="RELIANCE" initialInterval="15m" />
+        <div className="animate-in fade-in-50">
+          <LiveVolumeProfile
+            initialSymbol={activeProfileSymbol}
+            initialInterval="15m"
+          />
         </div>
       ) : (
-        <div className="space-y-6 animate-in fade-in-50">
+        <div className="animate-in fade-in-50">
           <MacroMarketRadar
             pulse={pulse}
             currentIndex={currentIndex}
             onUniverseChange={handleUniverseChange}
+            onSelectStock={handleOpenVolumeProfile}
           />
         </div>
       )}
