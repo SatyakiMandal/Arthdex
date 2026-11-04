@@ -45,6 +45,7 @@ const BELLWETHERS = [
 ];
 
 const TIMEFRAMES: { id: OrderflowInterval; label: string; sub: string }[] = [
+  { id: "1m", label: "1m", sub: "Ultra-High Frequency (5d)" },
   { id: "5m", label: "5m", sub: "Scalp (30d)" },
   { id: "15m", label: "15m", sub: "Structure (60d)" },
   { id: "1h", label: "1h", sub: "Swing (6mo)" },
