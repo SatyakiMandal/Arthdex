@@ -101,6 +101,33 @@ function label(t: string, intraday: boolean): string {
   return `${t.slice(5, 10)} ${t.slice(11, 16)}`;
 }
 
+function PaneShell({
+  title,
+  children,
+  readout,
+  height = PANE_H,
+  crossX,
+}: {
+  title: string;
+  children: React.ReactNode;
+  readout: React.ReactNode;
+  height?: number;
+  crossX: number;
+}) {
+  return (
+    <div className="relative mt-1 border-t border-border">
+      <div className="pointer-events-none absolute left-2 top-1 z-10 flex flex-wrap gap-x-3 text-2xs text-muted-foreground">
+        <span className="font-medium text-foreground">{title}</span>
+        {readout}
+      </div>
+      <svg viewBox={`0 0 ${W} ${height}`} preserveAspectRatio="none" className="block w-full touch-pan-y" style={{ height }} role="img" aria-label={title}>
+        {children}
+        <line x1={crossX} x2={crossX} y1={0} y2={height} stroke="hsl(var(--muted-foreground))" strokeOpacity={0.5} strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
+      </svg>
+    </div>
+  );
+}
+
 export function IndicatorChart({
   data,
   overlays,
@@ -112,7 +139,7 @@ export function IndicatorChart({
 }) {
   const n = data.bars.length;
   const [hover, setHover] = useState<number | null>(null);
-  const idx = hover != null && hover < n ? hover : n - 1;
+  const idx = hover != null && hover < n ? hover : Math.max(0, n - 1);
   const step = W / Math.max(n, 1);
   const x = (i: number) => (i + 0.5) * step;
 
@@ -126,19 +153,20 @@ export function IndicatorChart({
     const pad = (mx - mn) * 0.05 || mx * 0.01;
     return { lo: mn - pad, hi: mx + pad };
   }, [data.bars]);
-  const py = (v: number) => 12 + (1 - (v - lo) / (hi - lo)) * (PRICE_H - 24);
+  const py = (v: number) => 12 + (1 - (v - lo) / (hi - lo || 1)) * (PRICE_H - 24);
   const s = data.series;
-  const bar = data.bars[idx];
+  const bar = data.bars[idx] ?? { t: "", o: 0, h: 0, l: 0, c: 0, v: 0 };
   const up = bar.c >= bar.o;
   const maxVol = Math.max(1, ...data.bars.map((b) => b.v));
   const crossX = x(idx);
 
   const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
+    if (!r.width) return;
     setHover(Math.max(0, Math.min(n - 1, Math.floor(((e.clientX - r.left) / r.width) * n))));
   };
 
-  const tickIdx = Array.from({ length: 5 }, (_, k) => Math.round((k / 4) * (n - 1)));
+  const tickIdx = Array.from({ length: 5 }, (_, k) => Math.round((k / 4) * Math.max(0, n - 1)));
 
   const overlayLine = (id: OverlayId, key: string, dashed = false) =>
     overlays.has(id) ? (
@@ -153,18 +181,13 @@ export function IndicatorChart({
       />
     ) : null;
 
-  const PaneShell = ({ title, children, readout, height = PANE_H }: { title: string; children: React.ReactNode; readout: React.ReactNode; height?: number }) => (
-    <div className="relative mt-1 border-t border-border">
-      <div className="pointer-events-none absolute left-2 top-1 z-10 flex flex-wrap gap-x-3 text-2xs text-muted-foreground">
-        <span className="font-medium text-foreground">{title}</span>
-        {readout}
+  if (n < 14) {
+    return (
+      <div className="rounded-xl border border-border bg-surface p-8 text-center text-sm text-muted-foreground">
+        Insufficient price history ({n} bars) to compute indicators. At least 14 bars are required.
       </div>
-      <svg viewBox={`0 0 ${W} ${height}`} preserveAspectRatio="none" className="block w-full" style={{ height }} role="img" aria-label={title}>
-        {children}
-        <line x1={crossX} x2={crossX} y1={0} y2={height} stroke="hsl(var(--muted-foreground))" strokeOpacity={0.5} strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
-      </svg>
-    </div>
-  );
+    );
+  }
 
   return (
     <div onMouseMove={onMove} onMouseLeave={() => setHover(null)} className="select-none">
@@ -178,7 +201,7 @@ export function IndicatorChart({
           <span className={up ? "text-up" : "text-down"}>C {fmt(bar.c)}</span>
           <span className="text-muted-foreground">Vol {bar.v.toLocaleString("en-IN")}</span>
         </div>
-        <svg viewBox={`0 0 ${W} ${PRICE_H}`} preserveAspectRatio="none" className="block w-full" style={{ height: PRICE_H }} role="img" aria-label={`${data.symbol} price chart`}>
+        <svg viewBox={`0 0 ${W} ${PRICE_H}`} preserveAspectRatio="none" className="block w-full touch-pan-y" style={{ height: PRICE_H }} role="img" aria-label={`${data.symbol} price chart`}>
           {[0.2, 0.4, 0.6, 0.8].map((g) => (
             <line key={g} x1={0} x2={W} y1={PRICE_H * g} y2={PRICE_H * g} stroke="hsl(var(--border))" strokeOpacity={0.6} vectorEffect="non-scaling-stroke" />
           ))}
@@ -207,26 +230,20 @@ export function IndicatorChart({
           {overlayLine("sma200", "sma200")}
           {overlayLine("ema20", "ema20")}
           {overlayLine("ema50", "ema50")}
-          {overlayLine("vwap", "vwap", true)}
-
-          {overlays.has("vwapBands")
-            ? (
-                [
-                  ["vwapUpper1", 0.55, "4 3"],
-                  ["vwapLower1", 0.55, "4 3"],
-                  ["vwapUpper2", 0.3, "1 3"],
-                  ["vwapLower2", 0.3, "1 3"],
-                ] as const
-              ).map(([key, op, dash]) => (
-                <path key={key} d={path(s[key], x, py)} fill="none" stroke="hsl(var(--chart-clay))" strokeOpacity={op} strokeWidth={1} strokeDasharray={dash} vectorEffect="non-scaling-stroke" />
-              ))
-            : null}
+          {overlayLine("vwap", "vwap")}
+          {overlayLine("bb", "bbMiddle", true)}
 
           {overlays.has("donchian") ? (
             <>
-              <path d={path(s.donchianUpper, x, py)} fill="none" stroke="hsl(var(--chart-sky))" strokeWidth={1.3} vectorEffect="non-scaling-stroke" />
-              <path d={path(s.donchianLower, x, py)} fill="none" stroke="hsl(var(--chart-sky))" strokeWidth={1.3} vectorEffect="non-scaling-stroke" />
-              <path d={path(s.donchianMiddle, x, py)} fill="none" stroke="hsl(var(--chart-sky))" strokeOpacity={0.45} strokeWidth={1} strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
+              <path d={path(s.donchianUpper, x, py)} fill="none" stroke="hsl(var(--chart-sky))" strokeWidth={1} strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
+              <path d={path(s.donchianLower, x, py)} fill="none" stroke="hsl(var(--chart-sky))" strokeWidth={1} strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
+            </>
+          ) : null}
+
+          {overlays.has("vwapBands") ? (
+            <>
+              <path d={path(s.vwapUpper1, x, py)} fill="none" stroke="hsl(var(--chart-clay))" strokeWidth={1} strokeDasharray="2 2" vectorEffect="non-scaling-stroke" />
+              <path d={path(s.vwapLower1, x, py)} fill="none" stroke="hsl(var(--chart-clay))" strokeWidth={1} strokeDasharray="2 2" vectorEffect="non-scaling-stroke" />
             </>
           ) : null}
 
@@ -331,9 +348,7 @@ export function IndicatorChart({
           </span>
         ))}
         {overlays.has("sr")
-          ? // Every level keeps its line; only labels at least 6% of the pane apart are written,
-            // most-tested first, so a cluster of nearby levels does not print on top of itself.
-            [...data.levels.support, ...data.levels.resistance]
+          ? [...data.levels.support, ...data.levels.resistance]
               .filter((l) => l.price > lo && l.price < hi)
               .map((l) => ({ ...l, at: (py(l.price) / PRICE_H) * 100 }))
               .sort((a, b) => b.touches - a.touches)
@@ -356,7 +371,7 @@ export function IndicatorChart({
       {panes.map((id) => {
         if (id === "volume") {
           return (
-            <PaneShell key={id} title="Volume" readout={<span className="font-mono">{bar.v.toLocaleString("en-IN")}</span>} height={70}>
+            <PaneShell key={id} title="Volume" readout={<span className="font-mono">{bar.v.toLocaleString("en-IN")}</span>} height={70} crossX={crossX}>
               {data.bars.map((b, i) => (
                 <rect key={i} x={x(i) - Math.max(step * 0.62, 0.8) / 2} y={70 - (b.v / maxVol) * 60} width={Math.max(step * 0.62, 0.8)} height={(b.v / maxVol) * 60} fill={b.c >= b.o ? "hsl(var(--up))" : "hsl(var(--down))"} fillOpacity={0.55} />
               ))}
@@ -378,6 +393,7 @@ export function IndicatorChart({
                 {l.label} {fmt(s[l.key][idx], id === "macd" || id === "atr" ? 3 : 1)}
               </span>
             ))}
+            crossX={crossX}
           >
             {spec.bands?.map((b) => (
               <line key={b} x1={0} x2={W} y1={y(b)} y2={y(b)} stroke="hsl(var(--muted-foreground))" strokeOpacity={0.45} strokeDasharray="4 4" vectorEffect="non-scaling-stroke" />
@@ -402,7 +418,7 @@ export function IndicatorChart({
       <div className="relative mt-1 h-4">
         {tickIdx.map((i) => (
           <span key={i} className={cn("absolute font-mono text-2xs text-muted-foreground", i === 0 ? "" : i === n - 1 ? "-translate-x-full" : "-translate-x-1/2")} style={{ left: `${(x(i) / W) * 100}%` }}>
-            {label(data.bars[i].t, data.intraday)}
+            {label(data.bars[i]?.t ?? "", data.intraday)}
           </span>
         ))}
       </div>

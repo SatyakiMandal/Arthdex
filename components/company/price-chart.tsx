@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import type { ApiCandle } from "@/lib/api/types";
+import { SegmentedControl } from "@/components/ui/segmented-control";
+import { cn, deltaColor, formatINR, formatPct } from "@/lib/utils";
 
 type Candle = ApiCandle;
 type Period = "1D" | "5D" | "1M" | "6M" | "1Y" | "3Y" | "5Y" | "MAX";
@@ -17,8 +19,6 @@ const PERIODS: { id: Period; label: string }[] = [
   { id: "5Y", label: "5Y" },
   { id: "MAX", label: "Max" },
 ];
-import { SegmentedControl } from "@/components/ui/segmented-control";
-import { cn, deltaColor, formatINR, formatPct } from "@/lib/utils";
 
 /**
  * Hand-rolled SVG chart rather than a canvas library: every stroke and fill
@@ -58,7 +58,7 @@ function buildScales(candles: Candle[]): Scales {
   const pad = (rawMax - rawMin) * 0.04 || rawMax * 0.02;
   const min = rawMin - pad;
   const max = rawMax + pad;
-  const maxVolume = Math.max(...candles.map((c) => c.volume));
+  const maxVolume = Math.max(...candles.map((c) => c.volume), 1);
   const usableH = PRICE_H - PAD_TOP - PAD_BOTTOM;
 
   return {
@@ -66,8 +66,8 @@ function buildScales(candles: Candle[]): Scales {
     max,
     maxVolume,
     x: (i) => (candles.length <= 1 ? 0 : (i / (candles.length - 1)) * VIEW_W),
-    y: (price) => PAD_TOP + (1 - (price - min) / (max - min)) * usableH,
-    volY: (volume) => VIEW_H - (volume / maxVolume) * VOLUME_H,
+    y: (price) => PAD_TOP + (1 - (price - min) / (max - min || 1)) * usableH,
+    volY: (volume) => VIEW_H - (maxVolume > 0 ? (volume / maxVolume) * VOLUME_H : 0),
   };
 }
 
@@ -88,7 +88,7 @@ function formatVolume(v: number): string {
   if (v >= 1e7) return `${(v / 1e7).toFixed(2)} Cr`;
   if (v >= 1e5) return `${(v / 1e5).toFixed(2)} L`;
   if (v >= 1e3) return `${(v / 1e3).toFixed(1)} K`;
-  return String(v);
+  return v.toLocaleString("en-IN");
 }
 
 export function PriceChart({
@@ -97,14 +97,14 @@ export function PriceChart({
   initialPeriod = "1Y",
 }: {
   symbol: string;
-  initialCandles: ApiCandle[];
+  initialCandles: Candle[];
   initialPeriod?: Period;
 }) {
+  const [candles, setCandles] = useState<Candle[]>(initialCandles);
   const [period, setPeriod] = useState<Period>(initialPeriod);
-  const [candles, setCandles] = useState<ApiCandle[]>(initialCandles);
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -114,11 +114,16 @@ export function PriceChart({
     if (period === initialPeriod && candles === initialCandles) return;
 
     let cancelled = false;
-    setLoading(true);
-    setError(null);
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
+
+    const timer = setTimeout(() => {
+      if (!cancelled) {
+        setLoading(true);
+        setError(null);
+      }
+    }, 0);
 
     (async () => {
       try {
@@ -145,6 +150,7 @@ export function PriceChart({
 
     return () => {
       cancelled = true;
+      clearTimeout(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period, symbol]);
@@ -229,7 +235,7 @@ export function PriceChart({
           ref={svgRef}
           viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
           preserveAspectRatio="none"
-          className="h-[320px] w-full touch-none"
+          className="h-[320px] w-full touch-pan-y"
           onPointerMove={handleMove}
           onPointerLeave={() => setHoverIndex(null)}
           role="img"

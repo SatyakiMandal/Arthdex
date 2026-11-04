@@ -41,7 +41,14 @@ export function ResearchPanel({ symbol }: { symbol: string }) {
   }, [symbol]);
 
   useEffect(() => {
-    void start();
+    let cancelled = false;
+    const t = setTimeout(() => {
+      if (!cancelled) void start();
+    }, 0);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
   }, [start]);
 
   const id = run?.id;

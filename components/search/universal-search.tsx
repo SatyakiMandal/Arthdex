@@ -39,6 +39,26 @@ const PAGES: { name: string; href: string; words: string }[] = [
   { name: "Data status", href: "/status", words: "status health feeds freshness watchdog" },
 ];
 
+const SUB_TABS: Record<string, { label: string; tab: string }> = {
+  tech: { label: "Technicals", tab: "technicals" },
+  technicals: { label: "Technicals", tab: "technicals" },
+  chart: { label: "Technicals", tab: "technicals" },
+  statements: { label: "Statements", tab: "statements" },
+  financials: { label: "Statements", tab: "statements" },
+  pnl: { label: "Statements", tab: "statements" },
+  peers: { label: "Peers", tab: "peers" },
+  competitors: { label: "Peers", tab: "peers" },
+  options: { label: "Options chain", tab: "options" },
+  derivatives: { label: "Options chain", tab: "options" },
+  fno: { label: "Options chain", tab: "options" },
+  shareholding: { label: "Shareholding pattern", tab: "shareholding" },
+  holders: { label: "Shareholding pattern", tab: "shareholding" },
+  macro: { label: "Macro & News", tab: "macro" },
+  news: { label: "Macro & News", tab: "macro" },
+  dcf: { label: "Reverse DCF valuation", tab: "dcf" },
+  valuation: { label: "Reverse DCF valuation", tab: "dcf" },
+};
+
 function matchPages(q: string): SearchHit[] {
   const needle = q.toLowerCase();
   if (needle.length < 2) return [];
@@ -49,9 +69,7 @@ function matchPages(q: string): SearchHit[] {
 
 /**
  * Search across every equity listed on NSE (~2,600 companies) and the unlisted / pre-IPO directory.
- *
- * Queries are debounced and in-flight requests are aborted when superseded, so
- * a fast typist cannot have an older response overwrite a newer one.
+ * Includes direct sub-tab jump parsing (e.g. "RELIANCE tech" -> /company/RELIANCE/technicals).
  */
 export function UniversalSearch({ className }: { className?: string }) {
   const router = useRouter();
@@ -68,15 +86,36 @@ export function UniversalSearch({ className }: { className?: string }) {
 
   const trimmed = useMemo(() => query.trim(), [query]);
 
-  useEffect(() => {
-    if (!trimmed) {
-      setResults([]);
-      setError(null);
-      setLoading(false);
-      return;
+  // Sub-tab jump parsing for queries like "RELIANCE tech", "TCS statements", "INFY peers"
+  const subTabHit = useMemo<SearchHit | null>(() => {
+    const parts = trimmed.split(/\s+/);
+    if (parts.length >= 2) {
+      const sym = parts[0].toUpperCase().replace(/[^A-Z0-9&-]/g, "");
+      const term = parts.slice(1).join(" ").toLowerCase();
+      const match = SUB_TABS[term];
+      if (sym && match) {
+        return {
+          id: `tab:${sym}:${match.tab}`,
+          symbol: sym,
+          name: `${sym} · ${match.label}`,
+          series: "JUMP",
+          isin: null,
+          kind: "page" as const,
+          href: `/company/${sym}/${match.tab}`,
+        };
+      }
     }
+    return null;
+  }, [trimmed]);
 
-    setLoading(true);
+  useEffect(() => {
+    if (!trimmed) return;
+
+    let cancelled = false;
+    const t = setTimeout(() => {
+      if (!cancelled) setLoading(true);
+    }, 0);
+
     const timer = setTimeout(async () => {
       abortRef.current?.abort();
       const controller = new AbortController();
@@ -87,26 +126,38 @@ export function UniversalSearch({ className }: { className?: string }) {
           signal: controller.signal,
         });
         const body = (await response.json()) as { results: SearchHit[]; error?: string };
-        setResults(body.results ?? []);
-        setError(body.error ?? null);
+        if (!cancelled) {
+          setResults(body.results ?? []);
+          setError(body.error ?? null);
+        }
       } catch (err) {
-        // An aborted request was superseded; that is not an error state
-        if ((err as Error)?.name !== "AbortError") {
+        if ((err as Error)?.name !== "AbortError" && !cancelled) {
           setError("Search failed. Is the data service running?");
           setResults([]);
         }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }, 180);
 
-    return () => clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+      clearTimeout(timer);
+    };
   }, [trimmed]);
 
-  // Tools first: a few words of a page name should never be outranked by a ticker that happens to contain them
-  const hits = useMemo(() => [...matchPages(trimmed), ...results], [trimmed, results]);
+  // Sub-tab jump first, then page navigation tools, then company results
+  const hits = useMemo(() => {
+    const effective = trimmed ? results : [];
+    return [...(subTabHit ? [subTabHit] : []), ...matchPages(trimmed), ...effective];
+  }, [subTabHit, trimmed, results]);
 
-  useEffect(() => setActiveIndex(0), [hits]);
+  const [prevHitsCount, setPrevHitsCount] = useState(hits.length);
+  if (prevHitsCount !== hits.length) {
+    setPrevHitsCount(hits.length);
+    setActiveIndex(0);
+  }
 
   useEffect(() => {
     function onPointerDown(event: MouseEvent) {
@@ -164,8 +215,6 @@ export function UniversalSearch({ className }: { className?: string }) {
       className={cn(
         "relative transition-[width] duration-300 ease-out",
         open ? "w-full md:w-[22rem]" : "w-full md:w-44 2xl:w-64",
-        // Between lg and xl the nav leaves no room, so the box collapses to an icon
-        // that opens as an overlay instead of pushing the nav around.
         "lg:max-xl:h-9 lg:max-xl:!w-10",
         className,
       )}
@@ -282,7 +331,7 @@ export function UniversalSearch({ className }: { className?: string }) {
                           hit.kind === "unlisted" ? "border-flat/40 bg-flat/10 text-flat" : "border-border text-muted-foreground",
                         )}
                       >
-                        {hit.kind === "page" ? "Go to" : hit.kind === "unlisted" ? "Unlisted" : hit.series || "NSE"}
+                        {hit.kind === "page" ? (hit.series === "JUMP" ? "Jump" : "Go to") : hit.kind === "unlisted" ? "Unlisted" : hit.series || "NSE"}
                       </span>
                     </button>
                   </li>

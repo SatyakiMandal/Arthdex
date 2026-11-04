@@ -160,12 +160,14 @@ export function HeaderBar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const pathname = usePathname();
+  const [prevPath, setPrevPath] = useState(pathname);
   const navRef = useRef<HTMLElement>(null);
 
-  useEffect(() => {
+  if (prevPath !== pathname) {
+    setPrevPath(pathname);
     setMobileOpen(false);
     setOpenGroup(null);
-  }, [pathname]);
+  }
 
   useEffect(() => {
     if (!openGroup) return;

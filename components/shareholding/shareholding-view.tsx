@@ -58,30 +58,32 @@ function Donut({ parts }: { parts: { key: string; value: number }[] }) {
   const total = parts.reduce((a, p) => a + p.value, 0) || 1;
   const R = 52;
   const C = 2 * Math.PI * R;
-  let offset = 0;
+  const segments = parts.reduce<Array<{ key: string; len: number; offset: number }>>((acc, p) => {
+    const prev = acc[acc.length - 1];
+    const prevOffset = prev ? prev.offset + prev.len : 0;
+    const len = (p.value / total) * C;
+    acc.push({ key: p.key, len, offset: prevOffset });
+    return acc;
+  }, []);
+
   return (
     <svg viewBox="0 0 140 140" className="mx-auto w-full max-w-[200px]" role="img" aria-label="Latest ownership composition">
       <circle cx={70} cy={70} r={R} fill="none" stroke="hsl(var(--muted))" strokeWidth={18} />
-      {parts.map((p, i) => {
-        const len = (p.value / total) * C;
-        const el = (
-          <circle
-            key={p.key}
-            cx={70}
-            cy={70}
-            r={R}
-            fill="none"
-            stroke={COLORS[p.key as ShareholdingCategory["key"]]}
-            strokeWidth={18}
-            strokeDasharray={`${len} ${C - len}`}
-            strokeDashoffset={-offset}
-            transform="rotate(-90 70 70)"
-            style={{ opacity: 1, transition: `opacity 0.5s ${i * 0.08}s` }}
-          />
-        );
-        offset += len;
-        return el;
-      })}
+      {segments.map((s, i) => (
+        <circle
+          key={s.key}
+          cx={70}
+          cy={70}
+          r={R}
+          fill="none"
+          stroke={COLORS[s.key as ShareholdingCategory["key"]]}
+          strokeWidth={18}
+          strokeDasharray={`${s.len} ${C - s.len}`}
+          strokeDashoffset={-s.offset}
+          transform="rotate(-90 70 70)"
+          style={{ opacity: 1, transition: `opacity 0.5s ${i * 0.08}s` }}
+        />
+      ))}
     </svg>
   );
 }
@@ -362,7 +364,7 @@ export function ShareholdingView({ data }: { data: ApiShareholding }) {
               </thead>
               <tbody>
                 {data.largeHolders.map((r, i) => (
-                  <tr key={i} className="border-b border-border last:border-0">
+                  <tr key={`${r.name}-${r.filedOn ?? ""}-${i}`} className="border-b border-border last:border-0">
                     <td className="px-4 py-2">
                       {r.name}
                       {r.promoterGroup ? <span className="ml-2 rounded border border-accent/30 px-1.5 text-2xs text-accent">Promoter group</span> : null}
@@ -406,7 +408,7 @@ export function ShareholdingView({ data }: { data: ApiShareholding }) {
               </thead>
               <tbody>
                 {data.insiders.map((r, i) => (
-                  <tr key={i} className="border-b border-border last:border-0">
+                  <tr key={`${r.name}-${r.tradedOn ?? ""}-${i}`} className="border-b border-border last:border-0">
                     <td className="px-4 py-2">{r.name}</td>
                     <td className="px-3 py-2 text-2xs text-muted-foreground">{r.category}</td>
                     <td className="px-3 py-2"><StatusPill label={r.action || "—"} tone={r.action === "Buy" ? "up" : r.action === "Sell" ? "down" : "neutral"} /></td>

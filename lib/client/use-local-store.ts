@@ -1,65 +1,65 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 
-/**
- * State persisted in localStorage and kept in sync across tabs and components.
- *
- * Reads happen after mount, so server and client markup match on first render.
- * Every write also dispatches a same-tab event, because the native `storage`
- * event only fires in other tabs.
- */
 const SAME_TAB = "arthdex:store";
 
-export function useLocalStore<T>(key: string, initial: T): [T, (next: T | ((prev: T) => T)) => void, boolean] {
-  const [value, setValue] = useState<T>(initial);
-  const [ready, setReady] = useState(false);
+function subscribe(callback: () => void) {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener("storage", callback);
+  window.addEventListener(SAME_TAB, callback);
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener(SAME_TAB, callback);
+  };
+}
 
-  const read = useCallback((): T => {
+const memoryCache = new Map<string, { raw: string | null; parsed: unknown }>();
+
+export function useLocalStore<T>(key: string, initial: T): [T, (next: T | ((prev: T) => T)) => void, boolean] {
+  const getSnapshot = useCallback((): T => {
+    if (typeof window === "undefined") return initial;
     try {
       const raw = window.localStorage.getItem(key);
-      if (raw === null) return initial;
+      const cached = memoryCache.get(key);
+      if (cached && cached.raw === raw) {
+        return cached.parsed as T;
+      }
+      if (raw === null) {
+        memoryCache.set(key, { raw: null, parsed: initial });
+        return initial;
+      }
       const parsed = JSON.parse(raw) as unknown;
-      // A value of the wrong shape (an older format, or edited by hand) falls back to the default
-      if (Array.isArray(initial) && !Array.isArray(parsed)) return initial;
+      if (Array.isArray(initial) && !Array.isArray(parsed)) {
+        memoryCache.set(key, { raw, parsed: initial });
+        return initial;
+      }
+      memoryCache.set(key, { raw, parsed });
       return parsed as T;
     } catch {
       return initial;
     }
-    // `initial` is a stable default; depending on its identity would loop
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
+  }, [key, initial]);
 
-  useEffect(() => {
-    setValue(read());
-    setReady(true);
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === key) setValue(read());
-    };
-    const onSameTab = (e: Event) => {
-      if ((e as CustomEvent<string>).detail === key) setValue(read());
-    };
-    window.addEventListener("storage", onStorage);
-    window.addEventListener(SAME_TAB, onSameTab);
-    return () => {
-      window.removeEventListener("storage", onStorage);
-      window.removeEventListener(SAME_TAB, onSameTab);
-    };
-  }, [key, read]);
+  const getServerSnapshot = useCallback((): T => initial, [initial]);
+
+  const value = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   const set = useCallback(
     (next: T | ((prev: T) => T)) => {
-      const resolved = typeof next === "function" ? (next as (prev: T) => T)(read()) : next;
+      const current = getSnapshot();
+      const resolved = typeof next === "function" ? (next as (prev: T) => T)(current) : next;
       try {
-        window.localStorage.setItem(key, JSON.stringify(resolved));
+        const raw = JSON.stringify(resolved);
+        window.localStorage.setItem(key, raw);
+        memoryCache.set(key, { raw, parsed: resolved });
       } catch {
-        // Private mode or a full quota: keep the in-memory value so the UI still works
+        // Quota or private mode
       }
-      setValue(resolved);
       window.dispatchEvent(new CustomEvent(SAME_TAB, { detail: key }));
     },
-    [key, read],
+    [key, getSnapshot],
   );
 
-  return [value, set, ready];
+  return [value, set, true];
 }

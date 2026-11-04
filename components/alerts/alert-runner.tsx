@@ -23,8 +23,11 @@ interface Toast {
 export function AlertRunner() {
   const { rules, setRules, ready } = useAlertRules();
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const rulesRef = useRef<AlertRule[]>([]);
-  rulesRef.current = rules;
+  const rulesRef = useRef<AlertRule[]>(rules);
+
+  useEffect(() => {
+    rulesRef.current = rules;
+  }, [rules]);
 
   useEffect(() => {
     if (!ready) return;
@@ -32,7 +35,7 @@ export function AlertRunner() {
 
     async function check() {
       const armed = rulesRef.current.filter((r) => !r.triggeredAt);
-      if (armed.length === 0 || document.hidden) return;
+      if (armed.length === 0 || document.hidden || document.visibilityState === "hidden") return;
       const snap = await fetchSnapshot(armed.map((r) => ({ kind: r.kind, id: r.target })));
       if (!snap || stopped) return;
 
@@ -69,7 +72,7 @@ export function AlertRunner() {
 
     // A tab left in the background is not polled, so catch up as soon as it is visible again
     const onVisible = () => {
-      if (!document.hidden) void check();
+      if (!document.hidden && document.visibilityState !== "hidden") void check();
     };
 
     check();

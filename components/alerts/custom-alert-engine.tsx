@@ -55,16 +55,10 @@ export function CustomAlertEngine({
   const [alerts, setAlerts] = useState<CustomAlert[]>([]);
   const [metricId, setMetricId] = useState(metrics[0]?.id ?? "");
   const [comparator, setComparator] = useState<AlertComparator>("lt");
-  const [threshold, setThreshold] = useState(0);
+  const [userThreshold, setUserThreshold] = useState<number | null>(null);
 
   const metric = metrics.find((m) => m.id === metricId) ?? metrics[0];
-
-  // Seed the threshold from the live value so the default is a sensible anchor
-  useEffect(() => {
-    if (metric?.current !== undefined) {
-      setThreshold(Number(metric.current.toFixed(2)));
-    }
-  }, [metric]);
+  const threshold = userThreshold ?? (metric?.current !== undefined ? Number(metric.current.toFixed(2)) : 0);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -102,7 +96,7 @@ export function CustomAlertEngine({
         <Bell className="h-3.5 w-3.5" />
         Alerts
         {alerts.length > 0 ? (
-          <span className="rounded-full bg-accent px-1.5 font-mono text-2xs text-accent-foreground">
+          <span className="ml-1 rounded-full bg-accent/20 px-1.5 py-0.2 font-mono text-2xs text-accent">
             {alerts.length}
           </span>
         ) : null}
@@ -116,51 +110,48 @@ export function CustomAlertEngine({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setOpen(false)}
-              className="fixed inset-0 z-[60] bg-background/70"
+              className="fixed inset-0 z-40 bg-background/60 backdrop-blur-sm"
             />
+
             <motion.aside
-              role="dialog"
-              aria-modal="true"
-              aria-label={`Alerts for ${symbol}`}
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
-              transition={{ type: "spring", stiffness: 320, damping: 34 }}
-              className="fixed inset-y-0 right-0 z-[61] flex w-full max-w-md flex-col border-l border-border bg-surface shadow-2xl"
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+              className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col border-l border-border bg-surface shadow-2xl"
             >
-              <header className="flex items-center justify-between border-b border-border px-4 py-3">
-                <div>
-                  <h2 className="text-sm font-semibold tracking-tight">Alerts · {symbol}</h2>
-                  <p className="mt-0.5 text-2xs text-muted-foreground">
-                    Threshold and event triggers for this company
-                  </p>
+              <div className="flex items-center justify-between border-b border-border px-5 py-4">
+                <div className="flex items-center gap-2">
+                  <Bell className="h-4 w-4 text-accent" />
+                  <h2 className="text-sm font-semibold">Alerts · {symbol}</h2>
                 </div>
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  aria-label="Close alerts"
-                  className="rounded-lg border border-border p-1.5 text-muted-foreground transition-colors hover:text-foreground"
+                  className="rounded p-1 text-muted-foreground hover:text-foreground"
                 >
                   <X className="h-4 w-4" />
                 </button>
-              </header>
+              </div>
 
-              {/* Kept at the top, not buried in a footnote */}
-              <div className="flex items-start gap-2 border-b border-border bg-flat/[0.08] px-4 py-2.5">
+              <div className="flex items-start gap-2 border-b border-border bg-flat/[0.08] px-5 py-3">
                 <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-flat" />
                 <p className="text-2xs leading-relaxed text-muted-foreground">
-                  Alerts live in this page only. Nothing is saved and nothing will notify you.
-                  Delivery needs a backend, which is not built yet.
+                  Alerts are evaluated in this browser tab only. They do not persist across
+                  sessions and will not notify you once the tab is closed.
                 </p>
               </div>
 
-              <div className="border-b border-border px-4 py-3">
-                <div className="grid gap-2">
+              <div className="border-b border-border px-5 py-4">
+                <div className="space-y-3">
                   <label className="flex flex-col gap-1">
                     <span className="text-2xs text-muted-foreground">Metric</span>
                     <select
                       value={metricId}
-                      onChange={(e) => setMetricId(e.target.value)}
+                      onChange={(e) => {
+                        setMetricId(e.target.value);
+                        setUserThreshold(null);
+                      }}
                       className="rounded-lg border border-border bg-surface-muted px-2.5 py-1.5 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       {metrics.map((m) => (
@@ -203,7 +194,7 @@ export function CustomAlertEngine({
                           type="number"
                           step="0.01"
                           value={threshold}
-                          onChange={(e) => setThreshold(Number(e.target.value))}
+                          onChange={(e) => setUserThreshold(Number(e.target.value))}
                           className="w-28 rounded-lg border border-border bg-surface-muted px-2.5 py-1.5 font-mono text-xs tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         />
                       </label>

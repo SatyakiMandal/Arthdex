@@ -8,6 +8,7 @@ export interface AnalyzerRun {
   kind: AnalyzerKind;
   company: string;
   ticker: string | null;
+  url?: string | null;
   start: string | null;
   end: string | null;
   status: RunStatus;
@@ -294,6 +295,7 @@ export interface ListedDetail {
     metals_summary: string | null;
     nifty: Record<string, { ticker: string; window_return: number | null; beta: number | null; r_squared: number | null; note: string | null }>;
     global: Record<string, { ticker: string; window_return: number | null; note: string | null }>;
+    notable_moves?: Blk[] | null;
   };
   peers: {
     sector: string | null;

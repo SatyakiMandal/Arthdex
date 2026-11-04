@@ -5,6 +5,7 @@ import { Download, GitCompare, History } from "lucide-react";
 import { DataCard } from "@/components/ui/data-card";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import type { ApiYCompare, ApiYHistory } from "@/lib/api/types";
+import { downloadCsv } from "@/lib/client/csv";
 import { cn } from "@/lib/utils";
 import { LineChart, num } from "./shared";
 
@@ -18,7 +19,8 @@ export function HistoryView({ history, compare }: { history: ApiYHistory; compar
   const [mode, setMode] = useState<Mode>("price");
 
   const rows = useMemo(() => {
-    const cut = new Date(Date.now() - DAYS[range] * 86_400_000).toISOString().slice(0, 10);
+    const anchor = history.rows[0]?.date ? new Date(history.rows[0].date).getTime() : 0;
+    const cut = anchor ? new Date(anchor - DAYS[range] * 86_400_000).toISOString().slice(0, 10) : "";
     return history.rows.filter((r) => r.date >= cut);
   }, [history, range]);
   const asc = useMemo(() => [...rows].reverse(), [rows]);
@@ -26,7 +28,10 @@ export function HistoryView({ history, compare }: { history: ApiYHistory; compar
   // rebase every compared series to 100 at the first date inside the selected range
   const cmp = useMemo(() => {
     if (!compare) return null;
-    const cut = new Date(Date.now() - DAYS[range] * 86_400_000).toISOString().slice(0, 10);
+    const anchor = compare.dates.length
+      ? new Date(compare.dates[compare.dates.length - 1]).getTime()
+      : (history.rows[0]?.date ? new Date(history.rows[0].date).getTime() : 0);
+    const cut = anchor ? new Date(anchor - DAYS[range] * 86_400_000).toISOString().slice(0, 10) : "";
     const start = compare.dates.findIndex((d) => d >= cut);
     if (start < 0) return null;
     return {
@@ -44,7 +49,7 @@ export function HistoryView({ history, compare }: { history: ApiYHistory; compar
         };
       }),
     };
-  }, [compare, range]);
+  }, [compare, history.rows, range]);
 
   const first = asc[0]?.close;
   const last = asc.at(-1)?.close;
@@ -53,14 +58,9 @@ export function HistoryView({ history, compare }: { history: ApiYHistory; compar
   const lo = asc.length ? Math.min(...asc.map((r) => r.low ?? r.close)) : null;
 
   function csv() {
-    const head = "Date,Open,High,Low,Close,Adj Close,Volume,Dividend,Split";
-    const body = rows.map((r) => [r.date, r.open, r.high, r.low, r.close, r.adjClose, r.volume, r.dividend ?? "", r.split ?? ""].join(","));
-    const url = URL.createObjectURL(new Blob([[head, ...body].join("\n")], { type: "text/csv" }));
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${history.symbol}-${range}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const head = ["Date", "Open", "High", "Low", "Close", "Adj Close", "Volume", "Dividend", "Split"];
+    const body = rows.map((r) => [r.date, r.open, r.high, r.low, r.close, r.adjClose, r.volume, r.dividend ?? "", r.split ?? ""]);
+    downloadCsv(`${history.symbol}-${range}`, head, body);
   }
 
   return (

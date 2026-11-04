@@ -73,36 +73,39 @@ export function AlertsWorkbench() {
 
   useEffect(() => {
     const trimmed = query.trim();
-    if (!trimmed || selected) {
-      setHits([]);
-      return;
-    }
-    setSearching(true);
+    if (!trimmed || selected) return;
+
+    let cancelled = false;
     const timer = setTimeout(async () => {
+      setSearching(true);
       try {
         const response = await fetch(`/api/search?q=${encodeURIComponent(trimmed)}`);
         const body = await response.json();
-        setHits(body.results ?? []);
+        if (!cancelled) setHits(body.results ?? []);
       } catch {
-        setHits([]);
+        if (!cancelled) setHits([]);
       } finally {
-        setSearching(false);
+        if (!cancelled) setSearching(false);
       }
     }, 200);
-    return () => clearTimeout(timer);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [query, selected]);
 
   // Pull the live value so the threshold defaults to something meaningful
   useEffect(() => {
-    if (!selected) {
-      setCurrent(null);
-      return;
-    }
+    if (!selected) return;
     let cancelled = false;
-    setLoadingValue(true);
+    const t = setTimeout(() => {
+      if (!cancelled) setLoadingValue(true);
+    }, 0);
+
     (async () => {
       try {
-        const response = await fetch(`/api/metric?symbol=${selected.symbol}&metric=${metric}`);
+        const response = await fetch(`/api/metric?symbol=${encodeURIComponent(selected.symbol)}&metric=${metric}`);
         const body = await response.json();
         if (cancelled) return;
         const value = typeof body.value === "number" ? body.value : null;
@@ -114,10 +117,15 @@ export function AlertsWorkbench() {
         if (!cancelled) setLoadingValue(false);
       }
     })();
+
     return () => {
       cancelled = true;
+      clearTimeout(t);
     };
   }, [selected, metric]);
+
+  const visibleHits = !query.trim() || selected ? [] : hits;
+  const displayCurrent = selected ? current : null;
 
   function addAlert() {
     const numeric = Number(threshold);
@@ -130,7 +138,7 @@ export function AlertsWorkbench() {
         metric,
         comparator,
         threshold: numeric,
-        current,
+        current: displayCurrent,
         createdOn: new Date().toISOString().slice(0, 10),
       },
       ...prev,
@@ -168,6 +176,8 @@ export function AlertsWorkbench() {
               value={selected ? `${selected.symbol} · ${selected.name}` : query}
               onChange={(e) => {
                 setSelected(null);
+                setCurrent(null);
+                setHits([]);
                 setQuery(e.target.value);
               }}
               placeholder="Search any listed company…"
@@ -178,6 +188,8 @@ export function AlertsWorkbench() {
                 type="button"
                 onClick={() => {
                   setSelected(null);
+                  setCurrent(null);
+                  setHits([]);
                   setQuery("");
                 }}
                 className="shrink-0 text-2xs text-muted-foreground hover:text-foreground"
@@ -187,9 +199,9 @@ export function AlertsWorkbench() {
             ) : null}
           </div>
 
-          {hits.length > 0 && !selected ? (
+          {visibleHits.length > 0 && !selected ? (
             <ul className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-border bg-surface-raised py-1 shadow-xl">
-              {hits.map((hit) => (
+              {visibleHits.map((hit) => (
                 <li key={hit.symbol}>
                   <button
                     type="button"
@@ -267,13 +279,13 @@ export function AlertsWorkbench() {
           <p className="font-mono text-2xs text-muted-foreground">
             {loadingValue ? (
               "Loading current value…"
-            ) : current === null ? (
+            ) : displayCurrent === null ? (
               `${metricMeta?.label} is not reported for ${selected.symbol}.`
             ) : (
               <>
                 {selected.symbol} {metricMeta?.label} is currently{" "}
                 <span className="text-foreground">
-                  {current.toFixed(2)} {metricMeta?.unit}
+                  {displayCurrent.toFixed(2)} {metricMeta?.unit}
                 </span>
               </>
             )}

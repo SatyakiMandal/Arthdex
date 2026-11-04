@@ -88,6 +88,7 @@ export default async function BhavcopyPage({ searchParams }: PageProps) {
   const { date } = await searchParams;
   const valid = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : undefined;
   const res = await getBhavcopy(valid);
+  const maxDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
 
   return (
     <div className="min-h-screen bg-background">
@@ -110,7 +111,7 @@ export default async function BhavcopyPage({ searchParams }: PageProps) {
                 type="date"
                 name="date"
                 defaultValue={res.ok ? res.data.date : valid}
-                max={new Date().toISOString().slice(0, 10)}
+                max={maxDate}
                 className="mt-1 block h-9 rounded-lg border border-border bg-surface px-2 font-mono text-sm"
               />
             </label>
@@ -197,7 +198,7 @@ export default async function BhavcopyPage({ searchParams }: PageProps) {
               Equity (EQ) and trade-for-trade (BE) series only. Sector-wise averages are not shown: the Bhavcopy carries no sector field.
             </div>
             <div className="mt-2">
-<PageStamp meta={res.meta} />
+              <PageStamp meta={res.meta} />
               <SourceLine meta={res.meta} />
             </div>
           </>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +17,7 @@ export function Gauge({
   label?: string;
   className?: string;
 }) {
+  const gradientId = useId();
   const v = Math.max(0, Math.min(100, value));
   const tone = v >= 60 ? "hsl(var(--up))" : v >= 40 ? "hsl(var(--flat))" : "hsl(var(--down))";
   const R = 80;
@@ -28,13 +30,13 @@ export function Gauge({
     <div className={cn("relative mx-auto w-full max-w-[260px]", className)}>
       <svg viewBox="0 0 200 118" className="w-full overflow-visible" role="img" aria-label={`${label ?? "Score"} ${v.toFixed(1)} out of 100`}>
         <defs>
-          <linearGradient id="gauge-track" x1="0" x2="1">
+          <linearGradient id={gradientId} x1="0" x2="1">
             <stop offset="0%" stopColor="hsl(var(--down))" stopOpacity="0.25" />
             <stop offset="50%" stopColor="hsl(var(--flat))" stopOpacity="0.25" />
             <stop offset="100%" stopColor="hsl(var(--up))" stopOpacity="0.25" />
           </linearGradient>
         </defs>
-        <path d={arc} fill="none" stroke="url(#gauge-track)" strokeWidth={14} strokeLinecap="round" />
+        <path d={arc} fill="none" stroke={`url(#${gradientId})`} strokeWidth={14} strokeLinecap="round" />
         <motion.path
           d={arc}
           fill="none"

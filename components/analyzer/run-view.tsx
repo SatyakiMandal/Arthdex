@@ -40,7 +40,12 @@ export function RunView({ initial }: { initial: AnalyzerRun }) {
   }, [id]);
 
   useEffect(() => {
-    if (run.status === "COMPLETED" && !summary && !summaryError) void loadSummary();
+    if (run.status === "COMPLETED" && !summary && !summaryError) {
+      const t = setTimeout(() => {
+        void loadSummary();
+      }, 0);
+      return () => clearTimeout(t);
+    }
   }, [run.status, summary, summaryError, loadSummary]);
 
   useEffect(() => {

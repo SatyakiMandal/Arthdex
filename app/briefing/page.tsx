@@ -57,8 +57,8 @@ export default async function BriefingPage() {
   ]);
 
   const today = new Date();
-  const todayIso = today.toISOString().slice(0, 10);
-  const dateLabel = today.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const todayIso = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(today);
+  const dateLabel = today.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
   const keyIndices = indices.ok ? indices.data.filter((i) => KEY_INDICES.includes(i.id)) : [];
   const nifty = indices.ok ? indices.data.find((i) => i.id === "nifty-50") : undefined;

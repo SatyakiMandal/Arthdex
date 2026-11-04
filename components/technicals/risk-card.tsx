@@ -14,8 +14,10 @@ export function RiskCard({ symbol }: { symbol: string }) {
 
   useEffect(() => {
     const ctl = new AbortController();
-    setData(null);
-    setError(null);
+    const t = setTimeout(() => {
+      setData(null);
+      setError(null);
+    }, 0);
     fetch(`/api/risk?symbol=${symbol}`, { signal: ctl.signal })
       .then(async (res) => {
         const body = await res.json();
@@ -26,7 +28,10 @@ export function RiskCard({ symbol }: { symbol: string }) {
         if ((e as { name?: string }).name === "AbortError") return;
         setError(e instanceof Error ? e.message : "Could not load risk.");
       });
-    return () => ctl.abort();
+    return () => {
+      clearTimeout(t);
+      ctl.abort();
+    };
   }, [symbol]);
 
   const m = data?.metrics;

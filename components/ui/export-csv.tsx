@@ -20,7 +20,10 @@ export function ExportCsv({
     <button
       type="button"
       disabled={rows.length === 0}
-      onClick={() => downloadCsv(`${filename}-${new Date().toISOString().slice(0, 10)}`, header, rows)}
+      onClick={() => {
+        const istDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
+        downloadCsv(`${filename}-${istDate}`, header, rows);
+      }}
       className={cn(
         "inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-surface-muted px-2.5 text-xs font-medium text-muted-foreground transition-all hover:border-accent/50 hover:text-foreground active:scale-[0.98] disabled:opacity-40",
         className,

@@ -69,9 +69,14 @@ export function RefreshControl() {
   const [done, setDone] = useState(false);
 
   useEffect(() => {
-    setLoadedAt(Date.now());
-    setNow(Date.now());
+    const id = setTimeout(() => {
+      const n = Date.now();
+      setLoadedAt(n);
+      setNow(n);
+    }, 0);
+    return () => clearTimeout(id);
   }, [pathname]);
+
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 15_000);
     return () => clearInterval(t);

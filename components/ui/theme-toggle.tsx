@@ -1,16 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
 import { motion } from "framer-motion";
 import { Moon, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+const emptySubscribe = () => () => {};
+
 export function ThemeToggle({ className }: { className?: string }) {
   const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
+  const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
 
   // resolvedTheme is undefined on the server, so every theme-dependent attribute
   // — label included — must stay neutral until after mount or React reports a

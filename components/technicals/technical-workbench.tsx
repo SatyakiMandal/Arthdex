@@ -49,8 +49,10 @@ export function TechnicalWorkbench({ symbol }: { symbol: string }) {
 
   useEffect(() => {
     const ctl = new AbortController();
-    setLoading(true);
-    setError(null);
+    const t = setTimeout(() => {
+      setLoading(true);
+      setError(null);
+    }, 0);
     fetch(`/api/technicals?symbol=${symbol}&interval=${interval}`, { signal: ctl.signal })
       .then(async (res) => {
         const body = await res.json();
@@ -65,7 +67,10 @@ export function TechnicalWorkbench({ symbol }: { symbol: string }) {
       .finally(() => {
         if (!ctl.signal.aborted) setLoading(false);
       });
-    return () => ctl.abort();
+    return () => {
+      clearTimeout(t);
+      ctl.abort();
+    };
   }, [symbol, interval]);
 
   const toggleOverlay = (id: OverlayId) =>

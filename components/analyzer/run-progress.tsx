@@ -1,6 +1,5 @@
 "use client";
 
-import { useRef } from "react";
 import { Check, Loader2, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AnalyzerProgress } from "@/types/analyzer";
@@ -30,9 +29,7 @@ export function RunProgress({
   const steps = progress?.steps ?? ["Finding news", "Reading articles", "Scoring tone", "Market data", "Running models", "Writing the report"];
   const step = progress?.step ?? 0;
   const raw = (step + (progress?.fraction ?? 0)) / steps.length;
-  const best = useRef(0);
-  best.current = Math.max(best.current, raw);
-  const pct = Math.round(Math.min(0.98, best.current) * 100);
+  const pct = Math.round(Math.min(0.98, Math.max(0, raw)) * 100);
 
   return (
     <section className="mt-8 overflow-hidden rounded-xl border border-border bg-surface" aria-live="polite">

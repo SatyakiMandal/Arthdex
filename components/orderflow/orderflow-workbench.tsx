@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { AlertTriangle, BarChart3, Flame, Grid3x3, Layers, Loader2, Magnet, Waves } from "lucide-react";
 import { DataCard } from "@/components/ui/data-card";
 import { SegmentedControl } from "@/components/ui/segmented-control";
@@ -59,8 +60,10 @@ export function OrderflowWorkbench({
 
   useEffect(() => {
     const ctl = new AbortController();
-    setLoading(true);
-    setError(null);
+    const t = setTimeout(() => {
+      setLoading(true);
+      setError(null);
+    }, 0);
     fetch(`/api/orderflow?symbol=${encodeURIComponent(symbol)}&market=${market}&interval=${interval}`, { signal: ctl.signal })
       .then(async (res) => {
         const body = await res.json();
@@ -75,7 +78,10 @@ export function OrderflowWorkbench({
       .finally(() => {
         if (!ctl.signal.aborted) setLoading(false);
       });
-    return () => ctl.abort();
+    return () => {
+      clearTimeout(t);
+      ctl.abort();
+    };
   }, [symbol, market, interval]);
 
   const pickMarket = (m: OrderflowMarket) => {
@@ -277,7 +283,9 @@ export function OrderflowWorkbench({
       {selectable && market === "nse" ? (
         <DataCard title="Options exposure" subtitle="Gamma, delta, theta, open interest and 0DTE" icon={Layers}>
           <p className="p-4 text-sm text-muted-foreground">
-            Options analytics need a live NSE option chain, which the free data service does not have. They are available for SPY, QQQ and the NQ, MNQ, NNQ, ES and MES futures, using the ETF chains as proxies.
+            For NSE indices and F&amp;O stocks, the option chain, Greeks, max pain and open-interest walls are on the{" "}
+            <Link href="/derivatives" className="underline underline-offset-4 hover:decoration-gold">Derivatives</Link> page. Dealer gamma exposure here covers SPY,
+            QQQ and the NQ, MNQ, NNQ, ES and MES futures, using the ETF chains as proxies.
           </p>
         </DataCard>
       ) : null}

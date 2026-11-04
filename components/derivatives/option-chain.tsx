@@ -23,8 +23,19 @@ function OiCell({ oi, max, side }: { oi: number | null; max: number; side: "ce" 
 }
 
 export function OptionChainView({ chain }: { chain: ApiOptionChain }) {
-  const atmIndex = chain.rows.findIndex((r) => r.strike === chain.atmStrike);
-  const rows = chain.rows.slice(Math.max(0, atmIndex - STRIKES_EACH_SIDE), atmIndex + STRIKES_EACH_SIDE + 1);
+  let atmIndex = chain.rows.findIndex((r) => r.strike === chain.atmStrike);
+  if (atmIndex < 0 && chain.rows.length > 0) {
+    let bestDist = Infinity;
+    chain.rows.forEach((r, i) => {
+      const dist = Math.abs(r.strike - (chain.atmStrike || chain.underlying));
+      if (dist < bestDist) {
+        bestDist = dist;
+        atmIndex = i;
+      }
+    });
+  }
+  const safeAtmIndex = Math.max(0, atmIndex);
+  const rows = chain.rows.slice(Math.max(0, safeAtmIndex - STRIKES_EACH_SIDE), safeAtmIndex + STRIKES_EACH_SIDE + 1);
   const maxOi = Math.max(1, ...rows.flatMap((r) => [r.ce?.oi ?? 0, r.pe?.oi ?? 0]));
   const ledger = [
     { label: "Underlying", value: n(chain.underlying, 2) },

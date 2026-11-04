@@ -46,7 +46,7 @@ export function RunActions({ run }: { run: AnalyzerRun }) {
       const body =
         run.kind === "listed"
           ? { kind: "listed", company: run.company, ticker: run.ticker, start, end }
-          : { kind: "unlisted", company: run.company, start, end };
+          : { kind: "unlisted", company: run.company, start, end, url: (run as { url?: string | null }).url ?? null };
       const res = await fetch("/api/analyzer/runs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

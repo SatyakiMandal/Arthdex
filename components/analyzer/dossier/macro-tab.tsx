@@ -31,7 +31,7 @@ export function MacroTab({ s }: { s: ListedSummary }) {
             <Stat label="US Fed funds" value={fed.effective_rate_pct != null ? `${num(fed.effective_rate_pct)}%` : dash} hint={str(fed.fomc_stance)} />
             <Stat
               label="Repo − Fed differential"
-              value={fed.us_india_rate_differential_bps != null ? `${-Number(fed.us_india_rate_differential_bps)} bps` : dash}
+              value={fed.us_india_rate_differential_bps != null ? `${Number(fed.us_india_rate_differential_bps)} bps` : dash}
               hint="India minus US"
             />
             <Stat label="Brent crude" value={crude.end_price != null ? `$${num(crude.end_price)}` : dash} tone={crude.change != null ? deltaColor(crude.change) : undefined} hint={crude.change != null ? `${fracSigned(crude.change, 1)} over window` : undefined} />
@@ -60,63 +60,59 @@ export function MacroTab({ s }: { s: ListedSummary }) {
       </DataCard>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <DataCard title="Nifty 50 & sectoral benchmarks" subtitle="Sensitivity of the stock to each index over the window" icon={Factory}>
+        <DataCard title="Nifty 50 vs broad and sector indices" subtitle="Beta, correlation and return relative to benchmark" icon={Globe2}>
           {nifty.length === 0 ? (
-            <Empty>No benchmark regressions were run.</Empty>
+            <Empty>No Nifty benchmark moves were logged.</Empty>
           ) : (
-            <Table min={420} head={["Index", { label: "β", right: true }, { label: "R²", right: true }, { label: "Window return", right: true }]}>
-              {nifty.map(([name, n]) => (
-                <tr key={name} className="border-b border-border last:border-0">
-                  <Td>{name}</Td>
-                  <Td right>{num(n.beta)}</Td>
-                  <Td right>{num(n.r_squared)}</Td>
-                  <Td right className={n.window_return != null ? deltaColor(n.window_return) : ""}>{fracSigned(n.window_return, 1)}</Td>
-                </tr>
-              ))}
+            <Table min={440} head={["Index", { label: "Change", right: true }, { label: "Beta", right: true }, { label: "Corr", right: true }]}>
+              {nifty.map(([k, v]) => {
+                const row = v as Blk;
+                return (
+                  <tr key={k} className="border-t border-border">
+                    <Td>{str(row.label ?? k)}</Td>
+                    <Td right className={row.return_pct != null ? deltaColor(Number(row.return_pct)) : undefined}>{pct(row.return_pct, 1)}</Td>
+                    <Td right>{num(row.beta, 2)}</Td>
+                    <Td right>{num(row.correlation, 2)}</Td>
+                  </tr>
+                );
+              })}
             </Table>
           )}
         </DataCard>
 
-        <DataCard
-          title="Global markets"
-          subtitle="Cross-border sentiment over the window"
-          icon={Globe2}
-          footnote="US and European closes arrive after Indian hours, so they are aligned to the next Indian session."
-        >
+        <DataCard title="Global markets" subtitle="S&P 500, Nasdaq, crude, gold and the dollar index" icon={Factory}>
           {glob.length === 0 ? (
-            <Empty>No global index data was collected.</Empty>
+            <Empty>No global indices were logged.</Empty>
           ) : (
-            <Table min={320} head={["Index", "Ticker", { label: "Window return", right: true }]}>
-              {glob.map(([name, g]) => (
-                <tr key={name} className="border-b border-border last:border-0">
-                  <Td>{name}</Td>
-                  <Td mono className="text-muted-foreground">{g.ticker}</Td>
-                  <Td right className={cn(g.window_return != null && deltaColor(g.window_return))}>{fracSigned(g.window_return, 1)}</Td>
-                </tr>
-              ))}
+            <Table min={440} head={["Market", { label: "Change", right: true }, { label: "Beta", right: true }, { label: "Corr", right: true }]}>
+              {glob.map(([k, v]) => {
+                const row = v as Blk;
+                return (
+                  <tr key={k} className="border-t border-border">
+                    <Td>{str(row.label ?? k)}</Td>
+                    <Td right className={row.return_pct != null ? deltaColor(Number(row.return_pct)) : undefined}>{pct(row.return_pct, 1)}</Td>
+                    <Td right>{num(row.beta, 2)}</Td>
+                    <Td right>{num(row.correlation, 2)}</Td>
+                  </tr>
+                );
+              })}
             </Table>
           )}
         </DataCard>
       </div>
 
-      <DataCard title="Industrial & precious metals" subtitle="Zinc, copper, gold, silver and aluminium" icon={Pickaxe} footnote={m.metals_summary ?? undefined}>
-        {m.metals.length === 0 ? (
-          <Empty>No metals data was collected.</Empty>
-        ) : (
-          <Table min={640} head={["Metal", { label: "Price", right: true }, { label: "Window", right: true }, { label: "1-week", right: true }, { label: "Vol (ann.)", right: true }, "Transmission"]}>
-            {m.metals.map((x) => (
-              <tr key={x.symbol} className="border-b border-border last:border-0">
-                <Td>{x.name}</Td>
-                <Td right>{num(x.current_price)} <span className="text-2xs text-muted-foreground">{x.unit}</span></Td>
-                <Td right className={deltaColor(x.change_pct ?? 0)}>{pct(x.change_pct, 1)}</Td>
-                <Td right className={deltaColor(x.momentum_1w_pct ?? 0)}>{pct(x.momentum_1w_pct, 1)}</Td>
-                <Td right>{x.annualized_volatility_pct != null ? `${x.annualized_volatility_pct}%` : dash}</Td>
-                <Td className="text-2xs text-muted-foreground">{x.transmission_channel ?? dash}</Td>
-              </tr>
+      {Array.isArray(m.notable_moves) && m.notable_moves.length > 0 ? (
+        <DataCard title="Notable macro days" subtitle="Outsized sessions for oil, the rupee or global markets during the window" icon={Pickaxe}>
+          <ul className="space-y-2 p-4 text-sm">
+            {(m.notable_moves as Blk[]).map((d, i) => (
+              <li key={i} className="flex items-start gap-3">
+                <span className="font-mono text-xs text-muted-foreground">{str(d.date)}</span>
+                <span>{str(d.note ?? d.headline)}</span>
+              </li>
             ))}
-          </Table>
-        )}
-      </DataCard>
+          </ul>
+        </DataCard>
+      ) : null}
     </div>
   );
 }

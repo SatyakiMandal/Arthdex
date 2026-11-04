@@ -46,8 +46,10 @@ export function MacdScreener() {
 
   useEffect(() => {
     const ctl = new AbortController();
-    setLoading(true);
-    setError(null);
+    const t = setTimeout(() => {
+      setLoading(true);
+      setError(null);
+    }, 0);
     fetch(`/api/screener/macd?direction=${direction}&interval=${interval}&within=${within}&index=${index}`, { signal: ctl.signal })
       .then(async (res) => {
         const body = await res.json();
@@ -62,7 +64,10 @@ export function MacdScreener() {
       .finally(() => {
         if (!ctl.signal.aborted) setLoading(false);
       });
-    return () => ctl.abort();
+    return () => {
+      clearTimeout(t);
+      ctl.abort();
+    };
   }, [direction, interval, within, index, tick]);
 
   const maxHist = Math.max(...(data?.results.map((r) => Math.abs(r.hist ?? 0)) ?? [0]), 0.001);

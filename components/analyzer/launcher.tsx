@@ -20,11 +20,21 @@ const TICKER_LIKE = /^[A-Za-z0-9&.^-]{1,20}$/;
 export function Launcher() {
   const router = useRouter();
   const params = useSearchParams();
-  const [query, setQuery] = useState("");
+
+  // Arriving from "Analyze in depth" on a mover pre-fills the company
+  const [picked, setPicked] = useState<AnalyzerSearchHit | null>(() => {
+    const company = params.get("company");
+    const ticker = params.get("ticker");
+    if (company && ticker) {
+      return { kind: "listed", name: company, ticker, symbol: ticker.replace(/\.(NS|BO)$/i, ""), url: null, sector: null };
+    }
+    return null;
+  });
+
+  const [query, setQuery] = useState(() => params.get("company") ?? "");
   const [hits, setHits] = useState<AnalyzerSearchHit[]>([]);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
-  const [picked, setPicked] = useState<AnalyzerSearchHit | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [unlistedReady, setUnlistedReady] = useState(true);
   const [start, setStart] = useState("");
@@ -33,33 +43,25 @@ export function Launcher() {
   const [error, setError] = useState<string | null>(null);
   const seq = useRef(0);
 
-  // Arriving from "Analyze in depth" on a mover pre-fills the company
-  useEffect(() => {
-    const company = params.get("company");
-    const ticker = params.get("ticker");
-    if (company && ticker) {
-      setPicked({ kind: "listed", name: company, ticker, symbol: ticker.replace(/\.(NS|BO)$/i, ""), url: null, sector: null });
-      setQuery(company);
-    }
-  }, [params]);
-
   // Dates are filled after mount so server and client markup match.
   useEffect(() => {
-    setEnd(daysAgo(0));
-    setStart(daysAgo(183));
+    const t = setTimeout(() => {
+      setEnd(daysAgo(0));
+      setStart(daysAgo(183));
+    }, 0);
+    return () => clearTimeout(t);
   }, []);
 
   useEffect(() => {
     const q = query.trim();
-    if (picked || q.length < 2) {
-      setHits([]);
-      return;
-    }
+    if (picked || q.length < 2) return;
+
+    let cancelled = false;
     const mine = ++seq.current;
     const t = setTimeout(async () => {
       try {
         const res = await fetch(`/api/analyzer/search?q=${encodeURIComponent(q)}`);
-        if (mine !== seq.current) return;
+        if (mine !== seq.current || cancelled) return;
         if (!res.ok) {
           setSearchError("Search is unavailable right now.");
           setHits([]);
@@ -67,15 +69,23 @@ export function Launcher() {
         }
         setSearchError(null);
         const body = (await res.json()) as { results: AnalyzerSearchHit[]; unlistedReady?: boolean };
-        setHits(body.results);
-        setUnlistedReady(body.unlistedReady !== false);
-        setActive(-1);
+        if (!cancelled) {
+          setHits(body.results ?? []);
+          setUnlistedReady(body.unlistedReady !== false);
+          setActive(-1);
+        }
       } catch {
-        if (mine === seq.current) setSearchError("Search is unavailable right now.");
+        if (mine === seq.current && !cancelled) setSearchError("Search is unavailable right now.");
       }
     }, 220);
-    return () => clearTimeout(t);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
   }, [query, picked]);
+
+  const visibleHits = picked || query.trim().length < 2 ? [] : hits;
 
   const span = useMemo(() => {
     if (!start || !end) return null;
@@ -131,16 +141,16 @@ export function Launcher() {
   }
 
   function onKey(e: React.KeyboardEvent) {
-    if (!open || hits.length === 0) return;
+    if (!open || visibleHits.length === 0) return;
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setActive((i) => (i + 1) % hits.length);
+      setActive((i) => (i + 1) % visibleHits.length);
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setActive((i) => (i <= 0 ? hits.length - 1 : i - 1));
+      setActive((i) => (i <= 0 ? visibleHits.length - 1 : i - 1));
     } else if (e.key === "Enter" && active >= 0) {
       e.preventDefault();
-      choose(hits[active]);
+      choose(visibleHits[active]);
     } else if (e.key === "Escape") {
       setOpen(false);
     }
@@ -162,7 +172,7 @@ export function Launcher() {
             <input
               id="an-company"
               role="combobox"
-              aria-expanded={open && hits.length > 0}
+              aria-expanded={open && visibleHits.length > 0}
               aria-controls="an-listbox"
               aria-autocomplete="list"
               autoComplete="off"
@@ -180,13 +190,13 @@ export function Launcher() {
             />
           </div>
 
-          {open && hits.length > 0 ? (
+          {open && visibleHits.length > 0 ? (
             <ul
               id="an-listbox"
               role="listbox"
               className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-lg border border-border bg-surface-raised p-1 shadow-lg"
             >
-              {hits.map((h, i) => (
+              {visibleHits.map((h, i) => (
                 <li
                   key={`${h.ticker ?? h.url}-${i}`}
                   role="option"

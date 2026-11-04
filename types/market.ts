@@ -1,4 +1,7 @@
 import type { Delta, ISODate, MoverWindow } from "./common";
+import type { CompanyFilingItem, CompanyFilingsPayload } from "@/lib/api/types";
+
+export type { CompanyFilingItem, CompanyFilingsPayload };
 
 export type IndexFamily =
   | "broad"

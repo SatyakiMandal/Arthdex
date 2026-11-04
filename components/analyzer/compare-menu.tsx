@@ -92,25 +92,31 @@ export function CompareMenu({ run }: { run: AnalyzerRun }) {
   // Search every company, debounced, ignoring superseded responses
   useEffect(() => {
     const q = query.trim();
-    if (q.length < 2) {
-      setHits([]);
-      setSearching(false);
-      return;
-    }
-    setSearching(true);
+    if (q.length < 2) return;
+
+    let cancelled = false;
+    const tSearch = setTimeout(() => {
+      if (!cancelled) setSearching(true);
+    }, 0);
+
     const mine = ++seq.current;
     const t = setTimeout(async () => {
       try {
         const res = await fetch(`/api/analyzer/search?q=${encodeURIComponent(q)}&kind=${run.kind}`);
         const body = (await res.json()) as { results: SearchHit[] };
-        if (mine === seq.current) setHits(body.results ?? []);
+        if (mine === seq.current && !cancelled) setHits(body.results ?? []);
       } catch {
-        if (mine === seq.current) setHits([]);
+        if (mine === seq.current && !cancelled) setHits([]);
       } finally {
-        if (mine === seq.current) setSearching(false);
+        if (mine === seq.current && !cancelled) setSearching(false);
       }
     }, 220);
-    return () => clearTimeout(t);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(tSearch);
+      clearTimeout(t);
+    };
   }, [query, run.kind]);
 
   // One entry per company (the newest finished run), never the company being compared with itself
@@ -139,64 +145,74 @@ export function CompareMenu({ run }: { run: AnalyzerRun }) {
     ticker: p.ticker,
     url: p.url,
   }));
-  const suggestedKeys = new Set(suggested.map((s) => norm(s.name)));
 
+  // Other analyses the user has run of the same kind that are not already suggested
+  const suggestedNames = new Set(suggested.map((s) => norm(s.name)));
   const others: Candidate[] = finished
-    .filter((r) => !suggestedKeys.has(norm(r.company)))
-    .map((r) => ({ key: `r-${r.id}`, name: r.company, sub: `Analysed ${r.start} to ${r.end}`, runId: r.id, ticker: r.ticker, url: null }));
-
-  const q = query.trim().toLowerCase();
-  const searchResults: Candidate[] = hits
-    .filter((h) => (h.ticker ?? "") !== (run.ticker ?? "\u0000") && norm(h.name) !== norm(run.company))
-    .map((h) => ({
-      key: `s-${h.ticker ?? h.url ?? h.name}`,
-      name: h.name,
-      sub: h.kind === "listed" ? (h.symbol ?? "Listed") : (h.sector ?? "Unlisted"),
-      runId: runFor({ ticker: h.ticker, name: h.name }),
-      ticker: h.ticker,
-      url: h.url,
+    .filter((r) => !suggestedNames.has(norm(r.company)))
+    .map((r) => ({
+      key: `r-${r.id}`,
+      name: r.company,
+      sub: `${r.ticker ?? "Unlisted"} · analysed ${r.start ?? ""} to ${r.end ?? ""}`,
+      runId: r.id,
+      ticker: r.ticker,
+      url: null,
     }));
-  const analysedMatches = q.length >= 2 ? finished.filter((r) => r.company.toLowerCase().includes(q)).map((r): Candidate => ({ key: `r-${r.id}`, name: r.company, sub: `Analysed ${r.start} to ${r.end}`, runId: r.id, ticker: r.ticker, url: null })) : [];
-  const shownSearch = [...analysedMatches, ...searchResults.filter((s) => !analysedMatches.some((m) => norm(m.name) === norm(s.name)))];
+
+  const shownSearch: Candidate[] = (query.trim().length < 2 ? [] : hits).map((h) => ({
+    key: `s-${h.ticker ?? h.name}`,
+    name: h.name,
+    sub: [h.symbol ?? h.ticker, h.sector].filter(Boolean).join(" · ") || (h.kind === "unlisted" ? "Unlisted" : "Listed"),
+    runId: runFor(h),
+    ticker: h.ticker,
+    url: h.url,
+  }));
 
   async function choose(c: Candidate) {
-    setError(null);
     if (c.runId) {
+      setOpen(false);
       router.push(`/analyzer/compare?a=${run.id}&b=${c.runId}`);
       return;
     }
-    if (!run.start || !run.end) return setError("This analysis has no window to reuse.");
+    if (!run.start || !run.end) return;
     setBusy(c.key);
+    setError(null);
     try {
       const body =
         run.kind === "listed"
           ? { kind: "listed", company: c.name, ticker: c.ticker, start: run.start, end: run.end }
-          : { kind: "unlisted", company: c.name, url: c.url ?? undefined, start: run.start, end: run.end };
-      const res = await fetch("/api/analyzer/runs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+          : { kind: "unlisted", company: c.name, url: c.url, start: run.start, end: run.end };
+      const res = await fetch("/api/analyzer/runs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
       const json = await res.json();
-      if (!res.ok) throw new Error(Array.isArray(json.detail) ? json.detail.map((d: { msg: string }) => d.msg).join("; ") : json.detail);
+      if (!res.ok) {
+        throw new Error(Array.isArray(json.detail) ? json.detail.map((d: { msg: string }) => d.msg).join("; ") : json.detail);
+      }
+      setOpen(false);
       router.push(`/analyzer/compare?a=${run.id}&b=${(json as AnalyzerRun).id}`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not start that analysis.");
+      setError(e instanceof Error ? e.message : "Could not start the comparison.");
       setBusy(null);
     }
   }
 
-  const loading = runs === null || peers === null;
+  const loading = peers === null || runs === null;
+  const q = query.trim();
 
   return (
     <div ref={ref} className="relative">
-      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-haspopup="dialog" className={BTN}>
-        <Columns2 className="h-3.5 w-3.5" /> Compare
-        <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")} />
+      <button type="button" onClick={() => setOpen((o) => !o)} className={BTN}>
+        <Columns2 className="h-3.5 w-3.5" /> Compare <ChevronDown className="h-3 w-3 text-muted-foreground" />
       </button>
 
       {open ? (
-        // Above the sticky dossier tabs (z-30) but below the site header (z-50)
-        <div role="dialog" aria-label="Choose a company to compare with" className="absolute right-0 top-[calc(100%+6px)] z-40 w-[min(26rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border bg-surface-raised shadow-xl">
+        <div className="absolute right-0 top-full z-30 mt-1.5 w-[22rem] overflow-hidden rounded-xl border border-border bg-surface-raised shadow-xl sm:w-96">
           <div className="border-b border-border p-2">
             <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
               <input
                 autoFocus
                 value={query}

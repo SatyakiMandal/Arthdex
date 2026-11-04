@@ -1,22 +1,22 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { BellRing, CheckCircle2, ChevronDown, RotateCcw, Trash2 } from "lucide-react";
-import { CompanyPicker, type PickedCompany } from "@/components/search/company-picker";
 import { SegmentedControl } from "@/components/ui/segmented-control";
-import { describeRule, useAlertRules, type RuleComparator, type RuleMetric } from "@/lib/client/alert-rules";
+import { CompanyPicker, type PickedCompany } from "@/components/search/company-picker";
+import { describeRule, useAlertRules, type AlertRule, type RuleComparator, type RuleMetric } from "@/lib/client/alert-rules";
 import { cn, formatINR } from "@/lib/utils";
 
-const COMPARATORS = [
-  { id: "gte" as const, label: "At or above" },
-  { id: "lte" as const, label: "At or below" },
+const METRICS: { id: RuleMetric; label: string }[] = [
+  { id: "price", label: "Price" },
+  { id: "dayChangePct", label: "Day move" },
 ];
 
-const METRICS = [
-  { id: "price" as const, label: "Price" },
-  { id: "dayChangePct" as const, label: "Day change %" },
+const COMPARATORS: { id: RuleComparator; label: string }[] = [
+  { id: "gte", label: "At or above" },
+  { id: "lte", label: "At or below" },
 ];
 
 const label = "mb-1.5 block text-2xs font-medium text-muted-foreground";
@@ -24,43 +24,50 @@ const label = "mb-1.5 block text-2xs font-medium text-muted-foreground";
 export function MyAlerts() {
   const params = useSearchParams();
   const { rules, add, remove, rearm, markAllSeen, ready } = useAlertRules();
-  const [company, setCompany] = useState<PickedCompany | null>(null);
+
+  // Arriving from a watchlist row pre-fills the company
+  const [company, setCompany] = useState<PickedCompany | null>(() => {
+    const kind = params.get("kind");
+    const target = params.get("target");
+    const name = params.get("name");
+    if ((kind === "listed" || kind === "unlisted") && target && name) {
+      return { kind, id: target, name };
+    }
+    return null;
+  });
+
   const [metric, setMetric] = useState<RuleMetric>("price");
   const [comparator, setComparator] = useState<RuleComparator>("gte");
   const [threshold, setThreshold] = useState("");
   const [permission, setPermission] = useState<NotificationPermission | "unsupported">("default");
   const [error, setError] = useState<string | null>(null);
 
-  // Arriving from a watchlist row pre-fills the company
   useEffect(() => {
-    const kind = params.get("kind");
-    const target = params.get("target");
-    const name = params.get("name");
-    if ((kind === "listed" || kind === "unlisted") && target && name) setCompany({ kind, id: target, name });
-  }, [params]);
-
-  useEffect(() => {
-    setPermission("Notification" in window ? Notification.permission : "unsupported");
+    const t = setTimeout(() => {
+      setPermission("Notification" in window ? Notification.permission : "unsupported");
+    }, 0);
+    return () => clearTimeout(t);
   }, []);
 
   // Opening this page counts as having seen the fired alerts
   useEffect(() => {
-    if (ready) markAllSeen();
+    if (ready) {
+      const t = setTimeout(markAllSeen, 0);
+      return () => clearTimeout(t);
+    }
   }, [ready, markAllSeen]);
 
   // Unlisted names only have a price, never a daily change
   const unlisted = company?.kind === "unlisted";
-  useEffect(() => {
-    if (unlisted) setMetric("price");
-  }, [unlisted]);
+  const effectiveMetric = unlisted ? "price" : metric;
 
   function submit() {
     setError(null);
     const value = Number(threshold);
     if (!company) return setError("Choose a company first.");
     if (!threshold.trim() || !Number.isFinite(value)) return setError("Enter a number for the threshold.");
-    if (metric === "price" && value <= 0) return setError("A price threshold must be above zero.");
-    add({ kind: company.kind, target: company.id, name: company.name, metric, comparator, threshold: value });
+    if (effectiveMetric === "price" && value <= 0) return setError("A price threshold must be above zero.");
+    add({ kind: company.kind, target: company.id, name: company.name, metric: effectiveMetric, comparator, threshold: value });
     setThreshold("");
   }
 
@@ -100,18 +107,18 @@ export function MyAlerts() {
           <span className={label}>Watch</span>
           <SegmentedControl
             options={unlisted ? METRICS.slice(0, 1) : METRICS}
-            value={metric}
-            onChange={setMetric}
+            value={effectiveMetric}
+            onChange={(m) => setMetric(m as RuleMetric)}
             layoutGroupId="alert-metric"
           />
         </div>
         <div>
           <span className={label}>When it is</span>
-          <SegmentedControl options={COMPARATORS} value={comparator} onChange={setComparator} layoutGroupId="alert-comparator" />
+          <SegmentedControl options={COMPARATORS} value={comparator} onChange={(c) => setComparator(c as RuleComparator)} layoutGroupId="alert-comparator" />
         </div>
         <div>
           <label htmlFor="alert-threshold" className={label}>
-            {metric === "price" ? "Price (₹)" : "Percent"}
+            {effectiveMetric === "price" ? "Price (₹)" : "Percent"}
           </label>
           <input
             id="alert-threshold"
@@ -119,7 +126,7 @@ export function MyAlerts() {
             value={threshold}
             onChange={(e) => setThreshold(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && submit()}
-            placeholder={metric === "price" ? "e.g. 1250" : "e.g. -3"}
+            placeholder={effectiveMetric === "price" ? "e.g. 1250" : "e.g. -3"}
             className="h-10 w-full rounded-lg border border-border bg-background px-3 font-mono text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-accent"
           />
         </div>
@@ -143,7 +150,7 @@ export function MyAlerts() {
         </p>
       ) : (
         <ul className="divide-y divide-border/60 border-t border-border">
-          {rules.map((r) => (
+          {rules.map((r: AlertRule) => (
             <li key={r.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium">{describeRule(r)}</p>

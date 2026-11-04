@@ -32,18 +32,22 @@ export function CompanyPicker({
   id?: string;
 }) {
   const [query, setQuery] = useState(value?.name ?? "");
+  const [prevValue, setPrevValue] = useState(value);
   const [hits, setHits] = useState<Hit[]>([]);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
   const seq = useRef(0);
 
-  useEffect(() => setQuery(value?.name ?? ""), [value]);
+  if (prevValue !== value) {
+    setPrevValue(value);
+    setQuery(value?.name ?? "");
+  }
 
   useEffect(() => {
     const q = query.trim();
     if (value || q.length < 2) {
-      setHits([]);
-      return;
+      const t = setTimeout(() => setHits([]), 0);
+      return () => clearTimeout(t);
     }
     const mine = ++seq.current;
     const t = setTimeout(async () => {

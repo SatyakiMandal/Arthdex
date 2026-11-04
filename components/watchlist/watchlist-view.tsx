@@ -39,9 +39,12 @@ export function WatchlistView() {
   }, [key]);
 
   useEffect(() => {
-    load();
+    const t0 = setTimeout(load, 0);
     const t = setInterval(load, REFRESH_MS);
-    return () => clearInterval(t);
+    return () => {
+      clearTimeout(t0);
+      clearInterval(t);
+    };
   }, [load]);
 
   const rows = items.map((i) => {

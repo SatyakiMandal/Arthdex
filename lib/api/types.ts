@@ -160,6 +160,33 @@ export interface ApiRatios {
   quartersAvailable: number;
 }
 
+export interface ApiVettingCheck {
+  period?: string;
+  year?: string;
+  field: string;
+  primary?: number | null;
+  backup?: number | null;
+  yahoo?: number | null;
+  screener?: number | null;
+  vetted?: number | null;
+  gapPct?: number | null;
+  diffPct?: number | null;
+  agree?: boolean;
+  verdict?: string;
+  xbrlUrl?: string | null;
+}
+
+export interface ApiFinancialsVetting {
+  quarterly?: ApiSeriesSource;
+  annual?: ApiSeriesSource;
+  balanceSheet?: ApiSeriesSource;
+  checks?: ApiVettingCheck[];
+  xbrlFilings?: { period?: string; subject?: string; url: string; filedAt?: string | null }[];
+  vetted?: boolean;
+  primarySource?: string;
+  backupSource?: string;
+}
+
 export interface ApiFinancials {
   /** Days since the newest quarter on file ended; over ~150 means a filed quarter is missing upstream. */
   latestQuarterAgeDays?: number | null;
@@ -170,6 +197,8 @@ export interface ApiFinancials {
   ratios: ApiRatios;
   /** Which source each series came from after vetting Yahoo against screener.in, and why. */
   sources?: Partial<Record<"quarterly" | "annual" | "balanceSheet", ApiSeriesSource>>;
+  /** Optional cross-source vetting summary and field-level checks. */
+  vetting?: ApiFinancialsVetting | null;
 }
 
 export interface ApiSourceDispute {
@@ -310,7 +339,7 @@ export interface ApiSensitivity {
   note: string | null;
 }
 
-// -- search, IPO, news ------------------------------------------------------
+// -- search, IPO, news, filings ---------------------------------------------
 
 export interface ApiSearchResult {
   id: string;
@@ -376,6 +405,30 @@ export interface ApiNewsFeed {
   items: ApiNewsItem[];
   counts: { filings: number; press: number };
   errors: string[] | null;
+}
+
+export interface CompanyFilingItem {
+  symbol: string;
+  company: string | null;
+  category: string;
+  subject: string | null;
+  detail: string | null;
+  /** As NSE prints it, IST: "04-Nov-2026 11:00:07" */
+  broadcastDate: string;
+  /** First session the filing could move the price: the same day, or the next if filed after 15:30 */
+  reactionDate: string | null;
+  attachment: string | null;
+  stockReturnPct: number | null;
+  niftyReturnPct: number | null;
+  abnormalReturnPct: number | null;
+  seqId: string | null;
+}
+
+export interface CompanyFilingsPayload {
+  symbol: string;
+  asOf: string | null;
+  filings: CompanyFilingItem[];
+  categoryCounts: Record<string, number>;
 }
 
 // -- screener ---------------------------------------------------------------
@@ -905,6 +958,7 @@ export interface ApiGex {
   symbol: string;
   underlying: string;
   spot: number;
+  currency?: "INR" | "USD" | string;
   asOf: string;
   expiries: string[];
   nearestExpiry: string;
