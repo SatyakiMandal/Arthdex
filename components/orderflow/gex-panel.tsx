@@ -37,11 +37,16 @@ export function GexPanel({ symbol }: { symbol: string }) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [metric, setMetric] = useState<Metric>("gex");
+  const [prevSymbol, setPrevSymbol] = useState(symbol);
+
+  if (prevSymbol !== symbol) {
+    setPrevSymbol(symbol);
+    setLoading(true);
+    setError(null);
+  }
 
   useEffect(() => {
     const ctl = new AbortController();
-    setLoading(true);
-    setError(null);
     fetch(`/api/gex?symbol=${symbol}`, { signal: ctl.signal })
       .then(async (res) => {
         const body = await res.json();

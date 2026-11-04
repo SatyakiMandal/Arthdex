@@ -181,3 +181,55 @@ def analyse(d: date) -> dict[str, Any] | None:
             "baselineSessions": len(prior),
         },
     }
+
+
+def scan(d: date) -> dict[str, Any] | None:
+    """Scan Bhavcopy for institutional accumulation, delivery surges, absorption, and distribution."""
+    df = load_day(d)
+    if df is None:
+        return None
+    df = df.dropna(subset=["CLOSE_PRICE", "PREV_CLOSE", "DELIV_PER"]).copy()
+    liquid = df[df["TURNOVER_CR"] >= 3.0].copy()
+
+    prior = previous_sessions(d, 5)
+    avg_vol = pd.Series(dtype=float)
+    if len(prior) >= 3:
+        avg_vol = pd.concat([p[1].set_index("SYMBOL")["TTL_TRD_QNTY"] for p in prior], axis=1).mean(axis=1)
+
+    liquid["AVG_VOL"] = liquid["SYMBOL"].map(avg_vol)
+    liquid["VOL_MULT"] = liquid.apply(
+        lambda r: round(float(r["TTL_TRD_QNTY"] / r["AVG_VOL"]), 2) if pd.notna(r["AVG_VOL"]) and r["AVG_VOL"] > 0 else 1.0,
+        axis=1,
+    )
+
+    accumulation = liquid[(liquid["DELIV_PER"] >= 60.0) & (liquid["CHG_PCT"] > 0.5)].sort_values("TURNOVER_CR", ascending=False).head(30)
+    surges = liquid[(liquid["VOL_MULT"] >= 1.6) & (liquid["DELIV_PER"] >= 48.0)].sort_values("VOL_MULT", ascending=False).head(30)
+    absorption = liquid[(liquid["DELIV_PER"] >= 65.0) & (liquid["CHG_PCT"].abs() <= 1.0)].sort_values("TURNOVER_CR", ascending=False).head(25)
+    distribution = liquid[(liquid["DELIV_PER"] >= 55.0) & (liquid["CHG_PCT"] < -1.5)].sort_values("TURNOVER_CR", ascending=False).head(25)
+
+    def _format(df_sub: pd.DataFrame, category: str, rationale: str) -> list[dict[str, Any]]:
+        return [
+            {
+                **_row(r, volumeMultiple=r["VOL_MULT"]),
+                "category": category,
+                "rationale": rationale,
+            }
+            for _, r in df_sub.iterrows()
+        ]
+
+    return {
+        "date": d.isoformat(),
+        "summary": {
+            "scanned": len(liquid),
+            "accumulationCount": len(accumulation),
+            "surgeCount": len(surges),
+            "absorptionCount": len(absorption),
+            "distributionCount": len(distribution),
+        },
+        "results": {
+            "accumulation": _format(accumulation, "Accumulation", "High delivery into demat with rising price"),
+            "surges": _format(surges, "Volume Surge", "Volume >1.6x baseline with >=48% delivery share"),
+            "absorption": _format(absorption, "Absorption", "Heavy volume soaked up with flat price action"),
+            "distribution": _format(distribution, "Distribution", "Heavy delivery volume pushing prices down"),
+        },
+    }

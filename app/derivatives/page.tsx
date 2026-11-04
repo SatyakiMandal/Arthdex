@@ -7,7 +7,9 @@ import { SectionHead } from "@/components/ui/section-head";
 import { DataUnavailable, SourceLine } from "@/components/ui/data-provenance";
 import { OptionChainView } from "@/components/derivatives/option-chain";
 import { BuildUpView } from "@/components/derivatives/build-up";
-import { getBuildUp, getOptionChain } from "@/lib/api/endpoints";
+import { FnoBanTracker } from "@/components/derivatives/fno-ban-tracker";
+import { EarningsImpliedMoves } from "@/components/derivatives/earnings-implied-moves";
+import { getBuildUp, getOptionChain, getFnoBan, getEarningsMoves } from "@/lib/api/endpoints";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -29,7 +31,12 @@ interface PageProps {
 export default async function DerivativesPage({ searchParams }: PageProps) {
   const { symbol: requested, expiry } = await searchParams;
   const symbol = (requested ?? "NIFTY").toUpperCase().replace(/[^A-Z0-9&-]/g, "");
-  const [chain, buildUp] = await Promise.all([getOptionChain(symbol, expiry), getBuildUp()]);
+  const [chain, buildUp, fnoBan, earningsMoves] = await Promise.all([
+    getOptionChain(symbol, expiry),
+    getBuildUp(),
+    getFnoBan(),
+    getEarningsMoves(),
+  ]);
   const isIndex = INDICES.some((i) => i.id === symbol);
 
   return (
@@ -94,6 +101,33 @@ export default async function DerivativesPage({ searchParams }: PageProps) {
             )}
           </div>
         </section>
+        {fnoBan && fnoBan.ok ? (
+          <section aria-labelledby="fnoban" className="mt-16">
+            <SectionHead
+              id="fnoban"
+              title="F&O Ban List & MWPL Tracker"
+              note="Banned from fresh positions at 95% MWPL"
+            />
+            <div className="mt-6">
+              <FnoBanTracker banData={fnoBan.data} />
+              <SourceLine meta={fnoBan.meta} className="mt-4" />
+            </div>
+          </section>
+        ) : null}
+
+        {earningsMoves && earningsMoves.ok ? (
+          <section aria-labelledby="earningsmoves" className="mt-16">
+            <SectionHead
+              id="earningsmoves"
+              title="Pre-Earnings Implied Move Tracker"
+              note="ATM straddle expected post-results move"
+            />
+            <div className="mt-6">
+              <EarningsImpliedMoves initialData={earningsMoves.data} />
+              <SourceLine meta={earningsMoves.meta} className="mt-4" />
+            </div>
+          </section>
+        ) : null}
       </main>
       <SiteFooter />
     </div>

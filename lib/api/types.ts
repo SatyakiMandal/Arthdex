@@ -1274,3 +1274,159 @@ export interface ApiResultsSeason {
   awaitingFigures: { symbol: string; name: string; date: string }[];
   notScheduled: number;
 }
+
+
+// -- F&O ban and MWPL --------------------------------------------------------
+
+export interface ApiFnoBanRules {
+  entry: string;
+  restriction: string;
+  exit: string;
+}
+
+export interface ApiFnoBan {
+  tradeDate: string;
+  bannedSymbols: string[];
+  bannedCount: number;
+  mwplThreshold: string;
+  exitThreshold: string;
+  rules: ApiFnoBanRules;
+  dangerWatchlist: string[];
+  note?: string;
+}
+
+// -- earnings implied move ----------------------------------------------------
+
+export interface ApiEarningsMove {
+  symbol: string;
+  companyName: string;
+  resultDate: string;
+  status: "upcoming" | "reported";
+  spotPrice: number | null;
+  straddleAtmPrice: number | null;
+  impliedMovePct: number | null;
+  pricingVerdict: string;
+  callIv: number | null;
+  putIv: number | null;
+  asOf: string;
+}
+
+export interface ApiEarningsMovesResponse {
+  season: string;
+  count: number;
+  moves: ApiEarningsMove[];
+  note?: string;
+}
+
+// -- bhavcopy institutional delivery scanner ---------------------------------
+
+export interface ApiBhavScannerStock {
+  symbol: string;
+  close: number;
+  changePct: number;
+  deliveryPct: number;
+  deliveryVolume: number;
+  totalVolume: number;
+  turnoverCr: number;
+  volumeVs20dAvg: number;
+  signals: string[];
+}
+
+export interface ApiBhavScanner {
+  tradeDate: string;
+  counts: {
+    accumulation: number;
+    volume_surges: number;
+    absorption: number;
+    distribution: number;
+    total_screened: number;
+  };
+  stocks: ApiBhavScannerStock[];
+  rules: Record<string, string>;
+  note?: string;
+}
+
+// -- sector rotation (RRG) ---------------------------------------------------
+
+export interface ApiSectorRotationTrailPoint {
+  date: string;
+  rsRatio: number;
+  rsMomentum: number;
+}
+
+export interface ApiSectorRotationSector {
+  id: string;
+  name: string;
+  symbol: string;
+  quadrant: "Leading" | "Weakening" | "Lagging" | "Improving";
+  rsRatio: number;
+  rsMomentum: number;
+  change1wPct: number | null;
+  trail: ApiSectorRotationTrailPoint[];
+}
+
+export interface ApiSectorRotation {
+  benchmark: string;
+  benchmarkSymbol: string;
+  calculatedAt: string;
+  historyBars: number;
+  sectors: ApiSectorRotationSector[];
+  note?: string;
+}
+
+// -- multi-company comparison ------------------------------------------------
+
+export interface ApiCompareValuation {
+  peRatio: number | null;
+  pbRatio: number | null;
+  evToEbitda: number | null;
+  evToSales: number | null;
+  dividendYieldPct: number | null;
+  roePct: number | null;
+  profitMarginPct: number | null;
+}
+
+export interface ApiCompareProfitability {
+  opmPct: number | null;
+  npmPct: number | null;
+  rocePct: number | null;
+  salesGrowth3yPct: number | null;
+  profitGrowth3yPct: number | null;
+}
+
+export interface ApiCompareBalanceSheet {
+  debtToEquity: number | null;
+  interestCoverage: number | null;
+  currentRatio: number | null;
+  totalDebtCr: number | null;
+  cashAndEquivalentsCr: number | null;
+}
+
+export interface ApiCompareForensics {
+  piotroskiFScore: number | null;
+  piotroskiRating: string | null;
+  altmanZScore: number | null;
+  altmanZone: string | null;
+  beneishMScore: number | null;
+  beneishRating: string | null;
+}
+
+export interface ApiCompanyCompareCompany {
+  symbol: string;
+  name: string;
+  sector: string;
+  industry: string;
+  price: number | null;
+  changePct: number | null;
+  marketCapCr: number | null;
+  valuation: ApiCompareValuation;
+  profitability: ApiCompareProfitability;
+  balanceSheet: ApiCompareBalanceSheet;
+  forensics: ApiCompareForensics;
+}
+
+export interface ApiCompanyCompare {
+  symbols: string[];
+  count: number;
+  companies: ApiCompanyCompareCompany[];
+}

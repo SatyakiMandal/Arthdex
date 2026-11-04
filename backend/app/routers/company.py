@@ -565,3 +565,17 @@ def get_company_filings(symbol: str, limit: int = Query(40, ge=1, le=100)):
     except Exception as exc:
         raise HTTPException(status_code=503, detail=f"Filings unavailable: {exc}") from exc
     return envelope(data, age, source="NSE corporate announcements + 1D price reaction", delayed_minutes=0)
+
+
+@router.get("/compare")
+def compare_companies(symbols: str = Query(..., description="Comma-separated NSE tickers, e.g. TCS,INFY,WIPRO")):
+    """Side-by-side comparison matrix for up to 4 companies across valuation, returns, balance sheet and forensics."""
+    from ..services import comparison
+    sym_list = [s.strip().upper() for s in symbols.split(",") if s.strip()]
+    if not sym_list:
+        raise HTTPException(status_code=400, detail="Provide at least one symbol to compare")
+    try:
+        data = comparison.compare(sym_list)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Comparison unavailable: {exc}") from exc
+    return envelope(data, 120, source="Arthdex vetted fundamentals & forensics", delayed_minutes=0)

@@ -14,8 +14,9 @@ import { MoversExplained } from "@/components/market/movers-explained";
 import { ExportCsv } from "@/components/ui/export-csv";
 import { InstitutionalFlows } from "@/components/market/institutional-flows";
 import { SectorTreemap } from "@/components/market/sector-treemap";
+import { SectorRotationRrg } from "@/components/market/sector-rotation-rrg";
 import { SectionHead } from "@/components/ui/section-head";
-import { getFactorScreens, getFlows, getIndices, getPulse, getMovers, getMoversExplained, getWindowedMovers } from "@/lib/api/endpoints";
+import { getFactorScreens, getFlows, getIndices, getPulse, getMovers, getMoversExplained, getWindowedMovers, getSectorRotation } from "@/lib/api/endpoints";
 import { cn, deltaColor, formatINR, formatPct } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -62,7 +63,7 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
 
   // Daily comes straight from NSE's live variation feed; weekly and monthly are
   // computed from index-constituent history, because NSE publishes daily only.
-  const [gainers, losers, indices, windowed, factors, explainedUp, explainedDown, flows, pulse500] = await Promise.all([
+  const [gainers, losers, indices, windowed, factors, explainedUp, explainedDown, flows, pulse500, sectorRotation] = await Promise.all([
     getMovers("gainers", universe, band.id === "all" ? 15 : 50),
     getMovers("losers", universe, band.id === "all" ? 15 : 50),
     getIndices(),
@@ -72,6 +73,7 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
     getMoversExplained("losers", 8),
     getFlows(90),
     getPulse("nifty500"),
+    getSectorRotation(),
   ]);
 
   // Advances and declines are reported per index constituent set
@@ -327,6 +329,21 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
             <div className="border-t border-border px-4 py-2">
 <PageStamp meta={indices.meta} />
               <SourceLine meta={indices.meta} />
+            </div>
+          </section>
+        ) : null}
+
+        {sectorRotation && sectorRotation.ok ? (
+          <section className="mt-8 rounded-xl border border-border bg-card p-5 sm:p-6 shadow-sm">
+            <SectionHead
+              title="Sector Rotation (Relative Rotation Graph)"
+              note="10 NSE sectors against Nifty 50"
+            />
+            <div className="mt-6">
+              <SectorRotationRrg rotationData={sectorRotation.data} />
+              <div className="mt-4 border-t border-border/40 pt-3">
+                <SourceLine meta={sectorRotation.meta} />
+              </div>
             </div>
           </section>
         ) : null}

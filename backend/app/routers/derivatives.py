@@ -11,7 +11,7 @@ from ..cache import CACHE
 from ..config import SETTINGS
 from ..providers import nse, nse_options
 from ..schemas import envelope
-from ..services import options, quote_sources
+from ..services import earnings_moves, fno_ban, options, quote_sources
 
 router = APIRouter(prefix="/api/v1/derivatives", tags=["derivatives"])
 
@@ -97,3 +97,35 @@ def get_buildup():
     except Exception as exc:
         raise HTTPException(status_code=503, detail=f"F&O build-up unavailable: {exc}") from exc
     return envelope(data, age, source="NSE open-interest changes and traded prices", delayed_minutes=SETTINGS.quote_delay_minutes)
+
+
+@router.get("/fno-ban")
+def get_fno_ban():
+    """Securities currently in the NSE F&O ban period (>=95% MWPL) and ban rules."""
+    try:
+        data = fno_ban.get_fno_ban_status()
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"F&O ban list unavailable: {exc}") from exc
+    return envelope(
+        data,
+        60,
+        source="NSE official security ban list (fo_secban.csv)",
+        delayed_minutes=0,
+        note="Ban is triggered at 95% MWPL; exit occurs when open interest drops below 80% MWPL.",
+    )
+
+
+@router.get("/earnings-moves")
+def get_earnings_moves():
+    """Upcoming results meetings matched with at-the-money straddle implied moves."""
+    try:
+        data = earnings_moves.get_earnings_implied_moves()
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Earnings implied moves unavailable: {exc}") from exc
+    return envelope(
+        data,
+        300,
+        source="NSE event calendar and options chain ATM straddles",
+        delayed_minutes=SETTINGS.quote_delay_minutes,
+        note="Implied move is (Price(ATM CE) + Price(ATM PE)) / Spot, indicating market-expected volatility.",
+    )

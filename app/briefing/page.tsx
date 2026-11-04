@@ -14,6 +14,8 @@ import {
   getIpoPipeline,
   getMoversExplained,
   getNews,
+  getFnoBan,
+  getEarningsMoves,
 } from "@/lib/api/endpoints";
 import { cn, deltaColor, formatINR, formatPct } from "@/lib/utils";
 
@@ -45,7 +47,7 @@ function Block({ title, href, children }: { title: string; href?: string; childr
 const inr = (n: number) => formatINR(n, n < 100 ? 2 : 0);
 
 export default async function BriefingPage() {
-  const [indices, global, up, down, deals, calendar, ipo, filings] = await Promise.all([
+  const [indices, global, up, down, deals, calendar, ipo, filings, fnoBan, earningsMoves] = await Promise.all([
     getIndices(),
     getGlobalIndices(),
     getMoversExplained("gainers", 5),
@@ -54,6 +56,8 @@ export default async function BriefingPage() {
     getCalendar(),
     getIpoPipeline(),
     getNews({ kind: "filing", limit: 40 }),
+    getFnoBan(),
+    getEarningsMoves(),
   ]);
 
   const today = new Date();
@@ -199,6 +203,54 @@ export default async function BriefingPage() {
               <p className="px-4 py-6 text-sm text-muted-foreground">No results meetings are listed in the next few days.</p>
             )}
           </Block>
+
+          {fnoBan && fnoBan.ok ? (
+            <Block title="F&O ban list today" href="/derivatives#fnoban">
+              {fnoBan.data.bannedCount > 0 ? (
+                <div className="p-3.5 space-y-2">
+                  <div className="flex items-center justify-between text-2xs text-muted-foreground">
+                    <span className="text-rose-500 font-semibold uppercase">{fnoBan.data.bannedCount} Banned (&gt;95% MWPL)</span>
+                    <span>Session: {fnoBan.data.tradeDate}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {fnoBan.data.bannedSymbols.map((sym) => (
+                      <Link
+                        key={sym}
+                        href={`/company/${sym}`}
+                        className="rounded border border-rose-500/30 bg-rose-500/10 px-2 py-0.5 font-mono text-xs font-bold text-rose-400 hover:border-rose-500/60"
+                      >
+                        {sym}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="px-4 py-4 text-xs text-muted-foreground">No securities in the F&amp;O ban period today.</p>
+              )}
+            </Block>
+          ) : null}
+
+          {earningsMoves && earningsMoves.ok && earningsMoves.data.moves.length > 0 ? (
+            <Block title="Earnings implied move (ATM straddles)" href="/derivatives#earningsmoves">
+              <ul className="divide-y divide-border/60">
+                {earningsMoves.data.moves.slice(0, 5).map((m) => (
+                  <li key={m.symbol} className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm">
+                    <div>
+                      <Link href={`/company/${m.symbol}`} className="font-mono text-xs font-bold hover:text-accent">
+                        {m.symbol}
+                      </Link>
+                      <span className="ml-2 text-2xs text-muted-foreground font-mono">{m.resultDate}</span>
+                    </div>
+                    {m.impliedMovePct !== null ? (
+                      <span className="font-mono text-xs font-bold text-accent">±{m.impliedMovePct.toFixed(1)}%</span>
+                    ) : (
+                      <span className="text-2xs text-muted-foreground">—</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </Block>
+          ) : null}
 
           <Block title="Largest deals" href="/deals">
             {bigDeals.length ? (

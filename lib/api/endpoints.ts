@@ -50,6 +50,11 @@ import type {
   ApiResultsSeason,
   CompanyFilingItem,
   CompanyFilingsPayload,
+  ApiFnoBan,
+  ApiEarningsMovesResponse,
+  ApiBhavScanner,
+  ApiSectorRotation,
+  ApiCompanyCompare,
 } from "./types";
 
 export type { CompanyFilingItem, CompanyFilingsPayload };
@@ -268,3 +273,31 @@ export const getFundamentalScreen = (params: { q?: string; preset?: string; sort
 };
 
 export const getResultsSeason = () => apiGet<ApiResultsSeason>("/api/v1/market/results-season", 900);
+
+
+// -- sprint features: ban, earnings moves, bhavcopy scanner, sector rotation, compare --
+
+export const getFnoBan = () =>
+  apiGet<ApiFnoBan>("/api/v1/derivatives/fno-ban", 300);
+
+export const getEarningsMoves = () =>
+  apiGet<ApiEarningsMovesResponse>("/api/v1/derivatives/earnings-moves", 900);
+
+export const getBhavScanner = (date?: string) => {
+  const qs = date ? `?date=${encodeURIComponent(date)}` : "";
+  return apiGet<ApiBhavScanner>(`/api/v1/bhavcopy/scanner${qs}`, 300);
+};
+
+export const getSectorRotation = () =>
+  apiGet<ApiSectorRotation>("/api/v1/market/sector-rotation", 900);
+
+export const getCompanyCompare = (symbols: string[]) => {
+  const symParam = symbols
+    .map((s) => s.trim().toUpperCase())
+    .filter(Boolean)
+    .join(",");
+  return apiGet<ApiCompanyCompare>(
+    `/api/v1/company/compare?symbols=${encodeURIComponent(symParam)}`,
+    300,
+  );
+};

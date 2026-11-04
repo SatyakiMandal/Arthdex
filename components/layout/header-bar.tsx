@@ -67,6 +67,7 @@ const GROUPS: Group[] = [
     blurb: "Models, screens and the record",
     items: [
       { label: "Screener", href: "/screener", icon: ScanSearch, hint: "Factor, momentum and MACD screens" },
+      { label: "Compare companies", href: "/compare", icon: ArrowLeftRight, hint: "Head-to-head ledger for up to four stocks" },
       { label: "Event analyzer", href: "/analyzer", icon: FlaskConical, hint: "What one event did to a stock" },
       { label: "Track record", href: "/track-record", icon: ClipboardCheck, hint: "Every logged call, scored" },
       { label: "Alerts", href: "/alerts", icon: Bell, hint: "Price levels and new filings" },

@@ -47,8 +47,23 @@ export default async function CompanyOverviewPage({ params }: PageProps) {
   const preIpoId = preIpoMatch?.data.id ?? null;
   const preIpo = preIpoId ? await getUnlistedCompany(preIpoId) : null;
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Corporation",
+    name: profile?.data.name ?? upper,
+    tickerSymbol: `NSE:${upper}`,
+    url: `https://arthdex.com/company/${upper}`,
+    description: profile?.data.summary ?? `Live share price, fundamentals, ratios and valuation for ${upper} on NSE.`,
+    ...(profile?.data.isin ? { isin: profile.data.isin } : {}),
+    ...(profile?.data.website ? { sameAs: [profile.data.website] } : {}),
+  };
+
   return (
     <div className="mx-auto max-w-[1600px] space-y-14 px-4 py-8 sm:px-6 lg:py-10">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <section aria-label="Price history">
         {candles.ok ? (
           <>

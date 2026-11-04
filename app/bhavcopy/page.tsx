@@ -8,8 +8,10 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { CellBar } from "@/components/ui/cell-bar";
 import { DeskAnalysis } from "@/components/ui/desk-analysis";
 import { DataCard } from "@/components/ui/data-card";
+import { DeliveryScanner } from "@/components/bhavcopy/delivery-scanner";
+import { SectionHead } from "@/components/ui/section-head";
 import { DataUnavailable, SourceLine } from "@/components/ui/data-provenance";
-import { getBhavcopy } from "@/lib/api/endpoints";
+import { getBhavcopy, getBhavScanner } from "@/lib/api/endpoints";
 import type { BhavRow } from "@/lib/api/types";
 import { cn, deltaColor, formatINR, formatPct } from "@/lib/utils";
 
@@ -87,7 +89,7 @@ function RowsTable({ rows, extra }: { rows: BhavRow[]; extra?: { label: string; 
 export default async function BhavcopyPage({ searchParams }: PageProps) {
   const { date } = await searchParams;
   const valid = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : undefined;
-  const res = await getBhavcopy(valid);
+  const [res, scannerRes] = await Promise.all([getBhavcopy(valid), getBhavScanner(valid)]);
   const maxDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
 
   return (
@@ -161,7 +163,22 @@ export default async function BhavcopyPage({ searchParams }: PageProps) {
 
             <DeskAnalysis insights={res.data.insights} title="Session analysis" className="mt-4" />
 
-            <div className="mt-4 grid gap-4 xl:grid-cols-2">
+            {scannerRes.ok && (
+              <section className="mt-8 rounded-xl border border-border bg-card p-6 shadow-sm">
+                <SectionHead
+                  title="Institutional Delivery & Volume Scanner"
+                  note="Delivery, volume surges, absorption and distribution"
+                />
+                <div className="mt-6">
+                  <DeliveryScanner initialData={scannerRes.data} />
+                  <div className="mt-4 border-t border-border/40 pt-3">
+                    <SourceLine meta={scannerRes.meta} />
+                  </div>
+                </div>
+              </section>
+            )}
+
+            <div className="mt-6 grid gap-4 xl:grid-cols-2">
               <DataCard
                 title="Institutional accumulation radar"
                 subtitle={`Delivery above ${res.data.criteria.accumulationDeliveryPct}%, turnover of at least ₹${res.data.criteria.minTurnoverCr} Cr, ranked by turnover`}

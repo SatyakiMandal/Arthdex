@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, Query
 from ..cache import CACHE
 from ..config import SETTINGS
 from ..providers import constituents, nse, yahoo
-from ..services import bhavcopy, commodities
+from ..services import bhavcopy, commodities, sector_rotation
 from ..schemas import envelope
 
 router = APIRouter(prefix="/api/v1/market", tags=["market"])
@@ -240,4 +240,20 @@ def get_results_season():
     return envelope(
         data, age, source="Arthdex vetted quarterly results (Nifty 500 snapshots); NSE event calendar", delayed_minutes=0,
         note=f"{data['covered']} of the Nifty 500 snapshotted so far." if data["covered"] < 450 else None,
+    )
+
+
+@router.get("/sector-rotation")
+def get_sector_rotation():
+    """Relative Rotation Graph (RRG) of 10 major NSE sectors vs Nifty 50."""
+    try:
+        data = sector_rotation.compute_rrg()
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Sector rotation unavailable: {exc}") from exc
+    return envelope(
+        data,
+        900,
+        source="Yahoo Finance / NSE daily sectoral histories",
+        delayed_minutes=15,
+        note="JdK RS-Ratio (trend) vs RS-Momentum (acceleration) centered at 100 with 4-session trails.",
     )
