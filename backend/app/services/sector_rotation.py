@@ -63,14 +63,22 @@ def compute_rrg() -> dict[str, Any]:
                 # Relative Strength: Sector / Benchmark * 100
                 rs = (s_sub / b_sub) * 100.0
 
-                # 10-period EMA of RS
-                rs_ema = rs.ewm(span=10, adjust=False).mean()
+                # JdK RRG Mathematical Standardization:
+                # 1. Smooth relative strength using 10-period EMA
+                rs_smooth = rs.ewm(span=10, adjust=False).mean()
 
-                # RS-Ratio centered at 100: normalized distance from EMA
-                rs_ratio = 100.0 + ((rs - rs_ema) / rs_ema) * 100.0 * 2.5
+                # 2. RS-Ratio centered at 100 with rolling 20-period Z-score standardization
+                rs_mean = rs_smooth.rolling(window=20, min_periods=5).mean()
+                rs_std = rs_smooth.rolling(window=20, min_periods=5).std().replace(0, 1e-6)
+                z_rs = (rs_smooth - rs_mean) / rs_std
+                rs_ratio = 100.0 + (z_rs.ewm(span=5, adjust=False).mean() * 1.5)
 
-                # RS-Momentum centered at 100: rate of change of RS-Ratio
-                rs_mom = 100.0 + (rs_ratio.diff(3) / rs_ratio.shift(3)) * 100.0 * 3.0
+                # 3. RS-Momentum: Rate of change of RS-Ratio, also smoothed and standardized
+                mom_raw = rs_ratio - rs_ratio.shift(5)
+                mom_mean = mom_raw.rolling(window=20, min_periods=5).mean()
+                mom_std = mom_raw.rolling(window=20, min_periods=5).std().replace(0, 1e-6)
+                z_mom = (mom_raw - mom_mean) / mom_std
+                rs_mom = 100.0 + (z_mom.ewm(span=5, adjust=False).mean() * 1.5)
 
                 # 12-week weekly trail (step = 5 trading sessions)
                 last_idx = len(common_dates)

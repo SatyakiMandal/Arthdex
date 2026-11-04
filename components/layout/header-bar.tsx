@@ -41,8 +41,8 @@ const GROUPS: Group[] = [
     label: "Markets",
     blurb: "What the market is doing now",
     items: [
+      { label: "Market watch", href: "/market-watch", icon: CandlestickChart, hint: "Indices, movers, breadth and sector RRG" },
       { label: "Live market cockpit", href: "/live", icon: Radio, hint: "God's-eye live trading radar & pulse" },
-      { label: "Sector rotation (RRG)", href: "/market-watch#sector-rotation", icon: Compass, hint: "12-week trailing quadrant rotation" },
       { label: "Derivatives", href: "/derivatives", icon: Sigma, hint: "Option chains, open interest, F&O build-up" },
       { label: "Commodities", href: "/commodities", icon: Coins, hint: "Metals, energy and the rupee" },
       { label: "Order flow", href: "/orderflow", icon: Activity, hint: "Profile, footprint, CVD and GEX" },
@@ -185,8 +185,6 @@ export function HeaderBar() {
     };
   }, [openGroup]);
 
-  const watchActive = isActive(pathname, "/market-watch");
-
   return (
     <div className="chrome border-b border-border">
       <div className="mx-auto flex h-14 max-w-[1600px] items-stretch gap-2 px-4 sm:gap-4 sm:px-6">
@@ -195,17 +193,6 @@ export function HeaderBar() {
         </Link>
 
         <nav ref={navRef} aria-label="Primary" className="relative ml-4 hidden items-stretch lg:flex">
-          <Link
-            href="/market-watch"
-            aria-current={watchActive ? "page" : undefined}
-            className={cn(
-              "relative inline-flex items-center whitespace-nowrap px-3 text-sm transition-colors",
-              watchActive ? "font-medium text-foreground" : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            Market watch
-            {watchActive ? <motion.span layoutId="nav-active" className="absolute inset-x-3 -bottom-px h-0.5 bg-gold" transition={UNDERLINE} /> : null}
-          </Link>
           {GROUPS.map((g) => (
             <GroupMenu
               key={g.label}

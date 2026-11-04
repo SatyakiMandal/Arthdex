@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useId, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import {
   Activity,
   ArrowDownRight,
   ArrowUpRight,
+  BarChart2,
   Clock,
   Compass,
   Filter,
@@ -23,7 +24,8 @@ import {
   Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { ApiPulse, ApiPulseSector, ApiPulseStock } from "@/lib/api/types";
+import type { ApiPulse } from "@/lib/api/types";
+import { LiveVolumeProfile } from "./live-volume-profile";
 
 interface LiveMarketCockpitProps {
   initialPulse: ApiPulse;
@@ -104,12 +106,14 @@ export function LiveMarketCockpit({
 }: LiveMarketCockpitProps) {
   const [pulse, setPulse] = useState<ApiPulse>(initialPulse);
   const [currentIndex, setCurrentIndex] = useState<string>(initialIndex);
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [loading, setLoading] = useState<boolean>(false);
-  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [refreshInterval, setRefreshInterval] = useState<number>(15); // in seconds, 0 = paused
   const [countdown, setCountdown] = useState<number>(15);
   const [marketStatus, setMarketStatus] = useState(getMarketSession());
+
+  // Master Cockpit View Switcher: God's-Eye Market Radar vs TradingView Volume Profile
+  const [cockpitView, setCockpitView] = useState<"radar" | "volume_profile">("radar");
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState("");
@@ -138,7 +142,6 @@ export function LiveMarketCockpit({
         const json = await res.json();
         if (json.data) {
           setPulse(json.data);
-          setLastUpdated(new Date());
         }
       }
     } catch {
@@ -253,15 +256,15 @@ export function LiveMarketCockpit({
   const adRatio = totalBreadthDec > 0 ? (totalBreadthAdv / totalBreadthDec).toFixed(2) : "—";
 
   return (
-    <div className="space-y-6">
-      {/* 1. Cockpit Header Control Panel */}
-      <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-sm space-y-4">
+    <div className="space-y-6 rounded-none">
+      {/* 1. Cockpit Header Control Panel & Master View Switcher */}
+      <div className="border border-border bg-card p-4 sm:p-5 shadow-sm space-y-4 rounded-none">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 pb-4">
-          {/* Market Status Pill */}
+          {/* Market Status Pill (Sharp, Zero Rounded Corners) */}
           <div className="flex items-center gap-3">
             <div
               className={cn(
-                "flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider border",
+                "flex items-center gap-2 px-3 py-1 text-xs font-semibold uppercase tracking-wider border rounded-none font-mono",
                 marketStatus.session === "OPEN"
                   ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-400"
                   : marketStatus.session === "PRE_OPEN"
@@ -271,7 +274,7 @@ export function LiveMarketCockpit({
             >
               <span
                 className={cn(
-                  "h-2 w-2 rounded-full",
+                  "h-2 w-2 rounded-none",
                   marketStatus.session === "OPEN"
                     ? "bg-emerald-400 animate-pulse"
                     : marketStatus.session === "PRE_OPEN"
@@ -287,10 +290,10 @@ export function LiveMarketCockpit({
             </span>
           </div>
 
-          {/* Right Controls: Auto-Refresh & Universe */}
+          {/* Right Controls: Auto-Refresh & Trigger */}
           <div className="flex flex-wrap items-center gap-3">
             {/* Live Auto-Refresh Selector */}
-            <div className="flex items-center gap-1.5 rounded-lg border border-border bg-background p-1 text-xs">
+            <div className="flex items-center gap-1.5 border border-border bg-background p-1 text-xs rounded-none">
               <span className="px-2 text-2xs uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1">
                 <Radio className="h-3 w-3 text-primary animate-pulse" /> Refresh:
               </span>
@@ -307,7 +310,7 @@ export function LiveMarketCockpit({
                     setCountdown(opt.sec);
                   }}
                   className={cn(
-                    "rounded px-2 py-0.5 text-2xs font-medium transition-colors",
+                    "px-2 py-0.5 text-2xs font-mono font-medium transition-colors rounded-none",
                     refreshInterval === opt.sec
                       ? "bg-primary text-primary-foreground font-semibold shadow-xs"
                       : "text-muted-foreground hover:text-foreground",
@@ -322,7 +325,7 @@ export function LiveMarketCockpit({
             <button
               onClick={() => void refreshData()}
               disabled={loading}
-              className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 border border-border bg-background px-3 py-1.5 text-xs font-mono font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50 rounded-none"
             >
               <RefreshCw className={cn("h-3.5 w-3.5 text-primary", loading && "animate-spin")} />
               <span>{loading ? "Fetching..." : `Sync (${countdown}s)`}</span>
@@ -330,29 +333,36 @@ export function LiveMarketCockpit({
           </div>
         </div>
 
-        {/* Universe Selector & Meta Provenance Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground mr-1">
-              Index Universe:
-            </span>
-            {UNIVERSES.map((u) => (
-              <button
-                key={u.id}
-                onClick={() => handleUniverseChange(u.id)}
-                className={cn(
-                  "rounded-full px-3 py-1 text-2xs font-semibold uppercase tracking-wider transition-colors",
-                  currentIndex === u.id
-                    ? "bg-primary text-primary-foreground shadow-xs"
-                    : "border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground",
-                )}
-              >
-                {u.label}
-              </button>
-            ))}
+        {/* Master View Navigation Tabs (Sharp Square Tabs) */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+          <div className="flex items-center border border-border bg-muted/40 p-1 rounded-none">
+            <button
+              onClick={() => setCockpitView("radar")}
+              className={cn(
+                "flex items-center gap-2 px-4 py-1.5 text-xs font-mono font-bold uppercase tracking-wider transition-all rounded-none",
+                cockpitView === "radar"
+                  ? "bg-card text-foreground shadow-sm border border-border"
+                  : "text-muted-foreground hover:text-foreground hover:bg-card/50",
+              )}
+            >
+              <Gauge className="h-3.5 w-3.5 text-primary" />
+              <span>Whole-Market God&apos;s-Eye Radar</span>
+            </button>
+            <button
+              onClick={() => setCockpitView("volume_profile")}
+              className={cn(
+                "flex items-center gap-2 px-4 py-1.5 text-xs font-mono font-bold uppercase tracking-wider transition-all rounded-none",
+                cockpitView === "volume_profile"
+                  ? "bg-card text-primary shadow-sm border border-border"
+                  : "text-muted-foreground hover:text-foreground hover:bg-card/50",
+              )}
+            >
+              <BarChart2 className="h-3.5 w-3.5 text-amber-400" />
+              <span>TradingView Volume Profile (VRVP)</span>
+            </button>
           </div>
 
-          <div className="flex items-center gap-2 text-2xs font-mono">
+          <div className="flex items-center gap-2 text-2xs font-mono text-muted-foreground">
             <span>Exchange Session: <strong className="text-foreground">{pulse.asOf}</strong></span>
             <span className="text-border">|</span>
             <span className="flex items-center gap-1 text-emerald-400">
@@ -362,451 +372,488 @@ export function LiveMarketCockpit({
         </div>
       </div>
 
-      {/* 2. God's-Eye Market Breadth Bar & A/D Spectrum */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {/* Whole Market Advances / Declines */}
-        <div className="rounded-xl border border-border bg-card p-4 space-y-2">
-          <div className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
-            <span>Whole-Market Breadth</span>
-            <span className="font-mono text-foreground font-bold">A/D: {adRatio}</span>
-          </div>
-          <div className="flex items-baseline justify-between font-mono">
-            <span className="text-lg font-bold text-emerald-400">+{totalBreadthAdv}</span>
-            <span className="text-xs text-muted-foreground">{totalBreadthUnch} unch</span>
-            <span className="text-lg font-bold text-rose-400">-{totalBreadthDec}</span>
-          </div>
-          {/* Proportion Bar */}
-          <div className="flex h-2 w-full overflow-hidden rounded-full bg-muted">
-            <div
-              className="bg-emerald-500 transition-all duration-500"
-              style={{ width: `${(totalBreadthAdv / (totalMarketTrades || 1)) * 100}%` }}
-            />
-            <div
-              className="bg-muted-foreground/30 transition-all duration-500"
-              style={{ width: `${(totalBreadthUnch / (totalMarketTrades || 1)) * 100}%` }}
-            />
-            <div
-              className="bg-rose-500 transition-all duration-500"
-              style={{ width: `${(totalBreadthDec / (totalMarketTrades || 1)) * 100}%` }}
-            />
-          </div>
-          <div className="text-3xs text-muted-foreground font-mono">
-            Across {totalMarketTrades.toLocaleString("en-IN")} total NSE traded stocks
-          </div>
+      {/* Render View: TradingView Volume Profile or God's Eye Radar */}
+      {cockpitView === "volume_profile" ? (
+        <div className="space-y-6 animate-in fade-in-50">
+          <LiveVolumeProfile initialSymbol="RELIANCE" initialInterval="15m" />
         </div>
-
-        {/* Current Index Universe Advances */}
-        <div className="rounded-xl border border-border bg-card p-4 space-y-2">
-          <div className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
-            <span>{pulse.label} Breadth</span>
-            <span className="font-mono text-foreground font-bold">
-              {((pulse.advances / (pulse.stocks.length || 1)) * 100).toFixed(0)}% Adv
-            </span>
-          </div>
-          <div className="flex items-baseline justify-between font-mono">
-            <span className="text-lg font-bold text-emerald-400">+{pulse.advances} Adv</span>
-            <span className="text-xs text-muted-foreground">{pulse.unchanged} flat</span>
-            <span className="text-lg font-bold text-rose-400">-{pulse.declines} Dec</span>
-          </div>
-          <div className="flex h-2 w-full overflow-hidden rounded-full bg-muted">
-            <div
-              className="bg-emerald-500 transition-all duration-500"
-              style={{ width: `${(pulse.advances / (pulse.stocks.length || 1)) * 100}%` }}
-            />
-            <div
-              className="bg-muted-foreground/30 transition-all duration-500"
-              style={{ width: `${(pulse.unchanged / (pulse.stocks.length || 1)) * 100}%` }}
-            />
-            <div
-              className="bg-rose-500 transition-all duration-500"
-              style={{ width: `${(pulse.declines / (pulse.stocks.length || 1)) * 100}%` }}
-            />
-          </div>
-          <div className="text-3xs text-muted-foreground font-mono">
-            Constituents: {pulse.stocks.length} tracked
-          </div>
-        </div>
-
-        {/* "What is Not Moving" Stagnation Counter */}
-        <div
-          onClick={() => setMovementFilter(movementFilter === "UNMOVED" ? "ALL" : "UNMOVED")}
-          className={cn(
-            "rounded-xl border p-4 space-y-2 cursor-pointer transition-all",
-            movementFilter === "UNMOVED"
-              ? "border-primary bg-primary/10 shadow-xs"
-              : "border-border bg-card hover:border-primary/40",
-          )}
-        >
-          <div className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
-            <span className="flex items-center gap-1.5">
-              <Compass className="h-3.5 w-3.5 text-cyan-400" /> What is Not Moving
-            </span>
-            <span className="text-2xs font-mono text-cyan-400 font-bold">&plusmn;0.15%</span>
-          </div>
-          <div className="font-mono text-lg font-bold text-cyan-400">
-            {distribution.flat} Scrips
-          </div>
-          <div className="text-3xs text-muted-foreground leading-tight">
-            Consolidating in tight flat ranges. Click to isolate stagnant counter setups.
-          </div>
-        </div>
-
-        {/* Buying vs Selling Intensity Ratio */}
-        <div className="rounded-xl border border-border bg-card p-4 space-y-2">
-          <div className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
-            <span className="flex items-center gap-1.5">
-              <Flame className="h-3.5 w-3.5 text-amber-500" /> Velocity Breakdown
-            </span>
-            <span className="text-2xs font-mono text-amber-400 font-bold">
-              {distribution.strongGain} vs {distribution.strongLoss}
-            </span>
-          </div>
-          <div className="flex items-center justify-between text-xs font-mono">
-            <span className="text-emerald-400 font-semibold">&ge; +1%: {distribution.strongGain + distribution.modGain}</span>
-            <span className="text-border">|</span>
-            <span className="text-rose-400 font-semibold">&le; -1%: {distribution.modLoss + distribution.strongLoss}</span>
-          </div>
-          <div className="text-3xs text-muted-foreground leading-tight">
-            Scrips surging over 1% vs slipping over 1%.
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Seven-Bucket Price Velocity Distribution Spectrum */}
-      <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-        <div className="flex items-center justify-between text-xs border-b border-border/60 pb-2">
-          <span className="font-semibold text-foreground uppercase tracking-wider text-2xs flex items-center gap-1.5">
-            <Gauge className="h-3.5 w-3.5 text-primary" /> Intraday Price Distribution Spectrum ({stocks.length} scrips)
-          </span>
-          <span className="text-3xs text-muted-foreground">Click any bucket to filter the ledger</span>
-        </div>
-
-        <div className="grid grid-cols-7 gap-1.5 text-center font-mono">
-          {/* >= +3% */}
-          <button
-            onClick={() => {
-              setMovementFilter("BUYING");
-              setSortBy("changeDesc");
-            }}
-            className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2 hover:bg-emerald-500/20 transition-all"
-          >
-            <div className="text-2xs font-bold text-emerald-400">&ge; +3%</div>
-            <div className="text-base font-bold text-emerald-300 mt-1">{distribution.strongGain}</div>
-            <div className="text-3xs text-emerald-400/80 mt-0.5">Surge</div>
-          </button>
-
-          {/* +1% to +3% */}
-          <button
-            onClick={() => {
-              setMovementFilter("BUYING");
-              setSortBy("changeDesc");
-            }}
-            className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-2 hover:bg-emerald-500/15 transition-all"
-          >
-            <div className="text-2xs font-bold text-emerald-400/90">+1% to +3%</div>
-            <div className="text-base font-bold text-emerald-400 mt-1">{distribution.modGain}</div>
-            <div className="text-3xs text-muted-foreground mt-0.5">Gainers</div>
-          </button>
-
-          {/* +0.15% to +1% */}
-          <button
-            onClick={() => {
-              setMovementFilter("BUYING");
-              setSortBy("changeDesc");
-            }}
-            className="rounded-lg border border-emerald-500/10 bg-emerald-500/5 p-2 hover:bg-emerald-500/10 transition-all"
-          >
-            <div className="text-2xs font-bold text-emerald-400/70">0 to +1%</div>
-            <div className="text-base font-bold text-emerald-400/80 mt-1">{distribution.mildGain}</div>
-            <div className="text-3xs text-muted-foreground mt-0.5">Mild Up</div>
-          </button>
-
-          {/* Flat: -0.15% to +0.15% (What is not moving) */}
-          <button
-            onClick={() => setMovementFilter(movementFilter === "UNMOVED" ? "ALL" : "UNMOVED")}
-            className={cn(
-              "rounded-lg border p-2 transition-all",
-              movementFilter === "UNMOVED"
-                ? "border-cyan-400 bg-cyan-500/20 shadow-xs"
-                : "border-border bg-card/60 hover:bg-muted",
-            )}
-          >
-            <div className="text-2xs font-bold text-cyan-400">Flat (0.0%)</div>
-            <div className="text-base font-bold text-foreground mt-1">{distribution.flat}</div>
-            <div className="text-3xs text-cyan-400 mt-0.5 font-semibold">Not Moving</div>
-          </button>
-
-          {/* 0 to -1% */}
-          <button
-            onClick={() => {
-              setMovementFilter("SELLING");
-              setSortBy("changeAsc");
-            }}
-            className="rounded-lg border border-rose-500/10 bg-rose-500/5 p-2 hover:bg-rose-500/10 transition-all"
-          >
-            <div className="text-2xs font-bold text-rose-400/70">0 to -1%</div>
-            <div className="text-base font-bold text-rose-400/80 mt-1">{distribution.mildLoss}</div>
-            <div className="text-3xs text-muted-foreground mt-0.5">Mild Down</div>
-          </button>
-
-          {/* -1% to -3% */}
-          <button
-            onClick={() => {
-              setMovementFilter("SELLING");
-              setSortBy("changeAsc");
-            }}
-            className="rounded-lg border border-rose-500/20 bg-rose-500/5 p-2 hover:bg-rose-500/15 transition-all"
-          >
-            <div className="text-2xs font-bold text-rose-400/90">-1% to -3%</div>
-            <div className="text-base font-bold text-rose-400 mt-1">{distribution.modLoss}</div>
-            <div className="text-3xs text-muted-foreground mt-0.5">Decliners</div>
-          </button>
-
-          {/* <= -3% */}
-          <button
-            onClick={() => {
-              setMovementFilter("SELLING");
-              setSortBy("changeAsc");
-            }}
-            className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-2 hover:bg-rose-500/20 transition-all"
-          >
-            <div className="text-2xs font-bold text-rose-400">&le; -3%</div>
-            <div className="text-base font-bold text-rose-300 mt-1">{distribution.strongLoss}</div>
-            <div className="text-3xs text-rose-400/80 mt-0.5">Dumping</div>
-          </button>
-        </div>
-      </div>
-
-      {/* 4. What is Being Bought & What is Being Sold: Interactive Sector Flow Treemap */}
-      <div className="rounded-xl border border-border bg-card p-4 sm:p-5 space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3">
-          <div>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-1.5">
-              <Layers className="h-4 w-4 text-primary" /> Sector Flow Matrix: What is Being Bought vs Sold
-            </h3>
-            <p className="text-3xs text-muted-foreground mt-0.5">
-              20 sector classifications weighted by market capitalization and real-time capital flow. Click any sector to isolate stocks.
-            </p>
-          </div>
-
-          {selectedSector && (
-            <button
-              onClick={() => setSelectedSector(null)}
-              className="text-2xs text-primary hover:underline font-medium"
-            >
-              Reset Sector Filter ({selectedSector}) &times;
-            </button>
-          )}
-        </div>
-
-        {/* Sector Cards Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
-          {sectors.map((sec) => {
-            const isSelected = selectedSector === sec.industry;
-            const isPositive = sec.changePct >= 0;
-
-            return (
-              <button
-                key={sec.industry}
-                onClick={() => setSelectedSector(isSelected ? null : sec.industry)}
-                className={cn(
-                  "flex flex-col justify-between rounded-lg border p-2.5 text-left transition-all",
-                  isSelected
-                    ? "ring-2 ring-primary border-primary bg-primary/10 shadow-sm"
-                    : isPositive
-                      ? "border-emerald-500/20 bg-emerald-500/5 hover:border-emerald-500/40"
-                      : "border-rose-500/20 bg-rose-500/5 hover:border-rose-500/40",
-                )}
-              >
-                <div className="text-2xs font-medium text-foreground truncate w-full" title={sec.industry}>
-                  {sec.industry}
-                </div>
-                <div className="mt-2 flex items-baseline justify-between w-full font-mono">
-                  <span
-                    className={cn(
-                      "text-sm font-bold flex items-center",
-                      isPositive ? "text-emerald-400" : "text-rose-400",
-                    )}
-                  >
-                    {isPositive ? "+" : ""}{sec.changePct.toFixed(2)}%
-                  </span>
-                  <span className="text-3xs text-muted-foreground">
-                    {sec.count} stocks
-                  </span>
-                </div>
-                <div className="mt-1 text-3xs text-muted-foreground font-mono truncate">
-                  ₹{(sec.marketCapCr / 1000).toFixed(1)}k Cr
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 5. Live Filterable Stock Ledger */}
-      <div className="rounded-xl border border-border bg-card p-4 sm:p-5 space-y-4">
-        {/* Filter bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground mr-1">
-              Filter Desk:
-            </span>
-            {[
-              { id: "ALL", label: `All (${stocks.length})` },
-              { id: "BUYING", label: `Being Bought (${distribution.strongGain + distribution.modGain})` },
-              { id: "SELLING", label: `Being Sold (${distribution.modLoss + distribution.strongLoss})` },
-              { id: "UNMOVED", label: `Not Moving (${distribution.flat})` },
-              { id: "SURGE", label: "Volume / Momentum Surge" },
-            ].map((f) => (
-              <button
-                key={f.id}
-                onClick={() => setMovementFilter(f.id as any)}
-                className={cn(
-                  "rounded-full px-3 py-1 text-2xs font-semibold uppercase tracking-wider transition-colors",
-                  movementFilter === f.id
-                    ? "bg-primary text-primary-foreground shadow-xs"
-                    : "border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground",
-                )}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Search Box & Sort */}
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search symbol, company..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-8 w-44 sm:w-56 rounded-md border border-border bg-background pl-8 pr-3 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-              />
+      ) : (
+        <div className="space-y-6 animate-in fade-in-50">
+          {/* Index Universe Selector */}
+          <div className="border border-border bg-card p-3 rounded-none flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground mr-1">
+                Universe Scope:
+              </span>
+              {UNIVERSES.map((u) => (
+                <button
+                  key={u.id}
+                  onClick={() => handleUniverseChange(u.id)}
+                  className={cn(
+                    "px-3 py-1 text-2xs font-mono font-bold uppercase tracking-wider transition-colors rounded-none",
+                    currentIndex === u.id
+                      ? "bg-primary text-primary-foreground shadow-xs"
+                      : "border border-border/80 bg-background text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  {u.label}
+                </button>
+              ))}
             </div>
 
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="h-8 rounded-md border border-border bg-background px-2 font-mono text-2xs text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-            >
-              <option value="changeDesc">Sort: Top Gainers %</option>
-              <option value="changeAsc">Sort: Top Losers %</option>
-              <option value="turnover">Sort: Highest Turnover</option>
-              <option value="mcap">Sort: Market Cap</option>
-            </select>
+            <div className="text-3xs font-mono">
+              Constituents: <strong className="text-foreground">{stocks.length} tracked</strong>
+            </div>
           </div>
-        </div>
 
-        {/* Stock Rows Table */}
-        <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-border bg-muted/40 text-2xs text-muted-foreground uppercase tracking-wider font-semibold">
-                <th className="p-3">Scrip / Company</th>
-                <th className="p-3">Sector</th>
-                <th className="p-3 text-right">LTP (₹)</th>
-                <th className="p-3 text-right">Change (₹)</th>
-                <th className="p-3 text-right">Change (%)</th>
-                <th className="p-3 text-right">Traded Volume</th>
-                <th className="p-3 text-right">Turnover (₹ Cr)</th>
-                <th className="p-3 text-right">Market Cap (₹ Cr)</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border/60">
-              {filteredStocks.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="p-8 text-center text-xs text-muted-foreground">
-                    No scrips match the active filter criteria.
-                  </td>
-                </tr>
-              ) : (
-                filteredStocks.map((s) => {
-                  const isUp = s.changePct > 0;
-                  const isFlat = Math.abs(s.changePct) <= 0.15;
+          {/* 2. God's-Eye Market Breadth Bar & A/D Spectrum (Strict Zero Rounded Corners) */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Whole Market Advances / Declines */}
+            <div className="border border-border bg-card p-4 space-y-2 rounded-none">
+              <div className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
+                <span>Whole-Market Breadth</span>
+                <span className="font-mono text-foreground font-bold">A/D: {adRatio}</span>
+              </div>
+              <div className="flex items-baseline justify-between font-mono">
+                <span className="text-lg font-bold text-emerald-400">+{totalBreadthAdv}</span>
+                <span className="text-xs text-muted-foreground">{totalBreadthUnch} unch</span>
+                <span className="text-lg font-bold text-rose-400">-{totalBreadthDec}</span>
+              </div>
+              {/* Proportion Bar: Strict Zero Rounded Edges */}
+              <div className="flex h-2 w-full overflow-hidden bg-muted rounded-none">
+                <div
+                  className="bg-emerald-500 transition-all duration-500 rounded-none"
+                  style={{ width: `${(totalBreadthAdv / (totalMarketTrades || 1)) * 100}%` }}
+                />
+                <div
+                  className="bg-muted-foreground/30 transition-all duration-500 rounded-none"
+                  style={{ width: `${(totalBreadthUnch / (totalMarketTrades || 1)) * 100}%` }}
+                />
+                <div
+                  className="bg-rose-500 transition-all duration-500 rounded-none"
+                  style={{ width: `${(totalBreadthDec / (totalMarketTrades || 1)) * 100}%` }}
+                />
+              </div>
+              <div className="text-3xs text-muted-foreground font-mono">
+                Across {totalMarketTrades.toLocaleString("en-IN")} total NSE traded stocks
+              </div>
+            </div>
 
-                  return (
-                    <tr
-                      key={s.symbol}
-                      className="hover:bg-muted/30 transition-colors font-mono"
-                    >
-                      <td className="p-3">
-                        <Link
-                          href={`/company/${encodeURIComponent(s.symbol)}`}
-                          className="font-bold text-foreground hover:text-primary transition-colors flex items-center gap-1.5"
-                        >
-                          <span>{s.symbol}</span>
-                          <span className="text-3xs text-muted-foreground font-normal truncate max-w-[140px]">
-                            {s.name}
-                          </span>
-                        </Link>
-                      </td>
-                      <td className="p-3 font-sans text-2xs text-muted-foreground truncate max-w-[150px]">
-                        {s.industry}
-                      </td>
-                      <td className="p-3 text-right font-bold text-foreground">
-                        {fmtINR(s.last)}
-                      </td>
-                      <td
+            {/* Current Index Universe Advances */}
+            <div className="border border-border bg-card p-4 space-y-2 rounded-none">
+              <div className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
+                <span>{pulse.label} Breadth</span>
+                <span className="font-mono text-foreground font-bold">
+                  {((pulse.advances / (pulse.stocks.length || 1)) * 100).toFixed(0)}% Adv
+                </span>
+              </div>
+              <div className="flex items-baseline justify-between font-mono">
+                <span className="text-lg font-bold text-emerald-400">+{pulse.advances} Adv</span>
+                <span className="text-xs text-muted-foreground">{pulse.unchanged} flat</span>
+                <span className="text-lg font-bold text-rose-400">-{pulse.declines} Dec</span>
+              </div>
+              {/* Proportion Bar */}
+              <div className="flex h-2 w-full overflow-hidden bg-muted rounded-none">
+                <div
+                  className="bg-emerald-500 transition-all duration-500 rounded-none"
+                  style={{ width: `${(pulse.advances / (pulse.stocks.length || 1)) * 100}%` }}
+                />
+                <div
+                  className="bg-muted-foreground/30 transition-all duration-500 rounded-none"
+                  style={{ width: `${(pulse.unchanged / (pulse.stocks.length || 1)) * 100}%` }}
+                />
+                <div
+                  className="bg-rose-500 transition-all duration-500 rounded-none"
+                  style={{ width: `${(pulse.declines / (pulse.stocks.length || 1)) * 100}%` }}
+                />
+              </div>
+              <div className="text-3xs text-muted-foreground font-mono">
+                Constituents: {pulse.stocks.length} tracked
+              </div>
+            </div>
+
+            {/* "What is Not Moving" Stagnation Counter */}
+            <div
+              onClick={() => setMovementFilter(movementFilter === "UNMOVED" ? "ALL" : "UNMOVED")}
+              className={cn(
+                "border p-4 space-y-2 cursor-pointer transition-all rounded-none",
+                movementFilter === "UNMOVED"
+                  ? "border-primary bg-primary/10 shadow-xs"
+                  : "border-border bg-card hover:border-primary/40",
+              )}
+            >
+              <div className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Compass className="h-3.5 w-3.5 text-cyan-400" /> What is Not Moving
+                </span>
+                <span className="text-2xs font-mono text-cyan-400 font-bold">&plusmn;0.15%</span>
+              </div>
+              <div className="font-mono text-lg font-bold text-cyan-400">
+                {distribution.flat} Scrips
+              </div>
+              <div className="text-3xs text-muted-foreground leading-tight">
+                Consolidating in tight flat ranges. Click to isolate stagnant counter setups.
+              </div>
+            </div>
+
+            {/* Buying vs Selling Intensity Ratio */}
+            <div className="border border-border bg-card p-4 space-y-2 rounded-none">
+              <div className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Flame className="h-3.5 w-3.5 text-amber-500" /> Velocity Breakdown
+                </span>
+                <span className="text-2xs font-mono text-amber-400 font-bold">
+                  {distribution.strongGain} vs {distribution.strongLoss}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="text-emerald-400 font-semibold">&ge; +1%: {distribution.strongGain + distribution.modGain}</span>
+                <span className="text-border">|</span>
+                <span className="text-rose-400 font-semibold">&le; -1%: {distribution.modLoss + distribution.strongLoss}</span>
+              </div>
+              <div className="text-3xs text-muted-foreground leading-tight">
+                Scrips surging over 1% vs slipping over 1%.
+              </div>
+            </div>
+          </div>
+
+          {/* 3. Seven-Bucket Price Velocity Distribution Spectrum (Strict Zero Rounded Edges) */}
+          <div className="border border-border bg-card p-4 space-y-3 rounded-none">
+            <div className="flex items-center justify-between text-xs border-b border-border/60 pb-2">
+              <span className="font-semibold text-foreground uppercase tracking-wider text-2xs flex items-center gap-1.5">
+                <Gauge className="h-3.5 w-3.5 text-primary" /> Intraday Price Distribution Spectrum ({stocks.length} scrips)
+              </span>
+              <span className="text-3xs text-muted-foreground">Click any bucket to filter the ledger</span>
+            </div>
+
+            <div className="grid grid-cols-7 gap-1.5 text-center font-mono">
+              {/* >= +3% */}
+              <button
+                onClick={() => {
+                  setMovementFilter("BUYING");
+                  setSortBy("changeDesc");
+                }}
+                className="border border-emerald-500/30 bg-emerald-500/10 p-2 hover:bg-emerald-500/20 transition-all rounded-none"
+              >
+                <div className="text-2xs font-bold text-emerald-400">&ge; +3%</div>
+                <div className="text-base font-bold text-emerald-300 mt-1">{distribution.strongGain}</div>
+                <div className="text-3xs text-emerald-400/80 mt-0.5">Surge</div>
+              </button>
+
+              {/* +1% to +3% */}
+              <button
+                onClick={() => {
+                  setMovementFilter("BUYING");
+                  setSortBy("changeDesc");
+                }}
+                className="border border-emerald-500/20 bg-emerald-500/5 p-2 hover:bg-emerald-500/15 transition-all rounded-none"
+              >
+                <div className="text-2xs font-bold text-emerald-400/90">+1% to +3%</div>
+                <div className="text-base font-bold text-emerald-400 mt-1">{distribution.modGain}</div>
+                <div className="text-3xs text-muted-foreground mt-0.5">Gainers</div>
+              </button>
+
+              {/* +0.15% to +1% */}
+              <button
+                onClick={() => {
+                  setMovementFilter("BUYING");
+                  setSortBy("changeDesc");
+                }}
+                className="border border-emerald-500/10 bg-emerald-500/5 p-2 hover:bg-emerald-500/10 transition-all rounded-none"
+              >
+                <div className="text-2xs font-bold text-emerald-400/70">0 to +1%</div>
+                <div className="text-base font-bold text-emerald-400/80 mt-1">{distribution.mildGain}</div>
+                <div className="text-3xs text-muted-foreground mt-0.5">Mild Up</div>
+              </button>
+
+              {/* Flat: -0.15% to +0.15% (What is not moving) */}
+              <button
+                onClick={() => setMovementFilter(movementFilter === "UNMOVED" ? "ALL" : "UNMOVED")}
+                className={cn(
+                  "border p-2 transition-all rounded-none",
+                  movementFilter === "UNMOVED"
+                    ? "border-cyan-400 bg-cyan-500/20 shadow-xs"
+                    : "border-border bg-card/60 hover:bg-muted",
+                )}
+              >
+                <div className="text-2xs font-bold text-cyan-400">Flat (0.0%)</div>
+                <div className="text-base font-bold text-foreground mt-1">{distribution.flat}</div>
+                <div className="text-3xs text-cyan-400 mt-0.5 font-semibold">Not Moving</div>
+              </button>
+
+              {/* 0 to -1% */}
+              <button
+                onClick={() => {
+                  setMovementFilter("SELLING");
+                  setSortBy("changeAsc");
+                }}
+                className="border border-rose-500/10 bg-rose-500/5 p-2 hover:bg-rose-500/10 transition-all rounded-none"
+              >
+                <div className="text-2xs font-bold text-rose-400/70">0 to -1%</div>
+                <div className="text-base font-bold text-rose-400/80 mt-1">{distribution.mildLoss}</div>
+                <div className="text-3xs text-muted-foreground mt-0.5">Mild Down</div>
+              </button>
+
+              {/* -1% to -3% */}
+              <button
+                onClick={() => {
+                  setMovementFilter("SELLING");
+                  setSortBy("changeAsc");
+                }}
+                className="border border-rose-500/20 bg-rose-500/5 p-2 hover:bg-rose-500/15 transition-all rounded-none"
+              >
+                <div className="text-2xs font-bold text-rose-400/90">-1% to -3%</div>
+                <div className="text-base font-bold text-rose-400 mt-1">{distribution.modLoss}</div>
+                <div className="text-3xs text-muted-foreground mt-0.5">Decliners</div>
+              </button>
+
+              {/* <= -3% */}
+              <button
+                onClick={() => {
+                  setMovementFilter("SELLING");
+                  setSortBy("changeAsc");
+                }}
+                className="border border-rose-500/30 bg-rose-500/10 p-2 hover:bg-rose-500/20 transition-all rounded-none"
+              >
+                <div className="text-2xs font-bold text-rose-400">&le; -3%</div>
+                <div className="text-base font-bold text-rose-300 mt-1">{distribution.strongLoss}</div>
+                <div className="text-3xs text-rose-400/80 mt-0.5">Dumping</div>
+              </button>
+            </div>
+          </div>
+
+          {/* 4. What is Being Bought & What is Being Sold: Interactive Sector Flow Treemap (Zero Rounded Edges) */}
+          <div className="border border-border bg-card p-4 sm:p-5 space-y-4 rounded-none">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3">
+              <div>
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                  <Layers className="h-4 w-4 text-primary" /> Sector Flow Matrix: What is Being Bought vs Sold
+                </h3>
+                <p className="text-3xs text-muted-foreground mt-0.5">
+                  20 sector classifications weighted by market capitalization and real-time capital flow. Click any sector to isolate stocks.
+                </p>
+              </div>
+
+              {selectedSector && (
+                <button
+                  onClick={() => setSelectedSector(null)}
+                  className="text-2xs text-primary hover:underline font-medium rounded-none"
+                >
+                  Reset Sector Filter ({selectedSector}) &times;
+                </button>
+              )}
+            </div>
+
+            {/* Sector Cards Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
+              {sectors.map((sec) => {
+                const isSelected = selectedSector === sec.industry;
+                const isPositive = sec.changePct >= 0;
+
+                return (
+                  <button
+                    key={sec.industry}
+                    onClick={() => setSelectedSector(isSelected ? null : sec.industry)}
+                    className={cn(
+                      "flex flex-col justify-between border p-2.5 text-left transition-all rounded-none",
+                      isSelected
+                        ? "ring-2 ring-primary border-primary bg-primary/10 shadow-sm"
+                        : isPositive
+                          ? "border-emerald-500/20 bg-emerald-500/5 hover:border-emerald-500/40"
+                          : "border-rose-500/20 bg-rose-500/5 hover:border-rose-500/40",
+                    )}
+                  >
+                    <div className="text-2xs font-medium text-foreground truncate w-full" title={sec.industry}>
+                      {sec.industry}
+                    </div>
+                    <div className="mt-2 flex items-baseline justify-between w-full font-mono">
+                      <span
                         className={cn(
-                          "p-3 text-right",
-                          isFlat
-                            ? "text-muted-foreground"
-                            : isUp
-                              ? "text-emerald-400"
-                              : "text-rose-400",
+                          "text-sm font-bold flex items-center",
+                          isPositive ? "text-emerald-400" : "text-rose-400",
                         )}
                       >
-                        {s.change !== undefined && s.change !== null
-                          ? `${s.change > 0 ? "+" : ""}${s.change.toFixed(2)}`
-                          : "—"}
-                      </td>
-                      <td className="p-3 text-right">
-                        <span
-                          className={cn(
-                            "inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-2xs font-bold",
-                            isFlat
-                              ? "bg-muted text-muted-foreground"
-                              : isUp
-                                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                                : "bg-rose-500/20 text-rose-400 border border-rose-500/30",
-                          )}
-                        >
-                          {isFlat ? "" : isUp ? "+" : ""}
-                          {s.changePct.toFixed(2)}%
-                        </span>
-                      </td>
-                      <td className="p-3 text-right text-muted-foreground">
-                        {s.volume ? fmtCompact(s.volume) : "—"}
-                      </td>
-                      <td className="p-3 text-right text-foreground font-medium">
-                        {s.turnoverCr ? fmtINR(s.turnoverCr, "₹") : "—"}
-                      </td>
-                      <td className="p-3 text-right text-muted-foreground">
-                        {s.marketCapCr ? fmtINR(s.marketCapCr, "₹") : "—"}
+                        {isPositive ? "+" : ""}{sec.changePct.toFixed(2)}%
+                      </span>
+                      <span className="text-3xs text-muted-foreground">
+                        {sec.count} stocks
+                      </span>
+                    </div>
+                    <div className="mt-1 text-3xs text-muted-foreground font-mono truncate">
+                      ₹{(sec.marketCapCr / 1000).toFixed(1)}k Cr
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 5. Live Filterable Stock Ledger (Zero Rounded Edges) */}
+          <div className="border border-border bg-card p-4 sm:p-5 space-y-4 rounded-none">
+            {/* Filter bar */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground mr-1">
+                  Filter Desk:
+                </span>
+                {[
+                  { id: "ALL", label: `All (${stocks.length})` },
+                  { id: "BUYING", label: `Being Bought (${distribution.strongGain + distribution.modGain})` },
+                  { id: "SELLING", label: `Being Sold (${distribution.modLoss + distribution.strongLoss})` },
+                  { id: "UNMOVED", label: `Not Moving (${distribution.flat})` },
+                  { id: "SURGE", label: "Volume / Momentum Surge" },
+                ].map((f) => (
+                  <button
+                    key={f.id}
+                    onClick={() => setMovementFilter(f.id as any)}
+                    className={cn(
+                      "border px-3 py-1 text-2xs font-mono font-bold uppercase tracking-wider transition-colors rounded-none",
+                      movementFilter === f.id
+                        ? "border-primary bg-primary text-primary-foreground shadow-xs"
+                        : "border-border/80 bg-background text-muted-foreground hover:bg-muted hover:text-foreground",
+                    )}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Search Box & Sort */}
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Search symbol, company..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-8 w-44 sm:w-56 border border-border bg-background pl-8 pr-3 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-primary rounded-none"
+                  />
+                </div>
+
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="h-8 border border-border bg-background px-2 font-mono text-2xs text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary rounded-none"
+                >
+                  <option value="changeDesc">Sort: Top Gainers %</option>
+                  <option value="changeAsc">Sort: Top Losers %</option>
+                  <option value="turnover">Sort: Highest Turnover</option>
+                  <option value="mcap">Sort: Market Cap</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Stock Rows Table */}
+            <div className="overflow-x-auto border border-border rounded-none">
+              <table className="w-full text-left text-xs border-collapse rounded-none">
+                <thead>
+                  <tr className="border-b border-border bg-muted/40 text-2xs text-muted-foreground uppercase tracking-wider font-semibold">
+                    <th className="p-3">Scrip / Company</th>
+                    <th className="p-3">Sector</th>
+                    <th className="p-3 text-right">LTP (₹)</th>
+                    <th className="p-3 text-right">Change (₹)</th>
+                    <th className="p-3 text-right">Change (%)</th>
+                    <th className="p-3 text-right">Traded Volume</th>
+                    <th className="p-3 text-right">Turnover (₹ Cr)</th>
+                    <th className="p-3 text-right">Market Cap (₹ Cr)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60">
+                  {filteredStocks.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="p-8 text-center text-xs text-muted-foreground">
+                        No scrips match the active filter criteria.
                       </td>
                     </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                  ) : (
+                    filteredStocks.map((s) => {
+                      const isUp = s.changePct > 0;
+                      const isFlat = Math.abs(s.changePct) <= 0.15;
 
-        {/* Bottom Provenance and Real Data Guarantee */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/40 pt-3 text-3xs text-muted-foreground">
-          <div className="flex items-center gap-1.5">
-            <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
-            <span>
-              <strong>Authentic Live Feed:</strong> Direct official NSE stocksTraded JSON payload. Zero synthetic interpolation or simulated orders.
-            </span>
-          </div>
-          <div>
-            Showing <strong>{filteredStocks.length}</strong> of <strong>{stocks.length}</strong> {pulse.label} scrips
+                      return (
+                        <tr
+                          key={s.symbol}
+                          className="hover:bg-muted/30 transition-colors font-mono"
+                        >
+                          <td className="p-3">
+                            <Link
+                              href={`/company/${encodeURIComponent(s.symbol)}`}
+                              className="font-bold text-foreground hover:text-primary transition-colors flex items-center gap-1.5"
+                            >
+                              <span>{s.symbol}</span>
+                              <span className="text-3xs text-muted-foreground font-normal truncate max-w-[140px]">
+                                {s.name}
+                              </span>
+                            </Link>
+                          </td>
+                          <td className="p-3 font-sans text-2xs text-muted-foreground truncate max-w-[150px]">
+                            {s.industry}
+                          </td>
+                          <td className="p-3 text-right font-bold text-foreground">
+                            {fmtINR(s.last)}
+                          </td>
+                          <td
+                            className={cn(
+                              "p-3 text-right",
+                              isFlat
+                                ? "text-muted-foreground"
+                                : isUp
+                                  ? "text-emerald-400"
+                                  : "text-rose-400",
+                            )}
+                          >
+                            {s.change !== undefined && s.change !== null
+                              ? `${s.change > 0 ? "+" : ""}${s.change.toFixed(2)}`
+                              : "—"}
+                          </td>
+                          <td className="p-3 text-right">
+                            <span
+                              className={cn(
+                                "inline-flex items-center gap-0.5 px-1.5 py-0.5 text-2xs font-bold rounded-none",
+                                isFlat
+                                  ? "bg-muted text-muted-foreground"
+                                  : isUp
+                                    ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                                    : "bg-rose-500/20 text-rose-400 border border-rose-500/30",
+                              )}
+                            >
+                              {isFlat ? "" : isUp ? "+" : ""}
+                              {s.changePct.toFixed(2)}%
+                            </span>
+                          </td>
+                          <td className="p-3 text-right text-muted-foreground">
+                            {s.volume ? fmtCompact(s.volume) : "—"}
+                          </td>
+                          <td className="p-3 text-right text-foreground font-medium">
+                            {s.turnoverCr ? fmtINR(s.turnoverCr, "₹") : "—"}
+                          </td>
+                          <td className="p-3 text-right text-muted-foreground">
+                            {s.marketCapCr ? fmtINR(s.marketCapCr, "₹") : "—"}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Bottom Provenance and Real Data Guarantee */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/40 pt-3 text-3xs text-muted-foreground rounded-none">
+              <div className="flex items-center gap-1.5">
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+                <span>
+                  <strong>Authentic Live Feed:</strong> Direct official NSE stocksTraded JSON payload. Zero synthetic interpolation or simulated orders.
+                </span>
+              </div>
+              <div>
+                Showing <strong>{filteredStocks.length}</strong> of <strong>{stocks.length}</strong> {pulse.label} scrips
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

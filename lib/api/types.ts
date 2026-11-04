@@ -1386,6 +1386,10 @@ export interface ApiSectorRotationSector {
   rsRatio: number;
   rsMomentum: number;
   change1wPct: number | null;
+  lastClose?: number;
+  change1d?: number | null;
+  change1w?: number | null;
+  change1m?: number | null;
   trail: ApiSectorRotationTrailPoint[];
 }
 
