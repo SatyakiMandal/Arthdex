@@ -1355,6 +1355,9 @@ export interface ApiSectorRotationTrailPoint {
 }
 
 export interface ApiSectorRotationSector {
+  ticker?: string;
+  label?: string;
+  color?: string;
   id: string;
   name: string;
   symbol: string;
@@ -1429,4 +1432,169 @@ export interface ApiCompanyCompare {
   symbols: string[];
   count: number;
   companies: ApiCompanyCompareCompany[];
+}
+
+
+// -- Phase 1: Portfolio, Catalysts, Lock-ins, Buybacks -----------------------
+
+export interface ApiPortfolioLot {
+  symbol: string;
+  quantity: number;
+  buyDate: string;
+  buyPrice: number;
+  currentPrice: number;
+  investedAmount: number;
+  currentValue: number;
+  unrealizedPnL: number;
+  unrealizedPnLPct: number;
+  holdingDays: number;
+  taxBucket: "STCG" | "LTCG";
+  isLoss: boolean;
+}
+
+export interface ApiTaxHarvestOpportunity {
+  symbol: string;
+  quantity: number;
+  currentValue: number;
+  unrealizedLoss: number;
+  taxBucket: "STCG" | "LTCG";
+  taxRatePct: number;
+  estimatedTaxSaving: number;
+  daysHeld: number;
+  recommendedSwaps: string[];
+  action: string;
+}
+
+export interface ApiTaxHarvesting {
+  stcg: {
+    unrealizedGains: number;
+    unrealizedLosses: number;
+    taxableGain: number;
+    taxRatePct: number;
+  };
+  ltcg: {
+    unrealizedGains: number;
+    unrealizedLosses: number;
+    annualExemptionLimit: number;
+    taxableGain: number;
+    taxRatePct: number;
+  };
+  potentialTaxSavings: number;
+  opportunities: ApiTaxHarvestOpportunity[];
+}
+
+export interface ApiSectorAllocation {
+  sector: string;
+  value: number;
+  weightPct: number;
+}
+
+export interface ApiPortfolioAnalysis {
+  asOf: string;
+  summary: {
+    totalInvested: number;
+    currentValue: number;
+    totalPnL: number;
+    totalPnLPct: number;
+    xirrPct: number | null;
+    lotsCount: number;
+    uniqueHoldingsCount: number;
+  };
+  taxHarvesting: ApiTaxHarvesting;
+  sectorAllocation: ApiSectorAllocation[];
+  concentrationAlerts: string[];
+  lots: ApiPortfolioLot[];
+}
+
+export interface ApiIndexRebalanceCandidate {
+  index: string;
+  symbol: string;
+  name: string;
+  direction: "INCLUSION" | "EXCLUSION";
+  probabilityPct: number;
+  estWeightPct: number;
+  catalyst: string;
+  estFlowCr: number;
+  avgDailyTurnoverCr: number;
+  cmp: number | null;
+  daysToCover: number | null;
+  urgency: "High" | "Normal";
+}
+
+export interface ApiIndexRebalance {
+  asOf: string;
+  reviewName: string;
+  effectiveDate: string;
+  dataCutoffDate: string;
+  totalPassiveAumTrackedCr: number;
+  candidatesCount: number;
+  candidates: ApiIndexRebalanceCandidate[];
+  byIndex: Record<string, ApiIndexRebalanceCandidate[]>;
+  notes: string[];
+}
+
+export interface ApiIpoLockinEvent {
+  symbol: string;
+  companyName: string;
+  listingDate: string;
+  lockinCategory: string;
+  unlockDate: string;
+  daysRemaining: number;
+  status: "EXPIRED" | "IMMINENT" | "UPCOMING_SOON" | "FUTURE";
+  sharesUnlocking: number;
+  unlockValueCr: number | null;
+  cmp: number | null;
+  avgDailyVolume: number;
+  supplyImpactRatio: number | null;
+  riskLevel: string;
+}
+
+export interface ApiIpoLockinResponse {
+  asOf: string;
+  totalEventsTracked: number;
+  upcomingCount: number;
+  imminentCount: number;
+  events: ApiIpoLockinEvent[];
+  rules: Record<string, string>;
+}
+
+export interface ApiBuybackScenario {
+  acceptanceRatioPct: number;
+  acceptedShares: number;
+  unacceptedShares: number;
+  cashFromAccepted: number;
+  residualSharesValue: number;
+  netProfitINR: number;
+  returnPct: number;
+}
+
+export interface ApiBuybackArbitrageSimulation {
+  maxCapitalLimit: number;
+  sharesAcquired: number;
+  actualInvested: number;
+  premiumPct: number;
+  assumedPostBuybackPrice: number;
+  scenarios: ApiBuybackScenario[];
+}
+
+export interface ApiBuybackItem {
+  symbol: string;
+  name: string;
+  buybackPrice: number;
+  type: string;
+  totalSizeCr: number;
+  recordDate: string;
+  tenderEndDate: string;
+  status: "ACTIVE" | "UPCOMING" | "COMPLETED";
+  historicalAcceptancePct: number;
+  cmp: number | null;
+  premiumPct: number | null;
+  arbitrageSimulation?: ApiBuybackArbitrageSimulation;
+}
+
+export interface ApiBuybackResponse {
+  asOf: string;
+  totalCount: number;
+  buybacks: ApiBuybackItem[];
+  rules: Record<string, string>;
 }

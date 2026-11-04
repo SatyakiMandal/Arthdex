@@ -1,6 +1,6 @@
 import "server-only";
 
-import { apiGet, apiGetOrNull, REVALIDATE, type ApiResult } from "./client";
+import { apiGet, apiGetOrNull, apiPost, REVALIDATE, type ApiResult } from "./client";
 import type {
   ApiCalendar,
   ApiDeals,
@@ -55,6 +55,10 @@ import type {
   ApiBhavScanner,
   ApiSectorRotation,
   ApiCompanyCompare,
+  ApiPortfolioAnalysis,
+  ApiIndexRebalance,
+  ApiIpoLockinResponse,
+  ApiBuybackResponse,
 } from "./types";
 
 export type { CompanyFilingItem, CompanyFilingsPayload };
@@ -301,3 +305,24 @@ export const getCompanyCompare = (symbols: string[]) => {
     300,
   );
 };
+
+
+// -- Phase 1: Portfolio, Catalysts, Lock-in & Buyback endpoints --------------
+
+export const postPortfolioAnalyze = (holdings: Array<{
+  symbol: string;
+  quantity: number;
+  buyPrice: number;
+  buyDate?: string;
+  currentPrice?: number;
+}>) =>
+  apiPost<ApiPortfolioAnalysis>("/api/v1/portfolio/analyze", { holdings });
+
+export const getIndexRebalance = () =>
+  apiGet<ApiIndexRebalance>("/api/v1/catalysts/index-rebalance", 3600);
+
+export const getIpoLockins = () =>
+  apiGet<ApiIpoLockinResponse>("/api/v1/catalysts/ipo-lockins", 3600);
+
+export const getBuybacks = () =>
+  apiGet<ApiBuybackResponse>("/api/v1/catalysts/buybacks", 3600);

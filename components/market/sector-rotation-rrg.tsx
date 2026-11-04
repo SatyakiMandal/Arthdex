@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Compass, RotateCw, TrendingUp } from "lucide-react";
+import { useId, useState } from "react";
+import { Compass, RotateCw, Sparkles, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ApiSectorRotation, ApiSectorRotationSector } from "@/lib/api/types";
 
@@ -9,31 +9,45 @@ const QUADRANT_COLORS = {
   Leading: {
     bg: "bg-emerald-500/10",
     border: "border-emerald-500/30",
-    text: "text-emerald-500",
+    text: "text-emerald-400",
     badge: "bg-emerald-500/20 text-emerald-400 border-emerald-500/40",
-    dot: "#10b981",
+    hex: "#22c55e",
   },
   Weakening: {
     bg: "bg-amber-500/10",
     border: "border-amber-500/30",
-    text: "text-amber-500",
+    text: "text-amber-400",
     badge: "bg-amber-500/20 text-amber-400 border-amber-500/40",
-    dot: "#f59e0b",
+    hex: "#eab308",
   },
   Lagging: {
     bg: "bg-rose-500/10",
     border: "border-rose-500/30",
-    text: "text-rose-500",
+    text: "text-rose-400",
     badge: "bg-rose-500/20 text-rose-400 border-rose-500/40",
-    dot: "#f43f5e",
+    hex: "#ef4444",
   },
   Improving: {
-    bg: "bg-blue-500/10",
-    border: "border-blue-500/30",
-    text: "text-blue-500",
-    badge: "bg-blue-500/20 text-blue-400 border-blue-500/40",
-    dot: "#3b82f6",
+    bg: "bg-cyan-500/10",
+    border: "border-cyan-500/30",
+    text: "text-cyan-400",
+    badge: "bg-cyan-500/20 text-cyan-400 border-cyan-500/40",
+    hex: "#06b6d4",
   },
+};
+
+// Bloomberg color mapping per sector
+const BLOOMBERG_SECTOR_COLORS: Record<string, string> = {
+  it: "#e879f9", // Magenta (like S5INFT)
+  metal: "#ef4444", // Red (like S5MATR)
+  energy: "#f97316", // Orange/Red (like S5ENRS)
+  auto: "#ea580c", // Industrial orange (like S5INDU)
+  bank: "#eab308", // Yellow (like S5FINL)
+  pharma: "#84cc16", // Lime Green (like S5HLTH)
+  fmcg: "#10b981", // Emerald (like S5CONS)
+  realty: "#06b6d4", // Cyan (like S5TELS)
+  infra: "#38bdf8", // Sky blue
+  pse: "#14b8a6", // Teal
 };
 
 export function SectorRotationRrg({
@@ -42,398 +56,510 @@ export function SectorRotationRrg({
   rotationData: ApiSectorRotation;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const sectors = rotationData.sectors ?? [];
+  const [trailingWeeks, setTrailingWeeks] = useState<4 | 8 | 12>(12);
 
-  // SVG coordinate dimensions
-  const svgWidth = 600;
-  const svgHeight = 440;
-  const padding = 50;
+  const rawSectors = rotationData.sectors ?? [];
+  const maskId = useId();
 
-  // Calculate dynamic domain based on RS-Ratio and RS-Momentum across sectors and trails
-  const allX: number[] = [100];
-  const allY: number[] = [100];
+  // SVG dimensions: matching Bloomberg terminal widescreen aspect
+  const svgWidth = 820;
+  const svgHeight = 520;
+  const paddingX = 60;
+  const paddingY = 50;
 
-  sectors.forEach((s) => {
+  // Compute dynamic domain across sectors and their trails
+  const allX: number[] = [100.0];
+  const allY: number[] = [100.0];
+
+  rawSectors.forEach((s) => {
     allX.push(s.rsRatio);
     allY.push(s.rsMomentum);
-    s.trail.forEach((t) => {
+    (s.trail || []).slice(-trailingWeeks).forEach((t) => {
       allX.push(t.rsRatio);
       allY.push(t.rsMomentum);
     });
   });
 
-  const minX = Math.min(94, Math.floor(Math.min(...allX) - 1));
-  const maxX = Math.max(106, Math.ceil(Math.max(...allX) + 1));
-  const minY = Math.min(94, Math.floor(Math.min(...allY) - 1));
-  const maxY = Math.max(106, Math.ceil(Math.max(...allY) + 1));
+  const rawMinX = Math.min(...allX);
+  const rawMaxX = Math.max(...allX);
+  const rawMinY = Math.min(...allY);
+  const rawMaxY = Math.max(...allY);
+
+  // Pad evenly so 100 is nicely framed
+  const minX = Math.min(96.0, Math.floor(rawMinX - 0.5));
+  const maxX = Math.max(103.5, Math.ceil(rawMaxX + 0.5));
+  const minY = Math.min(97.0, Math.floor(rawMinY - 0.5));
+  const maxY = Math.max(103.0, Math.ceil(rawMaxY + 0.5));
 
   function scaleX(val: number): number {
-    return padding + ((val - minX) / (maxX - minX)) * (svgWidth - 2 * padding);
+    return paddingX + ((val - minX) / (maxX - minX)) * (svgWidth - 2 * paddingX);
   }
 
   function scaleY(val: number): number {
-    // Invert SVG Y axis so higher momentum is at top
-    return svgHeight - padding - ((val - minY) / (maxY - minY)) * (svgHeight - 2 * padding);
+    // Invert Y so higher momentum is at top
+    return svgHeight - paddingY - ((val - minY) / (maxY - minY)) * (svgHeight - 2 * paddingY);
   }
 
-  const cx = scaleX(100);
-  const cy = scaleY(100);
+  const cx = scaleX(100.0);
+  const cy = scaleY(100.0);
 
-  const selectedSector = sectors.find((s) => s.id === selectedId);
+  // Grid tick intervals
+  const xTicks: number[] = [];
+  for (let x = Math.ceil(minX * 2) / 2; x <= maxX; x += 0.5) {
+    xTicks.push(Math.round(x * 100) / 100);
+  }
+
+  const yTicks: number[] = [];
+  for (let y = Math.ceil(minY); y <= maxY; y += 1.0) {
+    yTicks.push(y);
+  }
+
+  const selectedSector = rawSectors.find((s) => s.id === selectedId);
 
   return (
-    <div className="space-y-6">
-      {/* Intro info bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground border-b border-border/60 pb-3">
+    <div className="space-y-4">
+      {/* Top terminal bar with trailing window selector */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3">
         <div className="flex items-center gap-2">
-          <Compass className="h-4 w-4 text-primary" />
-          <span>
-            Benchmark: <strong className="text-foreground">{rotationData.benchmark} ({rotationData.benchmarkSymbol})</strong>
-          </span>
+          <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+          <h3 className="text-sm font-bold tracking-tight text-foreground font-mono">
+            Relative Rotation Graph - {trailingWeeks} week trailing
+          </h3>
           <span className="text-border">|</span>
-          <span>Center: <strong>(100, 100)</strong></span>
-          <span className="text-border">|</span>
-          <span className="flex items-center gap-1">
-            <RotateCw className="h-3 w-3 text-primary animate-spin-slow" /> Clockwise Rotation Cycle
+          <span className="text-2xs text-muted-foreground font-mono">
+            Benchmark: <strong className="text-foreground">NIFTY 50 (^NSEI)</strong>
           </span>
         </div>
-        <div className="text-2xs font-mono">
-          Last Calculated: {new Date(rotationData.calculatedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+
+        {/* Trail Length Controls */}
+        <div className="flex items-center gap-1.5 bg-black/60 border border-neutral-800 rounded-lg p-1">
+          <span className="text-3xs font-mono uppercase text-muted-foreground px-2">Trail:</span>
+          {([4, 8, 12] as const).map((w) => (
+            <button
+              key={w}
+              onClick={() => setTrailingWeeks(w)}
+              className={cn(
+                "rounded px-2.5 py-0.5 font-mono text-2xs font-bold transition-all",
+                trailingWeeks === w
+                  ? "bg-primary text-primary-foreground shadow"
+                  : "text-neutral-400 hover:text-white hover:bg-neutral-800",
+              )}
+            >
+              {w}W
+            </button>
+          ))}
+          {selectedId && (
+            <button
+              onClick={() => setSelectedId(null)}
+              className="ml-1 text-3xs font-mono text-neutral-400 hover:text-white px-1.5"
+            >
+              [Reset Focus]
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* RRG Scatter Canvas (8 cols) */}
-        <div className="lg:col-span-8 rounded-lg border border-border bg-card/60 p-4 relative overflow-hidden">
-          <div className="absolute top-3 left-4 text-3xs font-semibold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-1.5">
-            <TrendingUp className="h-3 w-3" /> Relative Rotation Graph (JdK RRG®)
-          </div>
+      {/* Main Terminal Screen */}
+      <div className="rounded-xl border border-neutral-800 bg-[#000000] p-3 sm:p-5 shadow-2xl relative overflow-hidden">
+        {/* SVG RRG Graph */}
+        <svg
+          viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+          className="w-full h-auto select-none font-mono"
+          style={{ maxHeight: "580px" }}
+        >
+          <defs>
+            {/* Generic Arrowhead for segment direction */}
+            <marker
+              id="rrg-arrow"
+              viewBox="0 0 10 10"
+              refX="6"
+              refY="5"
+              markerWidth="5"
+              markerHeight="5"
+              orient="auto-start-reverse"
+            >
+              <path d="M 0 1 L 9 5 L 0 9 z" fill="currentColor" opacity="0.9" />
+            </marker>
 
-          <svg
-            viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-            className="w-full h-auto select-none"
-            style={{ maxHeight: "480px" }}
+            {/* Subtle glow filter for square node endpoints */}
+            <filter id="bloom" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="2.5" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          {/* Grid Background Lines */}
+          {xTicks.map((xVal) => (
+            <line
+              key={`x-grid-${xVal}`}
+              x1={scaleX(xVal)}
+              y1={paddingY}
+              x2={scaleX(xVal)}
+              y2={svgHeight - paddingY}
+              stroke="#1a202c"
+              strokeWidth="0.8"
+              strokeDasharray={xVal === 100 ? "none" : "2,3"}
+            />
+          ))}
+
+          {yTicks.map((yVal) => (
+            <line
+              key={`y-grid-${yVal}`}
+              x1={paddingX}
+              y1={scaleY(yVal)}
+              x2={svgWidth - paddingX}
+              y2={scaleY(yVal)}
+              stroke="#1a202c"
+              strokeWidth="0.8"
+              strokeDasharray={yVal === 100 ? "none" : "2,3"}
+            />
+          ))}
+
+          {/* Large Semi-Transparent Rotational Arrows in the 4 Quadrants (Universal Clockwise Rotation) */}
+          {/* 1. Top-Left: Improving -> Leading (Blue sweep curving up & right) */}
+          <path
+            d={`M ${paddingX + 40} ${cy - 10} C ${paddingX + 40} ${paddingY + 80}, ${cx - 90} ${paddingY + 40}, ${cx - 20} ${paddingY + 40} L ${cx - 20} ${paddingY + 20} L ${cx + 15} ${paddingY + 45} L ${cx - 20} ${paddingY + 70} L ${cx - 20} ${paddingY + 52} C ${cx - 80} ${paddingY + 52}, ${paddingX + 55} ${paddingY + 90}, ${paddingX + 55} ${cy - 10} Z`}
+            fill="#0284c7"
+            fillOpacity="0.08"
+          />
+
+          {/* 2. Top-Right: Leading -> Weakening (Green sweep curving right & down) */}
+          <path
+            d={`M ${cx + 10} ${paddingY + 40} C ${svgWidth - paddingX - 90} ${paddingY + 40}, ${svgWidth - paddingX - 40} ${paddingY + 90}, ${svgWidth - paddingX - 40} ${cy - 20} L ${svgWidth - paddingX - 60} ${cy - 20} L ${svgWidth - paddingX - 35} ${cy + 15} L ${svgWidth - paddingX - 10} ${cy - 20} L ${svgWidth - paddingX - 28} ${cy - 20} C ${svgWidth - paddingX - 28} ${paddingY + 80}, ${svgWidth - paddingX - 80} ${paddingY + 52}, ${cx + 10} ${paddingY + 52} Z`}
+            fill="#16a34a"
+            fillOpacity="0.08"
+          />
+
+          {/* 3. Bottom-Right: Weakening -> Lagging (Yellow/Olive sweep curving down & left) */}
+          <path
+            d={`M ${svgWidth - paddingX - 40} ${cy + 10} C ${svgWidth - paddingX - 40} ${svgHeight - paddingY - 80}, ${cx + 90} ${svgHeight - paddingY - 40}, ${cx + 20} ${svgHeight - paddingY - 40} L ${cx + 20} ${svgHeight - paddingY - 20} L ${cx - 15} ${svgHeight - paddingY - 45} L ${cx + 20} ${svgHeight - paddingY - 70} L ${cx + 20} ${svgHeight - paddingY - 52} C ${cx + 80} ${svgHeight - paddingY - 52}, ${svgWidth - paddingX - 55} ${svgHeight - paddingY - 90}, ${svgWidth - paddingX - 55} ${cy + 10} Z`}
+            fill="#ca8a04"
+            fillOpacity="0.08"
+          />
+
+          {/* 4. Bottom-Left: Lagging -> Improving (Red sweep curving left & up) */}
+          <path
+            d={`M ${cx - 10} ${svgHeight - paddingY - 40} C ${paddingX + 90} ${svgHeight - paddingY - 40}, ${paddingX + 40} ${svgHeight - paddingY - 90}, ${paddingX + 40} ${cy + 20} L ${paddingX + 60} ${cy + 20} L ${paddingX + 35} ${cy - 15} L ${paddingX + 10} ${cy + 20} L ${paddingX + 28} ${cy + 20} C ${paddingX + 28} ${svgHeight - paddingY - 80}, ${paddingX + 80} ${svgHeight - paddingY - 52}, ${cx - 10} ${svgHeight - paddingY - 52} Z`}
+            fill="#dc2626"
+            fillOpacity="0.08"
+          />
+
+          {/* Center Benchmark Crosshairs at (100.00, 100.00) */}
+          <line
+            x1={cx}
+            y1={paddingY - 10}
+            x2={cx}
+            y2={svgHeight - paddingY + 10}
+            stroke="#ffffff"
+            strokeWidth="1.2"
+            strokeDasharray="6,4"
+            strokeOpacity="0.75"
+          />
+          <line
+            x1={paddingX - 10}
+            y1={cy}
+            x2={svgWidth - paddingX + 10}
+            y2={cy}
+            stroke="#ffffff"
+            strokeWidth="1.2"
+            strokeDasharray="6,4"
+            strokeOpacity="0.75"
+          />
+
+          {/* Quadrant Corner Labels (Bloomberg style) */}
+          <text
+            x={paddingX + 10}
+            y={paddingY + 18}
+            className="fill-neutral-500 font-bold text-xs tracking-wider uppercase"
           >
-            <defs>
-              <marker
-                id="arrowhead"
-                markerWidth="6"
-                markerHeight="6"
-                refX="4"
-                refY="3"
-                orient="auto"
+            Improving
+          </text>
+          <text
+            x={svgWidth - paddingX - 10}
+            y={paddingY + 18}
+            textAnchor="end"
+            className="fill-neutral-500 font-bold text-xs tracking-wider uppercase"
+          >
+            Leading
+          </text>
+          <text
+            x={paddingX + 10}
+            y={svgHeight - paddingY - 10}
+            className="fill-neutral-500 font-bold text-xs tracking-wider uppercase"
+          >
+            Lagging
+          </text>
+          <text
+            x={svgWidth - paddingX - 10}
+            y={svgHeight - paddingY - 10}
+            textAnchor="end"
+            className="fill-neutral-500 font-bold text-xs tracking-wider uppercase"
+          >
+            Weakening
+          </text>
+
+          {/* Tick Labels on Left Axis (JdK RS-Momentum) */}
+          {yTicks.map((yVal) => (
+            <text
+              key={`ytick-${yVal}`}
+              x={paddingX - 8}
+              y={scaleY(yVal) + 4}
+              textAnchor="end"
+              className={cn(
+                "text-2xs font-bold",
+                yVal === 100 ? "fill-white" : "fill-neutral-400",
+              )}
+            >
+              {yVal}
+            </text>
+          ))}
+
+          {/* Tick Labels on Bottom Axis (JdK RS-Ratio) */}
+          {xTicks.filter((_, i) => i % 2 === 0).map((xVal) => (
+            <text
+              key={`xtick-${xVal}`}
+              x={scaleX(xVal)}
+              y={svgHeight - paddingY + 18}
+              textAnchor="middle"
+              className={cn(
+                "text-2xs font-bold",
+                xVal === 100 ? "fill-white" : "fill-neutral-400",
+              )}
+            >
+              {xVal.toFixed(2)}
+            </text>
+          ))}
+
+          {/* Outer Border Axis Scale Lines */}
+          <line
+            x1={paddingX}
+            y1={paddingY}
+            x2={paddingX}
+            y2={svgHeight - paddingY}
+            stroke="#4a5568"
+            strokeWidth="1.2"
+          />
+          <line
+            x1={paddingX}
+            y1={svgHeight - paddingY}
+            x2={svgWidth - paddingX}
+            y2={svgHeight - paddingY}
+            stroke="#4a5568"
+            strokeWidth="1.2"
+          />
+
+          {/* Axis Title Labels */}
+          <text
+            x={svgWidth / 2}
+            y={svgHeight - 12}
+            textAnchor="middle"
+            className="fill-neutral-300 font-bold text-xs tracking-wide"
+          >
+            JdK RS-Ratio
+          </text>
+          <text
+            x={16}
+            y={svgHeight / 2}
+            textAnchor="middle"
+            transform={`rotate(-90 16 ${svgHeight / 2})`}
+            className="fill-neutral-300 font-bold text-xs tracking-wide"
+          >
+            JdK RS-Momentum
+          </text>
+
+          {/* Sector Trails with Directional Arrowheads (Bloomberg Trajectory) */}
+          {rawSectors.map((s) => {
+            const isSelected = selectedId === s.id;
+            const isAnySelected = selectedId !== null;
+            const opacity = isSelected ? 1.0 : isAnySelected ? 0.15 : 0.85;
+
+            const sectorColor = BLOOMBERG_SECTOR_COLORS[s.id] || QUADRANT_COLORS[s.quadrant]?.hex || "#ffffff";
+            const fullTrail = s.trail || [];
+            const activeTrail = fullTrail.slice(-trailingWeeks);
+
+            // Connect from first trail point to current position
+            const points = [...activeTrail, { date: "today", rsRatio: s.rsRatio, rsMomentum: s.rsMomentum }];
+            if (points.length < 2) return null;
+
+            return (
+              <g
+                key={`trail-grp-${s.id}`}
+                className="cursor-pointer"
+                onClick={() => setSelectedId(isSelected ? null : s.id)}
               >
-                <polygon points="0 0, 6 3, 0 6" fill="currentColor" opacity="0.8" />
-              </marker>
-            </defs>
+                {/* Continuous curve path */}
+                {points.map((p, idx) => {
+                  if (idx === 0) return null;
+                  const prev = points[idx - 1];
+                  const x1 = scaleX(prev.rsRatio);
+                  const y1 = scaleY(prev.rsMomentum);
+                  const x2 = scaleX(p.rsRatio);
+                  const y2 = scaleY(p.rsMomentum);
 
-            {/* Quadrant Background Shading */}
-            {/* Top-Right: Leading (Green) */}
-            <rect
-              x={cx}
-              y={padding}
-              width={svgWidth - padding - cx}
-              height={cy - padding}
-              fill="#10b981"
-              fillOpacity="0.04"
-            />
-            {/* Bottom-Right: Weakening (Amber) */}
-            <rect
-              x={cx}
-              y={cy}
-              width={svgWidth - padding - cx}
-              height={svgHeight - padding - cy}
-              fill="#f59e0b"
-              fillOpacity="0.04"
-            />
-            {/* Bottom-Left: Lagging (Rose) */}
-            <rect
-              x={padding}
-              y={cy}
-              width={cx - padding}
-              height={svgHeight - padding - cy}
-              fill="#f43f5e"
-              fillOpacity="0.04"
-            />
-            {/* Top-Left: Improving (Blue) */}
-            <rect
-              x={padding}
-              y={padding}
-              width={cx - padding}
-              height={cy - padding}
-              fill="#3b82f6"
-              fillOpacity="0.04"
-            />
+                  return (
+                    <g key={`seg-${s.id}-${idx}`}>
+                      {/* Segment line */}
+                      <line
+                        x1={x1}
+                        y1={y1}
+                        x2={x2}
+                        y2={y2}
+                        stroke={sectorColor}
+                        strokeWidth={isSelected ? 2.5 : 1.4}
+                        strokeOpacity={opacity}
+                      />
 
-            {/* Crosshairs at (100, 100) */}
-            <line
-              x1={cx}
-              y1={padding}
-              x2={cx}
-              y2={svgHeight - padding}
-              stroke="currentColor"
-              strokeDasharray="4,4"
-              strokeWidth="1.5"
-              className="text-border"
-            />
-            <line
-              x1={padding}
-              y1={cy}
-              x2={svgWidth - padding}
-              y2={cy}
-              stroke="currentColor"
-              strokeDasharray="4,4"
-              strokeWidth="1.5"
-              className="text-border"
-            />
+                      {/* Directional Arrowhead along segment */}
+                      <circle
+                        cx={(x1 + x2) / 2}
+                        cy={(y1 + y2) / 2}
+                        r={0.1}
+                        stroke="none"
+                        markerEnd="url(#rrg-arrow)"
+                        color={sectorColor}
+                        opacity={opacity}
+                      />
+                    </g>
+                  );
+                })}
 
-            {/* Quadrant Watermark Labels */}
-            <text
-              x={svgWidth - padding - 10}
-              y={padding + 22}
-              textAnchor="end"
-              className="fill-emerald-500/70 text-2xs font-bold tracking-wider uppercase font-sans"
-            >
-              LEADING (RS+ / Mom+)
-            </text>
-            <text
-              x={svgWidth - padding - 10}
-              y={svgHeight - padding - 14}
-              textAnchor="end"
-              className="fill-amber-500/70 text-2xs font-bold tracking-wider uppercase font-sans"
-            >
-              WEAKENING (RS+ / Mom-)
-            </text>
-            <text
-              x={padding + 10}
-              y={svgHeight - padding - 14}
-              textAnchor="start"
-              className="fill-rose-500/70 text-2xs font-bold tracking-wider uppercase font-sans"
-            >
-              LAGGING (RS- / Mom-)
-            </text>
-            <text
-              x={padding + 10}
-              y={padding + 22}
-              textAnchor="start"
-              className="fill-blue-500/70 text-2xs font-bold tracking-wider uppercase font-sans"
-            >
-              IMPROVING (RS- / Mom+)
-            </text>
-
-            {/* Axes Labels */}
-            <text
-              x={svgWidth / 2}
-              y={svgHeight - 12}
-              textAnchor="middle"
-              className="fill-muted-foreground text-3xs font-mono font-medium"
-            >
-              RS-Ratio (Trend vs Nifty 50) →
-            </text>
-            <text
-              x={14}
-              y={svgHeight / 2}
-              textAnchor="middle"
-              transform={`rotate(-90 14 ${svgHeight / 2})`}
-              className="fill-muted-foreground text-3xs font-mono font-medium"
-            >
-              RS-Momentum (Acceleration) →
-            </text>
-
-            {/* Historical Trails & Vectors */}
-            {sectors.map((s) => {
-              const isSelected = selectedId === s.id;
-              const points = [...s.trail, { date: "today", rsRatio: s.rsRatio, rsMomentum: s.rsMomentum }];
-              const pathD = points
-                .map((p, i) => `${i === 0 ? "M" : "L"} ${scaleX(p.rsRatio).toFixed(1)} ${scaleY(p.rsMomentum).toFixed(1)}`)
-                .join(" ");
-
-              const quadColor = QUADRANT_COLORS[s.quadrant] || QUADRANT_COLORS.Leading;
-
-              return (
-                <g key={`trail-${s.id}`}>
-                  {/* Trail line */}
-                  <path
-                    d={pathD}
-                    fill="none"
-                    stroke={quadColor.dot}
-                    strokeWidth={isSelected ? "2.5" : "1.2"}
-                    strokeOpacity={isSelected ? 1.0 : selectedId ? 0.2 : 0.65}
-                    strokeDasharray={isSelected ? "none" : "2,2"}
+                {/* Trail Historical dots */}
+                {points.slice(0, -1).map((pt, idx) => (
+                  <circle
+                    key={`dot-${s.id}-${idx}`}
+                    cx={scaleX(pt.rsRatio)}
+                    cy={scaleY(pt.rsMomentum)}
+                    r={isSelected ? 2.8 : 1.8}
+                    fill={sectorColor}
+                    fillOpacity={opacity * 0.9}
                   />
+                ))}
+              </g>
+            );
+          })}
 
-                  {/* Trail history dots */}
-                  {s.trail.map((t, idx) => (
-                    <circle
-                      key={`dot-${s.id}-${idx}`}
-                      cx={scaleX(t.rsRatio)}
-                      cy={scaleY(t.rsMomentum)}
-                      r={isSelected ? 3 : 2}
-                      fill={quadColor.dot}
-                      fillOpacity={isSelected ? 0.8 : 0.35}
-                    />
-                  ))}
-                </g>
-              );
-            })}
+          {/* Current Active Coordinates: Square Marker + Ticker Label (Bloomberg Terminal Standard) */}
+          {rawSectors.map((s) => {
+            const isSelected = selectedId === s.id;
+            const isAnySelected = selectedId !== null;
+            const opacity = isSelected ? 1.0 : isAnySelected ? 0.2 : 1.0;
 
-            {/* Current Positions & Labels */}
-            {sectors.map((s) => {
-              const isSelected = selectedId === s.id;
-              const currX = scaleX(s.rsRatio);
-              const currY = scaleY(s.rsMomentum);
-              const quadColor = QUADRANT_COLORS[s.quadrant] || QUADRANT_COLORS.Leading;
-              const label = s.name.replace(/^Nifty\s+/i, "");
+            const currX = scaleX(s.rsRatio);
+            const currY = scaleY(s.rsMomentum);
+            const sectorColor = BLOOMBERG_SECTOR_COLORS[s.id] || QUADRANT_COLORS[s.quadrant]?.hex || "#ffffff";
+            const ticker = s.ticker || s.symbol.replace(/^(\^|NIFTY_)/i, "").slice(0, 5);
 
-              return (
-                <g
-                  key={s.id}
-                  className="cursor-pointer transition-all"
-                  onClick={() => setSelectedId(isSelected ? null : s.id)}
-                >
-                  {/* Outer halo if selected */}
-                  {isSelected && (
-                    <circle
-                      cx={currX}
-                      cy={currY}
-                      r={14}
-                      fill={quadColor.dot}
-                      fillOpacity="0.25"
-                      stroke={quadColor.dot}
-                      strokeWidth="1.5"
-                    />
-                  )}
-
-                  {/* Main current dot */}
+            return (
+              <g
+                key={`node-${s.id}`}
+                className="cursor-pointer transition-transform"
+                onClick={() => setSelectedId(isSelected ? null : s.id)}
+              >
+                {/* Focus Halo Ring if selected */}
+                {isSelected && (
                   <circle
                     cx={currX}
                     cy={currY}
-                    r={isSelected ? 6 : 5}
-                    fill={quadColor.dot}
-                    stroke="#ffffff"
+                    r={16}
+                    fill="none"
+                    stroke={sectorColor}
                     strokeWidth="1.5"
-                    className="drop-shadow-sm"
+                    strokeDasharray="3,3"
+                    className="animate-spin-slow"
                   />
+                )}
 
-                  {/* Sector Tag */}
-                  <g transform={`translate(${currX + 8}, ${currY - 8})`}>
-                    <rect
-                      x={-2}
-                      y={-10}
-                      width={label.length * 6.5 + 8}
-                      height={16}
-                      rx={3}
-                      fill="#0f172a"
-                      fillOpacity={isSelected ? 0.95 : 0.8}
-                      stroke={isSelected ? quadColor.dot : "currentColor"}
-                      strokeWidth={isSelected ? 1.5 : 0.5}
-                      className={cn(isSelected ? "" : "text-border")}
-                    />
-                    <text
-                      x={2}
-                      y={2}
-                      className={cn(
-                        "text-3xs font-mono font-bold tracking-tight",
-                        isSelected ? quadColor.text : "fill-foreground",
-                      )}
-                    >
-                      {label}
-                    </text>
-                  </g>
-                </g>
-              );
-            })}
-          </svg>
-        </div>
+                {/* Bright Square Terminal Marker (6x6 px) */}
+                <rect
+                  x={currX - 4}
+                  y={currY - 4}
+                  width={8}
+                  height={8}
+                  fill={sectorColor}
+                  stroke="#000000"
+                  strokeWidth="1"
+                  filter={isSelected ? "url(#bloom)" : undefined}
+                  opacity={opacity}
+                />
 
-        {/* Sector Ledger / Quadrant Detail List (4 cols) */}
-        <div className="lg:col-span-4 space-y-3">
-          <div className="text-2xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center justify-between">
-            <span>Sectors by Quadrant</span>
-            <span className="font-mono text-3xs">{sectors.length} Sectors</span>
-          </div>
-
-          <div className="space-y-2 max-h-[480px] overflow-y-auto pr-1">
-            {sectors.map((s) => {
-              const isSelected = selectedId === s.id;
-              const quad = QUADRANT_COLORS[s.quadrant] || QUADRANT_COLORS.Leading;
-              return (
-                <div
-                  key={s.id}
-                  onClick={() => setSelectedId(isSelected ? null : s.id)}
+                {/* Monospace Ticker Label next to square */}
+                <text
+                  x={currX + 8}
+                  y={currY + 4}
+                  fill={sectorColor}
+                  opacity={opacity}
                   className={cn(
-                    "cursor-pointer rounded-lg border p-3 transition-all",
-                    isSelected
-                      ? cn("border-primary/80 bg-primary/10 shadow-sm ring-1 ring-primary/40")
-                      : "border-border/80 bg-card hover:border-border hover:bg-muted/30",
+                    "font-bold text-2xs tracking-tighter drop-shadow-md",
+                    isSelected ? "text-xs font-black underline" : "",
                   )}
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-semibold text-xs text-foreground font-sans">
-                      {s.name}
-                    </span>
-                    <span
-                      className={cn(
-                        "rounded px-2 py-0.5 text-3xs font-semibold uppercase tracking-wider border",
-                        quad.badge,
-                      )}
-                    >
-                      {s.quadrant}
-                    </span>
-                  </div>
+                  {ticker}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
 
-                  <div className="mt-2 grid grid-cols-3 gap-2 text-2xs font-mono border-t border-border/40 pt-2">
-                    <div>
-                      <div className="text-3xs text-muted-foreground font-sans">RS-Ratio</div>
-                      <div className="font-medium text-foreground">{s.rsRatio.toFixed(2)}</div>
-                    </div>
-                    <div>
-                      <div className="text-3xs text-muted-foreground font-sans">Momentum</div>
-                      <div className="font-medium text-foreground">{s.rsMomentum.toFixed(2)}</div>
-                    </div>
-                    <div>
-                      <div className="text-3xs text-muted-foreground font-sans">1W Return</div>
-                      <div
-                        className={cn(
-                          "font-medium",
-                          s.change1wPct !== null && s.change1wPct >= 0
-                            ? "text-emerald-500"
-                            : "text-rose-500",
-                        )}
-                      >
-                        {s.change1wPct !== null
-                          ? `${s.change1wPct >= 0 ? "+" : ""}${s.change1wPct.toFixed(2)}%`
-                          : "—"}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+        {/* Bloomberg Terminal Status Footer */}
+        <div className="mt-2 flex flex-wrap items-center justify-between text-3xs font-mono text-neutral-400 border-t border-neutral-900 pt-2 px-1">
+          <div>
+            <span>Bloomberg RRG® Model · Trailing: {trailingWeeks} Weeks · Bench: Nifty 50</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1 text-emerald-400">
+              <span className="h-2 w-2 rounded-sm bg-emerald-500 inline-block" /> Leading (RS+ Mom+)
+            </span>
+            <span className="flex items-center gap-1 text-amber-400">
+              <span className="h-2 w-2 rounded-sm bg-amber-500 inline-block" /> Weakening (RS+ Mom-)
+            </span>
+            <span className="flex items-center gap-1 text-rose-400">
+              <span className="h-2 w-2 rounded-sm bg-rose-500 inline-block" /> Lagging (RS- Mom-)
+            </span>
+            <span className="flex items-center gap-1 text-cyan-400">
+              <span className="h-2 w-2 rounded-sm bg-cyan-500 inline-block" /> Improving (RS- Mom+)
+            </span>
           </div>
         </div>
       </div>
 
-      {selectedSector && (
-        <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 text-xs text-foreground">
-          <div className="flex items-center justify-between">
-            <span className="font-bold text-sm">{selectedSector.name} Rotation Vector</span>
+      {/* Sector Details Ledger */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 pt-2">
+        {rawSectors.map((s) => {
+          const isSelected = selectedId === s.id;
+          const qColor = QUADRANT_COLORS[s.quadrant] || QUADRANT_COLORS.Leading;
+          const sColor = BLOOMBERG_SECTOR_COLORS[s.id] || qColor.hex;
+
+          return (
             <button
-              onClick={() => setSelectedId(null)}
-              className="text-2xs text-muted-foreground hover:text-foreground"
+              key={s.id}
+              onClick={() => setSelectedId(isSelected ? null : s.id)}
+              className={cn(
+                "rounded-lg border p-2.5 text-left transition-all",
+                isSelected
+                  ? "border-primary bg-primary/10 shadow-md ring-1 ring-primary/40"
+                  : "border-border/80 bg-card hover:border-neutral-700",
+              )}
             >
-              Clear Focus
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-xs text-foreground font-mono flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: sColor }} />
+                  {s.ticker || s.label}
+                </span>
+                <span className={cn("text-3xs font-semibold px-1.5 py-0.2 rounded border", qColor.badge)}>
+                  {s.quadrant}
+                </span>
+              </div>
+              <div className="mt-2 grid grid-cols-2 gap-1 text-3xs font-mono text-muted-foreground border-t border-border/40 pt-1.5">
+                <div>RS: <strong className="text-foreground">{s.rsRatio.toFixed(2)}</strong></div>
+                <div>Mom: <strong className="text-foreground">{s.rsMomentum.toFixed(2)}</strong></div>
+              </div>
             </button>
-          </div>
-          <p className="mt-1 text-2xs text-muted-foreground">
-            Currently in the <strong className="text-foreground">{selectedSector.quadrant}</strong> quadrant against Nifty 50.
-            {selectedSector.quadrant === "Leading" && " Outperforming Nifty with positive relative momentum. Candidate for trend-following overweights."}
-            {selectedSector.quadrant === "Weakening" && " Outperforming Nifty overall, but relative momentum is slowing down. Look for topping signs."}
-            {selectedSector.quadrant === "Lagging" && " Underperforming Nifty with negative relative momentum. Candidate for underweights or hedging."}
-            {selectedSector.quadrant === "Improving" && " Still underperforming overall, but relative momentum is accelerating upwards. Candidate for early rotation entries."}
-          </p>
-        </div>
-      )}
+          );
+        })}
+      </div>
     </div>
   );
 }

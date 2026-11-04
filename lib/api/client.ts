@@ -97,3 +97,45 @@ export async function apiGetOrNull<T>(
   const result = await apiGet<T>(path, revalidate);
   return result.ok ? { data: result.data, meta: result.meta } : null;
 }
+
+
+export async function apiPost<T>(
+  path: string,
+  bodyData: unknown,
+): Promise<ApiResult<T>> {
+  const url = `${BASE_URL}${path}`;
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: backendHeaders({
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      }),
+      body: JSON.stringify(bodyData),
+    });
+
+    if (!response.ok) {
+      let detail = `API ${response.status} on ${path}`;
+      try {
+        const body = (await response.json()) as { detail?: string };
+        if (body?.detail) detail = body.detail;
+      } catch {
+        // Non-JSON error body
+      }
+      return { ok: false, status: response.status, message: detail };
+    }
+
+    const body = (await response.json()) as Envelope<T>;
+    return { ok: true, data: body.data, meta: body.meta };
+  } catch (error) {
+    return {
+      ok: false,
+      status: 0,
+      message:
+        error instanceof Error
+          ? `Cannot reach the data service on ${path}: ${error.message}`
+          : `Cannot reach the data service on ${path}`,
+    };
+  }
+}

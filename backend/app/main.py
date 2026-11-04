@@ -18,7 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from .config import SETTINGS
-from .routers import analyzer, bhavcopy, company, decisions, derivatives, health, ipo, market, news, orderflow, quant, screener, search, unlisted, desk
+from .routers import analyzer, bhavcopy, catalysts, company, decisions, derivatives, desk, health, ipo, market, news, orderflow, portfolio, quant, screener, search, unlisted
 from .services import analyzer as analyzer_service
 from .services import unlisted as unlisted_service
 
@@ -91,6 +91,8 @@ app.include_router(desk.router)
 app.include_router(orderflow.router)
 app.include_router(decisions.router)
 app.include_router(derivatives.router)
+app.include_router(catalysts.router)
+app.include_router(portfolio.router)
 
 
 def _analyzer_startup() -> None:

@@ -25,7 +25,7 @@ import {
   Star,
   Sunrise,
   X,
-  type LucideIcon, Sigma, FileBarChart } from "lucide-react";
+  type LucideIcon, Sigma, FileBarChart, Briefcase, Sparkles } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { UniversalSearch } from "@/components/search/universal-search";
@@ -49,6 +49,7 @@ const GROUPS: Group[] = [
       { label: "Bulk and block deals", href: "/deals", icon: ArrowLeftRight, hint: "Large trades disclosed today" },
       { label: "Results season", href: "/results", icon: FileBarChart, hint: "Who reported, and how they did against last year" },
       { label: "Results calendar", href: "/calendar", icon: CalendarDays, hint: "Board meetings and actions, 30 days" },
+      { label: "Catalyst desk", href: "/catalysts", icon: Sparkles, hint: "Index rebalances, IPO lock-ins, buybacks" },
     ],
   },
   {
@@ -60,6 +61,7 @@ const GROUPS: Group[] = [
       { label: "News and filings", href: "/news", icon: Newspaper, hint: "Exchange filings and the press" },
       { label: "Morning briefing", href: "/briefing", icon: Sunrise, hint: "Today in one page" },
       { label: "Watchlist", href: "/watchlist", icon: Star, hint: "Your companies at a glance" },
+      { label: "Portfolio & tax desk", href: "/portfolio", icon: Briefcase, hint: "Holdings, XIRR and ₹1.25L tax harvester" },
     ],
   },
   {

@@ -19,16 +19,16 @@ from ..cache import CACHE
 from ..providers import yahoo
 
 SECTORS = [
-    {"id": "bank", "symbol": "^NSEBANK", "label": "Nifty Bank", "color": "#3b82f6"},
-    {"id": "it", "symbol": "^CNXIT", "label": "Nifty IT", "color": "#06b6d4"},
-    {"id": "auto", "symbol": "^CNXAUTO", "label": "Nifty Auto", "color": "#f59e0b"},
-    {"id": "fmcg", "symbol": "^CNXFMCG", "label": "Nifty FMCG", "color": "#10b981"},
-    {"id": "metal", "symbol": "^CNXMETAL", "label": "Nifty Metal", "color": "#f97316"},
-    {"id": "pharma", "symbol": "^CNXPHARMA", "label": "Nifty Pharma", "color": "#8b5cf6"},
-    {"id": "realty", "symbol": "^CNXREALTY", "label": "Nifty Realty", "color": "#ec4899"},
-    {"id": "energy", "symbol": "^CNXENERGY", "label": "Nifty Energy", "color": "#eab308"},
-    {"id": "infra", "symbol": "^CNXINFRA", "label": "Nifty Infra", "color": "#6366f1"},
-    {"id": "pse", "symbol": "^CNXPSE", "label": "Nifty PSE", "color": "#14b8a6"},
+    {"id": "bank", "symbol": "^NSEBANK", "label": "Nifty Bank", "ticker": "BANK", "color": "#3b82f6"},
+    {"id": "it", "symbol": "^CNXIT", "label": "Nifty IT", "ticker": "IT", "color": "#a855f7"},
+    {"id": "auto", "symbol": "^CNXAUTO", "label": "Nifty Auto", "ticker": "AUTO", "color": "#f59e0b"},
+    {"id": "fmcg", "symbol": "^CNXFMCG", "label": "Nifty FMCG", "ticker": "FMCG", "color": "#10b981"},
+    {"id": "metal", "symbol": "^CNXMETAL", "label": "Nifty Metal", "ticker": "METAL", "color": "#f97316"},
+    {"id": "pharma", "symbol": "^CNXPHARMA", "label": "Nifty Pharma", "ticker": "PHARM", "color": "#22c55e"},
+    {"id": "realty", "symbol": "^CNXREALTY", "label": "Nifty Realty", "ticker": "REALT", "color": "#ec4899"},
+    {"id": "energy", "symbol": "^CNXENERGY", "label": "Nifty Energy", "ticker": "ENRGY", "color": "#eab308"},
+    {"id": "infra", "symbol": "^CNXINFRA", "label": "Nifty Infra", "ticker": "INFRA", "color": "#6366f1"},
+    {"id": "pse", "symbol": "^CNXPSE", "label": "Nifty PSE", "ticker": "PSE", "color": "#06b6d4"},
 ]
 
 BENCHMARK_SYMBOL = "^NSEI"
@@ -72,14 +72,27 @@ def compute_rrg() -> dict[str, Any]:
                 # RS-Momentum centered at 100: rate of change of RS-Ratio
                 rs_mom = 100.0 + (rs_ratio.diff(3) / rs_ratio.shift(3)) * 100.0 * 3.0
 
-                # Recent points for trail (last 4 sessions)
-                trail: list[dict[str, Any]] = []
+                # 12-week weekly trail (step = 5 trading sessions)
                 last_idx = len(common_dates)
-                lookback = min(5, last_idx)
-                for i in range(last_idx - lookback, last_idx):
-                    d_str = str(common_dates[i])[:10]
-                    r_val = round(float(rs_ratio.iloc[i]), 2)
-                    m_val = round(float(rs_mom.iloc[i]), 2) if pd.notna(rs_mom.iloc[i]) else 100.0
+                step = 5
+                num_points = 12
+                raw_indices = []
+                for k in range(num_points):
+                    idx = last_idx - 1 - (num_points - 1 - k) * step
+                    if idx >= 0:
+                        raw_indices.append(idx)
+                if not raw_indices:
+                    raw_indices = [last_idx - 1]
+                elif raw_indices[-1] != last_idx - 1:
+                    raw_indices.append(last_idx - 1)
+
+                indices = sorted(list(dict.fromkeys(raw_indices)))
+
+                trail: list[dict[str, Any]] = []
+                for idx in indices:
+                    d_str = str(common_dates[idx])[:10]
+                    r_val = round(float(rs_ratio.iloc[idx]), 2)
+                    m_val = round(float(rs_mom.iloc[idx]), 2) if pd.notna(rs_mom.iloc[idx]) else 100.0
                     trail.append({"date": d_str, "rsRatio": r_val, "rsMomentum": m_val})
 
                 cur_ratio = trail[-1]["rsRatio"]
@@ -109,6 +122,7 @@ def compute_rrg() -> dict[str, Any]:
                     "id": sec["id"],
                     "symbol": sec["symbol"],
                     "label": sec["label"],
+                    "ticker": sec["ticker"],
                     "color": sec["color"],
                     "quadrant": quadrant,
                     "rsRatio": cur_ratio,
