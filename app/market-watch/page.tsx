@@ -333,20 +333,27 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
           </section>
         ) : null}
 
-        {sectorRotation && sectorRotation.ok ? (
-          <section className="mt-8 rounded-xl border border-border bg-card p-5 sm:p-6 shadow-sm">
-            <SectionHead
-              title="Sector Rotation (Relative Rotation Graph)"
-              note="10 NSE sectors against Nifty 50"
-            />
-            <div className="mt-6">
-              <SectorRotationRrg rotationData={sectorRotation.data} />
-              <div className="mt-4 border-t border-border/40 pt-3">
-                <SourceLine meta={sectorRotation.meta} />
-              </div>
-            </div>
-          </section>
-        ) : null}
+        <section id="sector-rotation" className="mt-8 rounded-xl border border-border bg-card p-5 sm:p-6 shadow-sm scroll-mt-20">
+          <SectionHead
+            title="Sector Rotation (Relative Rotation Graph)"
+            note="10 NSE sectors against Nifty 50 · 12-week trailing vectors"
+          />
+          <div className="mt-6">
+            {sectorRotation && sectorRotation.ok ? (
+              <>
+                <SectorRotationRrg rotationData={sectorRotation.data} />
+                <div className="mt-4 border-t border-border/40 pt-3">
+                  <SourceLine meta={sectorRotation.meta} />
+                </div>
+              </>
+            ) : (
+              <DataUnavailable
+                title="Sector Rotation (Relative Rotation Graph) unavailable"
+                message={sectorRotation?.message ?? "Waiting for sectoral history feed"}
+              />
+            )}
+          </div>
+        </section>
 
         {factors ? (
           <div className="mt-6">
