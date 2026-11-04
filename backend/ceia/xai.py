@@ -82,12 +82,13 @@ def compute_shapley_factor_attribution(
     }
 
     raw_sum = sum(sensitivities.values())
-    if abs(raw_sum) > 1e-6:
-        # Scale to strictly satisfy Additivity Axiom: sum(phi_i) = forecast_return - base_val
+    if abs(raw_sum) > 1e-6 and total_delta * raw_sum > 0:
+        # Scale to strictly satisfy Additivity Axiom when signs align: sum(phi_i) = forecast_return - base_val
         scaling = total_delta / raw_sum
         shap_values = {k: v * scaling for k, v in sensitivities.items()}
     else:
-        shap_values = {k: total_delta / len(features) for k in features}
+        shift = (total_delta - raw_sum) / len(sensitivities)
+        shap_values = {k: v + shift for k, v in sensitivities.items()}
 
     contributions: list[ShapleyFactorContribution] = []
     for f_name, f_val in features.items():

@@ -241,12 +241,7 @@ def iip_growth(fetcher: Fetcher | None = None) -> tuple[dict | None, str]:
     except Exception as exc:
         log.debug("IIP fetch error: %s", exc)
 
-    return {
-        "value": 7.30,
-        "month": "June of 2026",
-        "sector": "Manufacturing, Mining, Electricity",
-        "source": "MOSPI Industrial Statistics",
-    }, ""
+    return None, "IIP growth unavailable: live source did not return a figure"
 
 
 def forex_reserves(fetcher: Fetcher | None = None) -> tuple[dict | None, str]:

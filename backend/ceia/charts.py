@@ -897,7 +897,7 @@ def shap_waterfall_svg(xai_data: dict, width: int = 850, height: int = 280) -> s
         bar_w = max(abs(x_s1 - x_s0), 2.0)
         fill_col = "var(--pos, #00e676)" if phi >= 0 else "var(--neg, #ff3333)"
 
-        svg.append(f'<text x="{pad_left - 10}" y="{y_i + row_h*0.6}" text-anchor="end" font-size="10" fill="var(--fg, #e2e8f0)">{f_name[:28]}</text>')
+        svg.append(f'<text x="{pad_left - 10}" y="{y_i + row_h*0.6}" text-anchor="end" font-size="10" fill="var(--fg, #e2e8f0)">{escape(str(f_name)[:28])}</text>')
         svg.append(f'<rect x="{bar_x}" y="{y_i}" width="{bar_w}" height="{row_h - 6}" rx="3" fill="{fill_col}"/>')
         label_x = bar_x + bar_w + 6 if phi >= 0 else bar_x - 6
         anchor = "start" if phi >= 0 else "end"
@@ -955,7 +955,7 @@ def hrp_allocation_svg(portfolio_data: dict, width: int = 850, height: int = 240
         bar_len = (w / max_w) * plot_w
         pct_str = f"{w*100:.1f}%"
 
-        svg.append(f'<text x="{pad_left - 10}" y="{y_i + row_h*0.6}" text-anchor="end" font-size="10" fill="var(--fg, #e2e8f0)">{asset[:22]}</text>')
+        svg.append(f'<text x="{pad_left - 10}" y="{y_i + row_h*0.6}" text-anchor="end" font-size="10" fill="var(--fg, #e2e8f0)">{escape(str(asset)[:22])}</text>')
         svg.append(f'<rect x="{pad_left}" y="{y_i}" width="{bar_len}" height="{row_h - 6}" rx="3" fill="var(--bbg-cyan, #00d4ff)"/>')
         svg.append(f'<text x="{pad_left + bar_len + 6}" y="{y_i + row_h*0.6}" font-size="10" fill="#c9d1d9">{pct_str}</text>')
 
@@ -1012,7 +1012,7 @@ def spillover_heatmap_svg(spillover_data: dict, width: int = 850, height: int = 
             anchor = "end"
             tag = f"{net_val:.1f}% (Receiver)"
 
-        svg.append(f'<text x="{pad_left - 10}" y="{y_i + row_h*0.6}" text-anchor="end" font-size="10" fill="var(--fg, #e2e8f0)">{asset[:22]}</text>')
+        svg.append(f'<text x="{pad_left - 10}" y="{y_i + row_h*0.6}" text-anchor="end" font-size="10" fill="var(--fg, #e2e8f0)">{escape(str(asset)[:22])}</text>')
         svg.append(f'<rect x="{bar_x}" y="{y_i}" width="{bar_len}" height="{row_h - 6}" rx="3" fill="{fill_c}"/>')
         svg.append(f'<text x="{label_x}" y="{y_i + row_h*0.6}" text-anchor="{anchor}" font-size="10" fill="{fill_c}">{tag}</text>')
 
@@ -1062,7 +1062,7 @@ def regime_timeline_svg(regime_data: dict, width: int = 850, height: int = 240) 
         f'<svg viewBox="0 0 {width} {height}" width="100%" height="{height}" '
         f'style="background:var(--card-bg, #0d1117);border:1px solid var(--border, #30363d);border-radius:6px;font-family:var(--font-mono, monospace);">'
     ]
-    curr_reg = regime_data.get("current_regime", "Normal")
+    curr_reg = escape(str(regime_data.get("current_regime", "Normal")))
     svg.append(f'<text x="{pad_left}" y="22" font-size="12" font-weight="700" fill="var(--fg, #e2e8f0)">Hamilton Markov-Switching Market Regime Tracker: <tspan fill="var(--bbg-amber, #ff9900)">{curr_reg}</tspan></text>')
     svg.append(f'<text x="{width - pad_right}" y="22" text-anchor="end" font-size="10" fill="var(--muted, #8b949e)">'
                f'<tspan fill="var(--neg, #ff3333)">● P(Crisis)</tspan> &nbsp;·&nbsp; '
@@ -1097,7 +1097,7 @@ def regime_timeline_svg(regime_data: dict, width: int = 850, height: int = 240) 
     if max_crisis > 0.40 and n_pts > 0:
         pk_x = pad_left + max_c_idx * dx
         pk_y = pad_top + (1.0 - max_crisis) * plot_h
-        pk_date = timeline[max_c_idx].get("date", "")
+        pk_date = escape(str(timeline[max_c_idx].get("date", "")))
         svg.append(f'<circle cx="{pk_x:.1f}" cy="{pk_y:.1f}" r="4.5" fill="var(--neg, #ff3333)" stroke="#fff" stroke-width="1.5"/>')
         callout_x = min(pk_x + 10, width - 140)
         callout_y = max(pk_y - 8, pad_top + 18)
@@ -1109,7 +1109,7 @@ def regime_timeline_svg(regime_data: dict, width: int = 850, height: int = 240) 
         for k in range(n_ticks):
             idx_k = int(k * (n_pts - 1) / (n_ticks - 1))
             x_k = pad_left + idx_k * dx
-            d_str = timeline[idx_k].get("date", "")
+            d_str = escape(str(timeline[idx_k].get("date", "")))
             svg.append(f'<line x1="{x_k:.1f}" y1="{pad_top + plot_h}" x2="{x_k:.1f}" y2="{pad_top + plot_h + 4}" stroke="#6e7681"/>')
             anchor = "start" if k == 0 else "end" if k == n_ticks - 1 else "middle"
             svg.append(f'<text x="{x_k:.1f}" y="{height - 12}" text-anchor="{anchor}" font-size="9" fill="var(--muted, #8b949e)">{d_str}</text>')
@@ -1157,7 +1157,7 @@ def microstructure_vpin_svg(micro_data: dict, width: int = 850, height: int = 24
         f'style="background:var(--card-bg, #0d1117);border:1px solid var(--border, #30363d);border-radius:6px;font-family:var(--font-mono, monospace);">'
     ]
     curr_vpin = micro_data.get("vpin_score", 0.2)
-    regime_name = micro_data.get("vpin_regime", "Normal")
+    regime_name = escape(str(micro_data.get("vpin_regime", "Normal")))
     svg.append(f'<text x="{pad_left}" y="22" font-size="12" font-weight="700" fill="var(--fg, #e2e8f0)">VPIN Order Flow Toxicity: <tspan fill="var(--bbg-cyan, #00d4ff)">{curr_vpin:.3f} ({regime_name})</tspan></text>')
     svg.append(f'<text x="{width - pad_right}" y="22" text-anchor="end" font-size="10" fill="var(--muted, #8b949e)">Kyle Lambda: {micro_data.get("kyle_lambda_bps_per_10m", 1.0):.1f} bps/10M</text>')
 
@@ -1192,7 +1192,7 @@ def microstructure_vpin_svg(micro_data: dict, width: int = 850, height: int = 24
     if max_vpin > 0.35 and n_pts > 0:
         pk_x = pad_left + max_idx * dx
         pk_y = pad_top + (1.0 - min(max_vpin, 1.0)) * plot_h
-        pk_date = series[max_idx].get("date", "")
+        pk_date = escape(str(series[max_idx].get("date", "")))
         svg.append(f'<circle cx="{pk_x:.1f}" cy="{pk_y:.1f}" r="4.5" fill="var(--neg, #ff3333)" stroke="#fff" stroke-width="1.5"/>')
         callout_x = min(pk_x + 10, width - 130)
         callout_y = max(pk_y - 8, pad_top + 18)
@@ -1204,7 +1204,7 @@ def microstructure_vpin_svg(micro_data: dict, width: int = 850, height: int = 24
         for k in range(n_ticks):
             idx_k = int(k * (n_pts - 1) / (n_ticks - 1))
             x_k = pad_left + idx_k * dx
-            d_str = series[idx_k].get("date", "")
+            d_str = escape(str(series[idx_k].get("date", "")))
             svg.append(f'<line x1="{x_k:.1f}" y1="{pad_top + plot_h}" x2="{x_k:.1f}" y2="{pad_top + plot_h + 4}" stroke="#6e7681"/>')
             anchor = "start" if k == 0 else "end" if k == n_ticks - 1 else "middle"
             svg.append(f'<text x="{x_k:.1f}" y="{height - 12}" text-anchor="{anchor}" font-size="9" fill="var(--muted, #8b949e)">{d_str}</text>')

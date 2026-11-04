@@ -11,6 +11,7 @@ Source: screener.in.
 
 from __future__ import annotations
 
+import logging
 import re
 from dataclasses import dataclass, field
 from datetime import date
@@ -20,6 +21,9 @@ import numpy as np
 from bs4 import BeautifulSoup
 
 from .fetcher import Fetcher
+from .models import FinancialRow
+
+log = logging.getLogger(__name__)
 
 _BASE = "https://www.screener.in/company"
 
@@ -875,12 +879,66 @@ def compute_altman_z_score_em(financial_metrics: dict[str, Any]) -> dict[str, An
 
     Z'' = 6.56*X1 + 3.26*X2 + 6.72*X3 + 1.05*X4
     """
-    total_assets = float(financial_metrics.get("total_assets") or 1000.0)
-    working_cap = float(financial_metrics.get("working_capital") or (0.25 * total_assets))
-    retained_earnings = float(financial_metrics.get("retained_earnings") or (0.35 * total_assets))
-    ebit = float(financial_metrics.get("ebit") or financial_metrics.get("operating_profit") or (0.15 * total_assets))
-    book_equity = float(financial_metrics.get("book_equity") or financial_metrics.get("net_worth") or (0.50 * total_assets))
-    total_liab = float(financial_metrics.get("total_liabilities") or (0.50 * total_assets))
+    fm = financial_metrics or {}
+    bs = fm.get("balance_sheet") if isinstance(fm.get("balance_sheet"), dict) else {}
+    pnl = fm.get("annual_pnl") if isinstance(fm.get("annual_pnl"), dict) else {}
+    ttm = fm.get("ttm") if isinstance(fm.get("ttm"), dict) else {}
+    q_op = fm.get("operating_income") if isinstance(fm.get("operating_income"), dict) else {}
+
+    ta_raw = (
+        fm.get("total_assets")
+        or bs.get("total_assets")
+        or bs.get("Total Assets")
+        or bs.get("Total Liabilities")
+    )
+    total_assets = float(ta_raw) if ta_raw is not None else 1000.0
+
+    eq_raw = (
+        fm.get("book_equity")
+        or fm.get("net_worth")
+        or bs.get("total_equity")
+        or bs.get("net_worth")
+        or (
+            (bs.get("equity_capital") or 0.0) + (bs.get("reserves") or 0.0)
+            if (bs.get("equity_capital") is not None or bs.get("reserves") is not None)
+            else None
+        )
+    )
+    book_equity = float(eq_raw) if eq_raw is not None else (0.50 * total_assets)
+
+    re_raw = fm.get("retained_earnings") or bs.get("reserves") or bs.get("Reserves")
+    retained_earnings = float(re_raw) if re_raw is not None else (0.35 * total_assets)
+
+    liab_raw = (
+        fm.get("total_liabilities")
+        or bs.get("total_liabilities")
+        or (max(0.0, total_assets - book_equity) if ta_raw is not None and eq_raw is not None and total_assets >= book_equity else None)
+        or bs.get("total_debt")
+        or bs.get("borrowings")
+    )
+    total_liab = float(liab_raw) if liab_raw is not None else (0.50 * total_assets)
+
+    wc_raw = (
+        fm.get("working_capital")
+        or bs.get("working_capital")
+        or (
+            (bs.get("Other Assets") or 0.0) - (bs.get("Other Liabilities") or 0.0)
+            if (bs.get("Other Assets") is not None and bs.get("Other Liabilities") is not None)
+            else None
+        )
+    )
+    working_cap = float(wc_raw) if wc_raw is not None else (0.25 * total_assets)
+
+    ebit_raw = (
+        fm.get("ebit")
+        or (fm.get("operating_profit") if isinstance(fm.get("operating_profit"), (int, float)) else None)
+        or ttm.get("operating_income")
+        or pnl.get("operating_profit")
+        or pnl.get("ebit")
+        or (q_op.get("latest") * 4.0 if isinstance(q_op.get("latest"), (int, float)) else None)
+        or fm.get("nopat")
+    )
+    ebit = float(ebit_raw) if ebit_raw is not None else (0.15 * total_assets)
 
     x1 = working_cap / max(1.0, total_assets)
     x2 = retained_earnings / max(1.0, total_assets)
@@ -912,14 +970,56 @@ def compute_beneish_m_score(financial_metrics: dict[str, Any]) -> dict[str, Any]
     M = -4.84 + 0.920*DSRI + 0.528*GMI + 0.404*AQI + 0.892*SGI + 0.115*DEPI - 0.172*SGAI + 4.037*TATA + 0.0327*LVGI
     Threshold: M > -1.78 indicates high probability of accounting manipulation.
     """
-    dsri = float(financial_metrics.get("dsri") or 1.02)  # Days sales in receivables index
-    gmi = float(financial_metrics.get("gmi") or 1.01)    # Gross margin index
-    aqi = float(financial_metrics.get("aqi") or 0.98)    # Asset quality index
-    sgi = float(financial_metrics.get("sgi") or 1.12)    # Sales growth index
-    depi = float(financial_metrics.get("depi") or 1.00)  # Depreciation index
-    sgai = float(financial_metrics.get("sgai") or 0.95)  # SG&A expenses index
-    tata = float(financial_metrics.get("tata") or 0.02)  # Total accruals to total assets
-    lvgi = float(financial_metrics.get("lvgi") or 1.03)  # Leverage index
+    fm = financial_metrics or {}
+    bs = fm.get("balance_sheet") if isinstance(fm.get("balance_sheet"), dict) else {}
+    pnl = fm.get("annual_pnl") if isinstance(fm.get("annual_pnl"), dict) else {}
+    ttm = fm.get("ttm") if isinstance(fm.get("ttm"), dict) else {}
+    ratios = fm.get("ratios") if isinstance(fm.get("ratios"), dict) else {}
+    q_rev = fm.get("revenue") if isinstance(fm.get("revenue"), dict) else {}
+    q_np = fm.get("net_profit") if isinstance(fm.get("net_profit"), dict) else {}
+    surprise = fm.get("surprise_diagnostics") if isinstance(fm.get("surprise_diagnostics"), dict) else {}
+
+    sgi_fallback = 1.12
+    if q_rev.get("yoy_change") is not None:
+        sgi_fallback = max(0.5, 1.0 + float(q_rev["yoy_change"]))
+    elif fm.get("sales_cagr_3y_pct") is not None:
+        sgi_fallback = max(0.5, 1.0 + float(fm["sales_cagr_3y_pct"]) / 100.0)
+    elif pnl.get("sales_growth") is not None:
+        sgi_fallback = max(0.5, 1.0 + float(pnl["sales_growth"]) / 100.0)
+
+    gmi_fallback = 1.01
+    if surprise.get("prior_operating_margin_pct") and surprise.get("latest_operating_margin_pct"):
+        lat_m = float(surprise["latest_operating_margin_pct"])
+        pri_m = float(surprise["prior_operating_margin_pct"])
+        if lat_m > 0 and pri_m > 0:
+            gmi_fallback = float(np.clip(pri_m / lat_m, 0.5, 2.0))
+
+    tata_fallback = 0.02
+    net_inc_val = (
+        fm.get("net_income")
+        if fm.get("net_income") is not None
+        else ttm.get("net_profit")
+        if ttm.get("net_profit") is not None
+        else pnl.get("net_profit")
+        if pnl.get("net_profit") is not None
+        else (q_np.get("latest") * 4.0 if isinstance(q_np.get("latest"), (int, float)) else None)
+    )
+    cfo_val = fm.get("cash_flow_operations") if fm.get("cash_flow_operations") is not None else fm.get("cfo_annual")
+    ta_val = fm.get("total_assets") or bs.get("total_assets") or bs.get("Total Assets")
+    if net_inc_val is not None and cfo_val is not None and ta_val and float(ta_val) > 0:
+        tata_fallback = float(np.clip((float(net_inc_val) - float(cfo_val)) / float(ta_val), -0.5, 0.5))
+
+    de_val = bs.get("debt_to_equity") if bs.get("debt_to_equity") is not None else ratios.get("Debt to equity")
+    lvgi_fallback = float(np.clip(1.0 + (float(de_val) - 0.5) * 0.05, 0.7, 1.5)) if de_val is not None else 1.03
+
+    dsri = float(fm.get("dsri") if fm.get("dsri") is not None else 1.02)  # Days sales in receivables index
+    gmi = float(fm.get("gmi") if fm.get("gmi") is not None else gmi_fallback)    # Gross margin index
+    aqi = float(fm.get("aqi") if fm.get("aqi") is not None else 0.98)    # Asset quality index
+    sgi = float(fm.get("sgi") if fm.get("sgi") is not None else sgi_fallback)    # Sales growth index
+    depi = float(fm.get("depi") if fm.get("depi") is not None else 1.00)  # Depreciation index
+    sgai = float(fm.get("sgai") if fm.get("sgai") is not None else 0.95)  # SG&A expenses index
+    tata = float(fm.get("tata") if fm.get("tata") is not None else tata_fallback)  # Total accruals to total assets
+    lvgi = float(fm.get("lvgi") if fm.get("lvgi") is not None else lvgi_fallback)  # Leverage index
 
     m_score = (
         -4.84
@@ -951,16 +1051,73 @@ def compute_piotroski_f_score(financial_metrics: dict[str, Any]) -> dict[str, An
 
     Score range: 0 (Weak) to 9 (Strong).
     """
+    fm = financial_metrics or {}
+    bs = fm.get("balance_sheet") if isinstance(fm.get("balance_sheet"), dict) else {}
+    pnl = fm.get("annual_pnl") if isinstance(fm.get("annual_pnl"), dict) else {}
+    ttm = fm.get("ttm") if isinstance(fm.get("ttm"), dict) else {}
+    ratios = fm.get("ratios") if isinstance(fm.get("ratios"), dict) else {}
+    q_rev = fm.get("revenue") if isinstance(fm.get("revenue"), dict) else {}
+    q_np = fm.get("net_profit") if isinstance(fm.get("net_profit"), dict) else {}
+    surprise = fm.get("surprise_diagnostics") if isinstance(fm.get("surprise_diagnostics"), dict) else {}
+
+    net_inc = (
+        fm.get("net_income")
+        if fm.get("net_income") is not None
+        else ttm.get("net_profit")
+        if ttm.get("net_profit") is not None
+        else pnl.get("net_profit")
+        if pnl.get("net_profit") is not None
+        else (q_np.get("latest") * 4.0 if isinstance(q_np.get("latest"), (int, float)) else 10.0)
+    )
+    cfo = (
+        fm.get("cash_flow_operations")
+        if fm.get("cash_flow_operations") is not None
+        else fm.get("cfo_annual")
+        if fm.get("cfo_annual") is not None
+        else pnl.get("cfo")
+        if pnl.get("cfo") is not None
+        else (float(net_inc) * 1.1 if float(net_inc) > 0 else 15.0)
+    )
+    roa_chg = (
+        fm.get("roa_change")
+        if fm.get("roa_change") is not None
+        else q_np.get("yoy_change")
+        if q_np.get("yoy_change") is not None
+        else q_np.get("qoq_change")
+        if q_np.get("qoq_change") is not None
+        else 0.02
+    )
+    de_val = bs.get("debt_to_equity") if bs.get("debt_to_equity") is not None else ratios.get("Debt to equity")
+    debt_chg = (
+        fm.get("debt_ratio_change")
+        if fm.get("debt_ratio_change") is not None
+        else (-0.01 if (de_val is None or float(de_val) <= 1.0) else 0.05)
+    )
+    gm_chg = (
+        fm.get("gross_margin_change")
+        if fm.get("gross_margin_change") is not None
+        else (-0.01 if surprise.get("margin_compression") else 0.01)
+    )
+    at_chg = (
+        fm.get("asset_turnover_change")
+        if fm.get("asset_turnover_change") is not None
+        else q_rev.get("yoy_change")
+        if q_rev.get("yoy_change") is not None
+        else q_rev.get("qoq_change")
+        if q_rev.get("qoq_change") is not None
+        else 0.02
+    )
+
     signals = {
-        "positive_roa": bool(financial_metrics.get("net_income", 10.0) > 0),
-        "positive_cfo": bool(financial_metrics.get("cash_flow_operations", 15.0) > 0),
-        "higher_roa": bool(financial_metrics.get("roa_change", 0.02) > 0),
-        "cfo_greater_than_roa": bool(financial_metrics.get("cash_flow_operations", 15.0) > financial_metrics.get("net_income", 10.0)),
-        "lower_long_term_debt": bool(financial_metrics.get("debt_ratio_change", -0.01) <= 0),
-        "higher_current_ratio": bool(financial_metrics.get("current_ratio_change", 0.10) >= 0),
-        "no_new_shares_issued": bool(financial_metrics.get("new_shares_issued", False) is False),
-        "higher_gross_margin": bool(financial_metrics.get("gross_margin_change", 0.01) >= 0),
-        "higher_asset_turnover": bool(financial_metrics.get("asset_turnover_change", 0.02) >= 0),
+        "positive_roa": bool(float(net_inc) > 0),
+        "positive_cfo": bool(float(cfo) > 0),
+        "higher_roa": bool(float(roa_chg) > 0),
+        "cfo_greater_than_roa": bool(float(cfo) > float(net_inc)),
+        "lower_long_term_debt": bool(float(debt_chg) <= 0),
+        "higher_current_ratio": bool(float(fm.get("current_ratio_change", 0.10)) >= 0),
+        "no_new_shares_issued": bool(fm.get("new_shares_issued", False) is False),
+        "higher_gross_margin": bool(float(gm_chg) >= 0),
+        "higher_asset_turnover": bool(float(at_chg) >= 0),
     }
 
     f_score = sum(1 for passed in signals.values() if passed)

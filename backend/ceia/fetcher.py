@@ -27,6 +27,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import os
 import random
 import threading
 import time
@@ -279,7 +280,10 @@ class Fetcher:
                     "fetched_at": fetched_at,
                     "sha256": digest,
                 }
-                cache_path.write_text(json.dumps(payload), encoding="utf-8")
+                if 200 <= resp.status_code < 400:
+                    tmp_path = cache_path.with_suffix(cache_path.suffix + f".{os.getpid()}.{threading.get_ident()}.tmp")
+                    tmp_path.write_text(json.dumps(payload), encoding="utf-8")
+                    os.replace(tmp_path, cache_path)
                 return Response(
                     url=url,
                     final_url=resp.url,

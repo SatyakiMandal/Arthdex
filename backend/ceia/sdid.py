@@ -20,6 +20,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+import scipy.stats
 from scipy.optimize import minimize
 
 log = logging.getLogger(__name__)
@@ -138,7 +139,7 @@ def compute_synthetic_difference_in_differences(
     se = float(np.std(placebos, ddof=1)) if len(placebos) > 1 else max(abs(tau_sdid) * 0.3, 0.005)
     se = max(se, 1e-4)
     t_stat = float(tau_sdid / se)
-    p_val = float(2.0 * (1.0 - 0.5 * (1.0 + np.math.erf(abs(t_stat) / np.sqrt(2))))) if hasattr(np, 'math') else 0.05
+    p_val = float(scipy.stats.norm.sf(abs(t_stat)) * 2.0)
 
     # Counterfactual Trajectory
     synthetic_ctrl_pre = w0_hat + ctrl_weighted_pre

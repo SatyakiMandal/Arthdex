@@ -197,7 +197,19 @@ def compute_investment_verdict(
             val_score += 10.0
 
     # DuPont / ROE check
-    roe_val = float(fin.get("roe", {}).get("latest", 20.0)) if isinstance(fin.get("roe"), dict) else 20.0
+    raw_roe = fin.get("roe")
+    if isinstance(raw_roe, dict):
+        raw_roe = raw_roe.get("latest")
+    if raw_roe is None:
+        ratios_d = fin.get("ratios") if isinstance(fin.get("ratios"), dict) else {}
+        top_d = fin.get("top_ratios") if isinstance(fin.get("top_ratios"), dict) else {}
+        raw_roe = ratios_d.get("ROE") if ratios_d.get("ROE") is not None else ratios_d.get("roe")
+        if raw_roe is None:
+            raw_roe = top_d.get("ROE") if top_d.get("ROE") is not None else top_d.get("roe")
+    try:
+        roe_val = float(raw_roe) if raw_roe is not None else 20.0
+    except (TypeError, ValueError):
+        roe_val = 20.0
     if roe_val > 25.0:
         val_score += 15.0
     elif roe_val < 8.0:
@@ -264,7 +276,13 @@ def compute_investment_verdict(
         if t_score is not None:
             tech_score = float(t_score)
             rating = getattr(technical_res, "composite_rating", "") if not isinstance(technical_res, dict) else technical_res.get("composite_rating", "")
-            adx_val = getattr(technical_res, "adx", {}).get("adx_14", 25.0) if isinstance(technical_res, dict) else 25.0
+            adx_raw = technical_res.get("adx") if isinstance(technical_res, dict) else getattr(technical_res, "adx", None)
+            if isinstance(adx_raw, dict):
+                adx_val = float(adx_raw.get("adx_14", 25.0) or 25.0)
+            elif isinstance(adx_raw, (int, float)):
+                adx_val = float(adx_raw)
+            else:
+                adx_val = float(getattr(adx_raw, "adx_14", 25.0) or 25.0)
             tech_highlight = f"{rating} (Score {tech_score:+.1f})"
             tech_evidence = f"Oscillators and moving averages signal a {rating.lower()} regime with 14-period ADX at {adx_val:.1f}."
     else:
@@ -317,7 +335,19 @@ def compute_investment_verdict(
     # Pillar 5: Downside Protection & Volatility Cushion (Weight 15%)
     risk_score = 20.0
     dd_val = float(dd.get("distance_to_default", 5.0)) if isinstance(dd, dict) else 5.0
-    var_1d = float(var_m.get("parametric_var_99", -0.028)) if isinstance(var_m, dict) else -0.028
+    raw_var_1d = None
+    if isinstance(var_m, dict):
+        raw_var_1d = (
+            var_m.get("var_99_1d")
+            or (var_m.get("var_1d_99") or {}).get("parametric")
+            or var_m.get("parametric_var_99")
+        )
+    if raw_var_1d is not None:
+        var_1d = float(raw_var_1d)
+        if abs(var_1d) > 0.5:
+            var_1d /= 100.0
+    else:
+        var_1d = -0.028
     
     if dd_val >= 4.5:
         risk_score += 35.0
@@ -330,7 +360,12 @@ def compute_investment_verdict(
         risk_score -= 30.0
 
     risk_highlight = f"Merton DD: {dd_val:.1f}σ | 1D 99% VaR: {abs(var_1d)*100:.2f}%"
-    risk_evidence = f"Extremely low structural default probability (Merton Distance to Default {dd_val:.1f}σ) ensures institutional solvency cushion."
+    if dd_val > 3.0:
+        risk_evidence = f"Low structural default probability (Merton Distance to Default {dd_val:.1f}σ) provides a strong institutional solvency cushion."
+    elif dd_val >= 1.5:
+        risk_evidence = f"Moderate structural default buffer (Merton Distance to Default {dd_val:.1f}σ) warrants standard credit monitoring."
+    else:
+        risk_evidence = f"Elevated structural insolvency risk (Merton Distance to Default {dd_val:.1f}σ < 1.5σ) indicates a thin balance sheet cushion."
     risk_score = np.clip(risk_score, -100.0, 100.0)
     risk_stance = "Strong Bullish" if risk_score >= 40 else "Bullish" if risk_score >= 15 else "Neutral" if risk_score >= -15 else "Bearish"
 
@@ -394,15 +429,17 @@ def compute_investment_verdict(
     stop_loss = curr_p * (1.0 - sl_downside_pct / 100.0)
 
     # Target 1 (Base Case): DCF intrinsic / Forecast P50
-    t1_upside = max(8.0, min(22.0, upside_pct if upside_pct > 5.0 else 14.5))
+    if upside_pct < 0:
+        t1_upside = max(-35.0, float(upside_pct) * 0.6)
+        t2_upside = max(-50.0, float(upside_pct))
+    else:
+        t1_upside = max(8.0, min(22.0, upside_pct if upside_pct > 5.0 else 14.5))
+        t2_upside = t1_upside * 1.65
     target_1 = curr_p * (1.0 + t1_upside / 100.0)
-
-    # Target 2 (Stretch / Bull Case)
-    t2_upside = t1_upside * 1.65
     target_2 = curr_p * (1.0 + t2_upside / 100.0)
 
     # Risk-Reward Ratio
-    rr_num = t1_upside / max(0.1, sl_downside_pct)
+    rr_num = max(0.0, t1_upside) / max(0.1, sl_downside_pct)
     rr_str = f"1 : {rr_num:.2f}"
 
     # -------------------------------------------------------------------------
@@ -410,7 +447,14 @@ def compute_investment_verdict(
     # -------------------------------------------------------------------------
     # Kelly Criterion calculation
     exp_ret = max(0.02, (conviction / 100.0) * 0.18)
-    est_vol = max(0.12, abs(var_1d) * np.sqrt(252))
+    raw_ann_vol = var_m.get("annualized_volatility") if isinstance(var_m, dict) else None
+    if raw_ann_vol is not None:
+        ann_vol_val = float(raw_ann_vol)
+        if ann_vol_val > 1.5:
+            ann_vol_val /= 100.0
+        est_vol = max(0.12, ann_vol_val)
+    else:
+        est_vol = max(0.12, (abs(var_1d) / 1.645) * np.sqrt(252))
     raw_kelly = (exp_ret / (est_vol ** 2)) * 100.0
     half_kelly = raw_kelly * 0.5
     

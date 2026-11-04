@@ -158,8 +158,8 @@ def fit_synthetic_control(
             y_others_pre = other_donors.loc[pre_idx].values
             J_other = y_others_pre.shape[1]
 
-            def _placebo_loss(w):
-                return np.sum((y_j_pre - np.dot(y_others_pre, w)) ** 2)
+            def _placebo_loss(w, y_j=y_j_pre, y_o=y_others_pre):
+                return np.sum((y_j - y_o @ w) ** 2)
 
             res_p = minimize(
                 _placebo_loss, np.ones(J_other) / J_other, method="SLSQP",

@@ -133,12 +133,12 @@ def cornish_fisher_var(
     kurt = float(stats.kurtosis(returns, bias=False)) if len(returns) > 3 else 0.0  # Excess kurtosis
 
     z = float(stats.norm.ppf(confidence))
-    # Cornish-Fisher quantile expansion
+    # Cornish-Fisher quantile expansion (with positive loss quantile z > 0, left-tail skew < 0 increases tail loss)
     z_cf = (
         z
-        + (1.0 / 6.0) * (z**2 - 1.0) * skew
-        + (1.0 / 24.0) * (z**3 - 3.0 * z) * kurt
-        - (1.0 / 36.0) * (2.0 * z**3 - 5.0 * z) * (skew**2)
+        - (z**2 - 1.0) * skew / 6.0
+        + (z**3 - 3.0 * z) * kurt / 24.0
+        - (2.0 * z**3 - 5.0 * z) * (skew**2) / 36.0
     )
 
     var_horizon = -(mu * horizon_days - z_cf * sigma * np.sqrt(horizon_days))
@@ -146,7 +146,7 @@ def cornish_fisher_var(
     # CVaR approximation using expanded tail loss
     alpha = 1.0 - confidence
     cutoff = mu * horizon_days - z_cf * sigma * np.sqrt(horizon_days)
-    scaled_ret = returns * np.sqrt(horizon_days)
+    scaled_ret = (returns - mu) * np.sqrt(horizon_days) + mu * horizon_days
     tail = scaled_ret[scaled_ret <= cutoff]
     cvar_loss = float(-tail.mean()) if len(tail) > 0 else max(0.0, var_horizon)
 

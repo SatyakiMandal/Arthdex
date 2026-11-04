@@ -24,7 +24,7 @@ import logging
 import os
 import time
 from abc import ABC, abstractmethod
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -284,13 +284,18 @@ def load_prices(
     # Index, FX and commodity series are the same for every company, and every company
     # run asks for identical dates. Reuse them for the rest of the day, across processes.
     day_cache = None
+    day_meta = None
     if providers is None:
-        day_cache = Path("cache/prices_day") / (
-            f"{symbol.replace('^', '_idx_').replace('=', '_')}_{start}_{end}_{date.today()}.pkl")
+        safe_sym = symbol.replace("^", "_idx_").replace("=", "_")
+        day_cache = Path("cache/prices_day") / f"{safe_sym}_{start}_{end}_{date.today()}.csv"
+        day_meta = day_cache.with_suffix(".provider")
         if day_cache.exists():
             try:
-                frame, name = pd.read_pickle(day_cache)
-                return frame, name
+                frame = pd.read_csv(day_cache, index_col=0, parse_dates=True)
+                frame.index = pd.DatetimeIndex(frame.index).normalize()
+                if not frame.empty and frame.index.max().date() >= (end - timedelta(days=5)):
+                    name = day_meta.read_text(encoding="utf-8").strip() if day_meta.exists() else "cache"
+                    return frame, name
             except Exception:
                 pass
     providers = providers or [YFinanceProvider(), YahooChartProvider(),
@@ -304,7 +309,9 @@ def load_prices(
                 if day_cache is not None:
                     try:
                         day_cache.parent.mkdir(parents=True, exist_ok=True)
-                        pd.to_pickle((frame, provider.name), day_cache)
+                        frame.to_csv(day_cache)
+                        if day_meta is not None:
+                            day_meta.write_text(provider.name, encoding="utf-8")
                     except Exception:
                         pass
                 return frame, provider.name

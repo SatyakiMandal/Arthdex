@@ -1792,7 +1792,7 @@ def _unlisted_peers_section(company: str) -> str:
     for idx, (p_name, p_sym) in enumerate(peers, 1):
         rows.append(f"<tr><td>#{idx}</td><td class='txt'><strong>{escape(p_name)}</strong></td><td class='txt'><code>{escape(p_sym)}</code></td><td><span class='osint-badge osint-badge-cyan'>Sector Peer</span></td></tr>")
     return f"""
-<div class="bbg-module">
+<div id="sec-peers" class="bbg-module">
   <div class="bbg-module-header">
     <h2>Sector Peer Benchmark Cohort</h2>
     <span class="tag">PUBLIC COMPARABLES</span>
@@ -4368,7 +4368,7 @@ def build_html(analysis) -> str:
 
     corr_disp_clean = corr_display
     if corr_disp_clean in ("n/a", "—", "", None):
-        corr_disp_clean = "r = +0.276 (p=0.002)"
+        corr_disp_clean = "—"
 
     stats = "".join([
         _stat("Trading days", str(len(daily))),
@@ -4517,6 +4517,14 @@ def build_html(analysis) -> str:
 
     generated = datetime.now().strftime("%d %B %Y at %H:%M")
     dcf_p_disp = f"₹ {dcf_res.intrinsic_value_per_share:,.2f}" if dcf_res.intrinsic_value_per_share >= 0.01 else "< ₹0.01 [Submerged]"
+    cvar_raw = (v.get("cvar_1d_95") or {}).get("historical") if isinstance(v.get("cvar_1d_95"), dict) else None
+    if cvar_raw is None:
+        cvar_raw = v.get("cvar_95_1d")
+    if cvar_raw is not None:
+        cvar_f = abs(float(cvar_raw))
+        cvar_disp = f"{cvar_f * 100.0:.2f}%" if cvar_f <= 1.0 else f"{cvar_f:.2f}%"
+    else:
+        cvar_disp = "—"
 
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
@@ -4578,7 +4586,7 @@ def build_html(analysis) -> str:
     </div>
     <div class="bbg-kpi-item">
       <span class="bbg-kpi-lbl">1D 95% CVAR</span>
-      <span class="bbg-kpi-val bbg-red">4.28%</span>
+      <span class="bbg-kpi-val bbg-red">{cvar_disp}</span>
     </div>
     <div class="bbg-kpi-item">
       <span class="bbg-kpi-lbl">ANOMALIES FLAGGED</span>
@@ -4749,36 +4757,6 @@ def _move_sections(moves: list, company: str) -> str:
             f"{paragraphs}{source_block}</div>"
         )
     return "".join(blocks)
-
-
-def _unlisted_peers_section(company_name: str) -> str:
-    peers = SECTOR_PEER_FALLBACKS.get(company_name, [])
-    if not peers:
-        return ""
-    rows = []
-    for idx, (p_name, p_sym) in enumerate(peers, 1):
-        rows.append(f"<tr><td>#{idx}</td><td class='txt'><strong>{escape(p_name)}</strong></td><td class='txt'><code>{escape(p_sym)}</code></td><td><span class='osint-badge osint-badge-cyan'>Sector Peer</span></td></tr>")
-    return f"""
-<div id="sec-peers" class="bbg-module">
-  <div class="bbg-module-header">
-    <h2>Peer comparison</h2>
-    <span class="tag">PUBLIC COMPARABLES</span>
-  </div>
-  <div class="bbg-module-body">
-    <p style="margin-top:0;font-size:0.8rem;color:var(--sub);">Listed sector benchmarks and competitors tracked for relative valuation:</p>
-    <div class="scroll">
-    <table>
-      <thead>
-        <tr><th>#</th><th class="txt">Competitor / Benchmark Entity</th><th class="txt">Exchange Ticker</th><th>Relationship</th></tr>
-      </thead>
-      <tbody>
-        {"".join(rows)}
-      </tbody>
-    </table>
-    </div>
-  </div>
-</div>
-"""
 
 
 def _news_table(items: list, start: date, end: date) -> str:

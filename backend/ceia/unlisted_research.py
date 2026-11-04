@@ -237,7 +237,7 @@ def risk_block(series: pd.Series, facts: dict[str, float | None]) -> dict[str, A
     z95, z99 = 1.6449, 2.3263
 
     def to_loss(log_ret: float) -> float:
-        return (1 - math.exp(log_ret)) * 100
+        return round(max(0.0, (1.0 - math.exp(float(log_ret))) * 100.0), 2)
 
     hist95 = to_loss(float(np.quantile(arr, 0.05))) if n >= 12 else None
     hist99 = to_loss(float(np.quantile(arr, 0.01))) if n >= 24 else None
@@ -842,21 +842,30 @@ def compute_unlisted_verdict(
     if fair and fair > price * 1.05:
         t1 = price + 0.6 * (fair - price)
         t2 = fair
+    elif v_up is not None and v_up < 0 and fair:
+        t1 = price + 0.6 * (fair - price)
+        t2 = fair
     else:
         base = max(5.0, p50_6 or 5.0)
         t1 = price * (1 + base / 100)
         t2 = price * (1 + base * 1.8 / 100)
     t1_up = (t1 / price - 1) * 100
     t2_up = (t2 / price - 1) * 100
-    rr = f"1 : {t1_up / stop_pct:.2f}"
+    rr = f"1 : {max(0.0, t1_up) / stop_pct:.2f}"
 
     # Sizing: smaller than for a listed stock, rounded down to whole lots
     vol_a = max(0.2, (vol or 35.0) / 100.0)
-    exp_ret = max(0.02, conviction / 100.0 * 0.15)
-    raw_kelly = exp_ret / (vol_a**2) * 100.0
-    half_kelly = raw_kelly * 0.5
+    if v_up is not None and v_up <= 0:
+        raw_kelly = 0.0
+        half_kelly = 0.0
+        alloc = 0.0
+    else:
+        exp_ret = max(0.02, conviction / 100.0 * 0.15)
+        raw_kelly = exp_ret / (vol_a**2) * 100.0
+        half_kelly = raw_kelly * 0.5
+        cap = 3.0
+        alloc = float(np.clip(half_kelly, 1.0, cap)) if "BUY" in call else float(np.clip(half_kelly, 0.5, 1.5)) if "HOLD" in call else 0.0
     cap = 3.0
-    alloc = float(np.clip(half_kelly, 1.0, cap)) if "BUY" in call else float(np.clip(half_kelly, 0.5, 1.5)) if "HOLD" in call else 0.0
     lot = int(facts.get("lot_size") or 1)
     tiers = []
     for name, capital in (("Conservative Tier (₹10 Lakhs)", 1_000_000.0), ("Balanced Institutional Tier (₹25 Lakhs)", 2_500_000.0), ("High-Net-Worth / Institutional Tier (₹1 Crore)", 10_000_000.0)):

@@ -45,6 +45,15 @@ from dataclasses import dataclass, field, replace
 from datetime import date, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING
+from zoneinfo import ZoneInfo
+
+_IST = ZoneInfo("Asia/Kolkata")
+
+
+def _pub_date_ist(dt) -> date:
+    if dt.tzinfo is not None:
+        return dt.astimezone(_IST).date()
+    return dt.date()
 
 from . import dedupe
 from .ingest import DEFAULT_SOURCES, IngestResult, run as run_ingest
@@ -188,7 +197,7 @@ def cached_items_in_window(cache: CompanyCache, start: date, end: date,
     for item in cache.items:
         if item.published_at is None:
             continue
-        day = item.published_at.date()
+        day = _pub_date_ist(item.published_at)
         if start <= day <= end and not in_a_gap(day):
             out.append(item)
     return out
@@ -207,7 +216,7 @@ def save_after_gaps(cache: CompanyCache, gaps: list[tuple[date, date]],
 
     kept = [
         item for item in cache.items
-        if item.published_at is None or not in_a_gap(item.published_at.date())
+        if item.published_at is None or not in_a_gap(_pub_date_ist(item.published_at))
     ]
     by_url = {item.url: item for item in kept}
     for item in new_items:

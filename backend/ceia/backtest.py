@@ -155,7 +155,7 @@ def backtest_conformal_forecasts(
         # Conformal Non-Conformity Quantile (1 - alpha)
         residuals = np.abs(train_slice - np.mean(train_slice))
         q_val = float(np.percentile(residuals, 90)) if len(residuals) > 0 else 0.02
-        margin = q_val * np.sqrt(window_length) * 1.645
+        margin = q_val * np.sqrt(window_length)
 
         lower = drift - margin
         upper = drift + margin
@@ -228,11 +228,12 @@ def backtest_volatility_models(
     best_qlike = 999.0
     best_name = "EGARCH(1,1)"
     best_rmse = 0.0
+    rng = np.random.default_rng(42)
 
     for m in models_meta:
         m_name = m["name"]
         est = m["vol_est"]
-        f_series = np.full(eval_n, est) + np.random.normal(0, est * 0.05, eval_n)
+        f_series = np.full(eval_n, est) + rng.normal(0, est * 0.05, eval_n)
         f_series = np.maximum(5.0, f_series)
 
         # RMSE
@@ -285,12 +286,12 @@ def backtest_event_strategy(
     if not candidate_incidents:
         return EventStrategyBacktestResult(
             total_events_tested=0,
-            win_rate_pct=65.0,
-            profit_factor=2.45,
-            mean_event_alpha_pct=+1.85,
-            cumulative_strategy_return_pct=+12.4,
-            max_event_drawdown_pct=-3.2,
-            information_ratio=1.65,
+            win_rate_pct=0.0,
+            profit_factor=0.0,
+            mean_event_alpha_pct=0.0,
+            cumulative_strategy_return_pct=0.0,
+            max_event_drawdown_pct=0.0,
+            information_ratio=0.0,
             event_performance_table=[],
         )
 

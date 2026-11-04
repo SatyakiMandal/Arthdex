@@ -15,6 +15,7 @@ is why this is kept out of the ``all`` extra rather than bundled into it.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 
 class PdfExportError(Exception):

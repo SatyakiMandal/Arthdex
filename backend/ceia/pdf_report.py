@@ -844,6 +844,7 @@ def build_pdf_document_html(analysis: Any) -> str:
     factor_res = None
     if not daily.empty and "return" in daily.columns and "benchmark_return" in daily.columns:
         try:
+            from .factor_model import fit_multi_factor_model
             factor_res = fit_multi_factor_model(daily["return"].dropna(), daily["benchmark_return"].dropna())
         except Exception:
             factor_res = None

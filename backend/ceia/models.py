@@ -136,6 +136,15 @@ class NewsItem:
 
 
 @dataclass
+class FinancialRow:
+    """Generic financial table row across periods."""
+
+    label_used: str
+    dates: list[date] = field(default_factory=list)
+    values: list[float | None] = field(default_factory=list)
+
+
+@dataclass
 class RunConfig:
     """The inputs from PRD Section 6."""
 
@@ -148,8 +157,8 @@ class RunConfig:
     # additive: the primary `benchmark` above still drives incident detection
     # and scoring, this is a second lens shown alongside it.
     benchmark2: str | None = None
-    start: date = date.today()
-    end: date = date.today()
+    start: date = field(default_factory=date.today)
+    end: date = field(default_factory=date.today)
     aliases: list[str] = field(default_factory=list)
     sources: list[str] = field(default_factory=list)
     event_window: tuple[int, int] = (-1, 3)

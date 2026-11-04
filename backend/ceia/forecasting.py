@@ -651,8 +651,9 @@ def generate_forecasting_suite(
         p50_price = round(curr_p * (1.0 + p50_ret), 2)
         p90_price = round(curr_p * (1.0 + p90_ret), 2)
 
-        conf_low = round(curr_p * (1.0 - margin_90 / 100.0), 2)
-        conf_high = round(curr_p * (1.0 + margin_90 / 100.0), 2)
+        half_w = curr_p * (margin_90 / 100.0)
+        conf_low = round(exp_price - half_w, 2)
+        conf_high = round(exp_price + half_w, 2)
 
         # Directional probability: Normal CDF of (exp_ret / vol_h)
         z_dir = exp_ret / max(0.005, vol_h)

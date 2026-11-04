@@ -1108,8 +1108,18 @@ def export_analysis_to_excel(
                 c.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
 
             # Data Rows
+            pct_keywords = ("%", "pct", "return", "margin", "roe", "roce", "yield", "volatility", "weight")
+            pct_cols = {
+                col_idx
+                for col_idx, h in enumerate(headers, start=1)
+                if any(k in str(h).lower() for k in pct_keywords)
+            }
             for r_idx, (_, row) in enumerate(df.iterrows(), start=2):
-                ws.append(list(row))
+                sanitized_row = [
+                    f"'{v}" if isinstance(v, str) and v.startswith(("=", "+", "-", "@", "\t", "\r")) else v
+                    for v in row
+                ]
+                ws.append(sanitized_row)
                 for col_idx in range(1, len(headers) + 1):
                     c = ws.cell(row=r_idx, column=col_idx)
                     c.font = regular_font
@@ -1117,7 +1127,7 @@ def export_analysis_to_excel(
                     if isinstance(c.value, (int, np.integer)):
                         c.number_format = "#,##0"
                     elif isinstance(c.value, (float, np.floating)):
-                        if abs(c.value) < 1.0:
+                        if col_idx in pct_cols and abs(c.value) <= 1.0:
                             c.number_format = "0.00%"
                         else:
                             c.number_format = "#,##0.00"
@@ -1131,8 +1141,8 @@ def export_analysis_to_excel(
             # Add Live Formulas in Daily Detail Footer
             if sheet_name == "Daily Detail" and len(df) > 1:
                 n_rows = len(df) + 1
-                ret_col = "C" if "return" in headers else ""
-                bench_col = "D" if "benchmark_return" in headers else ""
+                ret_col = get_column_letter(headers.index("return") + 1) if "return" in headers else ""
+                bench_col = get_column_letter(headers.index("benchmark_return") + 1) if "benchmark_return" in headers else ""
 
                 if ret_col and bench_col:
                     ws.append([])  # Spacer row
@@ -1176,6 +1186,16 @@ def export_analysis_to_excel(
     return out_path
 
 
+import re as _re
+
+
+def _xml_safe_str(val: Any, sanitize_formula: bool = True) -> str:
+    s = _re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f]", "", str(val))
+    if sanitize_formula and s.startswith(("=", "+", "-", "@", "\t", "\r")):
+        s = "'" + s
+    return escape(s, {'"': "&quot;"})
+
+
 def _df_to_worksheet_xml(df: pd.DataFrame) -> str:
     """Generate valid OpenXML Worksheet XML (<worksheet>...</worksheet>) from a DataFrame."""
     lines = [
@@ -1188,7 +1208,7 @@ def _df_to_worksheet_xml(df: pd.DataFrame) -> str:
     lines.append('    <row r="1">')
     for c_idx, col in enumerate(df.columns):
         col_ref = f"{_col_letter(c_idx)}1"
-        escaped_val = escape(str(col))
+        escaped_val = _xml_safe_str(col, sanitize_formula=False)
         lines.append(f'      <c r="{col_ref}" t="inlineStr"><is><t>{escaped_val}</t></is></c>')
     lines.append('    </row>')
 
@@ -1207,7 +1227,7 @@ def _df_to_worksheet_xml(df: pd.DataFrame) -> str:
                 else:
                     lines.append(f'      <c r="{col_ref}" t="inlineStr"><is><t>—</t></is></c>')
             else:
-                lines.append(f'      <c r="{col_ref}" t="inlineStr"><is><t>{escape(str(val))}</t></is></c>')
+                lines.append(f'      <c r="{col_ref}" t="inlineStr"><is><t>{_xml_safe_str(val, sanitize_formula=True)}</t></is></c>')
         lines.append('    </row>')
 
     lines.append('  </sheetData>')
@@ -1255,7 +1275,7 @@ def _write_fallback_openxml_zip(sheets: dict[str, pd.DataFrame], out_path: Path)
             '  <sheets>',
         ]
         for idx, sheet_name in enumerate(sheets.keys(), start=1):
-            escaped_name = escape(sheet_name[:31])
+            escaped_name = _xml_safe_str(sheet_name[:31], sanitize_formula=False)
             wb_lines.append(f'    <sheet name="{escaped_name}" sheetId="{idx}" r:id="rId{idx}"/>')
         wb_lines.append('  </sheets>')
         wb_lines.append('</workbook>')

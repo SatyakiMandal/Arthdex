@@ -19,8 +19,11 @@ from __future__ import annotations
 
 import re
 from collections import defaultdict
+from zoneinfo import ZoneInfo
 
 from .models import NewsItem
+
+_IST = ZoneInfo("Asia/Kolkata")
 
 _STOPWORDS = {
     "a", "an", "the", "of", "in", "on", "at", "to", "for", "and", "or", "as",
@@ -66,7 +69,12 @@ def deduplicate(items: list[NewsItem], threshold: float = 0.72) -> list[NewsItem
     for item in items:
         # Group by publication day so unrelated stories that reuse phrasing
         # months apart are never compared.
-        buckets[item.published_at.date() if item.published_at else None].append(item)
+        pub_day = (
+            item.published_at.astimezone(_IST).date()
+            if (item.published_at and item.published_at.tzinfo is not None)
+            else (item.published_at.date() if item.published_at else None)
+        )
+        buckets[pub_day].append(item)
 
     for bucket in buckets.values():
         # Longest body first, so the survivor is chosen before its duplicates.

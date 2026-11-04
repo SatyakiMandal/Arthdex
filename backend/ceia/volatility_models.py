@@ -374,7 +374,8 @@ def fit_har_rv(
         intra_ret = np.diff(np.log(intra_close))
         intra_ret = intra_ret[~np.isnan(intra_ret)]
         if len(intra_ret) > 10:
-            intraday_rv_val = float(np.sum(intra_ret ** 2))
+            intra_days = max(1, len(pd.DatetimeIndex(df_10m.index).normalize().unique())) if hasattr(df_10m.index, "normalize") or isinstance(df_10m.index, pd.DatetimeIndex) else 1
+            intraday_rv_val = float(np.sum(intra_ret ** 2)) / max(intra_days, 1)
 
     # Construct weekly (5-day) and monthly (22-day) moving averages of realized variance
     s_rv = pd.Series(daily_rv)

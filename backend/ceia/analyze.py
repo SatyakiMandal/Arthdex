@@ -22,6 +22,9 @@ import sys
 from dataclasses import dataclass, field, replace
 from datetime import date
 from pathlib import Path
+from zoneinfo import ZoneInfo
+
+_IST = ZoneInfo("Asia/Kolkata")
 
 import numpy as np
 import pandas as pd
@@ -246,7 +249,11 @@ def ingest_with_cache(
                 aliases_used.append(alias)
 
     cached_items = news_cache.cached_items_in_window(cache, config.start, config.end, gaps)
-    cached_days = {i.published_at.date() for i in cached_items if i.published_at}
+    cached_days = {
+        (i.published_at.astimezone(_IST).date() if i.published_at.tzinfo is not None else i.published_at.date())
+        for i in cached_items
+        if i.published_at
+    }
     news_cache.save_after_gaps(cache, gaps, sources, new_items, cache_dir)
 
     items = cached_items + new_items
@@ -449,13 +456,19 @@ def analyse(
         xai_analysis = {}
 
     # 4. Multi-Asset Portfolio Allocation (HRP & Black-Litterman)
-    port_rets_dict = {config.ticker: table["return"].dropna() if "return" in table.columns else frame["return"].dropna()}
+    target_ret_s = (table["return"] if "return" in table.columns else frame["return"]).copy()
+    target_ret_s.index = pd.DatetimeIndex(pd.to_datetime(target_ret_s.index))
+    port_rets_dict = {config.ticker: target_ret_s.dropna()}
     for n_name, n_idx in nifty_indices.items():
         if n_idx.available and not n_idx.daily.empty and "return" in n_idx.daily.columns:
-            port_rets_dict[n_name] = n_idx.daily["return"].dropna()
+            s_n = n_idx.daily["return"].dropna().copy()
+            s_n.index = pd.DatetimeIndex(pd.to_datetime(s_n.index))
+            port_rets_dict[n_name] = s_n
     for g_name, g_idx in global_indices.items():
         if g_idx.available and not g_idx.daily.empty and "return" in g_idx.daily.columns:
-            port_rets_dict[g_name] = g_idx.daily["return"].dropna()
+            s_g = g_idx.daily["return"].dropna().copy()
+            s_g.index = pd.DatetimeIndex(pd.to_datetime(s_g.index))
+            port_rets_dict[g_name] = s_g
 
     port_df = pd.DataFrame(port_rets_dict).dropna(thresh=2) if port_rets_dict else pd.DataFrame()
     # Covariance estimates need complete rows; ragged calendars across indices leave NaNs
@@ -511,14 +524,15 @@ def analyse(
         if not port_df.empty and len(port_df.columns) >= 2 and incidents:
             top_inc = incidents[0]
             event_dt = pd.Timestamp(top_inc.day)
+            treated_ret = (table["return"] if "return" in table.columns else frame["return"]).rename(index=pd.to_datetime)
             try:
-                ev_loc = table.index.get_loc(event_dt) if event_dt in table.index else len(table) // 2
+                ev_loc = treated_ret.index.get_loc(event_dt) if event_dt in treated_ret.index else len(table) // 2
             except Exception:
                 ev_loc = len(table) // 2
 
             ctrl_cols = [c for c in port_df.columns if c != config.ticker]
             sdid_obj = sdid_mod.compute_synthetic_difference_in_differences(
-                treated_series=table["close"] if "close" in table.columns else frame["close"],
+                treated_series=treated_ret,
                 control_panel_df=port_df[ctrl_cols],
                 event_index=max(5, ev_loc),
                 post_window_len=5,

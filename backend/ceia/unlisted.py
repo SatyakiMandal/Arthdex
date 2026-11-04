@@ -354,7 +354,7 @@ def analyse_unlisted(
     full_series = fetch_price_series(fetcher, url)
     moves = [
         m for m in price_moves(real_updates(full_series))
-        if m.end_date >= config.start and m.start_date <= config.end
+        if m.start_date >= config.start and m.end_date <= config.end
     ]
     series = full_series.loc[str(config.start):str(config.end)]
 
@@ -401,9 +401,10 @@ def analyse_unlisted(
                 ctx.update(fetch_page_context(fetcher, url))
             except Exception as exc:
                 log.warning("could not read the page's ratios: %s", exc)
-        window_real = real_updates(series)
+        history_to_end = full_series.loc[:str(config.end)]
+        window_real = real_updates(history_to_end)
         analysis.research = build_research(
-            series, window_real, config.start, config.end, ctx, moves, macro_summary,
+            history_to_end, window_real, config.start, config.end, ctx, moves, macro_summary,
             news_available=bool(items),
         )
         analysis.investment_verdict = (analysis.research or {}).get("verdict") or {}

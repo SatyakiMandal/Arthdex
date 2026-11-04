@@ -97,11 +97,11 @@ def solve_merton_model(
             risk_free_rate=risk_free_rate,
             asset_value=equity_value,
             asset_volatility=equity_volatility,
-            distance_to_default=float("inf"),
+            distance_to_default=15.0,
             default_probability=0.0,
             time_horizon_years=time_horizon,
             converged=True,
-            note="Zero reported debt implies infinite Distance to Default.",
+            note="Zero reported debt implies minimal default risk (capped at 15.0σ).",
         )
 
     # Initial guess: V_A0 = E + D, sigma_A0 = sigma_E * E / (E + D)
@@ -219,10 +219,12 @@ def get_term_matched_risk_free_rate(
     """Interpolate India sovereign risk-free rate matched to debt horizon T."""
     if macro and "gsec_yield" in macro:
         gsec = macro["gsec_yield"]
-        if isinstance(gsec, dict) and gsec.get("yield_pct") is not None:
-            return gsec["yield_pct"] / 100.0
+        if isinstance(gsec, dict):
+            g_val = gsec.get("value") if gsec.get("value") is not None else gsec.get("yield_pct")
+            if g_val is not None:
+                return float(g_val) / 100.0
         elif isinstance(gsec, (int, float)):
-            return gsec / 100.0
+            return float(gsec) / 100.0
 
     base_10y = DEFAULT_RISK_FREE_RATE
     # Sovereign term structure spread adjustments relative to 10Y benchmark
