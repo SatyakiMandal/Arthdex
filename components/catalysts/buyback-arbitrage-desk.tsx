@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Calculator, CheckCircle2, Coins, HelpCircle, Layers, Sparkles } from "lucide-react";
+import { ArrowUpRight, Calculator, CheckCircle2, Coins, HelpCircle, Info, Layers, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ApiBuybackResponse, ApiBuybackItem } from "@/lib/api/types";
 
@@ -18,6 +18,19 @@ export function BuybackArbitrageDesk({
 
   return (
     <div className="space-y-6">
+      {/* Simulation Notice */}
+      <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs text-muted-foreground flex items-start gap-2.5">
+        <Info className="h-4 w-4 shrink-0 text-primary mt-0.5" />
+        <div className="space-y-0.5">
+          <span className="font-semibold text-foreground text-2xs uppercase tracking-wider">
+            SCENARIO SIMULATION DESK · MODELLED PAYOFFS
+          </span>
+          <p className="text-3xs leading-relaxed text-muted-foreground">
+            Tender offer sizes, record dates, and SEBI small shareholder rules (holding &le; ₹2,00,000) are compiled from exchange filings. Net returns across 20%, 35%, and 50% acceptance ratios are <strong>interactive &quot;what-if&quot; simulations</strong> modeling post-buyback price drift.
+          </p>
+        </div>
+      </div>
+
       {/* Top explainer banner */}
       <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground border-b border-border/60 pb-3">
         <div className="flex items-center gap-2">

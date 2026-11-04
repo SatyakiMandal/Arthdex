@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, ArrowDownRight, Compass, ShieldAlert, Sparkles, TrendingUp, Zap } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Compass, Info, ShieldAlert, Sparkles, TrendingUp, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ApiIndexRebalance, ApiIndexRebalanceCandidate } from "@/lib/api/types";
 
@@ -20,6 +20,19 @@ export function IndexRebalanceTable({
 
   return (
     <div className="space-y-4">
+      {/* Modelled Forecast Disclaimer */}
+      <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs text-muted-foreground flex items-start gap-2.5">
+        <Info className="h-4 w-4 shrink-0 text-primary mt-0.5" />
+        <div className="space-y-0.5">
+          <span className="font-semibold text-foreground text-2xs uppercase tracking-wider">
+            QUANTITATIVE MODEL FORECAST · PREDICTIVE ESTIMATES
+          </span>
+          <p className="text-3xs leading-relaxed text-muted-foreground">
+            Inclusions, exclusions, and passive fund flow estimates are algorithmically modelled from NSE Indices&apos; semi-annual review criteria (6-month average free-float market capitalization, F&amp;O segment eligibility, and liquidity). They are quantitative predictions and <strong>not official exchange circulars</strong>.
+          </p>
+        </div>
+      </div>
+
       {/* Index review overview bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground border-b border-border/60 pb-3">
         <div className="flex items-center gap-2">

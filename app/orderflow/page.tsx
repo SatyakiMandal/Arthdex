@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Activity } from "lucide-react";
+import { Activity, Info } from "lucide-react";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
@@ -21,6 +21,18 @@ export default function OrderflowPage() {
           Volume profile, delta, CVD, footprint, absorption and big volume, with gamma, delta and theta exposure, open interest and 0DTE from listed options. Read
           them against market structure and location, and size from the stop.
         </p>
+        <div className="mt-4 rounded-xl border border-primary/30 bg-primary/5 p-4 text-xs text-muted-foreground flex items-start gap-3">
+          <Info className="h-4 w-4 shrink-0 text-primary mt-0.5" />
+          <div className="space-y-1">
+            <span className="font-semibold text-foreground text-2xs uppercase tracking-wider">
+              MODELLED ORDER FLOW ANALYTICS · NOT LEVEL 3 EXCHANGE TAPE
+            </span>
+            <p className="text-3xs leading-relaxed text-muted-foreground">
+              Aggressor buy and sell volume, CVD (Cumulative Volume Delta), and footprint imbalances are algorithmically estimated from OHLCV bar ranges because public feeds do not provide tick-by-tick Level 3 matched order execution tapes. Volume profile and value area are exact functions of the bars. Resting-liquidity order-book heatmaps are withheld rather than simulated.
+            </p>
+          </div>
+        </div>
+
         <div className="mt-6">
           <OrderflowWorkbench symbol="NQ" market="futures" selectable />
         </div>

@@ -403,9 +403,17 @@ def fetch_stocks_traded() -> dict[str, Any]:
         if not _is_tradable_equity(symbol) or last is None or row.get("series") not in ("EQ", "BE", "BZ", "SM", "ST"):
             continue
         cap = _num(row.get("totalMarketCapcsv"))  # NSE reports this in lakh rupees
+        vol = _num(row.get("totalTradedVolumecsv")) or _num(row.get("totalTradedVolume"))
+        val = _num(row.get("totalTradedValuecsv")) or _num(row.get("totalTradedValue"))
+        chg = _num(row.get("change"))
+        prev = _num(row.get("previousClose"))
         rows[symbol] = {
             "last": round(last, 2),
             "changePct": round(_num(row.get("pchange")) or 0.0, 2),
+            "change": round(chg, 2) if chg is not None else None,
+            "volume": int(vol) if vol is not None else None,
+            "turnoverCr": round(val / 10000000, 2) if val is not None else None,
+            "previousClose": round(prev, 2) if prev is not None else None,
             "marketCapCr": round(cap / 100, 0) if cap else None,
             "series": row.get("series"),
         }

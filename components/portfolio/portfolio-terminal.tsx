@@ -3,6 +3,8 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import {
+  AlertTriangle,
+  CheckCircle2,
   ArrowUpRight,
   ArrowDownRight,
   Briefcase,
@@ -70,6 +72,7 @@ export function PortfolioTerminal({
   const [showCsvHelp, setShowCsvHelp] = useState(false);
 
   // New lot form inputs
+  const [isDemoPreset, setIsDemoPreset] = useState<boolean>(true);
   const [pickedCompany, setPickedCompany] = useState<PickedCompany | null>(null);
   const [lotQty, setLotQty] = useState("");
   const [lotPrice, setLotPrice] = useState("");
@@ -123,6 +126,7 @@ export function PortfolioTerminal({
     setLotQty("");
     setLotPrice("");
     setShowAddLot(false);
+    setIsDemoPreset(false);
     void runAnalysis(currentHoldings);
   }
 
@@ -139,6 +143,7 @@ export function PortfolioTerminal({
   }
 
   function handleLoadPreset(preset: typeof SAMPLE_PORTFOLIOS[0]) {
+    setIsDemoPreset(true);
     void runAnalysis(preset.holdings);
   }
 
@@ -180,6 +185,7 @@ export function PortfolioTerminal({
       }
 
       if (parsed.length > 0) {
+        setIsDemoPreset(false);
         void runAnalysis(parsed);
       } else {
         alert("No valid holding rows could be parsed from the CSV file.");
@@ -281,6 +287,48 @@ export function PortfolioTerminal({
             >
               Add to Portfolio
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Prominent Sample / Synthetic Data Disclaimer Banner */}
+      {isDemoPreset ? (
+        <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-xs text-amber-200 shadow-xs">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 shrink-0 text-amber-400 mt-0.5" />
+            <div className="space-y-1.5">
+              <div className="font-semibold text-amber-300 uppercase tracking-wider text-2xs flex items-center gap-2">
+                <span>SAMPLE DATA DISCLAIMER · DEMO PORTFOLIO LOADED</span>
+                <span className="rounded bg-amber-500/20 px-1.5 py-0.5 text-3xs font-mono text-amber-300">ILLUSTRATIVE PRESET</span>
+              </div>
+              <p className="text-xs text-amber-200/90 leading-relaxed">
+                The holdings, purchase quantities, costs, and dates shown below are <strong>sample presets</strong> to demonstrate the Newton-Raphson XIRR engine and Section 112A tax-loss harvesting desk. While Current Market Prices (CMPs) are pulled live from NSE quotes, <strong>no personal portfolio data has been uploaded yet</strong>.
+              </p>
+              <div className="pt-1 flex flex-wrap items-center gap-2.5">
+                <label className="inline-flex items-center gap-1.5 rounded-md bg-amber-500/25 px-3 py-1.5 text-2xs font-semibold text-amber-200 hover:bg-amber-500/35 cursor-pointer border border-amber-500/40 transition-colors shadow-xs">
+                  <UploadCloud className="h-3.5 w-3.5 text-amber-300" /> Import your broker CSV (Zerodha, Groww)
+                  <input type="file" accept=".csv" onChange={handleCsvUpload} className="hidden" />
+                </label>
+                <button
+                  onClick={() => setShowAddLot(true)}
+                  className="inline-flex items-center gap-1 text-2xs font-medium text-amber-300 hover:underline"
+                >
+                  <Plus className="h-3 w-3" /> or click &quot;+ Add Holding&quot; to enter your actual scrips
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-3.5 text-xs text-emerald-200 shadow-xs">
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+            <div>
+              <span className="font-semibold text-emerald-300 text-2xs uppercase tracking-wider">ACTIVE USER PORTFOLIO: </span>
+              <span className="text-emerald-200/90">
+                Real portfolio returns, true XIRR, and Section 112A tax-loss harvesting computed live on your {lots.length} uploaded holdings.
+              </span>
+            </div>
           </div>
         </div>
       )}

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Building2 } from "lucide-react";
+import { AlertTriangle, Building2 } from "lucide-react";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
@@ -32,6 +32,20 @@ export default async function UnlistedIndexPage() {
             </p>
           </div>
           {result.ok ? <FreshnessBadge meta={result.meta} /> : null}
+        </div>
+
+        <div className="mt-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-200">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
+            <div className="space-y-1">
+              <span className="font-semibold text-amber-300 text-2xs uppercase tracking-wider">
+                INDICATIVE OVER-THE-COUNTER (OTC) MARKS
+              </span>
+              <p className="text-3xs leading-relaxed text-amber-200/90">
+                Unlisted and pre-IPO shares trade OTC, not on any regulated stock exchange. Prices are compiled indicative marks from dealer sites (UnlistedZone). They represent dealer desk levels, not an executable continuous quote. Non-trading flat days are filtered out rather than interpolated.
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="mt-8">

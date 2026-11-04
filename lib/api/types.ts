@@ -1058,6 +1058,27 @@ export interface FeedHealth {
   resolved: FeedIncident[];
 }
 
+export interface ApiPulseStock {
+  symbol: string;
+  name: string;
+  industry: string;
+  last: number;
+  changePct: number;
+  change?: number | null;
+  volume?: number | null;
+  turnoverCr?: number | null;
+  previousClose?: number | null;
+  marketCapCr: number | null;
+  series?: string | null;
+}
+
+export interface ApiPulseSector {
+  industry: string;
+  count: number;
+  marketCapCr: number;
+  changePct: number;
+}
+
 /** Every constituent of an index with today's move, plus sector and market breadth. */
 export interface ApiPulse {
   index: string;
@@ -1066,8 +1087,8 @@ export interface ApiPulse {
   declines: number;
   unchanged: number;
   market: { advances: number; declines: number; unchanged: number; total: number };
-  stocks: { symbol: string; name: string; industry: string; last: number; changePct: number; marketCapCr: number | null }[];
-  sectors: { industry: string; count: number; marketCapCr: number; changePct: number }[];
+  stocks: ApiPulseStock[];
+  sectors: ApiPulseSector[];
   asOf: string;
 }
 

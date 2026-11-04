@@ -13,3 +13,4 @@ next-env.d.ts
 
 # graphify knowledge graph (regenerable)
 graphify-out/
+AGENTS.md
