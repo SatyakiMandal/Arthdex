@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import type { ApiOptionChain } from "@/lib/api/types";
 import { cn, formatINR } from "@/lib/utils";
+import { Activity, BarChart2, Compass, Layers, ShieldAlert, Sparkles, Target, Zap } from "lucide-react";
 
 const STRIKES_EACH_SIDE = 10;
 const n = (v: number | null | undefined, d = 0) => (v == null ? "—" : formatINR(v, d));
@@ -27,6 +28,7 @@ function OiCell({ oi, max, side }: { oi: number | null; max: number; side: "ce" 
 
 export function OptionChainView({ chain }: { chain: ApiOptionChain }) {
   const [strikeDepth, setStrikeDepth] = useState<number>(15);
+  const [chainMode, setChainMode] = useState<"core" | "greeks" | "walls">("core");
   let atmIndex = chain.rows.findIndex((r) => r.strike === chain.atmStrike);
   if (atmIndex < 0 && chain.rows.length > 0) {
     let bestDist = Infinity;
@@ -41,13 +43,77 @@ export function OptionChainView({ chain }: { chain: ApiOptionChain }) {
   const safeAtmIndex = Math.max(0, atmIndex);
   const rows = strikeDepth === 0 ? chain.rows : chain.rows.slice(Math.max(0, safeAtmIndex - strikeDepth), safeAtmIndex + strikeDepth + 1);
   const maxOi = Math.max(1, ...rows.flatMap((r) => [r.ce?.oi ?? 0, r.pe?.oi ?? 0]));
+  // Total OI & Market Balance Calculations
+  const totalCeOi = rows.reduce((acc, r) => acc + (r.ce?.oi ?? 0), 0);
+  const totalPeOi = rows.reduce((acc, r) => acc + (r.pe?.oi ?? 0), 0);
+  const totalOi = totalCeOi + totalPeOi;
+  const peRatioPct = totalOi > 0 ? (totalPeOi / totalOi) * 100 : 50;
+
+  // ATM Straddle Breakeven Corridor
+  const atmRow = chain.rows.find((r) => r.strike === chain.atmStrike);
+  const straddlePrice = (atmRow?.ce?.ltp ?? 0) + (atmRow?.pe?.ltp ?? 0);
+  const upperBreakeven = chain.underlying + straddlePrice;
+  const lowerBreakeven = chain.underlying - straddlePrice;
+
+  // Max Pain Gravitational Pull
+  const maxPainDiff = chain.maxPain != null ? chain.maxPain - chain.underlying : null;
+  const maxPainPct = maxPainDiff != null ? (maxPainDiff / chain.underlying) * 100 : null;
+
+  // Daily Implied Move from IV (IV / sqrt(252))
+  const dailyImpliedMovePct = chain.atmIv != null ? chain.atmIv / 15.874 : null;
+
+  const pcrValue = chain.pcr ?? 1.0;
+  const pcrBias = pcrValue >= 1.25 ? "Bullish (Put Heavy)" : pcrValue <= 0.8 ? "Bearish (Call Heavy)" : "Balanced";
+
   const ledger = [
-    { label: "Underlying", value: n(chain.underlying, 2) },
-    { label: "Put-call ratio (OI)", value: chain.pcr?.toFixed(2) ?? "—" },
-    { label: "Max pain", value: n(chain.maxPain) },
-    { label: "ATM implied volatility", value: chain.atmIv != null ? `${chain.atmIv.toFixed(1)}%` : "—" },
-    { label: "Move priced in", value: chain.impliedMove ? `±${n(chain.impliedMove.points)} (${chain.impliedMove.pct.toFixed(2)}%)` : "—" },
-    { label: "Days to expiry", value: String(chain.daysToExpiry) },
+    {
+      label: "Underlying CMP",
+      value: `₹${formatINR(chain.underlying, 2)}`,
+      detail: `ATM Strike: ₹${formatINR(chain.atmStrike || chain.underlying, 0)}`,
+      tone: "neutral",
+    },
+    {
+      label: "Put-Call Ratio (OI)",
+      value: chain.pcr?.toFixed(2) ?? "—",
+      detail: pcrBias,
+      tone: pcrValue >= 1.25 ? "up" : pcrValue <= 0.8 ? "down" : "gold",
+    },
+    {
+      label: "Max Pain Settlement",
+      value: chain.maxPain != null ? `₹${formatINR(chain.maxPain, 0)}` : "—",
+      detail: maxPainDiff != null ? `${maxPainDiff >= 0 ? "+" : ""}₹${maxPainDiff.toFixed(1)} (${maxPainPct?.toFixed(1)}%) Gravity` : "—",
+      tone: "gold",
+    },
+    {
+      label: "ATM Straddle Premium",
+      value: straddlePrice > 0 ? `₹${straddlePrice.toFixed(1)}` : "—",
+      detail: straddlePrice > 0 ? `Corridor: ₹${lowerBreakeven.toFixed(0)} – ₹${upperBreakeven.toFixed(0)}` : "—",
+      tone: "accent",
+    },
+    {
+      label: "ATM Implied Volatility",
+      value: chain.atmIv != null ? `${chain.atmIv.toFixed(1)}%` : "—",
+      detail: dailyImpliedMovePct != null ? `1-Day Move: ±${dailyImpliedMovePct.toFixed(2)}%` : "—",
+      tone: "neutral",
+    },
+    {
+      label: "Move Priced In",
+      value: chain.impliedMove ? `±₹${formatINR(chain.impliedMove.points, 1)}` : "—",
+      detail: chain.impliedMove ? `±${chain.impliedMove.pct.toFixed(2)}% by Expiry` : "—",
+      tone: "neutral",
+    },
+    {
+      label: "Market Open Interest",
+      value: lakh(totalOi),
+      detail: `${peRatioPct.toFixed(0)}% PE / ${(100 - peRatioPct).toFixed(0)}% CE`,
+      tone: "neutral",
+    },
+    {
+      label: "Days to Expiry",
+      value: `${chain.daysToExpiry}D`,
+      detail: `Expiry: ${day(chain.expiry)}`,
+      tone: chain.daysToExpiry <= 2 ? "down" : "neutral",
+    },
   ];
   const failed = chain.vetting.checks.filter((c) => !c.ok);
   const sym = encodeURIComponent(chain.symbol);
@@ -72,36 +138,88 @@ export function OptionChainView({ chain }: { chain: ApiOptionChain }) {
         ))}
         </nav>
 
-        {/* Strike Depth Selector */}
-        <div className="flex items-center gap-1 text-3xs font-mono">
-          <span className="text-muted-foreground uppercase tracking-wider font-semibold mr-1">Depth:</span>
-          {[
-            { n: 10, label: "±10" },
-            { n: 15, label: "±15" },
-            { n: 25, label: "±25" },
-            { n: 0, label: "All" },
-          ].map((d) => (
-            <button
-              key={d.n}
-              onClick={() => setStrikeDepth(d.n)}
-              className={cn(
-                "px-2 py-0.5 border rounded-none font-bold uppercase transition-colors",
-                strikeDepth === d.n
-                  ? "bg-accent text-accent-foreground border-accent"
-                  : "bg-surface-muted/50 border-border text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {d.label}
-            </button>
-          ))}
+        {/* View Mode & Strike Depth Selectors */}
+        <div className="flex flex-wrap items-center gap-2 text-3xs font-mono">
+          {/* View Mode Chips */}
+          <div className="flex items-center border border-border bg-surface-muted p-0.5 rounded-none">
+            <span className="text-muted-foreground uppercase font-semibold px-1.5 hidden sm:inline">Mode:</span>
+            {[
+              { id: "core", label: "Core Chain" },
+              { id: "greeks", label: "Full Greeks" },
+              { id: "walls", label: "Strike Walls" },
+            ].map((m) => (
+              <button
+                key={m.id}
+                onClick={() => setChainMode(m.id as any)}
+                className={cn(
+                  "px-2 py-0.5 font-bold uppercase rounded-none transition-colors",
+                  chainMode === m.id
+                    ? "bg-foreground text-background"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Strike Depth Selector */}
+          <div className="flex items-center gap-1">
+            <span className="text-muted-foreground uppercase tracking-wider font-semibold mr-1">Depth:</span>
+            {[
+              { n: 10, label: "±10" },
+              { n: 15, label: "±15" },
+              { n: 25, label: "±25" },
+              { n: 0, label: "All" },
+            ].map((d) => (
+              <button
+                key={d.n}
+                onClick={() => setStrikeDepth(d.n)}
+                className={cn(
+                  "px-2 py-0.5 border rounded-none font-bold uppercase transition-colors",
+                  strikeDepth === d.n
+                    ? "bg-accent text-accent-foreground border-accent"
+                    : "bg-surface-muted/50 border-border text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2 font-mono">
+      {/* 8-METRIC INSTITUTIONAL DERIVATIVES COMMAND RIBBON */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 font-mono">
         {ledger.map((item) => (
-          <div key={item.label} className="border border-border bg-surface p-2.5 rounded-none shadow-xs">
-            <div className="text-3xs uppercase tracking-wider text-muted-foreground font-semibold">{item.label}</div>
-            <div className="mt-1 font-mono text-sm sm:text-base font-extrabold text-foreground tabular-nums">{item.value}</div>
+          <div
+            key={item.label}
+            className={cn(
+              "border border-border bg-surface p-2 rounded-none shadow-xs cell-glow space-y-0.5",
+              item.tone === "up" && "border-up/40 bg-up/[0.02]",
+              item.tone === "down" && "border-down/40 bg-down/[0.02]",
+              item.tone === "gold" && "border-gold/40 bg-gold/[0.02]",
+              item.tone === "accent" && "border-accent/40 bg-accent/[0.02]",
+            )}
+          >
+            <div className="text-3xs uppercase tracking-wider text-muted-foreground font-semibold truncate" title={item.label}>
+              {item.label}
+            </div>
+            <div
+              className={cn(
+                "font-mono text-xs sm:text-sm font-black tabular-nums truncate",
+                item.tone === "up" && "text-up",
+                item.tone === "down" && "text-down",
+                item.tone === "gold" && "text-gold",
+                item.tone === "accent" && "text-accent",
+                item.tone === "neutral" && "text-foreground",
+              )}
+            >
+              {item.value}
+            </div>
+            <div className="text-3xs text-muted-foreground truncate" title={item.detail}>
+              {item.detail}
+            </div>
           </div>
         ))}
       </div>
