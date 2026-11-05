@@ -69,18 +69,18 @@ export function VolatilityEnsemble({ volatility }: { volatility: ApiVolatility }
                 </th>
                 <td className="px-3 py-2 text-right font-mono tabular-nums">
                   {model.annualisedVolPct.toFixed(2)}%
-                  <span className="mt-1 block h-0.5 rounded-full bg-accent/30">
+                  <span className="mt-1 block h-0.5 rounded-none bg-accent/30">
                     <span
-                      className="block h-full rounded-full bg-accent/70"
+                      className="block h-full rounded-none bg-accent/70"
                       style={{ width: `${(model.annualisedVolPct / maxVol) * 100}%` }}
                     />
                   </span>
                 </td>
                 <td className="px-3 py-2">
                   <div className="flex items-center gap-2">
-                    <span className="h-1.5 flex-1 rounded-full bg-muted">
+                    <span className="h-1.5 flex-1 rounded-none bg-muted">
                       <span
-                        className="block h-full rounded-full bg-up"
+                        className="block h-full rounded-none bg-up"
                         style={{ width: `${model.weight * 100}%` }}
                       />
                     </span>

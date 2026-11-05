@@ -183,7 +183,7 @@ export function IndicatorChart({
 
   if (n < 14) {
     return (
-      <div className="rounded-xl border border-border bg-surface p-8 text-center text-sm text-muted-foreground">
+      <div className="rounded-none border border-border bg-surface p-8 text-center text-sm text-muted-foreground">
         Insufficient price history ({n} bars) to compute indicators. At least 14 bars are required.
       </div>
     );

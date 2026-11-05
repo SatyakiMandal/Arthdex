@@ -57,7 +57,7 @@ export function OptionChainView({ chain }: { chain: ApiOptionChain }) {
             href={`/derivatives?symbol=${sym}&expiry=${e}`}
             aria-current={e === chain.expiry ? "page" : undefined}
             className={cn(
-              "rounded-md px-2.5 py-1 font-mono text-xs",
+              "rounded-none px-2.5 py-1 font-mono text-xs",
               e === chain.expiry ? "bg-surface-muted text-foreground ring-1 ring-border" : "text-muted-foreground hover:text-foreground",
             )}
           >

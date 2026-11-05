@@ -157,7 +157,7 @@ export function Launcher() {
   }
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-5">
+    <div className="rounded-none border border-border bg-surface p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-sm font-semibold tracking-tight">Run a new analysis</h2>
       </div>
@@ -186,7 +186,7 @@ export function Launcher() {
               onFocus={() => setOpen(true)}
               onBlur={() => setTimeout(() => setOpen(false), 120)}
               onKeyDown={onKey}
-              className="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-accent"
+              className="h-10 w-full rounded-none border border-border bg-background pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-accent"
             />
           </div>
 
@@ -194,7 +194,7 @@ export function Launcher() {
             <ul
               id="an-listbox"
               role="listbox"
-              className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-lg border border-border bg-surface-raised p-1 shadow-lg"
+              className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-none border border-border bg-surface-raised p-1 shadow-lg"
             >
               {visibleHits.map((h, i) => (
                 <li
@@ -207,7 +207,7 @@ export function Launcher() {
                   }}
                   onMouseEnter={() => setActive(i)}
                   className={cn(
-                    "flex cursor-pointer items-center justify-between gap-3 rounded-md px-3 py-2 text-sm",
+                    "flex cursor-pointer items-center justify-between gap-3 rounded-none px-3 py-2 text-sm",
                     i === active ? "bg-surface-muted" : "",
                   )}
                 >
@@ -258,7 +258,7 @@ export function Launcher() {
                     setEnd(daysAgo(0));
                     setStart(daysAgo(p.days));
                   }}
-                  className="rounded-md border border-border px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:bg-surface-muted hover:text-foreground"
+                  className="rounded-none border border-border px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:bg-surface-muted hover:text-foreground"
                 >
                   {p.label}
                 </button>
@@ -272,7 +272,7 @@ export function Launcher() {
               value={start}
               max={end || undefined}
               onChange={(e) => setStart(e.target.value)}
-              className="h-10 rounded-lg border border-border bg-background px-3 font-mono text-sm outline-none focus:border-accent"
+              className="h-10 rounded-none border border-border bg-background px-3 font-mono text-sm outline-none focus:border-accent"
             />
             <input
               type="date"
@@ -281,7 +281,7 @@ export function Launcher() {
               min={start || undefined}
               max={daysAgo(0)}
               onChange={(e) => setEnd(e.target.value)}
-              className="h-10 rounded-lg border border-border bg-background px-3 font-mono text-sm outline-none focus:border-accent"
+              className="h-10 rounded-none border border-border bg-background px-3 font-mono text-sm outline-none focus:border-accent"
             />
           </div>
           <p className="mt-1.5 text-2xs text-muted-foreground">
@@ -295,7 +295,7 @@ export function Launcher() {
           type="button"
           disabled={!ready}
           onClick={submit}
-          className="inline-flex h-10 items-center gap-2 rounded-lg bg-accent px-4 text-sm font-medium text-accent-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex h-10 items-center gap-2 rounded-none bg-accent px-4 text-sm font-medium text-accent-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
         >
           {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
           Run full analysis
@@ -306,7 +306,7 @@ export function Launcher() {
         </p>
       </div>
       {error ? (
-        <p role="alert" className="mt-3 rounded-lg border border-down/40 bg-down/10 px-3 py-2 text-sm text-down">
+        <p role="alert" className="mt-3 rounded-none border border-down/40 bg-down/10 px-3 py-2 text-sm text-down">
           {error}
         </p>
       ) : null}

@@ -48,7 +48,7 @@ export function EarningsImpliedMoves({
           <button
             onClick={() => setFilter("ALL")}
             className={cn(
-              "rounded-full px-2.5 py-0.5 text-2xs font-semibold uppercase tracking-wider transition-colors",
+              "rounded-none px-2.5 py-0.5 text-2xs font-semibold uppercase tracking-wider transition-colors",
               filter === "ALL"
                 ? "bg-primary text-primary-foreground"
                 : "border border-border bg-card text-muted-foreground hover:bg-muted",
@@ -59,7 +59,7 @@ export function EarningsImpliedMoves({
           <button
             onClick={() => setFilter("UPCOMING")}
             className={cn(
-              "rounded-full px-2.5 py-0.5 text-2xs font-semibold uppercase tracking-wider transition-colors",
+              "rounded-none px-2.5 py-0.5 text-2xs font-semibold uppercase tracking-wider transition-colors",
               filter === "UPCOMING"
                 ? "bg-primary text-primary-foreground"
                 : "border border-border bg-card text-muted-foreground hover:bg-muted",
@@ -71,7 +71,7 @@ export function EarningsImpliedMoves({
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-lg border border-border bg-card">
+      <div className="overflow-x-auto rounded-none border border-border bg-card">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="border-b border-border bg-muted/40 text-2xs text-muted-foreground uppercase tracking-wider">
@@ -138,7 +138,7 @@ export function EarningsImpliedMoves({
 
                     <td className="p-3 text-center">
                       {m.impliedMovePct !== null ? (
-                        <div className="inline-flex items-center justify-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+                        <div className="inline-flex items-center justify-center gap-1.5 rounded-none border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
                           <TrendingUp className="h-3.5 w-3.5" />
                           <span>±{m.impliedMovePct.toFixed(2)}%</span>
                         </div>
@@ -172,7 +172,7 @@ export function EarningsImpliedMoves({
       </div>
 
       {/* Explainer card */}
-      <div className="rounded-lg border border-border/80 bg-muted/30 p-4 text-xs text-muted-foreground space-y-1.5 font-sans">
+      <div className="rounded-none border border-border/80 bg-muted/30 p-4 text-xs text-muted-foreground space-y-1.5 font-sans">
         <div className="font-semibold text-foreground flex items-center gap-1.5 text-2xs uppercase tracking-wider">
           <HelpCircle className="h-3.5 w-3.5 text-primary" /> Understanding Pre-Earnings Implied Moves
         </div>

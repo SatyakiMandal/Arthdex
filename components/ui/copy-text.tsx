@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Check, Copy, Printer } from "lucide-react";
 
 const BTN =
-  "inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-sm transition-all hover:bg-surface-muted active:scale-[0.98]";
+  "inline-flex h-8 items-center gap-1.5 rounded-none border border-border bg-surface px-2.5 text-xs font-mono transition-all duration-150 hover:bg-surface-muted active:scale-[0.98]";
 
 /** Copy a prepared plain-text version of a page, or print it. */
 export function CopyText({ text, label = "Copy as text" }: { text: string; label?: string }) {

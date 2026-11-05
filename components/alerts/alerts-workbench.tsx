@@ -166,7 +166,7 @@ export function AlertsWorkbench() {
         {/* Company picker */}
         <div className="relative">
           <label className="text-2xs text-muted-foreground">Company</label>
-          <div className="mt-1 flex items-center gap-2 rounded-lg border border-border bg-surface-muted px-2.5">
+          <div className="mt-1 flex items-center gap-2 rounded-none border border-border bg-surface-muted px-2.5">
             {searching ? (
               <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-accent" />
             ) : (
@@ -200,7 +200,7 @@ export function AlertsWorkbench() {
           </div>
 
           {visibleHits.length > 0 && !selected ? (
-            <ul className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-border bg-surface-raised py-1 shadow-xl">
+            <ul className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-none border border-border bg-surface-raised py-1 shadow-xl">
               {visibleHits.map((hit) => (
                 <li key={hit.symbol}>
                   <button
@@ -226,7 +226,7 @@ export function AlertsWorkbench() {
             <select
               value={metric}
               onChange={(e) => setMetric(e.target.value)}
-              className="rounded-lg border border-border bg-surface-muted px-2.5 py-1.5 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="rounded-none border border-border bg-surface-muted px-2.5 py-1.5 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {METRICS.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -241,7 +241,7 @@ export function AlertsWorkbench() {
             <select
               value={comparator}
               onChange={(e) => setComparator(e.target.value as WatchAlert["comparator"])}
-              className="rounded-lg border border-border bg-surface-muted px-2.5 py-1.5 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="rounded-none border border-border bg-surface-muted px-2.5 py-1.5 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {COMPARATORS.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -260,7 +260,7 @@ export function AlertsWorkbench() {
               step="0.01"
               value={threshold}
               onChange={(e) => setThreshold(e.target.value)}
-              className="w-28 rounded-lg border border-border bg-surface-muted px-2.5 py-1.5 font-mono text-xs tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="w-28 rounded-none border border-border bg-surface-muted px-2.5 py-1.5 font-mono text-xs tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </label>
 
@@ -268,7 +268,7 @@ export function AlertsWorkbench() {
             type="button"
             disabled={!selected || threshold === ""}
             onClick={addAlert}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-xs font-medium text-accent-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-none bg-accent px-3 py-2 text-xs font-medium text-accent-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Plus className="h-3.5 w-3.5" />
             Add alert
@@ -334,7 +334,7 @@ export function AlertsWorkbench() {
                     </span>
                     <span
                       className={cn(
-                        "rounded-full border px-2 py-0.5 font-mono text-2xs uppercase tracking-wide",
+                        "rounded-none border px-2 py-0.5 font-mono text-2xs uppercase tracking-wide",
                         met === null
                           ? "border-border bg-surface-muted text-muted-foreground"
                           : met

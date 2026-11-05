@@ -58,8 +58,8 @@ export function RiskCard({ symbol }: { symbol: string }) {
                   <span className="text-muted-foreground">{c.name}</span>
                   <span className="font-mono">{c.reading}</span>
                 </div>
-                <div className="mt-0.5 h-1 overflow-hidden rounded-full bg-surface-muted">
-                  <div className={cn("h-full rounded-full", c.score < 40 ? "bg-up" : c.score < 70 ? "bg-flat" : "bg-down")} style={{ width: `${Math.max(c.score, 3)}%` }} />
+                <div className="mt-0.5 h-1 overflow-hidden rounded-none bg-surface-muted">
+                  <div className={cn("h-full rounded-none", c.score < 40 ? "bg-up" : c.score < 70 ? "bg-flat" : "bg-down")} style={{ width: `${Math.max(c.score, 3)}%` }} />
                 </div>
               </li>
             ))}

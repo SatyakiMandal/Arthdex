@@ -26,7 +26,7 @@ interface PageProps {
 
 function Kpi({ label, value, hint }: { label: string; value: React.ReactNode; hint?: string }) {
   return (
-    <div className="rounded-xl border border-border bg-surface px-4 py-3">
+    <div className="rounded-none border border-border bg-surface px-4 py-3">
       <p className="text-2xs text-muted-foreground">{label}</p>
       <p className="mt-1 font-mono text-xl font-semibold tabular-nums">{value}</p>
       {hint ? <p className="mt-0.5 text-2xs text-muted-foreground">{hint}</p> : null}
@@ -114,10 +114,10 @@ export default async function BhavcopyPage({ searchParams }: PageProps) {
                 name="date"
                 defaultValue={res.ok ? res.data.date : valid}
                 max={maxDate}
-                className="mt-1 block h-9 rounded-lg border border-border bg-surface px-2 font-mono text-sm"
+                className="mt-1 block h-9 rounded-none border border-border bg-surface px-2 font-mono text-sm"
               />
             </label>
-            <button type="submit" className="h-9 rounded-lg border border-border bg-surface px-3 text-sm hover:bg-surface-muted">
+            <button type="submit" className="h-9 rounded-none border border-border bg-surface px-3 text-sm hover:bg-surface-muted">
               Load
             </button>
           </form>
@@ -156,7 +156,7 @@ export default async function BhavcopyPage({ searchParams }: PageProps) {
               />
             </div>
 
-            <p className="mt-4 rounded-xl border border-border bg-surface px-4 py-3 text-sm text-muted-foreground">
+            <p className="mt-4 rounded-none border border-border bg-surface px-4 py-3 text-sm text-muted-foreground">
               <span className="mr-2 font-mono text-2xs text-accent">Session narrative</span>
               {res.data.narrative}
             </p>
@@ -164,7 +164,7 @@ export default async function BhavcopyPage({ searchParams }: PageProps) {
             <DeskAnalysis insights={res.data.insights} title="Session analysis" className="mt-4" />
 
             {scannerRes.ok && (
-              <section className="mt-8 rounded-xl border border-border bg-card p-6 shadow-sm">
+              <section className="mt-8 rounded-none border border-border bg-card p-6 shadow-sm">
                 <SectionHead
                   title="Institutional Delivery & Volume Scanner"
                   note="Delivery, volume surges, absorption and distribution"

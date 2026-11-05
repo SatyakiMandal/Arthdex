@@ -120,8 +120,8 @@ export function BarChart({
         const top = Math.min(y(it.value), y(0));
         return (
           <g key={it.label + i}>
-            {it.ghost != null ? <rect x={cx - bw / 2 - 4} width={bw + 8} y={Math.min(y(it.ghost), y(0))} height={Math.abs(y(it.ghost) - y(0))} rx={3} fill="none" stroke="hsl(var(--muted-foreground))" strokeDasharray="3 3" /> : null}
-            <rect x={cx - bw / 2} width={bw} y={top} height={Math.max(Math.abs(y(it.value) - y(0)), 1)} rx={3} fill={it.color ?? "hsl(var(--accent))"} opacity={0.9} />
+            {it.ghost != null ? <rect x={cx - bw / 2 - 4} width={bw + 8} y={Math.min(y(it.ghost), y(0))} height={Math.abs(y(it.ghost) - y(0))} rx={0} fill="none" stroke="hsl(var(--muted-foreground))" strokeDasharray="3 3" /> : null}
+            <rect x={cx - bw / 2} width={bw} y={top} height={Math.max(Math.abs(y(it.value) - y(0)), 1)} rx={0} fill={it.color ?? "hsl(var(--accent))"} opacity={0.9} />
             <text x={cx} y={it.value >= 0 ? top - 3 : top + Math.abs(y(it.value) - y(0)) + 11} textAnchor="middle" className="fill-foreground" fontSize={10}>
               {fmt(it.value)}
             </text>

@@ -27,10 +27,10 @@ const COLUMNS = [
       { label: "Market watch", href: "/market-watch", icon: BarChart3 },
       { label: "Commodities", href: "/commodities", icon: Coins },
       { label: "Technical screener", href: "/screener", icon: ScanSearch },
-      { label: "Order flow", href: "/orderflow", icon: Activity },
+      { label: "Order flow & deals", href: "/orderflow", icon: Activity },
       { label: "NSE Bhavcopy", href: "/bhavcopy", icon: Layers },
-      { label: "Bulk & block deals", href: "/deals", icon: ArrowLeftRight },
-      { label: "Results calendar", href: "/calendar", icon: CalendarDays },
+      { label: "Bulk & block deals", href: "/orderflow?tab=deals", icon: ArrowLeftRight },
+      { label: "Earnings & catalysts", href: "/results?tab=catalysts", icon: CalendarDays },
     ],
   },
   {
@@ -79,7 +79,7 @@ export function SiteFooter() {
           </nav>
         ))}
 
-        <div className="rounded-lg border border-border bg-surface p-4">
+        <div className="rounded-none border border-border bg-surface p-4">
           <p className="flex items-center gap-2 text-2xs font-semibold text-flat">
             <AlertTriangle className="h-3.5 w-3.5" /> Important
           </p>

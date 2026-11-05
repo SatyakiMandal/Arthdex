@@ -8,7 +8,7 @@ import { PanelSkeleton, Skeleton } from "@/components/ui/skeleton";
 export default function Loading() {
   return (
     <div className="mx-auto max-w-[1600px] space-y-4 px-4 py-6 sm:px-6">
-      <div className="rounded-xl border border-border bg-surface p-4">
+      <div className="rounded-none border border-border bg-surface p-4">
         <Skeleton className="h-6 w-32" />
         <Skeleton className="mt-2 h-4 w-64" />
         <Skeleton className="mt-4 h-[320px] w-full" />

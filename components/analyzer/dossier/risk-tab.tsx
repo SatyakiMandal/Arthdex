@@ -169,7 +169,7 @@ export function RiskTab({ s }: { s: ListedSummary }) {
                       {(sv * 100).toFixed(2)}%
                     </span>
                   </div>
-                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-muted">
+                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-none bg-surface-muted">
                     <div className={cn("h-full", sv >= 0 ? "bg-up" : "bg-down")} style={{ width: `${(Math.abs(sv) / maxAbs) * 100}%` }} />
                   </div>
                   <p className="mt-1 text-2xs text-muted-foreground">{str2(c.rationale)}</p>

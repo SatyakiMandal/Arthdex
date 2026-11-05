@@ -29,7 +29,7 @@ export function CallTab({ s }: { s: CallTabData }) {
             <div>
               <Gauge value={v.conviction ?? 0} label="Conviction" className="pt-2" />
               {v.summary ? <p className="mt-5 text-center text-sm text-muted-foreground">{v.summary}</p> : null}
-              <div className="mt-5 grid grid-cols-2 gap-3 [&>div]:rounded-lg [&>div]:border [&>div]:border-border [&>div]:bg-surface-muted/50 [&>div]:px-3 [&>div]:py-2">
+              <div className="mt-5 grid grid-cols-2 gap-3 [&>div]:rounded-none [&>div]:border [&>div]:border-border [&>div]:bg-surface-muted/50 [&>div]:px-3 [&>div]:py-2">
                 <Stat label="Price" value={inr(v.price)} />
                 <Stat label="Entry accumulation zone" value={v.entryLow != null ? `${inr(v.entryLow)} – ${inr(v.entryHigh)}` : dash} />
                 <Stat label="Target 1 · tactical" value={`${inr(v.target1)} (${pct(v.target1Pct, 1)})`} tone="text-up" />

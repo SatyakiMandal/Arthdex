@@ -92,7 +92,7 @@ export function OrderflowWorkbench({
   };
 
   const chip = (active: boolean) =>
-    cn("rounded-lg border px-2.5 py-1 text-2xs transition-colors", active ? "border-accent/50 bg-accent/10 text-accent" : "border-border bg-surface-muted text-muted-foreground hover:text-foreground");
+    cn("rounded-none border px-2.5 py-1 text-2xs transition-colors", active ? "border-accent/50 bg-accent/10 text-accent" : "border-border bg-surface-muted text-muted-foreground hover:text-foreground");
 
   const symbols = market === "futures" ? FUTURES : market === "us" ? US : [];
   const stackedBuy = data ? data.imbalances.filter((i) => i.side === "buy").length : 0;
@@ -116,7 +116,7 @@ export function OrderflowWorkbench({
                   }}
                   className="flex items-center gap-1.5"
                 >
-                  <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="NSE symbol" aria-label="NSE symbol" className="w-32 rounded-lg border border-border bg-surface-muted px-2.5 py-1.5 font-mono text-sm uppercase outline-none focus:border-accent/60" />
+                  <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="NSE symbol" aria-label="NSE symbol" className="w-32 rounded-none border border-border bg-surface-muted px-2.5 py-1.5 font-mono text-sm uppercase outline-none focus:border-accent/60" />
                   <button type="submit" className="btn-ghost px-3 py-1.5 text-sm">
                     Load
                   </button>
@@ -133,7 +133,7 @@ export function OrderflowWorkbench({
         ) : null}
       </div>
 
-      <p className="flex items-start gap-2 rounded-xl border border-flat/30 bg-flat/10 px-3 py-2 text-2xs text-muted-foreground">
+      <p className="flex items-start gap-2 rounded-none border border-flat/30 bg-flat/10 px-3 py-2 text-2xs text-muted-foreground">
         <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-flat" />
         <span>
           <strong className="text-foreground">Modelled from bars.</strong> {data?.method ?? "The free feed has no trade tape or order-book depth, so buy and sell volume are estimated from each bar."}
@@ -141,12 +141,12 @@ export function OrderflowWorkbench({
       </p>
 
       {error ? (
-        <p role="alert" className="rounded-xl border border-down/40 bg-down/10 px-4 py-3 text-sm text-down">
+        <p role="alert" className="rounded-none border border-down/40 bg-down/10 px-4 py-3 text-sm text-down">
           {error}
         </p>
       ) : null}
 
-      <section className="rounded-xl border border-border bg-surface p-3">
+      <section className="rounded-none border border-border bg-surface p-3">
         <div className="mb-3 flex flex-wrap items-center gap-1.5">
           <span className="mr-1 self-center text-2xs text-muted-foreground">Profile</span>
           <button type="button" aria-pressed={mode === "volume"} onClick={() => setMode("volume")} className={chip(mode === "volume")}>

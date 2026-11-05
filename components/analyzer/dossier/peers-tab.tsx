@@ -50,7 +50,7 @@ export function PeersTab({ s }: { s: ListedSummary }) {
               <a
                 key={sym}
                 href={`/company/${sym.replace(/\.(NS|BO)$/, "")}`}
-                className="rounded-lg border border-border bg-surface-muted px-3 py-1.5 text-sm hover:border-accent/50 hover:text-accent"
+                className="rounded-none border border-border bg-surface-muted px-3 py-1.5 text-sm hover:border-accent/50 hover:text-accent"
               >
                 {name} <span className="font-mono text-2xs text-muted-foreground">{sym}</span>
               </a>

@@ -25,7 +25,7 @@ export function StatusRefresh() {
       <button
         type="button"
         onClick={() => start(() => router.refresh())}
-        className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-surface-muted px-2.5 text-xs font-medium text-muted-foreground transition-all hover:text-foreground active:scale-[0.98]"
+        className="inline-flex h-8 items-center gap-1.5 rounded-none border border-border bg-surface-muted px-2.5 text-xs font-medium text-muted-foreground transition-all hover:text-foreground active:scale-[0.98]"
       >
         {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
         Refresh

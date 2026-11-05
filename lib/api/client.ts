@@ -39,9 +39,9 @@ const BASE_URL = process.env.ARTHDEX_API_URL ?? "http://127.0.0.1:8000";
 
 /** Matches the backend's own cache lifetimes so the two layers don't fight. */
 export const REVALIDATE = {
-  quote: 60,
-  indices: 60,
-  movers: 120,
+  quote: 5,
+  indices: 5,
+  movers: 5,
   candles: 900,
   fundamentals: 3600,
   quant: 3600,

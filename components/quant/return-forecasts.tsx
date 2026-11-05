@@ -67,9 +67,9 @@ export function ReturnForecasts({ forecasts }: { forecasts: ApiForecast[] }) {
               </div>
 
               <div className="relative mt-3 h-6">
-                <div className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-muted" />
+                <div className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-none bg-muted" />
                 <div
-                  className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-accent/45"
+                  className="absolute top-1/2 h-1 -translate-y-1/2 rounded-none bg-accent/45"
                   style={{
                     left: `${toPct(lower)}%`,
                     width: `${toPct(upper) - toPct(lower)}%`,
@@ -81,7 +81,7 @@ export function ReturnForecasts({ forecasts }: { forecasts: ApiForecast[] }) {
                 />
                 <div
                   className={cn(
-                    "absolute top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-background",
+                    "absolute top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-none border-2 border-background",
                     expected >= 0 ? "bg-up" : "bg-down",
                   )}
                   style={{ left: `${toPct(expected)}%` }}

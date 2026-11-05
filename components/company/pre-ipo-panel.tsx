@@ -11,7 +11,7 @@ export function PreIpoPanel({ company }: { company: ApiUnlistedCompany }) {
     <section className="space-y-3">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <span className="grid h-8 w-8 place-items-center rounded-lg border border-accent/25 bg-accent/10 text-accent">
+          <span className="grid h-8 w-8 place-items-center rounded-none border border-accent/25 bg-accent/10 text-accent">
             <History className="h-4 w-4" />
           </span>
           <div>

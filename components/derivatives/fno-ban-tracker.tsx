@@ -17,7 +17,7 @@ export function FnoBanTracker({
     <div className="space-y-6">
       {/* Overview Status Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="rounded-xl border border-rose-500/40 bg-rose-500/10 p-4">
+        <div className="rounded-none border border-rose-500/40 bg-rose-500/10 p-4">
           <div className="flex items-center justify-between text-2xs text-rose-400">
             <span className="font-semibold uppercase tracking-wider flex items-center gap-1.5">
               <Ban className="h-4 w-4" /> Securities in Ban Period
@@ -29,7 +29,7 @@ export function FnoBanTracker({
           </div>
         </div>
 
-        <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4">
+        <div className="rounded-none border border-amber-500/40 bg-amber-500/10 p-4">
           <div className="flex items-center justify-between text-2xs text-amber-400">
             <span className="font-semibold uppercase tracking-wider flex items-center gap-1.5">
               <AlertTriangle className="h-4 w-4" /> MWPL Ban Threshold
@@ -41,7 +41,7 @@ export function FnoBanTracker({
           </div>
         </div>
 
-        <div className="rounded-xl border border-blue-500/40 bg-blue-500/10 p-4">
+        <div className="rounded-none border border-blue-500/40 bg-blue-500/10 p-4">
           <div className="flex items-center justify-between text-2xs text-blue-400">
             <span className="font-semibold uppercase tracking-wider flex items-center gap-1.5">
               <ShieldAlert className="h-4 w-4" /> MWPL Exit Threshold
@@ -55,7 +55,7 @@ export function FnoBanTracker({
       </div>
 
       {/* Banned Securities Grid */}
-      <div className="rounded-xl border border-border bg-card p-5">
+      <div className="rounded-none border border-border bg-card p-5">
         <div className="flex items-center justify-between border-b border-border/60 pb-3">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-2">
             <Ban className="h-4 w-4 text-rose-500" /> Official NSE Ban List ({banned.length})
@@ -73,7 +73,7 @@ export function FnoBanTracker({
               <Link
                 key={sym}
                 href={`/company/${sym}`}
-                className="group flex items-center justify-between rounded-lg border border-rose-500/30 bg-rose-500/5 px-3 py-2.5 hover:border-rose-500/60 hover:bg-rose-500/10 transition-colors"
+                className="group flex items-center justify-between rounded-none border border-rose-500/30 bg-rose-500/5 px-3 py-2.5 hover:border-rose-500/60 hover:bg-rose-500/10 transition-colors"
               >
                 <div>
                   <div className="font-mono text-xs font-bold text-foreground group-hover:text-rose-400 transition-colors">
@@ -90,7 +90,7 @@ export function FnoBanTracker({
 
       {/* Danger Watchlist */}
       {watchlist.length > 0 && (
-        <div className="rounded-xl border border-border bg-card p-5">
+        <div className="rounded-none border border-border bg-card p-5">
           <div className="flex items-center justify-between border-b border-border/60 pb-3">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-amber-500 flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" /> Approaching Ban Watchlist ({watchlist.length})
@@ -103,7 +103,7 @@ export function FnoBanTracker({
               <Link
                 key={sym}
                 href={`/company/${sym}`}
-                className="group flex items-center justify-between rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2.5 hover:border-amber-500/60 hover:bg-amber-500/10 transition-colors"
+                className="group flex items-center justify-between rounded-none border border-amber-500/30 bg-amber-500/5 px-3 py-2.5 hover:border-amber-500/60 hover:bg-amber-500/10 transition-colors"
               >
                 <div>
                   <div className="font-mono text-xs font-bold text-foreground group-hover:text-amber-400 transition-colors">
@@ -119,7 +119,7 @@ export function FnoBanTracker({
       )}
 
       {/* Regulatory Rules Footer */}
-      <div className="rounded-lg border border-border/80 bg-muted/30 p-4 text-xs text-muted-foreground space-y-2 font-sans">
+      <div className="rounded-none border border-border/80 bg-muted/30 p-4 text-xs text-muted-foreground space-y-2 font-sans">
         <div className="font-semibold text-foreground flex items-center gap-1.5 text-2xs uppercase tracking-wider">
           <Info className="h-3.5 w-3.5 text-primary" /> SEBI &amp; NSE Regulatory Guidelines
         </div>

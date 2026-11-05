@@ -18,7 +18,7 @@ export async function GlobalSentiment() {
 
         {result.ok ? (
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2">
+            <div className="flex items-center gap-2 rounded-none border border-border bg-surface px-3 py-2">
               <Globe2 className="h-4 w-4 text-accent" />
               <div>
                 <div className="text-2xs text-muted-foreground">Breadth</div>
@@ -40,7 +40,7 @@ export async function GlobalSentiment() {
         <Stagger className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6" gap={0.05}>
           {result.data.map((index) => (
             <StaggerItem key={index.id}>
-              <SpotlightCard className="h-full rounded-lg border border-border bg-surface p-4 transition-colors hover:border-foreground/30">
+              <SpotlightCard className="h-full rounded-none border border-border bg-surface p-4 transition-colors hover:border-foreground/30">
                 <div className="font-mono text-2xs text-muted-foreground">{index.region}</div>
                 <h3 className="mt-1 text-sm font-semibold tracking-tight">{index.name}</h3>
                 <div className="mt-3 font-mono text-lg font-semibold tabular-nums">{formatINR(index.level, 2)}</div>
@@ -49,10 +49,10 @@ export async function GlobalSentiment() {
                 </div>
 
                 {/* Centred zero, so direction reads before magnitude */}
-                <div className="relative mt-3 h-1 rounded-full bg-muted">
+                <div className="relative mt-3 h-1 rounded-none bg-muted">
                   <span className="absolute left-1/2 top-1/2 h-2.5 w-px -translate-y-1/2 bg-border" />
                   <span
-                    className={cn("absolute top-0 h-full rounded-full", index.changePct >= 0 ? "left-1/2 bg-up" : "right-1/2 bg-down")}
+                    className={cn("absolute top-0 h-full rounded-none", index.changePct >= 0 ? "left-1/2 bg-up" : "right-1/2 bg-down")}
                     style={{ width: `${Math.min(Math.abs(index.changePct) / 2, 1) * 50}%` }}
                   />
                 </div>

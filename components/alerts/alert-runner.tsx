@@ -96,7 +96,7 @@ export function AlertRunner() {
   return (
     <div aria-live="polite" className="fixed bottom-4 right-4 z-[60] flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-2">
       {toasts.map((t) => (
-        <div key={t.id} className="flex items-start gap-3 rounded-xl border border-accent/40 bg-surface-raised p-3 shadow-xl">
+        <div key={t.id} className="flex items-start gap-3 rounded-none border border-accent/40 bg-surface-raised p-3 shadow-xl">
           <Bell className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium">Alert triggered</p>

@@ -84,6 +84,60 @@
     --flat: 40 85% 60%;
   }
 
+  /* Ultra-Contrast Institutional Mode: Pitch charcoal background, crisp 1px borders, maximum luminance contrast */
+  .dark.ultra-contrast,
+  [data-contrast="ultra"] .dark,
+  .dark[data-contrast="ultra"],
+  [data-contrast="ultra"] {
+    --background: 220 18% 3.5%;
+    --foreground: 80 12% 96%;
+
+    --surface: 220 16% 5.5%;
+    --surface-muted: 220 14% 8%;
+    --surface-raised: 220 12% 10%;
+
+    --muted: 220 10% 12%;
+    --muted-foreground: 100 5% 68%;
+
+    --border: 220 12% 18%;
+    --input: 220 12% 24%;
+    --ring: 211 85% 72%;
+
+    --accent: 211 88% 74%;
+    --accent-foreground: 220 20% 4%;
+
+    --gold: 41 95% 64%;
+    --up: 150 65% 54%;
+    --down: 357 90% 72%;
+    --flat: 40 90% 62%;
+  }
+
+  @keyframes tick-flash-up {
+    0% {
+      background-color: hsl(var(--up) / 0.35);
+    }
+    100% {
+      background-color: transparent;
+    }
+  }
+
+  @keyframes tick-flash-down {
+    0% {
+      background-color: hsl(var(--down) / 0.35);
+    }
+    100% {
+      background-color: transparent;
+    }
+  }
+
+  .animate-tick-up {
+    animation: tick-flash-up 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  }
+
+  .animate-tick-down {
+    animation: tick-flash-down 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  }
+
   * {
     @apply border-border;
   }

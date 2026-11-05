@@ -67,7 +67,7 @@ export function RegimeCard({ regime }: { regime: ApiRegime }) {
           </span>
         </div>
 
-        <div className="mt-2 flex h-7 overflow-hidden rounded-md border border-border">
+        <div className="mt-2 flex h-7 overflow-hidden rounded-none border border-border">
           <div
             className="flex items-center justify-center bg-up/20 font-mono text-2xs font-medium text-up"
             style={{ width: `${lowPct}%` }}

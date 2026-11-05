@@ -13,7 +13,7 @@ const POLL_MS = 2500;
 const ACTIVE = ["QUEUED", "RUNNING"];
 
 const BTN =
-  "inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-sm hover:bg-surface-muted";
+  "inline-flex h-9 items-center gap-1.5 rounded-none border border-border bg-surface px-3 text-sm hover:bg-surface-muted";
 
 function elapsed(from: string | null, now: number): string {
   if (!from) return "0:00";
@@ -117,7 +117,7 @@ export function RunView({ initial }: { initial: AnalyzerRun }) {
       {active ? <RunProgress progress={run.progress} elapsed={elapsed(run.startedAt ?? run.createdAt, now)} logs={log} onCancel={cancel} pollError={pollError} /> : null}
 
       {run.status === "FAILED" || run.status === "CANCELLED" ? (
-        <section className="mt-8 rounded-xl border border-down/40 bg-down/10 p-5">
+        <section className="mt-8 rounded-none border border-down/40 bg-down/10 p-5">
           <p className="text-sm font-semibold text-down">
             {run.status === "CANCELLED" ? "This run was cancelled." : "The analysis did not finish."}
           </p>
@@ -128,7 +128,7 @@ export function RunView({ initial }: { initial: AnalyzerRun }) {
           {log.length > 0 ? (
             <details className="mt-4">
               <summary className="cursor-pointer text-2xs text-muted-foreground">Engine log</summary>
-              <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-lg border border-border bg-background p-3 font-mono text-2xs text-muted-foreground">
+              <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-none border border-border bg-background p-3 font-mono text-2xs text-muted-foreground">
                 {log.join("\n")}
               </pre>
             </details>
@@ -139,7 +139,7 @@ export function RunView({ initial }: { initial: AnalyzerRun }) {
       {run.status === "COMPLETED" ? (
         <div className="mt-8 space-y-10">
           {summaryError ? (
-            <p role="alert" className="rounded-xl border border-down/40 bg-down/10 px-4 py-3 text-sm text-down">
+            <p role="alert" className="rounded-none border border-down/40 bg-down/10 px-4 py-3 text-sm text-down">
               {summaryError}
             </p>
           ) : summary === null ? (

@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { Eyebrow } from "@/components/ui/eyebrow";
-import { getBuildUp, getFlows, getFnoBan, getIndices, getPulse } from "@/lib/api/endpoints";
-import type { ApiBuildUp, ApiFlows, ApiFnoBan, ApiIndex, ApiPulse } from "@/lib/api/types";
+import { getBuildUp, getFlows, getFnoBan, getIndices, getOptionChain, getPulse } from "@/lib/api/endpoints";
+import type { ApiBuildUp, ApiFlows, ApiFnoBan, ApiIndex, ApiOptionChain, ApiPulse } from "@/lib/api/types";
 import { LiveMarketCockpit } from "@/components/market/live-market-cockpit";
 
 export const metadata: Metadata = {
@@ -30,14 +30,16 @@ export default async function LiveMarketPage() {
   let initialBuildUp: ApiBuildUp | null = null;
   let initialFnoBan: ApiFnoBan | null = null;
   let initialFlows: ApiFlows | null = null;
+  let initialOptionChain: ApiOptionChain | null = null;
 
   try {
-    const [pulseRes, indicesRes, buildupRes, fnoBanRes, flowsRes] = await Promise.all([
+    const [pulseRes, indicesRes, buildupRes, fnoBanRes, flowsRes, optionChainRes] = await Promise.all([
       getPulse("nifty500").catch(() => null),
       getIndices().catch(() => null),
       getBuildUp().catch(() => null),
       getFnoBan().catch(() => null),
       getFlows(5).catch(() => null),
+      getOptionChain("NIFTY").catch(() => null),
     ]);
 
     if (pulseRes?.ok && pulseRes.data) {
@@ -55,6 +57,9 @@ export default async function LiveMarketPage() {
     if (flowsRes?.data) {
       initialFlows = flowsRes.data;
     }
+    if (optionChainRes?.data) {
+      initialOptionChain = optionChainRes.data;
+    }
   } catch {
     // Graceful fallback
   }
@@ -69,8 +74,8 @@ export default async function LiveMarketPage() {
             <h1 className="text-balance text-3xl sm:text-4xl font-serif tracking-tight text-foreground flex items-center gap-3">
               <span>Live Market Cockpit</span>
               <span className="flex h-2.5 w-2.5 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-none bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-none h-2.5 w-2.5 bg-emerald-500"></span>
               </span>
             </h1>
             <p className="mt-1 max-w-4xl text-xs text-muted-foreground leading-relaxed">
@@ -86,6 +91,7 @@ export default async function LiveMarketPage() {
             initialBuildUp={initialBuildUp}
             initialFnoBan={initialFnoBan}
             initialFlows={initialFlows}
+            initialOptionChain={initialOptionChain}
             initialIndex="nifty500"
           />
         </div>

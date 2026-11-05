@@ -83,13 +83,13 @@ export function ResearchPanel({ symbol }: { symbol: string }) {
 
   if (error) {
     return (
-      <div role="alert" className="rounded-xl border border-down/40 bg-down/10 p-5">
+      <div role="alert" className="rounded-none border border-down/40 bg-down/10 p-5">
         <p className="text-sm font-semibold text-down">The research dossier could not be produced.</p>
         <p className="mt-2 break-words font-mono text-2xs text-foreground/80">{error}</p>
         <button
           type="button"
           onClick={() => void start()}
-          className="mt-4 inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-sm hover:bg-surface-muted"
+          className="mt-4 inline-flex h-9 items-center gap-1.5 rounded-none border border-border bg-surface px-3 text-sm hover:bg-surface-muted"
         >
           <RotateCw className="h-3.5 w-3.5" /> Try again
         </button>
@@ -99,7 +99,7 @@ export function ResearchPanel({ symbol }: { symbol: string }) {
 
   if (run && (run.status === "FAILED" || run.status === "CANCELLED")) {
     return (
-      <div role="alert" className="rounded-xl border border-down/40 bg-down/10 p-5">
+      <div role="alert" className="rounded-none border border-down/40 bg-down/10 p-5">
         <p className="text-sm font-semibold text-down">The analysis did not finish for {symbol}.</p>
         {run.error ? <p className="mt-2 break-words font-mono text-2xs text-foreground/80">{run.error}</p> : null}
         <p className="mt-2 text-2xs text-muted-foreground">
@@ -108,7 +108,7 @@ export function ResearchPanel({ symbol }: { symbol: string }) {
         <button
           type="button"
           onClick={() => void start()}
-          className="mt-4 inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-sm hover:bg-surface-muted"
+          className="mt-4 inline-flex h-9 items-center gap-1.5 rounded-none border border-border bg-surface px-3 text-sm hover:bg-surface-muted"
         >
           <RotateCw className="h-3.5 w-3.5" /> Check again
         </button>
@@ -119,7 +119,7 @@ export function ResearchPanel({ symbol }: { symbol: string }) {
   if (!summary || summary.kind !== "listed") {
     const live = run?.status === "QUEUED" || run?.status === "RUNNING";
     return (
-      <section className="rounded-xl border border-border bg-surface p-5" aria-live="polite">
+      <section className="rounded-none border border-border bg-surface p-5" aria-live="polite">
         <div className="flex items-center gap-3">
           <Loader2 className="h-5 w-5 animate-spin text-accent" />
           <div>
@@ -137,7 +137,7 @@ export function ResearchPanel({ symbol }: { symbol: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-none border border-border bg-surface px-4 py-3">
         <p className="text-2xs text-muted-foreground">
           <span className="font-mono uppercase tracking-wider text-accent">Quantitative snapshot</span>{" "}
           · {summary.start} → {summary.end}. Built from prices, filings and macro data only. No news is analysed, so the event-study
@@ -145,7 +145,7 @@ export function ResearchPanel({ symbol }: { symbol: string }) {
         </p>
         <Link
           href="/analyzer"
-          className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border px-3 text-2xs hover:bg-surface-muted"
+          className="inline-flex h-8 items-center gap-1.5 rounded-none border border-border px-3 text-2xs hover:bg-surface-muted"
         >
           <FlaskConical className="h-3.5 w-3.5" /> Run the event-impact analysis
         </Link>

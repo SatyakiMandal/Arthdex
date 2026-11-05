@@ -83,7 +83,7 @@ export function Bullets({ items }: { items: (string | null | undefined)[] }) {
     <ul className="space-y-1.5 p-3 text-[0.8125rem] text-muted-foreground">
       {list.map((t, i) => (
         <li key={i} className="flex gap-2">
-          <span aria-hidden className="mt-2 h-1 w-1 shrink-0 rounded-full bg-accent" />
+          <span aria-hidden className="mt-2 h-1 w-1 shrink-0 rounded-none bg-accent" />
           <span>{t}</span>
         </li>
       ))}

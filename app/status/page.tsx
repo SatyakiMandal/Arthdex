@@ -59,13 +59,13 @@ export default async function StatusPage() {
           <>
             <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
               <span className="inline-flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-up" aria-hidden />
+                <span className="h-2 w-2 rounded-none bg-up" aria-hidden />
                 Data service running
               </span>
               <span className="font-mono text-2xs">up for {uptime(result.data.uptimeSeconds)}</span>
             </p>
 
-            <div className="mt-6 overflow-hidden rounded-lg border border-border bg-surface">
+            <div className="mt-6 overflow-hidden rounded-none border border-border bg-surface">
               <ul className="divide-y divide-border/60">
                 {result.data.feeds.map((f) => {
                   const s = STATE[f.state];
@@ -77,7 +77,7 @@ export default async function StatusPage() {
                       </div>
                       <div className="text-right">
                         <p className={cn("inline-flex items-center gap-2 text-sm font-medium", s.text)}>
-                          <span className={cn("h-2 w-2 rounded-full", s.dot)} />
+                          <span className={cn("h-2 w-2 rounded-none", s.dot)} />
                           {s.label}
                         </p>
                         <p className="font-mono text-2xs text-muted-foreground">
@@ -129,7 +129,7 @@ function Watchdog({ health }: { health: FeedHealth }) {
       {open.length > 0 ? (
         <div className="mt-4 space-y-2">
           {open.map((i) => (
-            <div key={i.feed} className={cn("rounded-lg border px-4 py-3", i.critical ? "border-down/30 bg-down/5" : "border-flat/30 bg-flat/5")}>
+            <div key={i.feed} className={cn("rounded-none border px-4 py-3", i.critical ? "border-down/30 bg-down/5" : "border-flat/30 bg-flat/5")}>
               <p className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
                 <span className="font-medium">{i.feed}</span>
                 <span className="font-mono text-2xs text-muted-foreground">open since {when(i.firstSeen)}</span>
@@ -144,7 +144,7 @@ function Watchdog({ health }: { health: FeedHealth }) {
       ) : null}
 
       {health.results.length > 0 ? (
-        <div className="mt-5 grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2">
+        <div className="mt-5 grid grid-cols-1 gap-px overflow-hidden rounded-none border border-border bg-border sm:grid-cols-2">
           {health.results.map((r) => (
             <div key={r.feed} className="flex items-baseline justify-between gap-3 bg-surface px-4 py-2 text-sm">
               <span className={cn(!r.ok && "font-medium text-down")}>{r.feed}</span>

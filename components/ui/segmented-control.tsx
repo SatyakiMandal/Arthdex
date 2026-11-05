@@ -29,7 +29,7 @@ export function SegmentedControl<T extends string>({
   return (
     <div
       role="tablist"
-      className={cn("inline-flex items-center gap-0.5 rounded-lg border border-border bg-surface-muted p-0.5", className)}
+      className={cn("inline-flex items-center gap-0.5 rounded-none border border-border bg-surface-muted p-0.5", className)}
     >
       {options.map((opt) => {
         const active = opt.id === value;
@@ -41,7 +41,7 @@ export function SegmentedControl<T extends string>({
             aria-selected={active}
             onClick={() => onChange(opt.id)}
             className={cn(
-              "relative rounded-md px-3 py-1 text-xs font-medium transition-colors",
+              "relative rounded-none px-2.5 py-1 font-mono text-2xs font-medium transition-colors duration-150",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
             )}
@@ -49,7 +49,7 @@ export function SegmentedControl<T extends string>({
             {active ? (
               <motion.span
                 layoutId={layoutGroupId}
-                className="absolute inset-0 rounded-md border border-border bg-surface shadow-sm"
+                className="absolute inset-0 rounded-none border border-border bg-surface shadow-xs"
                 transition={{ type: "spring", stiffness: 380, damping: 32 }}
               />
             ) : null}

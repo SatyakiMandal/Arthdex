@@ -12,9 +12,9 @@ export default function RootGlobalError({
   return (
     <html lang="en">
       <body className="flex min-h-screen items-center justify-center bg-neutral-950 px-4 py-12 text-neutral-100 antialiased">
-        <div className="w-full max-w-lg rounded-2xl border border-red-500/40 bg-neutral-900 p-6 shadow-2xl">
+        <div className="w-full max-w-lg rounded-none border border-red-500/40 bg-neutral-900 p-6 shadow-2xl">
           <div className="flex items-start gap-3">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-red-500/30 bg-red-500/10 text-red-400">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-none border border-red-500/30 bg-red-500/10 text-red-400">
               <AlertTriangle className="h-4 w-4" />
             </span>
             <div className="min-w-0 flex-1">
@@ -32,7 +32,7 @@ export default function RootGlobalError({
             <button
               type="button"
               onClick={() => reset()}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-amber-500 px-3.5 text-xs font-medium text-neutral-950 hover:bg-amber-400"
+              className="inline-flex h-9 items-center gap-1.5 rounded-none bg-amber-500 px-3.5 text-xs font-medium text-neutral-950 hover:bg-amber-400"
             >
               <RotateCcw className="h-3.5 w-3.5" />
               Retry

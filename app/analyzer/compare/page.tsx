@@ -19,7 +19,7 @@ const okId = (v?: string) => !!v && /^[A-Za-z0-9._-]+$/.test(v);
 
 function Notice({ children }: { children: React.ReactNode }) {
   return (
-    <p role="alert" className="mt-8 rounded-xl border border-flat/40 bg-flat/[0.07] px-4 py-3 text-sm">
+    <p role="alert" className="mt-8 rounded-none border border-flat/40 bg-flat/[0.07] px-4 py-3 text-sm">
       {children}
     </p>
   );
@@ -27,7 +27,7 @@ function Notice({ children }: { children: React.ReactNode }) {
 
 function Side({ run, tone }: { run: AnalyzerRun; tone: "a" | "b" }) {
   return (
-    <div className={`min-w-0 rounded-2xl border bg-surface p-4 ${tone === "a" ? "border-accent/40" : "border-flat/40"}`}>
+    <div className={`min-w-0 rounded-none border bg-surface p-4 ${tone === "a" ? "border-accent/40" : "border-flat/40"}`}>
       <p className={`font-mono text-2xs ${tone === "a" ? "text-accent" : "text-flat"}`}>{tone === "a" ? "Company A" : "Company B"}</p>
       <h2 className="mt-1 truncate text-lg font-semibold tracking-tight">{run.company}</h2>
       <p className="mt-0.5 font-mono text-2xs text-muted-foreground">

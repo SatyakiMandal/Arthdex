@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import {
   Activity,
   ArrowDownRight,
@@ -15,7 +15,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { ApiBuildUp, ApiFlows, ApiFnoBan, ApiIndex, ApiPulse } from "@/lib/api/types";
+import type { ApiBuildUp, ApiFlows, ApiFnoBan, ApiIndex, ApiOptionChain, ApiPulse } from "@/lib/api/types";
 import { LiveVolumeProfile } from "./live-volume-profile";
 import { MacroMarketRadar } from "./macro-market-radar";
 
@@ -25,6 +25,7 @@ interface LiveMarketCockpitProps {
   initialBuildUp?: ApiBuildUp | null;
   initialFnoBan?: ApiFnoBan | null;
   initialFlows?: ApiFlows | null;
+  initialOptionChain?: ApiOptionChain | null;
   initialIndex?: string;
 }
 
@@ -90,6 +91,7 @@ export function LiveMarketCockpit({
   initialBuildUp = null,
   initialFnoBan = null,
   initialFlows = null,
+  initialOptionChain = null,
   initialIndex = "nifty500",
 }: LiveMarketCockpitProps) {
   const [pulse, setPulse] = useState<ApiPulse>(initialPulse);
@@ -97,12 +99,24 @@ export function LiveMarketCockpit({
   const [buildup, setBuildup] = useState<ApiBuildUp | null>(initialBuildUp);
   const [fnoBan, setFnoBan] = useState<ApiFnoBan | null>(initialFnoBan);
   const [flows, setFlows] = useState<ApiFlows | null>(initialFlows);
+  const [optionChain, setOptionChain] = useState<ApiOptionChain | null>(initialOptionChain);
+  const [derivSymbol, setDerivSymbol] = useState<string>("NIFTY");
   const [currentIndex, setCurrentIndex] = useState<string>(initialIndex);
   const [, startTransition] = useTransition();
   const [loading, setLoading] = useState<boolean>(false);
-  const [refreshInterval, setRefreshInterval] = useState<number>(15);
-  const [countdown, setCountdown] = useState<number>(15);
+  const [refreshInterval, setRefreshInterval] = useState<number>(5);
+  const [countdown, setCountdown] = useState<number>(5);
   const [marketStatus, setMarketStatus] = useState(getMarketSession());
+  const prevPricesRef = useRef<Map<string, number>>(new Map());
+  const [priceTicks, setPriceTicks] = useState<Map<string, "up" | "down">>(new Map());
+  const [lastSyncTime, setLastSyncTime] = useState<string>(() =>
+    new Date().toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+    }),
+  );
 
   // Master Cockpit View Switcher
   const [cockpitView, setCockpitView] = useState<"radar" | "volume_profile">("radar");
@@ -120,17 +134,42 @@ export function LiveMarketCockpit({
   const refreshData = useCallback(async (idx = currentIndex) => {
     setLoading(true);
     try {
-      const [pulseRes, indicesRes, buildupRes, fnoBanRes, flowsRes] = await Promise.all([
+      const [pulseRes, indicesRes, buildupRes, fnoBanRes, flowsRes, chainRes] = await Promise.all([
         fetch(`/api/pulse?index=${encodeURIComponent(idx)}`, { cache: "no-store" }),
         fetch("/api/indices", { cache: "no-store" }),
         fetch("/api/derivatives/buildup", { cache: "no-store" }),
         fetch("/api/derivatives/fno-ban", { cache: "no-store" }),
         fetch("/api/flows?days=5", { cache: "no-store" }),
+        fetch(`/api/derivatives/chain?symbol=${encodeURIComponent(derivSymbol)}`, { cache: "no-store" }),
       ]);
 
       if (pulseRes.ok) {
         const json = await pulseRes.json();
-        if (json.data) setPulse(json.data);
+        if (json.data) {
+          if (json.data.stocks) {
+            const newTicks = new Map<string, "up" | "down">();
+            json.data.stocks.forEach((s: any) => {
+              const prev = prevPricesRef.current.get(s.symbol);
+              if (prev !== undefined && s.last !== prev) {
+                newTicks.set(s.symbol, s.last > prev ? "up" : "down");
+              }
+              prevPricesRef.current.set(s.symbol, s.last);
+            });
+            if (newTicks.size > 0) {
+              setPriceTicks(newTicks);
+              setTimeout(() => setPriceTicks(new Map()), 1200);
+            }
+          }
+          setPulse(json.data);
+          setLastSyncTime(
+            new Date().toLocaleTimeString("en-IN", {
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+              hour12: true,
+            }),
+          );
+        }
       }
       if (indicesRes.ok) {
         const json = await indicesRes.json();
@@ -148,13 +187,17 @@ export function LiveMarketCockpit({
         const json = await flowsRes.json();
         if (json.data) setFlows(json.data);
       }
+      if (chainRes.ok) {
+        const json = await chainRes.json();
+        if (json.data) setOptionChain(json.data);
+      }
     } catch {
       // Retain active state
     } finally {
       setLoading(false);
       setCountdown(refreshInterval);
     }
-  }, [currentIndex, refreshInterval]);
+  }, [currentIndex, refreshInterval, derivSymbol]);
 
   // Auto-refresh countdown loop
   useEffect(() => {
@@ -357,6 +400,22 @@ export function LiveMarketCockpit({
             buildup={buildup}
             fnoBan={fnoBan}
             flows={flows}
+            optionChain={optionChain}
+            priceTicks={priceTicks}
+            lastSyncTime={lastSyncTime}
+            countdown={countdown}
+            isSyncing={loading}
+            onManualSync={() => refreshData()}
+            derivSymbol={derivSymbol}
+            onDerivSymbolChange={(sym) => {
+              setDerivSymbol(sym);
+              void fetch(`/api/derivatives/chain?symbol=${encodeURIComponent(sym)}`, { cache: "no-store" })
+                .then((r) => r.json())
+                .then((j) => {
+                  if (j.data) setOptionChain(j.data);
+                })
+                .catch(() => {});
+            }}
             currentIndex={currentIndex}
             onUniverseChange={handleUniverseChange}
             onSelectStock={handleOpenVolumeProfile}

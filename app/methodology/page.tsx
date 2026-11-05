@@ -71,7 +71,7 @@ export default function MethodologyPage() {
           <h2 className="flex items-center gap-2 text-xl font-semibold tracking-tight">
             <Database className="h-5 w-5 text-accent" /> Data sources
           </h2>
-          <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-surface">
+          <div className="mt-4 overflow-hidden rounded-none border border-border bg-surface">
             <table className="w-full text-sm">
               <thead className="text-2xs text-muted-foreground">
                 <tr className="border-b border-border bg-surface-muted/40">
@@ -102,7 +102,7 @@ export default function MethodologyPage() {
           </h2>
           <dl className="mt-4 grid gap-4 sm:grid-cols-2">
             {MODELS.map((m) => (
-              <div key={m.title} className="rounded-2xl border border-border bg-surface p-5">
+              <div key={m.title} className="rounded-none border border-border bg-surface p-5">
                 <dt className="text-sm font-semibold tracking-tight">{m.title}</dt>
                 <dd className="mt-2 text-sm leading-relaxed text-muted-foreground">{m.body}</dd>
               </div>
@@ -116,7 +116,7 @@ export default function MethodologyPage() {
           </h2>
           <ul className="mt-4 space-y-2.5">
             {NOT_CLAIMED.map((t) => (
-              <li key={t} className="rounded-xl border border-border bg-surface px-4 py-3 text-sm text-muted-foreground">
+              <li key={t} className="rounded-none border border-border bg-surface px-4 py-3 text-sm text-muted-foreground">
                 {t}
               </li>
             ))}

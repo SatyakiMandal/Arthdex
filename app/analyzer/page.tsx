@@ -45,13 +45,13 @@ export default async function AnalyzerPage() {
         {models ? <ModelNotice status={models} /> : null}
 
         <div className="mt-8">
-          <Suspense fallback={<div className="h-56 animate-pulse rounded-xl border border-border bg-surface" />}>
+          <Suspense fallback={<div className="h-56 animate-pulse rounded-none border border-border bg-surface" />}>
             <Launcher />
           </Suspense>
         </div>
 
         {mine === null && samples === null ? (
-          <p role="alert" className="mt-8 rounded-xl border border-down/40 bg-down/10 px-4 py-3 text-sm text-down">
+          <p role="alert" className="mt-8 rounded-none border border-down/40 bg-down/10 px-4 py-3 text-sm text-down">
             The data service is not reachable, so runs cannot be started or listed.
           </p>
         ) : null}
@@ -116,5 +116,5 @@ function ModelNotice({ status }: { status: ModelStatus }) {
 
 function Note({ tone, children }: { tone: "up" | "flat"; children: React.ReactNode }) {
   const style = tone === "up" ? "border-up/30 bg-up/5 text-muted-foreground" : "border-flat/40 bg-flat/10 text-foreground";
-  return <p className={`mt-6 max-w-3xl rounded-xl border px-4 py-2.5 text-2xs ${style}`}>{children}</p>;
+  return <p className={`mt-6 max-w-3xl rounded-none border px-4 py-2.5 text-2xs ${style}`}>{children}</p>;
 }

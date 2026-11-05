@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import type { AnalyzerRun } from "@/types/analyzer";
 
 const BTN =
-  "inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-sm transition-all hover:bg-surface-muted active:scale-[0.98] disabled:opacity-50";
+  "inline-flex h-9 items-center gap-1.5 rounded-none border border-border bg-surface px-3 text-sm transition-all hover:bg-surface-muted active:scale-[0.98] disabled:opacity-50";
 
 interface Candidate {
   key: string;
@@ -209,7 +209,7 @@ export function CompareMenu({ run }: { run: AnalyzerRun }) {
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-full z-30 mt-1.5 w-[22rem] overflow-hidden rounded-xl border border-border bg-surface-raised shadow-xl sm:w-96">
+        <div className="absolute right-0 top-full z-30 mt-1.5 w-[22rem] overflow-hidden rounded-none border border-border bg-surface-raised shadow-xl sm:w-96">
           <div className="border-b border-border p-2">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -219,7 +219,7 @@ export function CompareMenu({ run }: { run: AnalyzerRun }) {
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={`Search any ${run.kind} company`}
                 aria-label="Search for a company to compare with"
-                className="h-9 w-full rounded-lg border border-border bg-background pl-9 pr-8 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-accent"
+                className="h-9 w-full rounded-none border border-border bg-background pl-9 pr-8 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-accent"
               />
               {searching ? <Loader2 className="absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin text-accent" /> : null}
             </div>
@@ -283,7 +283,7 @@ function Group({
             type="button"
             disabled={busy !== null}
             onClick={() => onPick(c)}
-            className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-surface-muted disabled:opacity-60"
+            className="flex w-full items-center justify-between gap-3 rounded-none px-3 py-2 text-left transition-colors hover:bg-surface-muted disabled:opacity-60"
           >
             <span className="min-w-0">
               <span className="block truncate text-sm">{c.name}</span>
@@ -292,11 +292,11 @@ function Group({
             {busy === c.key ? (
               <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-accent" />
             ) : c.runId ? (
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-up/40 bg-up/10 px-2 py-0.5 text-2xs text-up">
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-none border border-up/40 bg-up/10 px-2 py-0.5 text-2xs text-up">
                 <CheckCircle2 className="h-3 w-3" /> Analysed
               </span>
             ) : (
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border px-2 py-0.5 text-2xs text-muted-foreground">
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-none border border-border px-2 py-0.5 text-2xs text-muted-foreground">
                 <Play className="h-3 w-3" /> Analyse
               </span>
             )}

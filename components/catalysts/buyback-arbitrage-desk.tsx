@@ -19,7 +19,7 @@ export function BuybackArbitrageDesk({
   return (
     <div className="space-y-6">
       {/* Simulation Notice */}
-      <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs text-muted-foreground flex items-start gap-2.5">
+      <div className="rounded-none border border-primary/30 bg-primary/5 p-2.5 text-xs text-muted-foreground flex items-start gap-2.5">
         <Info className="h-4 w-4 shrink-0 text-primary mt-0.5" />
         <div className="space-y-0.5">
           <span className="font-semibold text-foreground text-2xs uppercase tracking-wider">
@@ -47,7 +47,7 @@ export function BuybackArbitrageDesk({
       </div>
 
       {/* Buybacks Overview Table */}
-      <div className="overflow-x-auto rounded-lg border border-border bg-card">
+      <div className="overflow-x-auto rounded-none border border-border bg-card">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="border-b border-border bg-muted/40 text-2xs text-muted-foreground uppercase tracking-wider">
@@ -154,7 +154,7 @@ export function BuybackArbitrageDesk({
 
       {/* Selected Buyback Retail Arbitrage Simulation (₹2,00,000 Allocation) */}
       {activeBuyback && activeBuyback.arbitrageSimulation && (
-        <div className="rounded-xl border border-primary/40 bg-card p-5 space-y-4">
+        <div className="rounded-none border border-primary/40 bg-card p-4 space-y-3.5">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3">
             <div>
               <div className="flex items-center gap-2">
@@ -179,7 +179,7 @@ export function BuybackArbitrageDesk({
             {activeBuyback.arbitrageSimulation.scenarios.map((sc, i) => (
               <div
                 key={i}
-                className="rounded-lg border border-border bg-muted/20 p-4 space-y-3"
+                className="rounded-none border border-border bg-muted/20 p-3.5 space-y-2.5"
               >
                 <div className="flex items-center justify-between">
                   <span className="text-2xs font-semibold uppercase text-primary tracking-wider">
@@ -227,7 +227,7 @@ export function BuybackArbitrageDesk({
       )}
 
       {/* Legal & Regulatory notes */}
-      <div className="rounded-lg border border-border/80 bg-muted/20 p-3.5 text-2xs text-muted-foreground space-y-1 font-sans">
+      <div className="rounded-none border border-border/80 bg-muted/20 p-3 text-2xs text-muted-foreground space-y-1 font-sans">
         <div className="font-semibold text-foreground flex items-center gap-1.5 text-2xs uppercase tracking-wider">
           <HelpCircle className="h-3.5 w-3.5 text-primary" /> Key Indian Buyback Regulations
         </div>

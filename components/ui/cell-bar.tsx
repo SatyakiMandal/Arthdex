@@ -31,8 +31,8 @@ export function CellBar({
   }[tone];
 
   return (
-    <div className={cn("relative ml-auto flex h-7 min-w-[5.5rem] items-center justify-end overflow-hidden rounded-md px-2", className)}>
-      <span className="absolute inset-y-0 right-0 rounded-md transition-[width] duration-500" style={{ width: `${pct}%`, background: color }} aria-hidden />
+    <div className={cn("relative ml-auto flex h-6 min-w-[5rem] items-center justify-end overflow-hidden rounded-none px-1.5 text-2xs", className)}>
+      <span className="absolute inset-y-0 right-0 rounded-none transition-[width] duration-300" style={{ width: `${pct}%`, background: color }} aria-hidden />
       {markers?.map((m) => (
         <span key={m} className="absolute inset-y-1 w-px bg-muted-foreground/40" style={{ right: `${100 - Math.min(100, (m / max) * 100)}%` }} aria-hidden />
       ))}

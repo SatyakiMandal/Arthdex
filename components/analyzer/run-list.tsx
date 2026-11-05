@@ -19,7 +19,7 @@ export function RunStatusPill({ status }: { status: RunStatus }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full border px-2 py-0.5 font-mono text-2xs uppercase tracking-wider",
+        "inline-flex items-center rounded-none border px-2 py-0.5 font-mono text-2xs uppercase tracking-wider",
         TONE[status],
       )}
     >
@@ -62,7 +62,7 @@ export function RunList({
 
   if (runs.length === 0) {
     return (
-      <p className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
+      <p className="rounded-none border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
         {empty}
       </p>
     );
@@ -78,14 +78,14 @@ export function RunList({
             type="button"
             disabled={busy}
             onClick={() => call("/api/analyzer/runs/clear-unsuccessful", "POST")}
-            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border px-3 text-2xs text-muted-foreground hover:bg-surface-muted hover:text-foreground disabled:opacity-50"
+            className="inline-flex h-8 items-center gap-1.5 rounded-none border border-border px-3 text-2xs text-muted-foreground hover:bg-surface-muted hover:text-foreground disabled:opacity-50"
           >
             <Trash2 className="h-3 w-3" /> Clear {unsuccessful} failed &amp; cancelled
           </button>
         </div>
       ) : null}
       {error ? (
-        <p role="alert" className="mb-3 rounded-lg border border-down/40 bg-down/10 px-3 py-2 text-2xs text-down">
+        <p role="alert" className="mb-3 rounded-none border border-down/40 bg-down/10 px-3 py-2 text-2xs text-down">
           {error}
         </p>
       ) : null}
@@ -94,7 +94,7 @@ export function RunList({
           <li key={r.id} className="relative">
             <Link
               href={`/analyzer/${r.id}`}
-              className="group flex h-full flex-col rounded-xl border border-border bg-surface p-4 transition-colors hover:border-accent/50"
+              className="group flex h-full flex-col rounded-none border border-border bg-surface p-4 transition-colors hover:border-accent/50"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
@@ -124,14 +124,14 @@ export function RunList({
                       type="button"
                       disabled={busy}
                       onClick={() => call(`/api/analyzer/runs/${r.id}`, "DELETE")}
-                      className="h-7 rounded-md border border-down/40 bg-down/10 px-2 text-2xs font-medium text-down hover:bg-down/20 disabled:opacity-50"
+                      className="h-7 rounded-none border border-down/40 bg-down/10 px-2 text-2xs font-medium text-down hover:bg-down/20 disabled:opacity-50"
                     >
                       Delete
                     </button>
                     <button
                       type="button"
                       onClick={() => setConfirming(null)}
-                      className="h-7 rounded-md border border-border px-2 text-2xs text-muted-foreground hover:bg-surface-muted"
+                      className="h-7 rounded-none border border-border px-2 text-2xs text-muted-foreground hover:bg-surface-muted"
                     >
                       Keep
                     </button>
@@ -142,7 +142,7 @@ export function RunList({
                     aria-label={`Delete analysis of ${r.company}`}
                     title="Delete this analysis (the company's scraped news is kept)"
                     onClick={() => setConfirming(r.id)}
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:border-down/40 hover:text-down"
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-none border border-border text-muted-foreground hover:border-down/40 hover:text-down"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>

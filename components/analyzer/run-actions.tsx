@@ -7,7 +7,7 @@ import { CompareMenu } from "@/components/analyzer/compare-menu";
 import type { AnalyzerRun } from "@/types/analyzer";
 
 const BTN =
-  "inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-sm transition-all hover:bg-surface-muted active:scale-[0.98] disabled:opacity-50";
+  "inline-flex h-9 items-center gap-1.5 rounded-none border border-border bg-surface px-3 text-sm transition-all hover:bg-surface-muted active:scale-[0.98] disabled:opacity-50";
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 

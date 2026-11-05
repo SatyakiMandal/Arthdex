@@ -51,7 +51,7 @@ export function DealsView({ deals }: { deals: ApiDeals }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end gap-x-5 gap-y-4 rounded-2xl border border-border bg-surface p-4">
+      <div className="flex flex-wrap items-end gap-x-5 gap-y-4 rounded-none border border-border bg-surface p-4">
         <div>
           <span className={label}>Disclosure</span>
           <SegmentedControl options={kinds} value={kind} onChange={setKind} layoutGroupId="deals-kind" />
@@ -71,7 +71,7 @@ export function DealsView({ deals }: { deals: ApiDeals }) {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="e.g. Edelweiss, a fund name"
-              className="h-9 w-full rounded-lg border border-border bg-surface-muted pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-accent/60"
+              className="h-9 w-full rounded-none border border-border bg-surface-muted pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-accent/60"
             />
           </div>
         </div>
@@ -82,7 +82,7 @@ export function DealsView({ deals }: { deals: ApiDeals }) {
         />
       </div>
 
-      <section className="overflow-hidden rounded-2xl border border-border bg-surface">
+      <section className="overflow-hidden rounded-none border border-border bg-surface">
         <header className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border px-4 py-3">
           <h2 className="text-sm font-semibold tracking-tight">
             {rows.length} {kind} {kind === "short" ? "disclosures" : "deals"}

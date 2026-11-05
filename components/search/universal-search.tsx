@@ -221,7 +221,7 @@ export function UniversalSearch({ className }: { className?: string }) {
     >
       <div
         className={cn(
-          "flex w-full items-center gap-2 rounded-lg border bg-surface-muted px-2.5 transition-[width,colors] duration-300",
+          "flex w-full items-center gap-2 rounded-none border bg-surface-muted px-2.5 transition-[width,colors] duration-300",
           "lg:max-xl:absolute lg:max-xl:overflow-hidden lg:max-xl:right-0 lg:max-xl:top-0 lg:max-xl:z-50 lg:max-xl:cursor-text",
           open ? "border-accent/60 shadow-sm shadow-accent/10 lg:max-xl:!w-80" : "border-border lg:max-xl:!w-10",
         )}
@@ -280,7 +280,7 @@ export function UniversalSearch({ className }: { className?: string }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
             transition={{ duration: 0.15 }}
-            className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 lg:max-xl:left-auto lg:max-xl:w-80 overflow-hidden rounded-lg border border-border bg-surface-raised shadow-xl"
+            className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 lg:max-xl:left-auto lg:max-xl:w-80 overflow-hidden rounded-none border border-border bg-surface-raised shadow-xl"
           >
             {error ? (
               <p className="px-3 py-4 text-2xs text-down">{error}</p>

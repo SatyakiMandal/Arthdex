@@ -107,7 +107,7 @@ export function CompanyComparisonMatrix({
             <button
               key={preset.label}
               onClick={() => loadPreset(preset)}
-              className="rounded-full border border-border/80 bg-card/60 px-3 py-1 text-xs text-foreground transition-all hover:border-primary/50 hover:bg-muted"
+              className="rounded-none border border-border/80 bg-card/60 px-3 py-1 text-xs text-foreground transition-all hover:border-primary/50 hover:bg-muted"
             >
               {preset.label}
             </button>
@@ -117,7 +117,7 @@ export function CompanyComparisonMatrix({
         {symbols.length < 4 && !showPicker && (
           <button
             onClick={() => setShowPicker(true)}
-            className="flex items-center gap-1.5 rounded-md border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
+            className="flex items-center gap-1.5 rounded-none border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
           >
             <Plus className="h-3.5 w-3.5" /> Add Company ({symbols.length}/4)
           </button>
@@ -125,7 +125,7 @@ export function CompanyComparisonMatrix({
       </div>
 
       {showPicker && (
-        <div className="rounded-lg border border-border bg-card p-4 shadow-sm animate-in fade-in-50">
+        <div className="rounded-none border border-border bg-card p-4 shadow-sm animate-in fade-in-50">
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-xs font-semibold text-foreground">Select a Company to Compare</h4>
             <button
@@ -146,7 +146,7 @@ export function CompanyComparisonMatrix({
       )}
 
       {/* Main Comparison Matrix Grid */}
-      <div className={cn("overflow-x-auto rounded-lg border border-border bg-card", loading && "opacity-60 transition-opacity")}>
+      <div className={cn("overflow-x-auto rounded-none border border-border bg-card", loading && "opacity-60 transition-opacity")}>
         <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="border-b border-border bg-muted/40">

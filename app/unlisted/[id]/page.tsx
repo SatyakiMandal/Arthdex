@@ -74,7 +74,7 @@ function Profile({
       <header className="mt-5 flex flex-wrap items-start justify-between gap-6">
         <div className="min-w-0">
           {c.sector ? (
-            <span className="inline-flex rounded-full border border-accent/25 bg-accent/10 px-2.5 py-0.5 text-2xs font-medium text-accent">
+            <span className="inline-flex rounded-none border border-accent/25 bg-accent/10 px-2.5 py-0.5 text-2xs font-medium text-accent">
               {c.sector}
             </span>
           ) : null}
@@ -108,7 +108,7 @@ function Profile({
         <div className="space-y-5">
           <PriceHistoryChart series={c.series} />
 
-          <section className="overflow-hidden rounded-2xl border border-border bg-surface">
+          <section className="overflow-hidden rounded-none border border-border bg-surface">
             <header className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border px-4 py-3">
               <h2 className="text-sm font-semibold tracking-tight">Price revisions</h2>
               <p className="text-2xs text-muted-foreground">
@@ -147,7 +147,7 @@ function Profile({
         </div>
 
         <div className="space-y-5">
-          <section className="overflow-hidden rounded-2xl border border-border bg-surface">
+          <section className="overflow-hidden rounded-none border border-border bg-surface">
             <header className="border-b border-border px-4 py-3">
               <h2 className="text-sm font-semibold tracking-tight">Key ratios</h2>
             </header>
@@ -171,7 +171,7 @@ function Profile({
             </dl>
           </section>
 
-          <section className="rounded-2xl border border-flat/30 bg-flat/[0.06] px-4 py-3">
+          <section className="rounded-none border border-flat/30 bg-flat/[0.06] px-4 py-3">
             <h2 className="text-sm font-medium text-flat">Read this before relying on the price</h2>
             <p className="mt-1.5 text-2xs leading-relaxed text-muted-foreground">
               This is an indicative level compiled by a dealer site. It is not an exchange price and not a quote you can
@@ -206,7 +206,7 @@ function Lifecycle({ l }: { l: LifecycleData }) {
       {l.listedSymbol ? (
         <Link
           href={`/company/${l.listedSymbol}`}
-          className="group flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-up/40 bg-up/[0.07] px-4 py-3 transition-colors hover:border-up/70"
+          className="group flex flex-wrap items-center justify-between gap-3 rounded-none border border-up/40 bg-up/[0.07] px-4 py-3 transition-colors hover:border-up/70"
         >
           <span className="flex items-center gap-3">
             <TrendingUp className="h-5 w-5 text-up" />
@@ -223,7 +223,7 @@ function Lifecycle({ l }: { l: LifecycleData }) {
       {ipo ? (
         <Link
           href="/ipo"
-          className="group flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-accent/40 bg-accent/[0.07] px-4 py-3 transition-colors hover:border-accent/70"
+          className="group flex flex-wrap items-center justify-between gap-3 rounded-none border border-accent/40 bg-accent/[0.07] px-4 py-3 transition-colors hover:border-accent/70"
         >
           <span className="flex items-center gap-3">
             <Rocket className="h-5 w-5 text-accent" />

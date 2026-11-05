@@ -65,7 +65,7 @@ export function ValuationTab({ s }: { s: ListedSummary }) {
   return (
     <div className="space-y-4">
       {v.warning ? (
-        <p role="note" className="flex gap-2 rounded-xl border border-flat/30 bg-flat/5 px-3 py-2 text-[0.8125rem] text-muted-foreground">
+        <p role="note" className="flex gap-2 rounded-none border border-flat/30 bg-flat/5 px-3 py-2 text-[0.8125rem] text-muted-foreground">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-flat" />
           {String(v.warning)}
         </p>
@@ -152,8 +152,8 @@ export function ValuationTab({ s }: { s: ListedSummary }) {
                       <span className="text-muted-foreground">{String(r.Percentile).split("(")[0]}</span>
                       <span className="font-mono">{formatINR(val, 0)} <span className={deltaColor(Number(r["Margin of Safety (%)"]))}>({pct(Number(r["Margin of Safety (%)"]), 0)})</span></span>
                     </div>
-                    <div className="relative mt-1 h-2 rounded-full bg-muted">
-                      <div className="h-full rounded-full bg-accent/70" style={{ width: `${(val / mx) * 100}%` }} />
+                    <div className="relative mt-1 h-2 rounded-none bg-muted">
+                      <div className="h-full rounded-none bg-accent/70" style={{ width: `${(val / mx) * 100}%` }} />
                       {price != null ? <span className="absolute top-[-3px] h-3.5 w-0.5 bg-flat" style={{ left: `${(price / mx) * 100}%` }} title={`Current price ${formatINR(price)}`} /> : null}
                     </div>
                   </div>

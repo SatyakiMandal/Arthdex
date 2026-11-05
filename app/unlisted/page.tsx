@@ -34,7 +34,7 @@ export default async function UnlistedIndexPage() {
           {result.ok ? <FreshnessBadge meta={result.meta} /> : null}
         </div>
 
-        <div className="mt-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-200">
+        <div className="mt-6 rounded-none border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-200">
           <div className="flex items-start gap-3">
             <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
             <div className="space-y-1">

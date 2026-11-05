@@ -27,7 +27,7 @@ export function WatchButton({
       title={on ? "On your watchlist" : "Add to watchlist"}
       onClick={() => toggle(kind, id, name)}
       className={cn(
-        "inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium transition-all active:scale-95",
+        "inline-flex h-9 items-center gap-1.5 rounded-none border px-3 text-xs font-medium transition-all active:scale-95",
         on
           ? "border-flat/50 bg-flat/10 text-flat"
           : "border-border bg-surface-muted text-muted-foreground hover:border-accent/50 hover:text-foreground",

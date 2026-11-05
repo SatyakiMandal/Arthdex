@@ -1,20 +1,31 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CalendarDays, FileBarChart, Layers, Zap } from "lucide-react";
+import { CalendarDays, FileBarChart, Layers, Sparkles, Zap } from "lucide-react";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { SectionHead } from "@/components/ui/section-head";
 import { DataUnavailable, SourceLine } from "@/components/ui/data-provenance";
 import { CalendarView } from "@/components/market/calendar-view";
-import { getCalendar, getEarningsMoves, getResultsSeason } from "@/lib/api/endpoints";
+import {
+  getCalendar,
+  getEarningsMoves,
+  getResultsSeason,
+  getIndexRebalance,
+  getIpoLockins,
+  getBuybacks,
+} from "@/lib/api/endpoints";
 import type { ApiReportedResult } from "@/lib/api/types";
+import { IndexRebalanceTable } from "@/components/catalysts/index-rebalance-table";
+import { IpoLockinCalendar } from "@/components/catalysts/ipo-lockin-calendar";
+import { BuybackArbitrageDesk } from "@/components/catalysts/buyback-arbitrage-desk";
+import { FALLBACK_BUYBACKS, FALLBACK_IPOLOCKIN, FALLBACK_REBALANCE } from "@/components/catalysts/defaults";
 import { cn, deltaColor, formatINR, formatPct } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: "Earnings & Results Desk · Arthdex",
+  title: "Earnings & Catalysts Desk · Arthdex",
   description:
-    "Unified institutional earnings desk: quarterly scorecard across the Nifty 500, 30-day corporate actions and board meetings calendar, and derivatives ATM implied moves.",
+    "Unified institutional earnings & catalysts desk: quarterly scorecard across the Nifty 500, corporate actions calendar, ATM implied moves, index rebalances, and buyback arbitrage.",
 };
 
 const day = (iso: string) =>
@@ -39,11 +50,30 @@ interface PageProps {
 export default async function ResultsPage({ searchParams }: PageProps) {
   const { sort = "netProfit", tab = "scorecard" } = await searchParams;
 
+  let rebalanceData = FALLBACK_REBALANCE;
+  let lockinData = FALLBACK_IPOLOCKIN;
+  let buybackData = FALLBACK_BUYBACKS;
+
   const [res, calendarRes, movesRes] = await Promise.all([
-    getResultsSeason().catch(() => null),
-    getCalendar().catch(() => null),
-    getEarningsMoves().catch(() => null),
+    tab === "scorecard" ? getResultsSeason().catch(() => null) : Promise.resolve(null),
+    tab === "calendar" || tab === "scorecard" ? getCalendar().catch(() => null) : Promise.resolve(null),
+    tab === "implied" ? getEarningsMoves().catch(() => null) : Promise.resolve(null),
   ]);
+
+  if (tab === "catalysts") {
+    try {
+      const [rebalanceRes, lockinRes, buybackRes] = await Promise.all([
+        getIndexRebalance().catch(() => null),
+        getIpoLockins().catch(() => null),
+        getBuybacks().catch(() => null),
+      ]);
+      if (rebalanceRes?.ok && rebalanceRes.data) rebalanceData = rebalanceRes.data;
+      if (lockinRes?.ok && lockinRes.data) lockinData = lockinRes.data;
+      if (buybackRes?.ok && buybackRes.data) buybackData = buybackRes.data;
+    } catch {
+      // Graceful fallback to cached catalyst data
+    }
+  }
 
   const key = (SORTS.find((s) => s.key === sort)?.key ?? "netProfit") as keyof ApiReportedResult;
 
@@ -94,7 +124,7 @@ export default async function ResultsPage({ searchParams }: PageProps) {
             <Link
               href="/results?tab=implied"
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 font-bold uppercase tracking-wider transition-all rounded-none",
+                "flex items-center gap-1.5 px-3 py-1.5 font-bold uppercase tracking-wider transition-all duration-150 rounded-none",
                 tab === "implied"
                   ? "bg-surface text-foreground shadow-xs border border-border"
                   : "text-muted-foreground hover:text-foreground",
@@ -102,6 +132,18 @@ export default async function ResultsPage({ searchParams }: PageProps) {
             >
               <Zap className="h-3.5 w-3.5 text-accent" />
               <span>ATM Implied Moves</span>
+            </Link>
+            <Link
+              href="/results?tab=catalysts"
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 font-bold uppercase tracking-wider transition-all duration-150 rounded-none",
+                tab === "catalysts"
+                  ? "bg-surface text-foreground shadow-xs border border-border"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Sparkles className="h-3.5 w-3.5 text-gold" />
+              <span>Corporate Catalysts</span>
             </Link>
           </div>
         </div>
@@ -306,6 +348,38 @@ export default async function ResultsPage({ searchParams }: PageProps) {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* TAB 4: CORPORATE CATALYSTS */}
+        {tab === "catalysts" && (
+          <div className="mt-8 space-y-12 animate-in fade-in-50">
+            {/* Section 1: Index Rebalance Predictor */}
+            <section className="space-y-4">
+              <SectionHead
+                title="Index Rebalance Forecast"
+                note="Semi-annual rebalance forecasting for Nifty 50, Bank Nifty, and Nifty Next 50. Anticipates passive ETF flows."
+              />
+              <IndexRebalanceTable initialData={rebalanceData} />
+            </section>
+
+            {/* Section 2: IPO Lock-in Expiry Calendar */}
+            <section className="space-y-4">
+              <SectionHead
+                title="IPO Anchor & Promoter Lock-in Expiries"
+                note="Anchor 30-day, Anchor 90-day, and 1-year Pre-IPO quotas with volume-relative Supply Impact Ratios."
+              />
+              <IpoLockinCalendar initialData={lockinData} />
+            </section>
+
+            {/* Section 3: Tender Offer Buyback Arbitrage Desk */}
+            <section className="space-y-4">
+              <SectionHead
+                title="Buyback Arbitrage & Small Shareholder Quota"
+                note="SEBI 15% retail reserved tender quota under ₹2,00,000 threshold with acceptance ratio payoff curves."
+              />
+              <BuybackArbitrageDesk initialData={buybackData} />
+            </section>
           </div>
         )}
       </main>

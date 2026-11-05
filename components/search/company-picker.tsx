@@ -105,14 +105,14 @@ export function CompanyPicker({
               choose(hits[active]);
             } else if (e.key === "Escape") setOpen(false);
           }}
-          className="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-accent"
+          className="h-10 w-full rounded-none border border-border bg-background pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-accent"
         />
       </div>
       {open && hits.length > 0 ? (
         <ul
           id={`${id}-list`}
           role="listbox"
-          className="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-lg border border-border bg-surface-raised p-1 shadow-lg"
+          className="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-none border border-border bg-surface-raised p-1 shadow-lg"
         >
           {hits.map((h, i) => (
             <li
@@ -124,7 +124,7 @@ export function CompanyPicker({
                 choose(h);
               }}
               onMouseEnter={() => setActive(i)}
-              className={cn("flex cursor-pointer items-center justify-between gap-3 rounded-md px-3 py-2 text-sm", i === active && "bg-surface-muted")}
+              className={cn("flex cursor-pointer items-center justify-between gap-3 rounded-none px-3 py-2 text-sm", i === active && "bg-surface-muted")}
             >
               <span className="truncate">{h.name}</span>
               {h.kind === "unlisted" ? (

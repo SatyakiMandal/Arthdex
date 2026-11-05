@@ -29,7 +29,7 @@ export function LogCallButton({ symbol }: { symbol: string }) {
         type="button"
         onClick={log}
         disabled={state === "busy" || state === "done"}
-        className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-surface-muted px-2.5 text-xs font-medium text-muted-foreground transition-all hover:text-foreground disabled:opacity-60"
+        className="inline-flex h-8 items-center gap-1.5 rounded-none border border-border bg-surface-muted px-2.5 text-xs font-medium text-muted-foreground transition-all hover:text-foreground disabled:opacity-60"
         title="Record today's indicator call so it can be scored against Nifty later"
       >
         {state === "busy" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ClipboardCheck className="h-3.5 w-3.5" />}

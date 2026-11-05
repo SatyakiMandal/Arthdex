@@ -36,7 +36,7 @@ export function ComparePending({ runId, company }: { runId: string; company: str
   const fraction = run?.progress?.fraction ?? 0;
 
   return (
-    <section className="mt-8 rounded-2xl border border-border bg-surface p-6">
+    <section className="mt-8 rounded-none border border-border bg-surface p-6">
       {failed ? (
         <>
           <p className="text-sm font-semibold text-down">The analysis of {company} did not finish.</p>
@@ -50,8 +50,8 @@ export function ComparePending({ runId, company }: { runId: string; company: str
           <p className="mt-1 text-2xs text-muted-foreground">
             {run?.stage ?? "Starting"}. This page opens the comparison as soon as the analysis finishes; a full analysis takes several minutes.
           </p>
-          <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-muted">
-            <div className="h-full rounded-full bg-accent transition-all duration-700" style={{ width: `${Math.max(3, Math.round(fraction * 100))}%` }} />
+          <div className="mt-4 h-1.5 overflow-hidden rounded-none bg-muted">
+            <div className="h-full rounded-none bg-accent transition-all duration-700" style={{ width: `${Math.max(3, Math.round(fraction * 100))}%` }} />
           </div>
         </>
       )}

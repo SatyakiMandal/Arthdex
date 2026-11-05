@@ -27,7 +27,7 @@ export function FreshnessBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-2xs",
+        "inline-flex items-center gap-1.5 rounded-none border px-2 py-0.5 font-mono text-2xs",
         stale ? "border-flat/40 bg-flat/10 text-flat" : "border-border bg-surface-muted text-muted-foreground",
         className,
       )}
@@ -67,7 +67,7 @@ export function IllustrativeBanner({
   return (
     <div
       className={cn(
-        "flex items-start gap-2.5 rounded-xl border border-flat/40 bg-flat/[0.07] px-4 py-3",
+        "flex items-start gap-2.5 rounded-none border border-flat/40 bg-flat/[0.07] px-4 py-3",
         className,
       )}
     >
@@ -95,7 +95,7 @@ export function DataUnavailable({
   return (
     <div
       className={cn(
-        "flex items-start gap-2.5 rounded-xl border border-down/40 bg-down/[0.06] px-4 py-3",
+        "flex items-start gap-2.5 rounded-none border border-down/40 bg-down/[0.06] px-4 py-3",
         className,
       )}
     >

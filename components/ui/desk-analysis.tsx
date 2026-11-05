@@ -28,7 +28,7 @@ export function DeskAnalysis({ insights, title = "Desk analysis", className }: {
   const { headline, metrics, findings, tables, method } = insights;
 
   return (
-    <section className={cn("overflow-hidden rounded-lg border border-border bg-surface", className)}>
+    <section className={cn("overflow-hidden rounded-none border border-border bg-surface", className)}>
       <header className="flex items-start gap-3 border-b border-border/70 px-4 py-3">
         <ListChecks className="mt-0.5 h-4 w-4 shrink-0 text-accent" strokeWidth={1.75} aria-hidden />
         <div className="min-w-0">
@@ -53,7 +53,7 @@ export function DeskAnalysis({ insights, title = "Desk analysis", className }: {
         <ul className="space-y-2">
           {findings.length === 0 ? <li className="text-sm text-muted-foreground">Nothing in the data stands out enough to call out.</li> : null}
           {findings.map((f, i) => (
-            <li key={i} className={cn("flex gap-2.5 rounded-lg border px-3 py-2", TONE_BORDER[f.tone] ?? TONE_BORDER.info)}>
+            <li key={i} className={cn("flex gap-2.5 rounded-none border px-3 py-2", TONE_BORDER[f.tone] ?? TONE_BORDER.info)}>
               <span className="mt-0.5">
                 <ToneIcon tone={f.tone} />
               </span>
@@ -68,7 +68,7 @@ export function DeskAnalysis({ insights, title = "Desk analysis", className }: {
         {tables.length > 0 ? (
           <div className="space-y-3">
             {tables.map((t) => (
-              <div key={t.title} className="overflow-x-auto rounded-lg border border-border bg-surface">
+              <div key={t.title} className="overflow-x-auto rounded-none border border-border bg-surface">
                 <p className="border-b border-border px-3 py-1.5 text-2xs font-medium text-muted-foreground">{t.title}</p>
                 <table className="w-full min-w-[260px] text-left text-[0.8125rem]">
                   <thead className="text-[0.625rem] text-muted-foreground">

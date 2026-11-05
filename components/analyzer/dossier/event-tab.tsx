@@ -91,7 +91,7 @@ export function EventTab({ s }: { s: ListedSummary }) {
                                   <span className="font-mono uppercase">{(h.source ?? "").replace(/_/g, " ")}</span>
                                   {h.published ? <span className="font-mono">{h.published}</span> : null}
                                   {h.sentiment_label ? (
-                                    <span className="rounded-full border border-border px-2 py-0.5">{h.sentiment_label}</span>
+                                    <span className="rounded-none border border-border px-2 py-0.5">{h.sentiment_label}</span>
                                   ) : null}
                                 </div>
                                 {h.url ? (
@@ -136,7 +136,7 @@ export function EventTab({ s }: { s: ListedSummary }) {
                   </Td>
                   <Td>
                     <div className="flex items-center gap-2">
-                      <div className="h-1.5 w-28 overflow-hidden rounded-full bg-surface-muted">
+                      <div className="h-1.5 w-28 overflow-hidden rounded-none bg-surface-muted">
                         <div className={cn("h-full", f >= 0.99 ? "bg-up" : f >= 0.5 ? "bg-flat" : "bg-down")} style={{ width: `${f * 100}%` }} />
                       </div>
                       <span className="text-2xs text-muted-foreground">{f >= 0.99 ? "Robust" : f >= 0.5 ? "Moderate" : "Threshold-sensitive"}</span>

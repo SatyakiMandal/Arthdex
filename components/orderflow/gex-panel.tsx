@@ -24,7 +24,7 @@ const money = (m: number) => `${m < 0 ? "-" : ""}$${Math.abs(m) >= 1000 ? `${(Ma
 
 function Tile({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: "up" | "down" | "flat" }) {
   return (
-    <div className="rounded-lg border border-border bg-surface-muted/50 px-3 py-2">
+    <div className="rounded-none border border-border bg-surface-muted/50 px-3 py-2">
       <p className="text-2xs text-muted-foreground">{label}</p>
       <p className={cn("mt-0.5 font-mono text-sm font-semibold", tone === "up" && "text-up", tone === "down" && "text-down")}>{value}</p>
       {sub ? <p className="mt-0.5 text-2xs text-muted-foreground">{sub}</p> : null}
@@ -110,7 +110,7 @@ export function GexPanel({ symbol }: { symbol: string }) {
     >
       <div className="space-y-4 p-4">
         {error ? (
-          <p role="alert" className="rounded-lg border border-down/40 bg-down/10 px-3 py-2 text-sm text-down">
+          <p role="alert" className="rounded-none border border-down/40 bg-down/10 px-3 py-2 text-sm text-down">
             {error}
           </p>
         ) : null}

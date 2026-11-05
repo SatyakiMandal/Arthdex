@@ -68,7 +68,7 @@ export function AnalystsView({ data }: { data: ApiYAnalysts }) {
         title="Analyst price targets"
         subtitle={t.analysts != null ? `${t.analysts} analysts` : undefined}
         icon={Target}
-        badge={t.key ? <span className="rounded-full border border-accent/30 bg-accent/10 px-2.5 py-0.5 text-2xs font-medium text-accent">{RATING_LABEL[t.key] ?? t.key}</span> : undefined}
+        badge={t.key ? <span className="rounded-none border border-accent/30 bg-accent/10 px-2.5 py-0.5 text-2xs font-medium text-accent">{RATING_LABEL[t.key] ?? t.key}</span> : undefined}
       >
         <div className="space-y-4 p-4">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -78,7 +78,7 @@ export function AnalystsView({ data }: { data: ApiYAnalysts }) {
               ["Implied move", upside != null ? `${upside > 0 ? "+" : ""}${upside.toFixed(1)}%` : "—"],
               ["Mean rating (1 buy – 5 sell)", num(t.meanRating)],
             ].map(([k, v]) => (
-              <div key={k} className="rounded-lg border border-border bg-surface-muted/40 px-3 py-2">
+              <div key={k} className="rounded-none border border-border bg-surface-muted/40 px-3 py-2">
                 <p className="text-[0.625rem] text-muted-foreground">{k}</p>
                 <p className={cn("font-mono text-lg font-semibold tabular-nums", k === "Implied move" && upside != null && (upside >= 0 ? "text-up" : "text-down"))}>{v}</p>
               </div>
@@ -86,7 +86,7 @@ export function AnalystsView({ data }: { data: ApiYAnalysts }) {
           </div>
           {span ? (
             <div>
-              <div className="relative mt-6 h-2 rounded-full bg-gradient-to-r from-down/40 via-flat/30 to-up/40">
+              <div className="relative mt-6 h-2 rounded-none bg-gradient-to-r from-down/40 via-flat/30 to-up/40">
                 {([["Low", t.low], ["Mean", t.mean], ["High", t.high]] as const).map(([l, v]) => (
                   <span key={l} className="absolute -top-5 -translate-x-1/2 text-center text-2xs text-muted-foreground" style={{ left: `${pos(v) ?? 0}%` }}>
                     {l}
@@ -112,7 +112,7 @@ export function AnalystsView({ data }: { data: ApiYAnalysts }) {
                 return (
                   <div key={r.period}>
                     <p className="mb-1 text-2xs text-muted-foreground">{r.period === "0m" ? "This month" : r.period.replace("-", "") + " ago"}</p>
-                    <div className="flex h-5 overflow-hidden rounded-md">
+                    <div className="flex h-5 overflow-hidden rounded-none">
                       {REC.map(([k, label, color]) =>
                         (r[k] ?? 0) > 0 ? (
                           <span key={k} className="grid place-items-center text-[0.625rem] font-medium text-white" style={{ width: `${((r[k] ?? 0) / sum) * 100}%`, background: color }} title={`${label}: ${r[k]}`}>
@@ -127,7 +127,7 @@ export function AnalystsView({ data }: { data: ApiYAnalysts }) {
               <div className="flex flex-wrap gap-3 pt-1 text-2xs text-muted-foreground">
                 {REC.map(([k, label, color]) => (
                   <span key={k} className="inline-flex items-center gap-1">
-                    <span className="h-2 w-2 rounded-sm" style={{ background: color }} />
+                    <span className="h-2 w-2 rounded-none" style={{ background: color }} />
                     {label}
                   </span>
                 ))}

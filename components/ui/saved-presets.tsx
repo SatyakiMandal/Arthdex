@@ -51,7 +51,7 @@ export function SavedPresets<T>({
       {ready && presets.length === 0 && !naming ? <span className="text-2xs text-muted-foreground">None yet</span> : null}
 
       {presets.map((p) => (
-        <span key={p.id} className="group inline-flex items-center overflow-hidden rounded-full border border-border bg-surface-muted text-xs">
+        <span key={p.id} className="group inline-flex items-center overflow-hidden rounded-none border border-border bg-surface-muted text-xs">
           <button
             type="button"
             onClick={() => onApply(p.value)}
@@ -84,9 +84,9 @@ export function SavedPresets<T>({
             }}
             placeholder={defaultName(current)}
             aria-label="Name for this screen"
-            className="h-8 w-44 rounded-lg border border-accent/60 bg-background px-2.5 text-xs outline-none placeholder:text-muted-foreground"
+            className="h-8 w-44 rounded-none border border-accent/60 bg-background px-2.5 text-xs outline-none placeholder:text-muted-foreground font-mono"
           />
-          <button type="button" onClick={save} aria-label="Save screen" className="grid h-8 w-8 place-items-center rounded-lg bg-accent text-accent-foreground active:scale-95">
+          <button type="button" onClick={save} aria-label="Save screen" className="grid h-8 w-8 place-items-center rounded-none bg-accent text-accent-foreground active:scale-95">
             <Check className="h-3.5 w-3.5" />
           </button>
         </span>
@@ -94,7 +94,7 @@ export function SavedPresets<T>({
         <button
           type="button"
           onClick={() => setNaming(true)}
-          className="inline-flex h-8 items-center gap-1 rounded-full border border-dashed border-border px-3 text-xs text-muted-foreground transition-colors hover:border-accent/60 hover:text-accent"
+          className="inline-flex h-8 items-center gap-1 rounded-none border border-dashed border-border px-3 text-xs text-muted-foreground transition-colors hover:border-accent/60 hover:text-accent font-mono"
         >
           Save current
         </button>

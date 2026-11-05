@@ -53,11 +53,11 @@ export function WatchlistView() {
     return { item: i, price: listed?.price ?? unlisted?.price ?? null, changePct: listed?.changePct ?? null };
   });
 
-  if (!ready) return <div className="h-40 animate-pulse rounded-2xl border border-border bg-surface" />;
+  if (!ready) return <div className="h-40 animate-pulse rounded-none border border-border bg-surface" />;
 
   if (items.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-border bg-surface px-6 py-14 text-center">
+      <div className="rounded-none border border-dashed border-border bg-surface px-6 py-14 text-center">
         <Star className="mx-auto h-8 w-8 text-muted-foreground" />
         <h2 className="mt-4 text-base font-semibold">Nothing on your watchlist yet</h2>
         <p className="mx-auto mt-1.5 max-w-md text-sm text-muted-foreground">
@@ -77,7 +77,7 @@ export function WatchlistView() {
   }
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-border bg-surface">
+    <section className="overflow-hidden rounded-none border border-border bg-surface">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
         <p className="font-mono text-2xs text-muted-foreground">
           {items.length} watched
@@ -85,13 +85,13 @@ export function WatchlistView() {
           {" · refreshes every minute"}
         </p>
         <div className="flex items-center gap-2">
-          <div className="flex items-center rounded-lg border border-border bg-surface-muted p-0.5">
+          <div className="flex items-center rounded-none border border-border bg-surface-muted p-0.5">
             <button
               type="button"
               aria-pressed={view === "grid"}
               onClick={() => setView("grid")}
               title="Grid view"
-              className={cn("grid h-7 w-7 place-items-center rounded-md transition-colors", view === "grid" ? "bg-surface text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+              className={cn("grid h-7 w-7 place-items-center rounded-none transition-colors", view === "grid" ? "bg-surface text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
             >
               <LayoutGrid className="h-3.5 w-3.5" />
             </button>
@@ -100,7 +100,7 @@ export function WatchlistView() {
               aria-pressed={view === "list"}
               onClick={() => setView("list")}
               title="List view"
-              className={cn("grid h-7 w-7 place-items-center rounded-md transition-colors", view === "list" ? "bg-surface text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+              className={cn("grid h-7 w-7 place-items-center rounded-none transition-colors", view === "list" ? "bg-surface text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
             >
               <List className="h-3.5 w-3.5" />
             </button>
@@ -114,7 +114,7 @@ export function WatchlistView() {
             type="button"
             onClick={load}
             disabled={loading}
-            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-surface-muted px-2.5 text-xs font-medium text-muted-foreground transition-all hover:text-foreground active:scale-[0.98] disabled:opacity-50"
+            className="inline-flex h-8 items-center gap-1.5 rounded-none border border-border bg-surface-muted px-2.5 text-xs font-medium text-muted-foreground transition-all hover:text-foreground active:scale-[0.98] disabled:opacity-50"
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Refresh
@@ -139,7 +139,7 @@ export function WatchlistView() {
             <div
               key={`${item.kind}:${item.id}`}
               className={cn(
-                "group relative rounded-xl border p-3 transition-colors",
+                "group relative rounded-none border p-3 transition-colors",
                 changePct == null
                   ? "border-border bg-surface-muted"
                   : changePct >= 0
@@ -152,7 +152,7 @@ export function WatchlistView() {
                 aria-label={`Remove ${item.name}`}
                 title="Remove"
                 onClick={() => remove(item.kind, item.id)}
-                className="absolute right-1.5 top-1.5 grid h-6 w-6 place-items-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-down/10 hover:text-down group-hover:opacity-100"
+                className="absolute right-1.5 top-1.5 grid h-6 w-6 place-items-center rounded-none text-muted-foreground opacity-0 transition-opacity hover:bg-down/10 hover:text-down group-hover:opacity-100"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
@@ -172,7 +172,7 @@ export function WatchlistView() {
                 </span>
                 <span
                   className={cn(
-                    "shrink-0 rounded-md px-1.5 py-0.5 font-mono text-2xs font-medium tabular-nums",
+                    "shrink-0 rounded-none px-1.5 py-0.5 font-mono text-2xs font-medium tabular-nums",
                     changePct == null ? "text-muted-foreground" : changePct >= 0 ? "bg-up/15 text-up" : "bg-down/15 text-down",
                   )}
                 >
@@ -233,7 +233,7 @@ export function WatchlistView() {
                       href={`/alerts?kind=${item.kind}&target=${encodeURIComponent(item.id)}&name=${encodeURIComponent(item.name)}`}
                       aria-label={`Set an alert on ${item.name}`}
                       title="Set an alert"
-                      className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-surface-muted hover:text-accent"
+                      className="grid h-8 w-8 place-items-center rounded-none text-muted-foreground transition-colors hover:bg-surface-muted hover:text-accent"
                     >
                       <BellPlus className="h-4 w-4" />
                     </Link>
@@ -242,7 +242,7 @@ export function WatchlistView() {
                       aria-label={`Remove ${item.name}`}
                       title="Remove"
                       onClick={() => remove(item.kind, item.id)}
-                      className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-down/10 hover:text-down"
+                      className="grid h-8 w-8 place-items-center rounded-none text-muted-foreground transition-colors hover:bg-down/10 hover:text-down"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>

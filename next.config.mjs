@@ -9,6 +9,20 @@ const nextConfig = {
     // Tree-shake icon and animation barrels so a page ships only what it imports
     optimizePackageImports: ["lucide-react", "framer-motion"],
   },
+  async redirects() {
+    return [
+      {
+        source: "/deals",
+        destination: "/orderflow?tab=deals",
+        permanent: false,
+      },
+      {
+        source: "/catalysts",
+        destination: "/results?tab=catalysts",
+        permanent: false,
+      },
+    ];
+  },
   async headers() {
     return [
       {

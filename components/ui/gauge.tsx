@@ -72,10 +72,10 @@ export function ScoreBar({ score, className }: { score: number | null; className
   const s = Math.max(-100, Math.min(100, score));
   const pos = s >= 0;
   return (
-    <div className={cn("relative h-1.5 w-24 overflow-hidden rounded-full bg-muted", className)} aria-hidden>
+    <div className={cn("relative h-1.5 w-24 overflow-hidden rounded-none bg-muted", className)} aria-hidden>
       <span className="absolute inset-y-0 left-1/2 w-px bg-border" />
       <motion.span
-        className={cn("absolute inset-y-0 rounded-full", pos ? "left-1/2 bg-up" : "right-1/2 bg-down")}
+        className={cn("absolute inset-y-0 rounded-none", pos ? "left-1/2 bg-up" : "right-1/2 bg-down")}
         initial={{ width: 0 }}
         animate={{ width: `${Math.abs(s) / 2}%` }}
         transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}

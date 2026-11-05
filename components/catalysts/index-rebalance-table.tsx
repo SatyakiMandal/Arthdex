@@ -21,7 +21,7 @@ export function IndexRebalanceTable({
   return (
     <div className="space-y-4">
       {/* Modelled Forecast Disclaimer */}
-      <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs text-muted-foreground flex items-start gap-2.5">
+      <div className="rounded-none border border-primary/30 bg-primary/5 p-2.5 text-xs text-muted-foreground flex items-start gap-2.5">
         <Info className="h-4 w-4 shrink-0 text-primary mt-0.5" />
         <div className="space-y-0.5">
           <span className="font-semibold text-foreground text-2xs uppercase tracking-wider">
@@ -57,7 +57,7 @@ export function IndexRebalanceTable({
             key={idx}
             onClick={() => setSelectedIndex(idx)}
             className={cn(
-              "rounded-full px-3 py-1 text-2xs font-semibold uppercase tracking-wider transition-colors",
+              "rounded-none px-2.5 py-1 text-2xs font-mono font-semibold uppercase tracking-wider transition-colors duration-150",
               selectedIndex === idx
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -69,7 +69,7 @@ export function IndexRebalanceTable({
       </div>
 
       {/* Candidates Table */}
-      <div className="overflow-x-auto rounded-lg border border-border bg-card">
+      <div className="overflow-x-auto rounded-none border border-border bg-card">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="border-b border-border bg-muted/40 text-2xs text-muted-foreground uppercase tracking-wider">
@@ -158,7 +158,7 @@ export function IndexRebalanceTable({
       </div>
 
       {/* Rules Footnote */}
-      <div className="rounded-lg border border-border/80 bg-muted/20 p-3.5 text-2xs text-muted-foreground space-y-1 font-sans">
+      <div className="rounded-none border border-border/80 bg-muted/20 p-3 text-2xs text-muted-foreground space-y-1 font-sans">
         <div className="font-semibold text-foreground flex items-center gap-1.5 text-2xs uppercase tracking-wider">
           <Zap className="h-3.5 w-3.5 text-primary" /> NSE Indices Methodology Guide
         </div>

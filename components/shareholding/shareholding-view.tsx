@@ -121,7 +121,7 @@ function StackedHistory({ t }: { t: ShareholdingTable }) {
         <span className="font-mono text-muted-foreground">{t.labels[idx]}</span>
         {KEYS.filter((k) => t[k]).map((k) => (
           <span key={k} className="inline-flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full" style={{ background: COLORS[k] }} />
+            <span className="h-2 w-2 rounded-none" style={{ background: COLORS[k] }} />
             <span className="text-muted-foreground">{NAMES[k]}</span>
             <span className="font-mono">{fmt(t[k]?.[idx], 2)}</span>
           </span>
@@ -146,7 +146,7 @@ export function ShareholdingView({ data }: { data: ApiShareholding }) {
   return (
     <div className="space-y-4">
       {!data.pattern ? (
-        <p role="alert" className="rounded-xl border border-flat/40 bg-flat/10 px-4 py-3 text-sm">
+        <p role="alert" className="rounded-none border border-flat/40 bg-flat/10 px-4 py-3 text-sm">
           The shareholding pattern could not be loaded from screener.in. Filings-based sections below are still shown where available.
         </p>
       ) : null}
@@ -156,10 +156,10 @@ export function ShareholdingView({ data }: { data: ApiShareholding }) {
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
             {cats.map((c) => (
               <Tip key={c.key} title={MEANING[c.key]}>
-                <div className="animate-fade-up rounded-xl border border-border bg-surface px-4 py-3 transition-colors hover:border-accent/40">
+                <div className="animate-fade-up rounded-none border border-border bg-surface px-4 py-3 transition-colors hover:border-accent/40">
                   <div className="flex items-center justify-between">
                     <p className="flex items-center gap-1.5 text-2xs text-muted-foreground">
-                      <span className="h-2 w-2 rounded-full" style={{ background: COLORS[c.key] }} />
+                      <span className="h-2 w-2 rounded-none" style={{ background: COLORS[c.key] }} />
                       {c.label}
                     </p>
                     <SignalIcon s={c.signal} />
@@ -172,7 +172,7 @@ export function ShareholdingView({ data }: { data: ApiShareholding }) {
             ))}
           </div>
           {a.notes.length > 0 ? (
-            <p className="rounded-xl border border-border bg-surface px-4 py-3 text-sm text-muted-foreground">
+            <p className="rounded-none border border-border bg-surface px-4 py-3 text-sm text-muted-foreground">
               <span className="mr-2 font-mono text-2xs text-accent">Notable</span>
               {a.notes.join(" ")}
             </p>
@@ -200,13 +200,13 @@ export function ShareholdingView({ data }: { data: ApiShareholding }) {
                   <li key={c.key}>
                     <div className="flex items-center justify-between gap-3">
                       <span className="flex items-center gap-2">
-                        <span className="h-2.5 w-2.5 rounded-full" style={{ background: COLORS[c.key] }} />
+                        <span className="h-2.5 w-2.5 rounded-none" style={{ background: COLORS[c.key] }} />
                         {c.label}
                       </span>
                       <span className="font-mono">{fmt(c.latest)}</span>
                     </div>
-                    <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
-                      <div className="h-full rounded-full" style={{ width: `${Math.min(100, Math.max(0, c.latest ?? 0))}%`, background: COLORS[c.key] }} />
+                    <div className="mt-1 h-1.5 overflow-hidden rounded-none bg-muted">
+                      <div className="h-full rounded-none" style={{ width: `${Math.min(100, Math.max(0, c.latest ?? 0))}%`, background: COLORS[c.key] }} />
                     </div>
                   </li>
                 ))}
@@ -298,8 +298,8 @@ export function ShareholdingView({ data }: { data: ApiShareholding }) {
                   <span className="text-2xs text-muted-foreground">Pledged share of promoter holding</span>
                   <span className="font-mono text-xl font-semibold">{fmt(pl.pledgedPct)}</span>
                 </div>
-                <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-muted">
-                  <motion.div className={cn("h-full rounded-full", (pl.pledgedPct ?? 0) >= 20 ? "bg-down" : (pl.pledgedPct ?? 0) >= 5 ? "bg-flat" : "bg-up")} initial={{ width: 0 }} animate={{ width: `${Math.min(100, pl.pledgedPct ?? 0)}%` }} transition={{ duration: 0.9 }} />
+                <div className="mt-2 h-2.5 overflow-hidden rounded-none bg-muted">
+                  <motion.div className={cn("h-full rounded-none", (pl.pledgedPct ?? 0) >= 20 ? "bg-down" : (pl.pledgedPct ?? 0) >= 5 ? "bg-flat" : "bg-up")} initial={{ width: 0 }} animate={{ width: `${Math.min(100, pl.pledgedPct ?? 0)}%` }} transition={{ duration: 0.9 }} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm">

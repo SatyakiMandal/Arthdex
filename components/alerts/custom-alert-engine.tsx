@@ -91,12 +91,12 @@ export function CustomAlertEngine({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-muted px-3 py-1.5 text-xs font-medium transition-colors hover:border-accent/50 hover:text-accent"
+        className="inline-flex items-center gap-1.5 rounded-none border border-border bg-surface-muted px-3 py-1.5 text-xs font-medium transition-colors hover:border-accent/50 hover:text-accent"
       >
         <Bell className="h-3.5 w-3.5" />
         Alerts
         {alerts.length > 0 ? (
-          <span className="ml-1 rounded-full bg-accent/20 px-1.5 py-0.2 font-mono text-2xs text-accent">
+          <span className="ml-1 rounded-none bg-accent/20 px-1.5 py-0.2 font-mono text-2xs text-accent">
             {alerts.length}
           </span>
         ) : null}
@@ -152,7 +152,7 @@ export function CustomAlertEngine({
                         setMetricId(e.target.value);
                         setUserThreshold(null);
                       }}
-                      className="rounded-lg border border-border bg-surface-muted px-2.5 py-1.5 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="rounded-none border border-border bg-surface-muted px-2.5 py-1.5 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       {metrics.map((m) => (
                         <option key={m.id} value={m.id}>
@@ -163,7 +163,7 @@ export function CustomAlertEngine({
                   </label>
 
                   {metric?.isEvent ? (
-                    <p className="rounded-lg border border-border bg-surface-muted px-2.5 py-2 text-2xs text-muted-foreground">
+                    <p className="rounded-none border border-border bg-surface-muted px-2.5 py-2 text-2xs text-muted-foreground">
                       This is a calendar event, not a threshold. The alert fires on the declaration
                       date once the backend supplies a results calendar.
                     </p>
@@ -176,7 +176,7 @@ export function CustomAlertEngine({
                         <select
                           value={comparator}
                           onChange={(e) => setComparator(e.target.value as AlertComparator)}
-                          className="rounded-lg border border-border bg-surface-muted px-2.5 py-1.5 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          className="rounded-none border border-border bg-surface-muted px-2.5 py-1.5 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         >
                           {COMPARATORS.map((c) => (
                             <option key={c.id} value={c.id}>
@@ -195,7 +195,7 @@ export function CustomAlertEngine({
                           step="0.01"
                           value={threshold}
                           onChange={(e) => setUserThreshold(Number(e.target.value))}
-                          className="w-28 rounded-lg border border-border bg-surface-muted px-2.5 py-1.5 font-mono text-xs tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          className="w-28 rounded-none border border-border bg-surface-muted px-2.5 py-1.5 font-mono text-xs tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         />
                       </label>
                     </div>
@@ -210,7 +210,7 @@ export function CustomAlertEngine({
                   <button
                     type="button"
                     onClick={addAlert}
-                    className="mt-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-xs font-medium text-accent-foreground transition-shadow hover:shadow-md hover:shadow-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="mt-1 inline-flex items-center justify-center gap-1.5 rounded-none bg-accent px-3 py-2 text-xs font-medium text-accent-foreground transition-shadow hover:shadow-md hover:shadow-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Add alert
@@ -258,7 +258,7 @@ export function CustomAlertEngine({
                                 </p>
                                 <span
                                   className={cn(
-                                    "mt-1 inline-block rounded-full border px-2 py-0.5 font-mono text-2xs uppercase tracking-wide",
+                                    "mt-1 inline-block rounded-none border px-2 py-0.5 font-mono text-2xs uppercase tracking-wide",
                                     !a.enabled
                                       ? "border-border bg-surface-muted text-muted-foreground"
                                       : met === undefined

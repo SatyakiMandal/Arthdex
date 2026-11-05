@@ -11,9 +11,9 @@ class Settings:
     # Cache lifetimes, in seconds. Free upstream endpoints are rate-limited and
     # unofficial, so every read goes through the cache rather than hitting them
     # directly on each request.
-    quote_ttl: int = 60
-    index_ttl: int = 60
-    movers_ttl: int = 120
+    quote_ttl: int = 10
+    index_ttl: int = 10
+    movers_ttl: int = 10
     candles_ttl: int = 900
     fundamentals_ttl: int = 86_400
     ipo_ttl: int = 1_800

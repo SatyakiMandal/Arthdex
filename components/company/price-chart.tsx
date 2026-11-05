@@ -202,7 +202,7 @@ export function PriceChart({
 
   if (isEmpty) {
     return (
-      <section className="rounded-xl border border-border bg-surface p-8">
+      <section className="rounded-none border border-border bg-surface p-6">
         <p className="text-sm text-muted-foreground">
           {error ?? `No price history available for ${symbol}.`}
         </p>
@@ -211,7 +211,7 @@ export function PriceChart({
   }
 
   return (
-    <section className="rounded-xl border border-border bg-surface">
+    <section className="rounded-none border border-border bg-surface">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div className="flex items-baseline gap-3">
           <h2 className="flex items-center gap-1.5 font-sans text-sm font-semibold tracking-normal">
@@ -277,7 +277,7 @@ export function PriceChart({
             fill="none"
             stroke={lineColor}
             strokeWidth="1.75"
-            strokeLinecap="round"
+            strokeLinecap="square"
             strokeLinejoin="round"
             vectorEffect="non-scaling-stroke"
           />
@@ -337,7 +337,7 @@ export function PriceChart({
         {active ? (
           <div
             className={cn(
-              "pointer-events-none absolute top-5 z-10 min-w-[190px] rounded-lg border border-border bg-surface-raised/95 p-2.5 shadow-lg",
+              "pointer-events-none absolute top-5 z-10 min-w-[190px] rounded-none border border-border bg-surface-raised/95 p-2.5 shadow-lg",
               tooltipOnLeft ? "translate-x-[-105%]" : "translate-x-[5%]",
             )}
             style={{ left: `${(activeX / VIEW_W) * 100}%` }}

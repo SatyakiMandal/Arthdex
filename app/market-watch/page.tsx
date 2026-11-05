@@ -111,7 +111,7 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
               key={option.id}
               href={href({ universe: option.id })}
               className={cn(
-                "rounded-lg border px-3 py-1.5 text-xs transition-colors",
+                "rounded-none border px-3 py-1.5 text-xs transition-colors",
                 option.id === universe
                   ? "border-accent/50 bg-accent/10 text-accent"
                   : "border-border bg-surface-muted text-muted-foreground hover:text-foreground",
@@ -129,7 +129,7 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
               key={option.id}
               href={href({ window: option.id })}
               className={cn(
-                "rounded-lg border px-3 py-1.5 text-xs transition-colors",
+                "rounded-none border px-3 py-1.5 text-xs transition-colors",
                 option.id === activeWindow
                   ? "border-accent/50 bg-accent/10 text-accent"
                   : "border-border bg-surface-muted text-muted-foreground hover:text-foreground",
@@ -147,7 +147,7 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
               key={option.id}
               href={href({ price: option.id })}
               className={cn(
-                "rounded-lg border px-3 py-1.5 text-xs transition-colors",
+                "rounded-none border px-3 py-1.5 text-xs transition-colors",
                 option.id === band.id
                   ? "border-accent/50 bg-accent/10 text-accent"
                   : "border-border bg-surface-muted text-muted-foreground hover:text-foreground",
@@ -159,7 +159,7 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
         </div>
 
         {breadth && breadth.advances + breadth.declines > 0 ? (
-          <div className="mt-6 flex flex-wrap items-center gap-4 rounded-xl border border-border bg-surface px-4 py-3">
+          <div className="mt-6 flex flex-wrap items-center gap-4 rounded-none border border-border bg-surface px-4 py-3">
             <span className="text-2xs text-muted-foreground">
               Index constituent breadth
             </span>
@@ -253,7 +253,7 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
         ) : null}
 
         {indices.ok ? (
-          <section className="mt-6 rounded-xl border border-border bg-surface">
+          <section className="mt-6 rounded-none border border-border bg-surface">
             <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
               <h2 className="text-sm font-semibold tracking-tight">Index Levels</h2>
               <FreshnessBadge meta={indices.meta} />
@@ -333,7 +333,7 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
           </section>
         ) : null}
 
-        <section id="sector-rotation" className="mt-8 rounded-xl border border-border bg-card p-5 sm:p-6 shadow-sm scroll-mt-20">
+        <section id="sector-rotation" className="mt-8 rounded-none border border-border bg-card p-5 sm:p-6 shadow-sm scroll-mt-20">
           <SectionHead
             title="Sector Rotation (Relative Rotation Graph)"
             note="10 NSE sectors against Nifty 50 · 12-week trailing vectors"

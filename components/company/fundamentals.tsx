@@ -101,7 +101,7 @@ export function QuarterlyPnLPanel({ financials }: { financials: ApiFinancials })
   ];
 
   return (
-    <section className="rounded-xl border border-border bg-surface">
+    <section className="rounded-none border border-border bg-surface">
       <header className="flex flex-wrap items-baseline justify-between gap-3 border-b border-border px-4 py-3">
         <h3 className="font-sans text-sm font-semibold tracking-normal">Quarterly results</h3>
         <span className="font-mono text-2xs text-muted-foreground">
@@ -174,7 +174,7 @@ export function AnnualPnLPanel({ financials }: { financials: ApiFinancials }) {
   if (years.length === 0) return null;
 
   return (
-    <section className="rounded-xl border border-border bg-surface">
+    <section className="rounded-none border border-border bg-surface">
       <header className="flex items-baseline justify-between gap-3 border-b border-border px-4 py-3">
         <h3 className="font-sans text-sm font-semibold tracking-normal">Annual results</h3>
         <span className="font-mono text-2xs text-muted-foreground">
@@ -227,7 +227,7 @@ export function BalanceSheetPanel({ financials }: { financials: ApiFinancials })
   if (rows.length === 0) return null;
 
   return (
-    <section className="rounded-xl border border-border bg-surface">
+    <section className="rounded-none border border-border bg-surface">
       <header className="flex items-baseline justify-between gap-3 border-b border-border px-4 py-3">
         <h3 className="font-sans text-sm font-semibold tracking-normal">Balance sheet</h3>
         <span className="font-mono text-2xs text-muted-foreground">
@@ -320,7 +320,7 @@ export function KeyRatiosPanel({ financials }: { financials: ApiFinancials }) {
   ];
 
   return (
-    <section className="rounded-xl border border-border bg-surface">
+    <section className="rounded-none border border-border bg-surface">
       <header className="flex flex-wrap items-baseline justify-between gap-3 border-b border-border px-4 py-3">
         <h3 className="font-sans text-sm font-semibold tracking-normal">Key ratios</h3>
         <span className="font-mono text-2xs text-muted-foreground">

@@ -30,7 +30,7 @@ const KEY_INDICES = ["nifty-50", "nifty-bank", "nifty-it", "nifty-midcap-100", "
 
 function Block({ title, href, children }: { title: string; href?: string; children: React.ReactNode }) {
   return (
-    <section className="break-inside-avoid overflow-hidden rounded-2xl border border-border bg-surface print:border-neutral-300">
+    <section className="break-inside-avoid overflow-hidden rounded-none border border-border bg-surface print:border-neutral-300">
       <header className="flex items-center justify-between border-b border-border px-4 py-2.5">
         <h2 className="text-sm font-semibold tracking-tight">{title}</h2>
         {href ? (

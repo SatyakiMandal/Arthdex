@@ -138,7 +138,7 @@ export default async function IpoPage({ searchParams }: PageProps) {
               key={option.id || "all"}
               href={`/ipo${option.id ? `?segment=${option.id}` : ""}`}
               className={cn(
-                "rounded-lg border px-3 py-1.5 text-xs transition-colors",
+                "rounded-none border px-3 py-1.5 text-xs transition-colors",
                 option.id === segment
                   ? "border-accent/50 bg-accent/10 text-accent"
                   : "border-border bg-surface-muted text-muted-foreground hover:text-foreground",
@@ -149,7 +149,7 @@ export default async function IpoPage({ searchParams }: PageProps) {
           ))}
         </nav>
 
-        <dl className="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-4">
+        <dl className="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-none border border-border bg-border sm:grid-cols-4">
           {ORDER.map((status) => (
             <div key={status} className="bg-surface px-4 py-2.5">
               <dt className="text-2xs text-muted-foreground">

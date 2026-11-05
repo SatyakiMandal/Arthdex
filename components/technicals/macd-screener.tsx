@@ -76,7 +76,7 @@ export function MacdScreener() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end gap-x-5 gap-y-4 rounded-2xl border border-border bg-surface p-4">
+      <div className="flex flex-wrap items-end gap-x-5 gap-y-4 rounded-none border border-border bg-surface p-4">
         <div>
           <span className={label}>Signal</span>
           <SegmentedControl options={DIRECTIONS} value={direction} onChange={setDirection} layoutGroupId="macd-direction" />
@@ -88,13 +88,13 @@ export function MacdScreener() {
 
         <div>
           <span className={label}>Within last</span>
-          <div className="flex h-9 items-center rounded-lg border border-border bg-surface-muted p-0.5">
+          <div className="flex h-9 items-center rounded-none border border-border bg-surface-muted p-0.5">
             <button
               type="button"
               aria-label="Fewer bars"
               disabled={within <= 1}
               onClick={() => setWithin((w) => Math.max(1, w - 1))}
-              className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-all hover:bg-surface hover:text-foreground active:scale-90 disabled:opacity-40"
+              className="grid h-8 w-8 place-items-center rounded-none text-muted-foreground transition-all hover:bg-surface hover:text-foreground active:scale-90 disabled:opacity-40"
             >
               <Minus className="h-3.5 w-3.5" />
             </button>
@@ -113,7 +113,7 @@ export function MacdScreener() {
               aria-label="More bars"
               disabled={within >= 50}
               onClick={() => setWithin((w) => Math.min(50, w + 1))}
-              className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-all hover:bg-surface hover:text-foreground active:scale-90 disabled:opacity-40"
+              className="grid h-8 w-8 place-items-center rounded-none text-muted-foreground transition-all hover:bg-surface hover:text-foreground active:scale-90 disabled:opacity-40"
             >
               <Plus className="h-3.5 w-3.5" />
             </button>
@@ -129,7 +129,7 @@ export function MacdScreener() {
               id="macd-universe"
               value={index}
               onChange={(e) => setIndex(e.target.value)}
-              className="h-9 appearance-none rounded-lg border border-border bg-surface-muted pl-3 pr-9 text-sm transition-colors hover:border-accent/50"
+              className="h-9 appearance-none rounded-none border border-border bg-surface-muted pl-3 pr-9 text-sm transition-colors hover:border-accent/50"
             >
               {INDICES.map((i) => (
                 <option key={i.id} value={i.id}>
@@ -169,14 +169,14 @@ export function MacdScreener() {
       </p>
 
       {error ? (
-        <p role="alert" className="rounded-xl border border-down/40 bg-down/10 px-4 py-3 text-sm text-down">
+        <p role="alert" className="rounded-none border border-down/40 bg-down/10 px-4 py-3 text-sm text-down">
           {error}
         </p>
       ) : null}
 
       {data ? <DeskAnalysis insights={data.insights} title="Universe analysis" /> : null}
 
-      <section className="rounded-xl border border-border bg-surface">
+      <section className="rounded-none border border-border bg-surface">
         <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
           <h2 className="text-sm font-semibold tracking-tight">
             {loading && !data ? "Scanning…" : `${data?.results.length ?? 0} match${data?.results.length === 1 ? "" : "es"}`}
@@ -248,7 +248,7 @@ export function MacdScreener() {
                     <td className="px-3 py-1 text-right">
                       <span role="img" className="inline-flex gap-0.5" title={`${r.score ?? 0} of 4 confirmations`} aria-label={`${r.score ?? 0} of 4 confirmations`}>
                         {[0, 1, 2, 3].map((k) => (
-                          <span key={k} className={cn("h-2 w-2 rounded-sm", k < (r.score ?? 0) ? "bg-accent" : "bg-muted")} />
+                          <span key={k} className={cn("h-2 w-2 rounded-none", k < (r.score ?? 0) ? "bg-accent" : "bg-muted")} />
                         ))}
                       </span>
                     </td>

@@ -64,7 +64,7 @@ export function PriceHistoryChart({ series }: { series: Point[] }) {
   }, [view]);
 
   if (!geo) {
-    return <p className="rounded-2xl border border-border bg-surface px-4 py-10 text-center text-sm text-muted-foreground">Not enough price history to chart.</p>;
+    return <p className="rounded-none border border-border bg-surface px-4 py-10 text-center text-sm text-muted-foreground">Not enough price history to chart.</p>;
   }
 
   const first = view[0].price;
@@ -79,13 +79,13 @@ export function PriceHistoryChart({ series }: { series: Point[] }) {
   const dateShown = hoverTime === null ? view[view.length - 1].date : new Date(hoverTime).toISOString().slice(0, 10);
 
   return (
-    <figure className="overflow-hidden rounded-2xl border border-border bg-surface p-4 sm:p-5">
+    <figure className="overflow-hidden rounded-none border border-border bg-surface p-4 sm:p-5">
       <figcaption className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="text-sm font-medium">Indicative price history</div>
           <div className="mt-0.5 font-mono text-2xs text-muted-foreground">{dateShown}</div>
         </div>
-        <div role="tablist" aria-label="Chart range" className="flex rounded-lg border border-border bg-surface-muted p-0.5">
+        <div role="tablist" aria-label="Chart range" className="flex rounded-none border border-border bg-surface-muted p-0.5">
           {RANGES.map((r) => (
             <button
               key={r.id}
@@ -96,7 +96,7 @@ export function PriceHistoryChart({ series }: { series: Point[] }) {
                 setHover(null);
               }}
               className={cn(
-                "rounded-md px-2.5 py-1 font-mono text-2xs font-medium transition-all active:scale-95",
+                "rounded-none px-2.5 py-1 font-mono text-2xs font-medium transition-all active:scale-95",
                 range === r.id ? "bg-accent text-accent-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
               )}
             >

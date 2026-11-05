@@ -44,11 +44,9 @@ const GROUPS: Group[] = [
       { label: "Live market cockpit", href: "/live", icon: Radio, hint: "God's-eye live trading radar & pulse" },
       { label: "Market watch", href: "/market-watch", icon: CandlestickChart, hint: "Indices, movers, breadth and sector RRG" },
       { label: "Derivatives & F&O", href: "/derivatives", icon: Sigma, hint: "Option chains, open interest, build-up & ban" },
-      { label: "Order flow", href: "/orderflow", icon: Activity, hint: "Profile, footprint, CVD and GEX" },
-      { label: "Earnings & Results desk", href: "/results", icon: FileBarChart, hint: "Scorecard, board meetings & implied moves" },
+      { label: "Order flow & deals", href: "/orderflow", icon: Activity, hint: "Footprint, CVD, GEX and institutional block deals" },
+      { label: "Earnings & catalysts", href: "/results", icon: FileBarChart, hint: "Scorecard, calendar, implied moves & rebalances" },
       { label: "Bhavcopy & Delivery", href: "/bhavcopy", icon: Layers, hint: "End-of-day delivery and accumulation" },
-      { label: "Bulk & block deals", href: "/deals", icon: ArrowLeftRight, hint: "Large institutional trades disclosed today" },
-      { label: "Catalyst desk", href: "/catalysts", icon: Sparkles, hint: "Index rebalances, IPO lock-ins, buybacks" },
       { label: "Commodities", href: "/commodities", icon: Coins, hint: "Metals, energy and the rupee" },
     ],
   },
@@ -241,7 +239,7 @@ export function HeaderBar() {
                           key={item.href}
                           href={item.href}
                           className={cn(
-                            "flex items-center gap-2 rounded-md px-2 py-2.5 text-sm transition-colors",
+                            "flex items-center gap-2 rounded-none px-2 py-2 text-sm transition-colors duration-150",
                             here ? "bg-surface-muted font-medium text-foreground" : "text-foreground/80 hover:bg-surface-muted",
                           )}
                         >

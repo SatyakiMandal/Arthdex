@@ -32,7 +32,7 @@ export function MoversExplained({ gainers, losers }: { gainers: ApiMoverExplaine
   const explained = rows.filter((r) => r.news.length > 0).length;
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-border bg-surface">
+    <section className="overflow-hidden rounded-none border border-border bg-surface">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div>
           <h2 className="text-sm font-semibold tracking-tight">Why they moved</h2>
@@ -63,7 +63,7 @@ export function MoversExplained({ gainers, losers }: { gainers: ApiMoverExplaine
               </div>
               <Link
                 href={`/analyzer?company=${encodeURIComponent(r.name ?? r.symbol)}&ticker=${encodeURIComponent(`${r.symbol}.NS`)}`}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-2xs font-medium text-muted-foreground transition-all hover:border-accent/50 hover:text-accent active:scale-95"
+                className="inline-flex items-center gap-1.5 rounded-none border border-border px-2.5 py-1 text-2xs font-medium text-muted-foreground transition-all hover:border-accent/50 hover:text-accent active:scale-95"
               >
                 <FlaskConical className="h-3 w-3" />
                 Analyze in depth

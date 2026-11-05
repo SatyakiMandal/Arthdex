@@ -42,7 +42,7 @@ export function FilingsTimeline({ data }: { data: CompanyFilingsPayload }) {
           onClick={() => setCategory(null)}
           aria-pressed={category === null}
           className={cn(
-            "rounded-md border px-3 py-1.5 text-sm transition-colors",
+            "rounded-none border px-3 py-1.5 text-sm transition-colors",
             category === null ? "border-foreground bg-foreground text-background" : "border-border text-muted-foreground hover:text-foreground",
           )}
         >
@@ -55,7 +55,7 @@ export function FilingsTimeline({ data }: { data: CompanyFilingsPayload }) {
             onClick={() => setCategory(category === c ? null : c)}
             aria-pressed={category === c}
             className={cn(
-              "rounded-md border px-3 py-1.5 text-sm transition-colors",
+              "rounded-none border px-3 py-1.5 text-sm transition-colors",
               category === c ? "border-foreground bg-foreground text-background" : "border-border text-muted-foreground hover:text-foreground",
             )}
           >

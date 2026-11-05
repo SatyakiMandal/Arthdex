@@ -85,7 +85,7 @@ export function TechnicalWorkbench({ symbol }: { symbol: string }) {
 
   const chip = (active: boolean) =>
     cn(
-      "rounded-lg border px-2.5 py-1 text-2xs transition-colors",
+      "rounded-none border px-2.5 py-1 text-2xs transition-colors",
       active ? "border-accent/50 bg-accent/10 text-accent" : "border-border bg-surface-muted text-muted-foreground hover:text-foreground",
     );
 
@@ -104,17 +104,17 @@ export function TechnicalWorkbench({ symbol }: { symbol: string }) {
       </div>
 
       {error ? (
-        <p role="alert" className="rounded-xl border border-down/40 bg-down/10 px-4 py-3 text-sm text-down">
+        <p role="alert" className="rounded-none border border-down/40 bg-down/10 px-4 py-3 text-sm text-down">
           {error}
         </p>
       ) : null}
 
-      <section className="rounded-xl border border-border bg-surface p-3">
+      <section className="rounded-none border border-border bg-surface p-3">
         <div className="mb-2 flex flex-wrap gap-1.5">
           <span className="mr-1 self-center text-2xs text-muted-foreground">Overlays</span>
           {OVERLAYS.map((o) => (
             <button key={o.id} type="button" aria-pressed={overlays.has(o.id)} onClick={() => toggleOverlay(o.id)} className={chip(overlays.has(o.id))}>
-              <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full align-middle" style={{ background: o.color }} />
+              <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-none align-middle" style={{ background: o.color }} />
               {o.label}
             </button>
           ))}

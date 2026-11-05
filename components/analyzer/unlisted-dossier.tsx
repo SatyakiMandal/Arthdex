@@ -393,7 +393,7 @@ function KeyStrip({ s, r }: { s: UnlistedSummary; r: UnlistedResearch }) {
     <Tile key="lot" label="Min ticket" value={r.risk.liquidity?.min_ticket_inr != null ? money(r.risk.liquidity.min_ticket_inr, 0) : dash} sub={r.risk.liquidity?.lot_size != null ? `${formatINR(r.risk.liquidity.lot_size, 0)} shares` : undefined} />,
   );
   return (
-    <div className="mb-3 grid grid-cols-2 gap-y-1 rounded-xl border border-border bg-surface sm:grid-cols-4 lg:grid-cols-8">{tiles}</div>
+    <div className="mb-3 grid grid-cols-2 gap-y-1 rounded-none border border-border bg-surface sm:grid-cols-4 lg:grid-cols-8">{tiles}</div>
   );
 }
 
@@ -416,7 +416,7 @@ export function UnlistedDossier({ s }: { s: UnlistedSummary }) {
     <div className="dossier">
       <KeyStrip s={s} r={r} />
       {r.data_quality.thin ? (
-        <p className="mb-3 flex items-start gap-2 rounded-xl border border-flat/40 bg-flat/[0.07] px-4 py-2.5 text-2xs text-flat">
+        <p className="mb-3 flex items-start gap-2 rounded-none border border-flat/40 bg-flat/[0.07] px-4 py-2.5 text-2xs text-flat">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           Short record: {r.data_quality.revisions} price revisions over {r.data_quality.months ?? 0} months of monthly returns. Statistics and the confidence of the call are
           limited accordingly.
@@ -434,7 +434,7 @@ export function UnlistedDossier({ s }: { s: UnlistedSummary }) {
           >
             {LABELS[t]}
             {t === tab ? (
-              <motion.span layoutId="unlisted-dossier-underline" className="absolute inset-x-1 -bottom-px h-0.5 rounded-full bg-accent" transition={{ type: "spring", stiffness: 380, damping: 32 }} />
+              <motion.span layoutId="unlisted-dossier-underline" className="absolute inset-x-1 -bottom-px h-0.5 rounded-none bg-accent" transition={{ type: "spring", stiffness: 380, damping: 32 }} />
             ) : null}
           </button>
         ))}

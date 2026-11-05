@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Activity,
@@ -12,6 +12,7 @@ import {
   Filter,
   Flame,
   Gauge,
+  Keyboard,
   Layers,
   PieChart,
   Search,
@@ -22,8 +23,10 @@ import {
   Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { MicrostructureCvdPanel } from "./microstructure-cvd-panel";
 import type {
   ApiBuildUp,
+  ApiOptionChain,
   ApiBuildUpRow,
   ApiFlows,
   ApiFnoBan,
@@ -38,6 +41,14 @@ interface MacroMarketRadarProps {
   buildup?: ApiBuildUp | null;
   fnoBan?: ApiFnoBan | null;
   flows?: ApiFlows | null;
+  optionChain?: ApiOptionChain | null;
+  priceTicks?: Map<string, "up" | "down">;
+  lastSyncTime?: string;
+  countdown?: number;
+  isSyncing?: boolean;
+  onManualSync?: () => void;
+  derivSymbol?: string;
+  onDerivSymbolChange?: (sym: string) => void;
   currentIndex: string;
   onUniverseChange: (idx: string) => void;
   onSelectStock?: (symbol: string) => void;
@@ -69,6 +80,14 @@ export function MacroMarketRadar({
   buildup = null,
   fnoBan = null,
   flows = null,
+  optionChain = null,
+  priceTicks,
+  lastSyncTime,
+  countdown,
+  isSyncing,
+  onManualSync,
+  derivSymbol = "NIFTY",
+  onDerivSymbolChange,
   currentIndex,
   onUniverseChange,
   onSelectStock,
@@ -83,6 +102,9 @@ export function MacroMarketRadar({
   const [leftTab, setLeftTab] = useState<"sectors" | "fno" | "velocity" | "institutional">("sectors");
   const [fnoSubFilter, setFnoSubFilter] = useState<"long" | "short" | "covering" | "unwinding">("long");
   const [selectedConstituent, setSelectedConstituent] = useState<ApiPulseStock | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [highlightedIndex, setHighlightedIndex] = useState<number>(0);
+  const [showHotkeyHelp, setShowHotkeyHelp] = useState<boolean>(false);
 
   const stocks = useMemo(() => pulse.stocks ?? [], [pulse.stocks]);
   const marketBreadth = pulse.market ?? { advances: 0, declines: 0, unchanged: 0, total: 0 };
@@ -163,6 +185,65 @@ export function MacroMarketRadar({
       envelopeDistance,
     };
   }, [indices]);
+
+  // =========================================================================
+  // 1B. NSE OPTIONS PCR, MAX PAIN & GAMMA GRAVITY
+  // =========================================================================
+  const optionsAnalytics = useMemo(() => {
+    if (!optionChain) return null;
+    const pcr = optionChain.pcr ?? 1.0;
+    const maxPain = optionChain.maxPain ?? null;
+    const spot = optionChain.underlying ?? 0;
+    const painDiff = maxPain && spot ? spot - maxPain : 0;
+    const callWall = optionChain.resistance?.[0] ?? null;
+    const putWall = optionChain.support?.[0] ?? null;
+    const atmStrike = optionChain.atmStrike ?? 0;
+    const atmIv = optionChain.atmIv ?? 0;
+    const impliedMove = optionChain.impliedMove ?? null;
+    const daysToExpiry = optionChain.daysToExpiry ?? 0;
+
+    let regimeLabel = "Balanced";
+    let regimeClass = "border-gold/40 bg-gold/10 text-gold";
+    if (pcr >= 1.05) {
+      regimeLabel = "Bullish / Put Writing";
+      regimeClass = "border-up/40 bg-up/10 text-up";
+    } else if (pcr <= 0.85) {
+      regimeLabel = "Bearish / Call Writing";
+      regimeClass = "border-down/40 bg-down/10 text-down";
+    }
+
+    return {
+      pcr,
+      maxPain,
+      spot,
+      painDiff,
+      callWall,
+      putWall,
+      atmStrike,
+      atmIv,
+      impliedMove,
+      daysToExpiry,
+      regimeLabel,
+      regimeClass,
+      symbol: optionChain.symbol,
+    };
+  }, [optionChain]);
+
+  // =========================================================================
+  // 1C. ADVANCE-DECLINE MOMENTUM OSCILLATOR (ADMO) & HOLLOW RALLY DETECTOR
+  // =========================================================================
+  const adAnalytics = useMemo(() => {
+    const adv = marketBreadth.advances;
+    const dec = marketBreadth.declines;
+    const unch = marketBreadth.unchanged;
+    const total = adv + dec + unch || 1;
+    const ranaPct = ((adv - dec) / total) * 100;
+    const adRatio = dec > 0 ? (adv / dec).toFixed(2) : "—";
+    const niftyIdx = indices.find((i) => i.id === "nifty-50");
+    const niftyChangePct = niftyIdx?.change?.percent ?? 0;
+    const isHollowRally = niftyChangePct > 0.1 && dec > adv * 1.35;
+    return { adv, dec, unch, total, ranaPct, adRatio, niftyChangePct, isHollowRally };
+  }, [marketBreadth, indices]);
 
   // =========================================================================
   // 2. MACRO TURNOVER & CAPITAL BREADTH
@@ -482,18 +563,101 @@ export function MacroMarketRadar({
     }
   }
 
+  // =========================================================================
+  // TERMINAL KEYBOARD SHORTCUTS NAVIGATION ENGINE (UX-03)
+  // =========================================================================
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      const activeEl = document.activeElement;
+      const isInputFocused =
+        activeEl?.tagName === "INPUT" ||
+        activeEl?.tagName === "TEXTAREA" ||
+        activeEl?.tagName === "SELECT";
+
+      if (e.key === "Escape") {
+        if (isInputFocused) {
+          (activeEl as HTMLElement)?.blur();
+        } else if (selectedConstituent) {
+          setSelectedConstituent(null);
+        } else if (searchQuery) {
+          setSearchQuery("");
+        } else if (showHotkeyHelp) {
+          setShowHotkeyHelp(false);
+        }
+        return;
+      }
+
+      if (e.key === "?" && !isInputFocused) {
+        e.preventDefault();
+        setShowHotkeyHelp((prev) => !prev);
+        return;
+      }
+
+      if (e.key === "/" && !isInputFocused) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        return;
+      }
+
+      if (isInputFocused) return;
+
+      if (e.key === "ArrowDown" || e.key === "j" || e.key === "J") {
+        e.preventDefault();
+        setHighlightedIndex((prev) =>
+          Math.min(prev + 1, Math.max(0, filteredStocks.length - 1)),
+        );
+      } else if (e.key === "ArrowUp" || e.key === "k" || e.key === "K") {
+        e.preventDefault();
+        setHighlightedIndex((prev) => Math.max(0, prev - 1));
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (filteredStocks[highlightedIndex]) {
+          setSelectedConstituent((prev) =>
+            prev?.symbol === filteredStocks[highlightedIndex].symbol
+              ? null
+              : filteredStocks[highlightedIndex],
+          );
+        }
+      } else if ((e.key === "v" || e.key === "V") && onSelectStock) {
+        e.preventDefault();
+        const target = selectedConstituent || filteredStocks[highlightedIndex];
+        if (target) {
+          onSelectStock(target.symbol);
+        }
+      } else if (e.key === "1") {
+        setLeftTab("sectors");
+      } else if (e.key === "2") {
+        setLeftTab("fno");
+      } else if (e.key === "3") {
+        setLeftTab("velocity");
+      } else if (e.key === "4") {
+        setLeftTab("institutional");
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    filteredStocks,
+    highlightedIndex,
+    onSelectStock,
+    searchQuery,
+    selectedConstituent,
+    showHotkeyHelp,
+  ]);
+
   return (
     <div className="w-full space-y-2.5 rounded-none font-sans">
       {/* ========================================================================= */}
-      {/* 1. MASTER INSTITUTIONAL HUD: VOLATILITY ENVELOPE, FII/DII FLOWS & BAN     */}
+      {/* 1. MASTER INSTITUTIONAL HUD (4-PILLAR ZERO DEAD MARGINS)                  */}
       {/* ========================================================================= */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-1.5 font-mono text-2xs">
-        {/* SECTION A (5 of 12 cols): INDIA VIX STATISTICAL INTRADAY ENVELOPE */}
-        <div className="md:col-span-5 border border-border bg-surface p-2 rounded-none flex flex-col justify-between">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-1.5 font-mono text-2xs">
+        {/* PILLAR 1 (3 of 12 cols): INDIA VIX STATISTICAL INTRADAY ENVELOPE (1σ) */}
+        <div className="lg:col-span-3 md:col-span-1 border border-border bg-surface p-2 rounded-none flex flex-col justify-between">
           <div className="flex items-center justify-between border-b border-border/70 pb-1">
             <span className="text-3xs uppercase tracking-wider text-muted-foreground font-bold flex items-center gap-1">
               <Activity className="h-3 w-3 text-gold" />
-              <span>Nifty Expected Volatility Envelope (1σ)</span>
+              <span>Nifty Volatility Envelope (1σ)</span>
             </span>
             <span
               className={cn(
@@ -505,43 +669,42 @@ export function MacroMarketRadar({
             >
               {vixAnalytics.isWithinEnvelope
                 ? `Normal · ${(vixAnalytics.envelopeDistance * 100).toFixed(0)}%σ`
-                : "Vol Breakout >1σ"}
+                : "Breakout >1σ"}
             </span>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 pt-1 text-center items-center">
+          <div className="grid grid-cols-3 gap-1 pt-1 text-center items-center">
             <div className="text-left">
-              <div className="text-3xs text-muted-foreground">Expected Lower (-1σ)</div>
+              <div className="text-3xs text-muted-foreground">-1σ Lower</div>
               <div className="font-bold text-foreground text-xs">
-                {vixAnalytics.expectedLower.toFixed(1)}
+                {vixAnalytics.expectedLower.toFixed(0)}
               </div>
               <div className="text-3xs text-down font-medium">
-                -{vixAnalytics.sigmaPoints.toFixed(1)} pts
+                -{vixAnalytics.sigmaPoints.toFixed(0)}p
               </div>
             </div>
 
             <div>
-              <div className="text-3xs text-muted-foreground">Spot Price</div>
+              <div className="text-3xs text-muted-foreground">Spot</div>
               <div className="font-extrabold text-foreground text-sm">
                 {vixAnalytics.niftySpot.toLocaleString("en-IN", { maximumFractionDigits: 1 })}
               </div>
               <div className="text-3xs text-muted-foreground">
-                India VIX: <strong className="text-foreground">{vixAnalytics.vixLevel.toFixed(2)}</strong> (±{vixAnalytics.dailySigmaPct.toFixed(2)}%)
+                VIX: <strong className="text-foreground">{vixAnalytics.vixLevel.toFixed(2)}</strong> (±{vixAnalytics.dailySigmaPct.toFixed(2)}%)
               </div>
             </div>
 
             <div className="text-right">
-              <div className="text-3xs text-muted-foreground">Expected Upper (+1σ)</div>
+              <div className="text-3xs text-muted-foreground">+1σ Upper</div>
               <div className="font-bold text-foreground text-xs">
-                {vixAnalytics.expectedUpper.toFixed(1)}
+                {vixAnalytics.expectedUpper.toFixed(0)}
               </div>
               <div className="text-3xs text-up font-medium">
-                +{vixAnalytics.sigmaPoints.toFixed(1)} pts
+                +{vixAnalytics.sigmaPoints.toFixed(0)}p
               </div>
             </div>
           </div>
 
-          {/* Intraday Range Envelope Bar */}
           <div className="mt-1 relative h-1.5 w-full bg-surface-muted border border-border/80 rounded-none overflow-hidden">
             <div
               className="absolute top-0 bottom-0 bg-gold/30 border-r border-gold h-full"
@@ -554,8 +717,87 @@ export function MacroMarketRadar({
           </div>
         </div>
 
-        {/* SECTION B (4 of 12 cols): INSTITUTIONAL CASH FLOWS (FII vs DII) */}
-        <div className="md:col-span-4 border border-border bg-surface p-2 rounded-none flex flex-col justify-between">
+        {/* PILLAR 2 (3 of 12 cols): NSE OPTIONS GRAVITY & MAX PAIN STRIKE HUD */}
+        <div className="lg:col-span-3 md:col-span-1 border border-border bg-surface p-2 rounded-none flex flex-col justify-between">
+          <div className="flex items-center justify-between border-b border-border/70 pb-1">
+            <span className="text-3xs uppercase tracking-wider text-muted-foreground font-bold flex items-center gap-1">
+              <Gauge className="h-3 w-3 text-accent" />
+              <span>Options Gravity & Max Pain</span>
+            </span>
+            <div className="flex items-center gap-1">
+              {["NIFTY", "BANKNIFTY"].map((sym) => (
+                <button
+                  key={sym}
+                  onClick={() => onDerivSymbolChange?.(sym)}
+                  className={cn(
+                    "px-1 py-0.2 text-3xs font-mono font-bold transition-colors rounded-none",
+                    derivSymbol === sym
+                      ? "bg-accent text-accent-foreground"
+                      : "border border-border/80 text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {sym === "BANKNIFTY" ? "BN" : "N50"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {optionsAnalytics ? (
+            <div className="pt-1 space-y-1">
+              <div className="flex items-baseline justify-between text-2xs">
+                <div>
+                  <span className="text-3xs text-muted-foreground mr-1">PCR:</span>
+                  <span className="font-bold text-foreground text-xs">{optionsAnalytics.pcr.toFixed(2)}</span>
+                  <span className={cn("ml-1.5 px-1 py-0.2 text-3xs font-bold border rounded-none", optionsAnalytics.regimeClass)}>
+                    {optionsAnalytics.regimeLabel}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-3xs text-muted-foreground mr-1">Max Pain:</span>
+                  <span className="font-bold text-foreground text-xs">
+                    {optionsAnalytics.maxPain ? optionsAnalytics.maxPain.toLocaleString("en-IN") : "—"}
+                  </span>
+                  <span className={cn("ml-1 text-3xs font-semibold", optionsAnalytics.painDiff >= 0 ? "text-up" : "text-down")}>
+                    {optionsAnalytics.painDiff >= 0 ? "+" : ""}{optionsAnalytics.painDiff.toFixed(0)}p
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-1 text-3xs border-t border-border/60 pt-1">
+                <div className="bg-surface-muted/40 p-1 border border-border/60">
+                  <div className="text-muted-foreground flex justify-between">
+                    <span>Call Wall (Resist)</span>
+                    <span className="text-down font-bold">{optionsAnalytics.callWall ? fmtCompact(optionsAnalytics.callWall.oi) : ""}</span>
+                  </div>
+                  <div className="font-bold text-foreground text-2xs mt-0.5">
+                    {optionsAnalytics.callWall ? optionsAnalytics.callWall.strike.toLocaleString("en-IN") : "—"}
+                  </div>
+                </div>
+
+                <div className="bg-surface-muted/40 p-1 border border-border/60">
+                  <div className="text-muted-foreground flex justify-between">
+                    <span>Put Wall (Support)</span>
+                    <span className="text-up font-bold">{optionsAnalytics.putWall ? fmtCompact(optionsAnalytics.putWall.oi) : ""}</span>
+                  </div>
+                  <div className="font-bold text-foreground text-2xs mt-0.5">
+                    {optionsAnalytics.putWall ? optionsAnalytics.putWall.strike.toLocaleString("en-IN") : "—"}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between text-3xs text-muted-foreground pt-0.5">
+                <span>ATM IV: <strong className="text-foreground">{optionsAnalytics.atmIv.toFixed(1)}%</strong></span>
+                <span>Straddle ±Move: <strong className="text-foreground">{optionsAnalytics.impliedMove ? `±${optionsAnalytics.impliedMove.points.toFixed(0)}p` : "—"}</strong></span>
+                <span>DTE: <strong className="text-foreground">{optionsAnalytics.daysToExpiry}d</strong></span>
+              </div>
+            </div>
+          ) : (
+            <div className="py-3 text-center text-3xs text-muted-foreground">Loading derivatives option chain...</div>
+          )}
+        </div>
+
+        {/* PILLAR 3 (3 of 12 cols): INSTITUTIONAL CASH FLOWS (FII vs DII) */}
+        <div className="lg:col-span-3 md:col-span-1 border border-border bg-surface p-2 rounded-none flex flex-col justify-between">
           <div className="flex items-center justify-between border-b border-border/70 pb-1">
             <span className="text-3xs uppercase tracking-wider text-muted-foreground font-bold flex items-center gap-1">
               <Compass className="h-3 w-3 text-accent" />
@@ -566,43 +808,43 @@ export function MacroMarketRadar({
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 pt-1 items-center">
+          <div className="grid grid-cols-2 gap-1 pt-1 items-center">
             {/* FII */}
-            <div className="border border-border/60 bg-surface-muted/40 p-1.5 rounded-none">
+            <div className="border border-border/60 bg-surface-muted/40 p-1 rounded-none">
               <div className="flex items-center justify-between text-3xs">
                 <span className="font-bold text-foreground">FII / FPI</span>
-                <span className="text-muted-foreground">{flows?.streak?.fii ? `${flows.streak.fii > 0 ? "+" : ""}${flows.streak.fii}d streak` : ""}</span>
+                <span className="text-muted-foreground">{flows?.streak?.fii ? `${flows.streak.fii > 0 ? "+" : ""}${flows.streak.fii}d` : ""}</span>
               </div>
               <div className={cn("text-xs font-bold mt-0.5", (flows?.latest?.allExchanges?.fii?.net ?? 0) >= 0 ? "text-up" : "text-down")}>
                 {(flows?.latest?.allExchanges?.fii?.net ?? 0) >= 0 ? "+" : ""}
                 {fmtINR(flows?.latest?.allExchanges?.fii?.net ?? 7284.03)} Cr
               </div>
-              <div className="text-3xs text-muted-foreground flex justify-between mt-0.5">
-                <span>Buy: {fmtINR(flows?.latest?.allExchanges?.fii?.buy ?? 21607.38)}</span>
-                <span>Sell: {fmtINR(flows?.latest?.allExchanges?.fii?.sell ?? 14323.35)}</span>
+              <div className="text-3xs text-muted-foreground flex justify-between mt-0.5 truncate">
+                <span>B: {fmtINR(flows?.latest?.allExchanges?.fii?.buy ?? 21607.38)}</span>
+                <span>S: {fmtINR(flows?.latest?.allExchanges?.fii?.sell ?? 14323.35)}</span>
               </div>
             </div>
 
             {/* DII */}
-            <div className="border border-border/60 bg-surface-muted/40 p-1.5 rounded-none">
+            <div className="border border-border/60 bg-surface-muted/40 p-1 rounded-none">
               <div className="flex items-center justify-between text-3xs">
                 <span className="font-bold text-foreground">DII (Domestic)</span>
-                <span className="text-muted-foreground">{flows?.streak?.dii ? `${flows.streak.dii > 0 ? "+" : ""}${flows.streak.dii}d streak` : ""}</span>
+                <span className="text-muted-foreground">{flows?.streak?.dii ? `${flows.streak.dii > 0 ? "+" : ""}${flows.streak.dii}d` : ""}</span>
               </div>
               <div className={cn("text-xs font-bold mt-0.5", (flows?.latest?.allExchanges?.dii?.net ?? 0) >= 0 ? "text-up" : "text-down")}>
                 {(flows?.latest?.allExchanges?.dii?.net ?? 0) >= 0 ? "+" : ""}
                 {fmtINR(flows?.latest?.allExchanges?.dii?.net ?? -3712.23)} Cr
               </div>
-              <div className="text-3xs text-muted-foreground flex justify-between mt-0.5">
-                <span>Buy: {fmtINR(flows?.latest?.allExchanges?.dii?.buy ?? 16392.82)}</span>
-                <span>Sell: {fmtINR(flows?.latest?.allExchanges?.dii?.sell ?? 20105.05)}</span>
+              <div className="text-3xs text-muted-foreground flex justify-between mt-0.5 truncate">
+                <span>B: {fmtINR(flows?.latest?.allExchanges?.dii?.buy ?? 16392.82)}</span>
+                <span>S: {fmtINR(flows?.latest?.allExchanges?.dii?.sell ?? 20105.05)}</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* SECTION C (3 of 12 cols): OFFICIAL NSE F&O BAN & RESTRICTIONS */}
-        <div className="md:col-span-3 border border-border bg-surface p-2 rounded-none flex flex-col justify-between">
+        {/* PILLAR 4 (3 of 12 cols): OFFICIAL NSE F&O BAN & RESTRICTIONS */}
+        <div className="lg:col-span-3 md:col-span-1 border border-border bg-surface p-2 rounded-none flex flex-col justify-between">
           <div className="flex items-center justify-between border-b border-border/70 pb-1">
             <span className="text-3xs uppercase tracking-wider text-muted-foreground font-bold flex items-center gap-1">
               <AlertTriangle className="h-3 w-3 text-down" />
@@ -614,7 +856,7 @@ export function MacroMarketRadar({
           </div>
 
           <div className="pt-1 space-y-1">
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-1 max-h-16 overflow-y-auto">
               {Array.from(bannedSet).length === 0 ? (
                 <span className="text-3xs text-muted-foreground">No securities in ban period</span>
               ) : (
@@ -629,7 +871,7 @@ export function MacroMarketRadar({
               )}
             </div>
             <div className="text-3xs text-muted-foreground leading-snug">
-              Fresh contracts prohibited. Position reduction only. Exit occurs when OI &lt; 80% MWPL.
+              Position reduction only. Fresh contracts prohibited until OI &lt; 80% MWPL.
             </div>
           </div>
         </div>
@@ -676,11 +918,47 @@ export function MacroMarketRadar({
               ({macroVolumeBreadth.netFlowCr >= 0 ? "Buying Dominant" : "Selling Dominant"})
             </span>
             <span className="text-border">|</span>
+            <div className="flex items-center gap-1.5 bg-surface-muted/80 border border-border px-1.5 py-0.5 rounded-none">
+              <span className="flex h-2 w-2 relative">
+                <span className={cn("animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75", isSyncing && "bg-gold")} />
+                <span className={cn("relative inline-flex rounded-full h-2 w-2 bg-emerald-500", isSyncing && "bg-gold")} />
+              </span>
+              <span className="text-3xs font-mono font-bold text-foreground">
+                {isSyncing ? "SYNCING..." : "LIVE FEED"}
+              </span>
+              {lastSyncTime && (
+                <span className="text-3xs font-mono text-muted-foreground">
+                  · {lastSyncTime} ({countdown ?? 5}s)
+                </span>
+              )}
+              {onManualSync && (
+                <button
+                  onClick={onManualSync}
+                  title="Sync live exchange data immediately"
+                  disabled={isSyncing}
+                  className="ml-1 text-3xs font-mono font-bold text-accent hover:text-foreground px-1 border border-accent/40 hover:bg-accent/15 transition-colors disabled:opacity-50"
+                >
+                  ↻ Sync
+                </button>
+              )}
+            </div>
+            <span className="text-border">|</span>
             <span className="text-up flex items-center gap-1 font-semibold">
               <ShieldCheck className="h-3 w-3" /> 100% Genuine Official Tape
             </span>
           </div>
         </div>
+
+        {/* Advance-Decline Breadth Momentum Alert */}
+        {adAnalytics.isHollowRally && (
+          <div className="bg-down/10 border border-down/40 px-2 py-1 text-3xs font-mono text-down font-bold flex items-center justify-between animate-in fade-in-50">
+            <span className="flex items-center gap-1.5">
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+              <span>HOLLOW RALLY DETECTED · Heavy breadth divergence: Declines outnumber Advances ({adAnalytics.dec} vs {adAnalytics.adv}) while headline index is positive (+{adAnalytics.niftyChangePct.toFixed(2)}%).</span>
+            </span>
+            <span className="text-3xs uppercase tracking-wider text-muted-foreground shrink-0">Institutional Alert</span>
+          </div>
+        )}
 
         {/* Dense 4-Metric Bar */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 font-mono text-xs">
@@ -1174,8 +1452,9 @@ export function MacroMarketRadar({
               <div className="relative grow sm:grow-0">
                 <Search className="absolute left-2 top-1/2 h-2.5 w-2.5 -translate-y-1/2 text-muted-foreground" />
                 <input
+                  ref={searchInputRef}
                   type="text"
-                  placeholder="Filter ticker..."
+                  placeholder="Filter ticker... (/ to focus)"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="h-6 w-full sm:w-36 border border-border bg-surface-muted/60 pl-6 pr-1.5 font-mono text-3xs focus:border-accent focus:outline-none rounded-none"
@@ -1281,6 +1560,11 @@ export function MacroMarketRadar({
                   </strong>
                 </div>
               </div>
+
+              {/* Real-Time Cumulative Volume Delta (CVD) & Microstructure Panel */}
+              <div className="pt-1 border-t border-border/60">
+                <MicrostructureCvdPanel symbol={selectedConstituent.symbol} />
+              </div>
             </div>
           )}
 
@@ -1360,9 +1644,23 @@ export function MacroMarketRadar({
                         <td className="p-1.5 font-sans text-3xs text-muted-foreground truncate max-w-[100px]">
                           {s.industry}
                         </td>
-                        <td className="p-1.5 text-right font-semibold text-foreground">
-                          {fmtINR(s.last)}
-                        </td>
+                        {(() => {
+                          const tickDir = priceTicks?.get(s.symbol);
+                          return (
+                            <td
+                              className={cn(
+                                "p-1.5 text-right font-semibold transition-colors font-mono",
+                                tickDir === "up"
+                                  ? "animate-tick-up text-up font-bold bg-up/10"
+                                  : tickDir === "down"
+                                    ? "animate-tick-down text-down font-bold bg-down/10"
+                                    : "text-foreground",
+                              )}
+                            >
+                              {fmtINR(s.last)}
+                            </td>
+                          );
+                        })()}
                         <td className="p-1.5 text-right">
                           <span
                             className={cn(
@@ -1426,6 +1724,51 @@ export function MacroMarketRadar({
           </div>
         </div>
       </div>
+      {/* Terminal Hotkeys Modal */}
+      {showHotkeyHelp && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-xs p-4"
+          onClick={() => setShowHotkeyHelp(false)}
+        >
+          <div
+            className="w-full max-w-md border border-border bg-surface p-4 font-mono text-xs space-y-3 shadow-xl rounded-none"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-border pb-2">
+              <span className="font-bold text-foreground flex items-center gap-1.5">
+                <Keyboard className="h-4 w-4 text-gold" />
+                <span>TERMINAL KEYBOARD NAVIGATION (UX-03)</span>
+              </span>
+              <button
+                onClick={() => setShowHotkeyHelp(false)}
+                className="text-muted-foreground hover:text-foreground p-0.5"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-2xs">
+              <div className="space-y-1.5">
+                <div className="text-muted-foreground font-bold uppercase tracking-wider text-3xs">Scrip Navigation</div>
+                <div className="flex justify-between"><kbd className="px-1 border border-border bg-surface-muted">J</kbd> or <kbd className="px-1 border border-border bg-surface-muted">↓</kbd> <span>Next Scrip</span></div>
+                <div className="flex justify-between"><kbd className="px-1 border border-border bg-surface-muted">K</kbd> or <kbd className="px-1 border border-border bg-surface-muted">↑</kbd> <span>Prev Scrip</span></div>
+                <div className="flex justify-between"><kbd className="px-1 border border-border bg-surface-muted">Enter</kbd> <span>Inspect Microstructure</span></div>
+                <div className="flex justify-between"><kbd className="px-1 border border-border bg-surface-muted">V</kbd> <span>Launch 1m VRVP Terminal</span></div>
+              </div>
+              <div className="space-y-1.5">
+                <div className="text-muted-foreground font-bold uppercase tracking-wider text-3xs">Desks & Tools</div>
+                <div className="flex justify-between"><kbd className="px-1 border border-border bg-surface-muted">/</kbd> <span>Focus Ticker Filter</span></div>
+                <div className="flex justify-between"><kbd className="px-1 border border-border bg-surface-muted">1..4</kbd> <span>Switch Sub-Tabs</span></div>
+                <div className="flex justify-between"><kbd className="px-1 border border-border bg-surface-muted">Esc</kbd> <span>Dismiss / Unfocus</span></div>
+                <div className="flex justify-between"><kbd className="px-1 border border-border bg-surface-muted">?</kbd> <span>Toggle This Help</span></div>
+              </div>
+            </div>
+            <div className="text-3xs text-muted-foreground pt-1 border-t border-border flex justify-between">
+              <span>Arthdex Terminal Standard</span>
+              <span>Press <kbd className="border border-border px-1">Esc</kbd> to close</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

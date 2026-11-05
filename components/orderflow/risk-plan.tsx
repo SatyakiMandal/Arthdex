@@ -31,7 +31,7 @@ export function RiskPlan({ data }: { data: ApiOrderflow }) {
   const sizeKnown = multiplier != null;
   const units = sizeKnown ? Math.floor(riskBudget / (dist * (multiplier as number))) : null;
 
-  const field = "w-full rounded-md border border-border bg-surface-muted px-2 py-1 font-mono text-sm outline-none focus:border-accent/60";
+  const field = "w-full rounded-none border border-border bg-surface-muted px-2 py-1 font-mono text-sm outline-none focus:border-accent/60";
   const f2 = (v: number) => v.toLocaleString("en-IN", { maximumFractionDigits: 2, minimumFractionDigits: 2 });
 
   return (
@@ -42,9 +42,9 @@ export function RiskPlan({ data }: { data: ApiOrderflow }) {
       footnote="A calculation from your inputs and the latest ATR, not a recommendation to trade. It pairs best with location from the profile and value area."
     >
       <div className="space-y-3 p-4">
-        <div className="inline-flex rounded-lg border border-border bg-surface-muted p-0.5 text-xs">
+        <div className="inline-flex rounded-none border border-border bg-surface-muted p-0.5 text-xs">
           {(["long", "short"] as const).map((s) => (
-            <button key={s} type="button" onClick={() => setSide(s)} className={cn("rounded-md px-3 py-1 capitalize transition-colors", side === s ? (s === "long" ? "bg-up/15 text-up" : "bg-down/15 text-down") : "text-muted-foreground")}>
+            <button key={s} type="button" onClick={() => setSide(s)} className={cn("rounded-none px-3 py-1 capitalize transition-colors", side === s ? (s === "long" ? "bg-up/15 text-up" : "bg-down/15 text-down") : "text-muted-foreground")}>
               {s}
             </button>
           ))}

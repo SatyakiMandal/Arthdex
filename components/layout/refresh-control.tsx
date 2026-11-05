@@ -106,11 +106,11 @@ export function RefreshControl() {
         onClick={refresh}
         disabled={pending}
         title={`${title}. Click to fetch fresh data.`}
-        className="group inline-flex items-center gap-2 rounded-full border border-border bg-surface py-1.5 pl-3 pr-2 text-2xs text-muted-foreground shadow-lg transition-colors hover:border-accent/40 hover:text-foreground disabled:opacity-80"
+        className="group inline-flex items-center gap-2 rounded-none border border-border bg-surface py-1.5 pl-3 pr-2 text-2xs text-muted-foreground shadow-lg transition-colors hover:border-accent/40 hover:text-foreground disabled:opacity-80"
       >
         <span suppressHydrationWarning className="font-mono">{pending ? "Refreshing…" : done ? "Updated just now" : label}</span>
         <span className="sr-only">. Refresh data on this page</span>
-        <span className={cn("grid h-6 w-6 place-items-center rounded-full bg-accent/15 text-accent", done && "bg-up/15 text-up")}>
+        <span className={cn("grid h-6 w-6 place-items-center rounded-none bg-accent/15 text-accent", done && "bg-up/15 text-up")}>
           {done ? <Check className="h-3.5 w-3.5" /> : <RefreshCw className={cn("h-3.5 w-3.5", pending && "animate-spin")} />}
         </span>
       </button>

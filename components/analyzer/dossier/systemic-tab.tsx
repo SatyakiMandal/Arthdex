@@ -11,10 +11,10 @@ function Bars({ rows, fmt, signed = false }: { rows: [string, number][]; fmt: (n
       {rows.map(([k, v]) => (
         <li key={k} className="grid grid-cols-[130px_1fr_64px] items-center gap-3 text-sm">
           <span className="truncate text-muted-foreground">{k}</span>
-          <div className="relative h-2 rounded-full bg-muted">
+          <div className="relative h-2 rounded-none bg-muted">
             {signed ? <span className="absolute inset-y-0 left-1/2 w-px bg-border" /> : null}
             <div
-              className={cn("absolute inset-y-0 rounded-full", signed ? (v >= 0 ? "left-1/2 bg-up" : "right-1/2 bg-down") : "left-0 bg-accent/80")}
+              className={cn("absolute inset-y-0 rounded-none", signed ? (v >= 0 ? "left-1/2 bg-up" : "right-1/2 bg-down") : "left-0 bg-accent/80")}
               style={{ width: `${(Math.abs(v) / max) * (signed ? 50 : 100)}%` }}
             />
           </div>
@@ -133,7 +133,7 @@ export function SystemicTab({ s }: { s: ListedSummary }) {
             <>
               <div className="p-4">
                 <p className="mb-2 text-2xs text-muted-foreground">Where the variance comes from</p>
-                <div className="flex h-3 overflow-hidden rounded-full bg-muted">
+                <div className="flex h-3 overflow-hidden rounded-none bg-muted">
                   {attribution.map(([k, v], i) => (
                     <div key={k} title={`${k}: ${v.toFixed(1)}%`} style={{ width: `${Math.max(v, 0)}%`, background: `hsl(var(--accent) / ${(1 - i * 0.17).toFixed(2)})` }} />
                   ))}
@@ -141,7 +141,7 @@ export function SystemicTab({ s }: { s: ListedSummary }) {
                 <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-2xs text-muted-foreground">
                   {attribution.map(([k, v], i) => (
                     <li key={k}>
-                      <span className="mr-1.5 inline-block h-2 w-2 rounded-full align-middle" style={{ background: `hsl(var(--accent) / ${(1 - i * 0.17).toFixed(2)})` }} />
+                      <span className="mr-1.5 inline-block h-2 w-2 rounded-none align-middle" style={{ background: `hsl(var(--accent) / ${(1 - i * 0.17).toFixed(2)})` }} />
                       {k} {v.toFixed(1)}%
                     </li>
                   ))}

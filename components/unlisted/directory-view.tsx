@@ -51,7 +51,7 @@ export function DirectoryView({ companies, sectors }: { companies: ApiUnlistedLi
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-end gap-x-5 gap-y-4 rounded-2xl border border-border bg-surface p-4">
+      <div className="flex flex-wrap items-end gap-x-5 gap-y-4 rounded-none border border-border bg-surface p-4">
         <div className="min-w-[14rem] flex-1">
           <label htmlFor="unlisted-search" className={label}>
             Company
@@ -66,7 +66,7 @@ export function DirectoryView({ companies, sectors }: { companies: ApiUnlistedLi
                 setShown(PAGE);
               }}
               placeholder="Search by name"
-              className="h-9 w-full rounded-lg border border-border bg-surface-muted pl-9 pr-8 text-sm outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-accent/60"
+              className="h-9 w-full rounded-none border border-border bg-surface-muted pl-9 pr-8 text-sm outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-accent/60"
             />
             {query ? (
               <button
@@ -93,7 +93,7 @@ export function DirectoryView({ companies, sectors }: { companies: ApiUnlistedLi
                 setSector(e.target.value);
                 setShown(PAGE);
               }}
-              className="h-9 max-w-[16rem] appearance-none rounded-lg border border-border bg-surface-muted pl-3 pr-9 text-sm transition-colors hover:border-accent/50"
+              className="h-9 max-w-[16rem] appearance-none rounded-none border border-border bg-surface-muted pl-3 pr-9 text-sm transition-colors hover:border-accent/50"
             >
               <option value="">All sectors</option>
               {sectors.map((s) => (
@@ -124,7 +124,7 @@ export function DirectoryView({ companies, sectors }: { companies: ApiUnlistedLi
       </div>
 
       {rows.length === 0 ? (
-        <p className="rounded-2xl border border-border bg-surface px-4 py-10 text-center text-sm text-muted-foreground">
+        <p className="rounded-none border border-border bg-surface px-4 py-10 text-center text-sm text-muted-foreground">
           No company matches that search. Clear the sector filter or try a shorter name.
         </p>
       ) : (
@@ -133,9 +133,9 @@ export function DirectoryView({ companies, sectors }: { companies: ApiUnlistedLi
             <li key={c.id}>
               <Link
                 href={`/unlisted/${c.id}`}
-                className="group flex h-full items-center gap-3 rounded-2xl border border-border bg-surface p-4 transition-all duration-300 hover:border-accent/50"
+                className="group flex h-full items-center gap-3 rounded-none border border-border bg-surface p-4 transition-all duration-300 hover:border-accent/50"
               >
-                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-accent/20 bg-accent/10 font-mono text-xs font-semibold text-accent">
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-none border border-accent/20 bg-accent/10 font-mono text-xs font-semibold text-accent">
                   {initials(c.name) || "?"}
                 </span>
                 <span className="min-w-0 flex-1">

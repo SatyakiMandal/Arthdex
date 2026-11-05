@@ -77,10 +77,10 @@ export function MyAlerts() {
   }
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-border bg-surface">
+    <section className="overflow-hidden rounded-none border border-border bg-surface">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div className="flex items-center gap-2">
-          <span className="grid h-8 w-8 place-items-center rounded-lg border border-accent/25 bg-accent/10 text-accent">
+          <span className="grid h-8 w-8 place-items-center rounded-none border border-accent/25 bg-accent/10 text-accent">
             <BellRing className="h-4 w-4" />
           </span>
           <div>
@@ -127,7 +127,7 @@ export function MyAlerts() {
             onChange={(e) => setThreshold(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && submit()}
             placeholder={effectiveMetric === "price" ? "e.g. 1250" : "e.g. -3"}
-            className="h-10 w-full rounded-lg border border-border bg-background px-3 font-mono text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-accent"
+            className="h-10 w-full rounded-none border border-border bg-background px-3 font-mono text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-accent"
           />
         </div>
         <button type="button" onClick={submit} className="btn-primary h-10 px-5 py-0 active:scale-[0.98]">
@@ -135,7 +135,7 @@ export function MyAlerts() {
         </button>
       </div>
       {error ? (
-        <p role="alert" className="mx-4 mb-3 rounded-lg border border-down/40 bg-down/10 px-3 py-2 text-sm text-down">
+        <p role="alert" className="mx-4 mb-3 rounded-none border border-down/40 bg-down/10 px-3 py-2 text-sm text-down">
           {error}
         </p>
       ) : null}
@@ -168,7 +168,7 @@ export function MyAlerts() {
                   <button
                     type="button"
                     onClick={() => rearm(r.id)}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border px-2.5 text-xs text-muted-foreground transition-colors hover:border-accent/50 hover:text-foreground"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-none border border-border px-2.5 text-xs text-muted-foreground transition-colors hover:border-accent/50 hover:text-foreground"
                   >
                     <RotateCcw className="h-3.5 w-3.5" /> Re-arm
                   </button>
@@ -177,7 +177,7 @@ export function MyAlerts() {
                   type="button"
                   aria-label={`Delete alert for ${r.name}`}
                   onClick={() => remove(r.id)}
-                  className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-down/10 hover:text-down"
+                  className="grid h-8 w-8 place-items-center rounded-none text-muted-foreground transition-colors hover:bg-down/10 hover:text-down"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>

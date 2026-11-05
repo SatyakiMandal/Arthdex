@@ -63,7 +63,7 @@ export function StatementsView({ data }: { data: ApiYStatements }) {
       </div>
 
       {!frame ? (
-        <p className="rounded-xl border border-border bg-surface p-6 text-sm text-muted-foreground">Yahoo Finance has no {kind === "cashflow" ? "cash flow" : kind === "balance" ? "balance sheet" : "income statement"} for this company.</p>
+        <p className="rounded-none border border-border bg-surface p-6 text-sm text-muted-foreground">Yahoo Finance has no {kind === "cashflow" ? "cash flow" : kind === "balance" ? "balance sheet" : "income statement"} for this company.</p>
       ) : (
         <>
           {row ? (
@@ -81,7 +81,7 @@ export function StatementsView({ data }: { data: ApiYStatements }) {
             </DataCard>
           ) : null}
 
-          <section className="overflow-hidden rounded-xl border border-border bg-surface">
+          <section className="overflow-hidden rounded-none border border-border bg-surface">
             <div className="overflow-x-auto">
               <table className="data-table yf-table w-full text-left text-[0.8125rem]">
                 <thead>

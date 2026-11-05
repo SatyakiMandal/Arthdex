@@ -60,7 +60,7 @@ export function ListedDossier({ s, hideEvent = false }: { s: ListedSummary; hide
             {t.id === tab ? (
               <motion.span
                 layoutId="dossier-tab-underline"
-                className="absolute inset-x-1 -bottom-px h-0.5 rounded-full bg-accent"
+                className="absolute inset-x-1 -bottom-px h-0.5 rounded-none bg-accent"
                 transition={{ type: "spring", stiffness: 380, damping: 32 }}
               />
             ) : null}
@@ -71,7 +71,7 @@ export function ListedDossier({ s, hideEvent = false }: { s: ListedSummary; hide
         {active.render(s)}
       </div>
       {s.caveats.length > 0 ? (
-        <section className="mt-6 rounded-xl border border-border bg-surface p-4">
+        <section className="mt-6 rounded-none border border-border bg-surface p-4">
           <h3 className="text-sm font-semibold tracking-tight">Caveats from the run</h3>
           <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
             {s.caveats.map((c, i) => (

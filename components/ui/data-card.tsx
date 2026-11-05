@@ -26,11 +26,11 @@ export function DataCard({
   className?: string;
 }) {
   return (
-    <section className={cn("flex flex-col rounded-lg border border-border bg-surface", className)}>
-      <header className="flex flex-wrap items-start justify-between gap-3 px-5 pb-3 pt-4">
+    <section className={cn("flex flex-col rounded-none border border-border bg-surface", className)}>
+      <header className="flex flex-wrap items-start justify-between gap-2.5 px-4 pb-2.5 pt-3">
         <div className="min-w-0">
-          <h2 className="font-sans text-[15px] font-semibold tracking-normal">{title}</h2>
-          {subtitle ? <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p> : null}
+          <h2 className="font-sans text-sm font-semibold tracking-normal">{title}</h2>
+          {subtitle ? <p className="mt-0.5 text-2xs text-muted-foreground">{subtitle}</p> : null}
         </div>
         {badge}
       </header>
@@ -38,7 +38,7 @@ export function DataCard({
       <div className="flex-1 border-t border-border">{children}</div>
 
       {footnote ? (
-        <p className="border-t border-border px-5 py-2.5 text-xs text-muted-foreground">{footnote}</p>
+        <p className="border-t border-border px-4 py-2 text-2xs text-muted-foreground">{footnote}</p>
       ) : null}
     </section>
   );
@@ -75,12 +75,12 @@ export function StatusPill({
   const pill = (
     <span
       className={cn(
-        "inline-flex h-6 select-none items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 font-mono text-2xs font-medium uppercase tracking-wide transition-colors",
+        "inline-flex h-6 select-none items-center gap-1.5 whitespace-nowrap rounded-none border px-2 font-mono text-3xs font-medium uppercase tracking-wide transition-colors",
         styles[tone],
         className,
       )}
     >
-      <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", dot[tone])} aria-hidden />
+      <span className={cn("h-1.5 w-1.5 shrink-0 rounded-none", dot[tone])} aria-hidden />
       {label}
     </span>
   );

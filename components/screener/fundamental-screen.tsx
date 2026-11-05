@@ -52,7 +52,7 @@ export function FundamentalScreen({
             href={href({ preset: id })}
             aria-current={active === id ? "page" : undefined}
             className={cn(
-              "rounded-md border px-3 py-1.5 text-sm transition-colors",
+              "rounded-none border px-3 py-1.5 text-sm transition-colors",
               active === id ? "border-foreground bg-foreground text-background" : "border-border text-muted-foreground hover:text-foreground",
             )}
           >
@@ -69,7 +69,7 @@ export function FundamentalScreen({
           defaultValue={formula}
           placeholder="pe < 20 AND roe > 18 AND de < 0.5"
           spellCheck={false}
-          className="min-w-0 flex-1 rounded-md border border-border bg-surface px-3 py-2 font-mono text-sm"
+          className="min-w-0 flex-1 rounded-none border border-border bg-surface px-3 py-2 font-mono text-sm"
         />
         <button type="submit" className="btn-primary h-10 px-4">Run screen</button>
       </form>
@@ -90,7 +90,7 @@ export function FundamentalScreen({
       </details>
 
       {error ? (
-        <p role="alert" className="rounded-md border border-down/40 bg-down/10 px-3 py-2 text-sm">{error}</p>
+        <p role="alert" className="rounded-none border border-down/40 bg-down/10 px-3 py-2 text-sm">{error}</p>
       ) : data ? (
         <>
           <p className="text-sm text-muted-foreground">

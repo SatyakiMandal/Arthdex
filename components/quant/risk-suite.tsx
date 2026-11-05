@@ -120,10 +120,10 @@ export function RiskSuite({ merton, varSuite }: { merton: ApiMerton; varSuite: A
                     <span className="block text-2xs text-muted-foreground">{row.note}</span>
                   </th>
                   <td className="px-3 py-2">
-                    <span className="block h-1.5 rounded-full bg-muted">
+                    <span className="block h-1.5 rounded-none bg-muted">
                       <span
                         className={cn(
-                          "block h-full rounded-full",
+                          "block h-full rounded-none",
                           row.emphasis ? "bg-down" : "bg-down/55",
                         )}
                         style={{ width: `${((row.value as number) / maxVar) * 100}%` }}

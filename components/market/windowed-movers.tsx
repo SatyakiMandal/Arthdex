@@ -75,12 +75,12 @@ function WindowTable({
                   {/* Position within the 52-week range — context the raw
                       high/low columns do not give on their own */}
                   <div
-                    className="relative h-1 w-full rounded-full bg-muted"
+                    className="relative h-1 w-full rounded-none bg-muted"
                     title="Position in 52-week range"
                   >
                     <div
                       className={cn(
-                        "absolute top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full",
+                        "absolute top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-none",
                         tone === "up" ? "bg-up" : "bg-down",
                       )}
                       style={{ left: `${bandPosition(row) * 100}%` }}

@@ -32,7 +32,7 @@ export function RunProgress({
   const pct = Math.round(Math.min(0.98, Math.max(0, raw)) * 100);
 
   return (
-    <section className="mt-8 overflow-hidden rounded-xl border border-border bg-surface" aria-live="polite">
+    <section className="mt-8 overflow-hidden rounded-none border border-border bg-surface" aria-live="polite">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
         <div>
           <p className="text-sm font-semibold">Analysing… {pct}%</p>
@@ -43,7 +43,7 @@ export function RunProgress({
         <button
           type="button"
           onClick={onCancel}
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-sm text-muted-foreground hover:bg-surface-muted hover:text-foreground"
+          className="inline-flex h-9 items-center gap-1.5 rounded-none border border-border px-3 text-sm text-muted-foreground hover:bg-surface-muted hover:text-foreground"
         >
           <XCircle className="h-3.5 w-3.5" /> Cancel
         </button>
@@ -61,7 +61,7 @@ export function RunProgress({
             <li key={label} className={cn("flex items-center gap-2.5 bg-surface px-4 py-3", cur && "bg-accent/[0.06]")}>
               <span
                 className={cn(
-                  "grid h-6 w-6 shrink-0 place-items-center rounded-full border text-2xs font-semibold",
+                  "grid h-6 w-6 shrink-0 place-items-center rounded-none border text-2xs font-semibold",
                   done && "border-up/40 bg-up/15 text-up",
                   cur && "border-accent/50 bg-accent/15 text-accent",
                   !done && !cur && "border-border text-muted-foreground",
@@ -85,7 +85,7 @@ export function RunProgress({
         {logs.length > 0 ? (
           <details className="mt-3">
             <summary className="cursor-pointer text-2xs text-muted-foreground hover:text-foreground">Technical details</summary>
-            <pre className="mt-2 max-h-56 overflow-auto whitespace-pre-wrap break-all rounded-lg border border-border bg-background p-3 font-mono text-2xs leading-relaxed text-muted-foreground">{logs.join("\n")}</pre>
+            <pre className="mt-2 max-h-56 overflow-auto whitespace-pre-wrap break-all rounded-none border border-border bg-background p-3 font-mono text-2xs leading-relaxed text-muted-foreground">{logs.join("\n")}</pre>
           </details>
         ) : null}
       </div>

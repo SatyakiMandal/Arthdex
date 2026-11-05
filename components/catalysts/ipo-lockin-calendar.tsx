@@ -37,7 +37,7 @@ export function IpoLockinCalendar({
           <button
             onClick={() => setFilter("ACTIVE")}
             className={cn(
-              "rounded-full px-3 py-1 text-2xs font-semibold uppercase tracking-wider transition-colors",
+              "rounded-none px-2.5 py-1 text-2xs font-mono font-semibold uppercase tracking-wider transition-colors duration-150",
               filter === "ACTIVE"
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -48,7 +48,7 @@ export function IpoLockinCalendar({
           <button
             onClick={() => setFilter("ALL")}
             className={cn(
-              "rounded-full px-3 py-1 text-2xs font-semibold uppercase tracking-wider transition-colors",
+              "rounded-none px-2.5 py-1 text-2xs font-mono font-semibold uppercase tracking-wider transition-colors duration-150",
               filter === "ALL"
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -60,7 +60,7 @@ export function IpoLockinCalendar({
       </div>
 
       {/* Events Table */}
-      <div className="overflow-x-auto rounded-lg border border-border bg-card">
+      <div className="overflow-x-auto rounded-none border border-border bg-card">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="border-b border-border bg-muted/40 text-2xs text-muted-foreground uppercase tracking-wider">
@@ -170,7 +170,7 @@ export function IpoLockinCalendar({
       </div>
 
       {/* Rules explainer card */}
-      <div className="rounded-lg border border-border/80 bg-muted/20 p-3.5 text-2xs text-muted-foreground space-y-1 font-sans">
+      <div className="rounded-none border border-border/80 bg-muted/20 p-3 text-2xs text-muted-foreground space-y-1 font-sans">
         <div className="font-semibold text-foreground flex items-center gap-1.5 text-2xs uppercase tracking-wider">
           <Info className="h-3.5 w-3.5 text-primary" /> SEBI ICDR Lock-in Framework
         </div>

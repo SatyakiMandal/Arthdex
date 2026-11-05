@@ -10,7 +10,7 @@ export function ListedSummaryView({ s }: { s: ListedSummary }) {
   // A data service started before the dossier sections existed returns no detail block
   if (!s.detail) {
     return (
-      <p role="alert" className="rounded-xl border border-flat/40 bg-flat/10 px-4 py-3 text-sm">
+      <p role="alert" className="rounded-none border border-flat/40 bg-flat/10 px-4 py-3 text-sm">
         This result is missing the dossier sections. Restart the data service (backend) so it serves the
         current summary format, then reload.
       </p>
@@ -25,7 +25,7 @@ export function UnlistedSummaryView({ s }: { s: UnlistedSummary }) {
   const p = s.price;
   return (
     <div className="space-y-4">
-      <p className="rounded-xl border border-flat/40 bg-flat/[0.07] px-4 py-2.5 text-2xs text-flat">
+      <p className="rounded-none border border-flat/40 bg-flat/[0.07] px-4 py-2.5 text-2xs text-flat">
         {s.researchNote ?? "This analysis was run before valuation, risk and the investment call were added for unlisted companies. Press Re-run above for the full dossier."}
       </p>
       <DataCard

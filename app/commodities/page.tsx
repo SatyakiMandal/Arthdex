@@ -44,7 +44,7 @@ function Group({ title, rows }: { title: string; rows: ApiCommodity[] }) {
   if (rows.length === 0) return null;
   const maxByHorizon = Object.fromEntries(HORIZONS.map((h) => [h, Math.max(...rows.map((r) => Math.abs(r.change[h] ?? 0)), 1)])) as Record<(typeof HORIZONS)[number], number>;
   return (
-    <section className="mt-6 rounded-xl border border-border bg-surface">
+    <section className="mt-6 rounded-none border border-border bg-surface">
       <h2 className="border-b border-border px-4 py-3 text-sm font-semibold tracking-tight">{title}</h2>
       <div className="overflow-x-auto">
         <table className="data-table w-full min-w-[900px] border-collapse text-sm">
@@ -86,8 +86,8 @@ function Group({ title, rows }: { title: string; rows: ApiCommodity[] }) {
                     {pos == null ? (
                       "—"
                     ) : (
-                      <div className="relative h-1 w-20 rounded-full bg-muted" title={`${formatINR(r.low52w ?? 0)} – ${formatINR(r.high52w ?? 0)}`}>
-                        <div className="absolute top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent" style={{ left: `${pos * 100}%` }} />
+                      <div className="relative h-1 w-20 rounded-none bg-muted" title={`${formatINR(r.low52w ?? 0)} – ${formatINR(r.high52w ?? 0)}`}>
+                        <div className="absolute top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-none bg-accent" style={{ left: `${pos * 100}%` }} />
                       </div>
                     )}
                   </td>
@@ -119,7 +119,7 @@ export default async function CommoditiesPage() {
         {related.length > 0 ? (
           <div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4">
             {related.map((i) => (
-              <div key={i.id} className="rounded-xl border border-border bg-surface px-4 py-3">
+              <div key={i.id} className="rounded-none border border-border bg-surface px-4 py-3">
                 <p className="text-2xs text-muted-foreground">{i.name}</p>
                 <p className="mt-1 font-mono text-xl font-semibold tabular-nums">{formatINR(i.level)}</p>
                 <p className={cn("font-mono text-xs", deltaColor(i.change.percent))}>{formatPct(i.change.percent)} today</p>
@@ -134,7 +134,7 @@ export default async function CommoditiesPage() {
         {res.ok ? (
           <>
             {res.data.usdinr ? (
-              <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-1 rounded-xl border border-border bg-surface px-4 py-3 text-sm">
+              <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-1 rounded-none border border-border bg-surface px-4 py-3 text-sm">
                 <span>
                   <span className="text-2xs text-muted-foreground">USD / INR </span>
                   <span className="font-mono">{res.data.usdinr.toFixed(2)}</span>

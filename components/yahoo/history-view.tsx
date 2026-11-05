@@ -100,7 +100,7 @@ export function HistoryView({ history, compare }: { history: ApiYHistory; compar
         </div>
       </DataCard>
 
-      <section className="overflow-hidden rounded-xl border border-border bg-surface">
+      <section className="overflow-hidden rounded-none border border-border bg-surface">
         <header className="flex items-center justify-between border-b border-border px-4 py-2.5">
           <h3 className="text-sm font-semibold">Historical data</h3>
           <button type="button" onClick={csv} className="btn inline-flex items-center gap-1.5 text-xs">

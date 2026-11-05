@@ -208,7 +208,7 @@ export function PortfolioTerminal({
             <button
               key={p.name}
               onClick={() => handleLoadPreset(p)}
-              className="rounded-full border border-border/80 bg-card/60 px-3 py-1 text-xs text-foreground transition-all hover:border-primary/50 hover:bg-muted"
+              className="rounded-none border border-border/80 bg-card/60 px-3 py-1 text-xs text-foreground transition-all hover:border-primary/50 hover:bg-muted"
             >
               {p.name}
             </button>
@@ -216,13 +216,13 @@ export function PortfolioTerminal({
         </div>
 
         <div className="flex items-center gap-2">
-          <label className="flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted cursor-pointer transition-colors">
+          <label className="flex items-center gap-1.5 rounded-none border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted cursor-pointer transition-colors">
             <UploadCloud className="h-3.5 w-3.5 text-primary" /> Import Broker CSV
             <input type="file" accept=".csv" onChange={handleCsvUpload} className="hidden" />
           </label>
           <button
             onClick={() => setShowAddLot(!showAddLot)}
-            className="flex items-center gap-1.5 rounded-md border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
+            className="flex items-center gap-1.5 rounded-none border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
           >
             <Plus className="h-3.5 w-3.5" /> Add Holding
           </button>
@@ -231,7 +231,7 @@ export function PortfolioTerminal({
 
       {/* Manual add holding card */}
       {showAddLot && (
-        <div className="rounded-lg border border-primary/40 bg-card p-4 shadow-sm animate-in fade-in-50 space-y-4">
+        <div className="rounded-none border border-primary/40 bg-card p-4 shadow-sm animate-in fade-in-50 space-y-4">
           <div className="flex items-center justify-between border-b border-border/60 pb-2">
             <h4 className="text-xs font-semibold text-foreground">Add Holding Lot</h4>
             <button
@@ -256,7 +256,7 @@ export function PortfolioTerminal({
                 value={lotQty}
                 onChange={(e) => setLotQty(e.target.value)}
                 placeholder="e.g. 50"
-                className="w-full rounded-md border border-border bg-background px-3 py-1.5 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                className="w-full rounded-none border border-border bg-background px-3 py-1.5 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
             <div>
@@ -266,7 +266,7 @@ export function PortfolioTerminal({
                 value={lotPrice}
                 onChange={(e) => setLotPrice(e.target.value)}
                 placeholder="e.g. 1450"
-                className="w-full rounded-md border border-border bg-background px-3 py-1.5 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                className="w-full rounded-none border border-border bg-background px-3 py-1.5 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
             <div>
@@ -275,7 +275,7 @@ export function PortfolioTerminal({
                 type="date"
                 value={lotDate}
                 onChange={(e) => setLotDate(e.target.value)}
-                className="w-full rounded-md border border-border bg-background px-3 py-1.5 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                className="w-full rounded-none border border-border bg-background px-3 py-1.5 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
           </div>
@@ -283,7 +283,7 @@ export function PortfolioTerminal({
             <button
               onClick={handleAddLot}
               disabled={!pickedCompany || !lotQty || !lotPrice}
-              className="rounded-md bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-all"
+              className="rounded-none bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-all"
             >
               Add to Portfolio
             </button>
@@ -293,7 +293,7 @@ export function PortfolioTerminal({
 
       {/* Prominent Sample / Synthetic Data Disclaimer Banner */}
       {isDemoPreset ? (
-        <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-xs text-amber-200 shadow-xs">
+        <div className="rounded-none border border-amber-500/40 bg-amber-500/10 p-4 text-xs text-amber-200 shadow-xs">
           <div className="flex items-start gap-3">
             <AlertTriangle className="h-5 w-5 shrink-0 text-amber-400 mt-0.5" />
             <div className="space-y-1.5">
@@ -305,7 +305,7 @@ export function PortfolioTerminal({
                 The holdings, purchase quantities, costs, and dates shown below are <strong>sample presets</strong> to demonstrate the Newton-Raphson XIRR engine and Section 112A tax-loss harvesting desk. While Current Market Prices (CMPs) are pulled live from NSE quotes, <strong>no personal portfolio data has been uploaded yet</strong>.
               </p>
               <div className="pt-1 flex flex-wrap items-center gap-2.5">
-                <label className="inline-flex items-center gap-1.5 rounded-md bg-amber-500/25 px-3 py-1.5 text-2xs font-semibold text-amber-200 hover:bg-amber-500/35 cursor-pointer border border-amber-500/40 transition-colors shadow-xs">
+                <label className="inline-flex items-center gap-1.5 rounded-none bg-amber-500/25 px-3 py-1.5 text-2xs font-semibold text-amber-200 hover:bg-amber-500/35 cursor-pointer border border-amber-500/40 transition-colors shadow-xs">
                   <UploadCloud className="h-3.5 w-3.5 text-amber-300" /> Import your broker CSV (Zerodha, Groww)
                   <input type="file" accept=".csv" onChange={handleCsvUpload} className="hidden" />
                 </label>
@@ -320,7 +320,7 @@ export function PortfolioTerminal({
           </div>
         </div>
       ) : (
-        <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-3.5 text-xs text-emerald-200 shadow-xs">
+        <div className="rounded-none border border-emerald-500/40 bg-emerald-500/10 p-3.5 text-xs text-emerald-200 shadow-xs">
           <div className="flex items-center gap-2.5">
             <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
             <div>
@@ -335,19 +335,19 @@ export function PortfolioTerminal({
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <div className="rounded-xl border border-border bg-card p-4">
+        <div className="rounded-none border border-border bg-card p-4">
           <div className="text-2xs text-muted-foreground uppercase tracking-wider font-semibold">Total Invested</div>
           <div className="mt-1 font-mono text-lg font-bold text-foreground">{fmtINR(summary.totalInvested)}</div>
           <div className="text-3xs text-muted-foreground mt-0.5 font-mono">{summary.lotsCount} lots across {summary.uniqueHoldingsCount} stocks</div>
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-4">
+        <div className="rounded-none border border-border bg-card p-4">
           <div className="text-2xs text-muted-foreground uppercase tracking-wider font-semibold">Current Value</div>
           <div className="mt-1 font-mono text-lg font-bold text-foreground">{fmtINR(summary.currentValue)}</div>
           <div className="text-3xs text-muted-foreground mt-0.5">Live vetted NSE closes</div>
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-4">
+        <div className="rounded-none border border-border bg-card p-4">
           <div className="text-2xs text-muted-foreground uppercase tracking-wider font-semibold">Total Unrealized P&amp;L</div>
           <div
             className={cn(
@@ -368,7 +368,7 @@ export function PortfolioTerminal({
           </div>
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-4">
+        <div className="rounded-none border border-border bg-card p-4">
           <div className="text-2xs text-muted-foreground uppercase tracking-wider font-semibold flex items-center gap-1">
             <Calculator className="h-3.5 w-3.5 text-primary" /> True XIRR
           </div>
@@ -378,7 +378,7 @@ export function PortfolioTerminal({
           <div className="text-3xs text-muted-foreground mt-0.5">Annualized cash-flow return</div>
         </div>
 
-        <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-4">
+        <div className="rounded-none border border-emerald-500/40 bg-emerald-500/10 p-4">
           <div className="text-2xs text-emerald-400 uppercase tracking-wider font-semibold flex items-center gap-1">
             <Flame className="h-3.5 w-3.5" /> Tax Relief Potential
           </div>
@@ -391,7 +391,7 @@ export function PortfolioTerminal({
 
       {/* Concentration Alerts */}
       {concentrationAlerts.length > 0 && (
-        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3.5 text-xs text-amber-300 space-y-1.5">
+        <div className="rounded-none border border-amber-500/40 bg-amber-500/10 p-3.5 text-xs text-amber-300 space-y-1.5">
           <div className="font-semibold flex items-center gap-1.5 text-2xs uppercase tracking-wider">
             <ShieldAlert className="h-4 w-4 text-amber-400" /> Portfolio Concentration Warnings
           </div>
@@ -408,7 +408,7 @@ export function PortfolioTerminal({
         <button
           onClick={() => setActiveTab("HARVEST")}
           className={cn(
-            "rounded-md px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5",
+            "rounded-none px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5",
             activeTab === "HARVEST"
               ? "bg-primary text-primary-foreground shadow-sm"
               : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -420,7 +420,7 @@ export function PortfolioTerminal({
         <button
           onClick={() => setActiveTab("LEDGER")}
           className={cn(
-            "rounded-md px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5",
+            "rounded-none px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5",
             activeTab === "LEDGER"
               ? "bg-primary text-primary-foreground shadow-sm"
               : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -432,7 +432,7 @@ export function PortfolioTerminal({
         <button
           onClick={() => setActiveTab("ALLOCATION")}
           className={cn(
-            "rounded-md px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5",
+            "rounded-none px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5",
             activeTab === "ALLOCATION"
               ? "bg-primary text-primary-foreground shadow-sm"
               : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -446,7 +446,7 @@ export function PortfolioTerminal({
       {activeTab === "HARVEST" && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="rounded-xl border border-border bg-card p-4 space-y-2">
+            <div className="rounded-none border border-border bg-card p-4 space-y-2">
               <div className="flex items-center justify-between text-2xs text-muted-foreground uppercase font-semibold">
                 <span>Short-Term Capital Gains (STCG &lt; 365 Days)</span>
                 <span className="font-mono text-primary font-bold">Tax Rate: 20%</span>
@@ -467,7 +467,7 @@ export function PortfolioTerminal({
               </div>
             </div>
 
-            <div className="rounded-xl border border-border bg-card p-4 space-y-2">
+            <div className="rounded-none border border-border bg-card p-4 space-y-2">
               <div className="flex items-center justify-between text-2xs text-muted-foreground uppercase font-semibold">
                 <span>Long-Term Capital Gains (LTCG ≥ 365 Days)</span>
                 <span className="font-mono text-primary font-bold">Tax Rate: 12.5%</span>
@@ -490,7 +490,7 @@ export function PortfolioTerminal({
           </div>
 
           {/* Actionable Harvesting Table */}
-          <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <div className="rounded-none border border-border bg-card overflow-hidden">
             <div className="border-b border-border/60 bg-muted/40 p-3.5 flex items-center justify-between">
               <div>
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-1.5">
@@ -580,7 +580,7 @@ export function PortfolioTerminal({
 
       {/* TAB 2: Holdings Ledger */}
       {activeTab === "LEDGER" && (
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="rounded-none border border-border bg-card overflow-hidden">
           <div className="border-b border-border/60 bg-muted/40 p-3.5 flex items-center justify-between">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground">
               Holdings Ledger &amp; Lot Breakdown ({lots.length} Lots)
@@ -659,7 +659,7 @@ export function PortfolioTerminal({
       {/* TAB 3: Sector & Market-Cap Allocation */}
       {activeTab === "ALLOCATION" && (
         <div className="space-y-6">
-          <div className="rounded-xl border border-border bg-card p-5">
+          <div className="rounded-none border border-border bg-card p-5">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground mb-4 flex items-center gap-2">
               <PieChart className="h-4 w-4 text-primary" /> Sector Weight Distribution
             </h3>
@@ -673,10 +673,10 @@ export function PortfolioTerminal({
                       {fmtINR(sec.value)} ({sec.weightPct}%)
                     </span>
                   </div>
-                  <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
+                  <div className="w-full h-2 rounded-none bg-muted overflow-hidden">
                     <div
                       className={cn(
-                        "h-full rounded-full transition-all",
+                        "h-full rounded-none transition-all",
                         sec.weightPct > 30 ? "bg-amber-500" : "bg-primary",
                       )}
                       style={{ width: `${Math.min(100, sec.weightPct)}%` }}
@@ -690,7 +690,7 @@ export function PortfolioTerminal({
       )}
 
       {/* Privacy Guarantee Note */}
-      <div className="rounded-lg border border-border/80 bg-muted/20 p-3.5 text-2xs text-muted-foreground flex items-center justify-between">
+      <div className="rounded-none border border-border/80 bg-muted/20 p-3.5 text-2xs text-muted-foreground flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <Info className="h-3.5 w-3.5 text-primary" />
           <span><strong>Privacy Guarantee:</strong> Portfolio analysis is executed on-the-fly. No bank accounts or broker credentials are requested or stored.</span>

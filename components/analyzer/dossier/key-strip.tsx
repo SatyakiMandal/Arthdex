@@ -44,7 +44,7 @@ export function KeyStrip({ s }: { s: ListedSummary }) {
   );
 
   return (
-    <div className="mb-3 grid grid-cols-2 gap-y-1 rounded-xl border border-border bg-surface sm:grid-cols-4 lg:grid-cols-8 2xl:grid-cols-[repeat(17,minmax(0,1fr))]">
+    <div className="mb-3 grid grid-cols-2 gap-y-1 rounded-none border border-border bg-surface sm:grid-cols-4 lg:grid-cols-8 2xl:grid-cols-[repeat(17,minmax(0,1fr))]">
       {tiles}
     </div>
   );

@@ -69,7 +69,7 @@ export function DeliveryScanner({
         <button
           onClick={() => setActiveTab(activeTab === "ACCUMULATION" ? "ALL" : "ACCUMULATION")}
           className={cn(
-            "rounded-lg border p-3.5 text-left transition-all",
+            "rounded-none border p-3.5 text-left transition-all",
             activeTab === "ACCUMULATION"
               ? "border-emerald-500 bg-emerald-500/10 ring-1 ring-emerald-500/40"
               : "border-border/80 bg-card hover:border-emerald-500/40",
@@ -89,7 +89,7 @@ export function DeliveryScanner({
         <button
           onClick={() => setActiveTab(activeTab === "SURGE" ? "ALL" : "SURGE")}
           className={cn(
-            "rounded-lg border p-3.5 text-left transition-all",
+            "rounded-none border p-3.5 text-left transition-all",
             activeTab === "SURGE"
               ? "border-cyan-500 bg-cyan-500/10 ring-1 ring-cyan-500/40"
               : "border-border/80 bg-card hover:border-cyan-500/40",
@@ -109,7 +109,7 @@ export function DeliveryScanner({
         <button
           onClick={() => setActiveTab(activeTab === "ABSORPTION" ? "ALL" : "ABSORPTION")}
           className={cn(
-            "rounded-lg border p-3.5 text-left transition-all",
+            "rounded-none border p-3.5 text-left transition-all",
             activeTab === "ABSORPTION"
               ? "border-purple-500 bg-purple-500/10 ring-1 ring-purple-500/40"
               : "border-border/80 bg-card hover:border-purple-500/40",
@@ -129,7 +129,7 @@ export function DeliveryScanner({
         <button
           onClick={() => setActiveTab(activeTab === "DISTRIBUTION" ? "ALL" : "DISTRIBUTION")}
           className={cn(
-            "rounded-lg border p-3.5 text-left transition-all",
+            "rounded-none border p-3.5 text-left transition-all",
             activeTab === "DISTRIBUTION"
               ? "border-rose-500 bg-rose-500/10 ring-1 ring-rose-500/40"
               : "border-border/80 bg-card hover:border-rose-500/40",
@@ -155,7 +155,7 @@ export function DeliveryScanner({
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={cn(
-                "rounded-full px-3 py-1 text-2xs font-semibold uppercase tracking-wider transition-all",
+                "rounded-none px-3 py-1 text-2xs font-semibold uppercase tracking-wider transition-all",
                 activeTab === tab
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "bg-card border border-border/70 text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -172,13 +172,13 @@ export function DeliveryScanner({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Filter by symbol..."
-            className="rounded-md border border-border/80 bg-card px-2.5 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary w-40 sm:w-52"
+            className="rounded-none border border-border/80 bg-card px-2.5 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary w-40 sm:w-52"
           />
         </div>
       </div>
 
       {/* Screened Stocks Table */}
-      <div className="overflow-x-auto rounded-lg border border-border bg-card">
+      <div className="overflow-x-auto rounded-none border border-border bg-card">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="border-b border-border bg-muted/40 text-2xs text-muted-foreground uppercase tracking-wider">
@@ -233,10 +233,10 @@ export function DeliveryScanner({
                   </td>
                   <td className="p-3">
                     <div className="flex items-center gap-2">
-                      <div className="w-16 h-2 rounded-full bg-muted overflow-hidden">
+                      <div className="w-16 h-2 rounded-none bg-muted overflow-hidden">
                         <div
                           className={cn(
-                            "h-full rounded-full",
+                            "h-full rounded-none",
                             stock.deliveryPct >= 70
                               ? "bg-emerald-500"
                               : stock.deliveryPct >= 50

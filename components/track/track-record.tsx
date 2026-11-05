@@ -48,7 +48,7 @@ export function TrackRecord() {
   }
   if (error && !data) {
     return (
-      <p role="alert" className="rounded-xl border border-down/40 bg-down/10 px-4 py-3 text-sm text-down">
+      <p role="alert" className="rounded-none border border-down/40 bg-down/10 px-4 py-3 text-sm text-down">
         {error}
       </p>
     );
@@ -57,7 +57,7 @@ export function TrackRecord() {
 
   if (data.items.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-border bg-surface px-6 py-14 text-center">
+      <div className="rounded-none border border-dashed border-border bg-surface px-6 py-14 text-center">
         <ClipboardCheck className="mx-auto h-8 w-8 text-muted-foreground" />
         <h2 className="mt-4 text-base font-semibold">No calls logged yet</h2>
         <p className="mx-auto mt-1.5 max-w-md text-sm text-muted-foreground">
@@ -76,7 +76,7 @@ export function TrackRecord() {
         {data.horizons.map((h) => {
           const s = data.summary[String(h)];
           return (
-            <div key={h} className="rounded-xl border border-border bg-surface px-4 py-3">
+            <div key={h} className="rounded-none border border-border bg-surface px-4 py-3">
               <p className="text-2xs text-muted-foreground">After {h} trading day{h > 1 ? "s" : ""}</p>
               <p className="mt-1 font-mono text-xl font-semibold">{s.hitRatePct == null ? "—" : `${s.hitRatePct}% hit`}</p>
               <p className="mt-0.5 text-2xs text-muted-foreground">
@@ -87,7 +87,7 @@ export function TrackRecord() {
         })}
       </div>
 
-      <section className="overflow-hidden rounded-2xl border border-border bg-surface">
+      <section className="overflow-hidden rounded-none border border-border bg-surface">
         <div className="overflow-x-auto">
           <table className="data-table w-full min-w-[720px] text-sm">
             <thead className="text-2xs text-muted-foreground">
@@ -136,7 +136,7 @@ export function TrackRecord() {
                     );
                   })}
                   <td className="px-3 py-2.5">
-                    <button type="button" aria-label={`Delete ${d.symbol} call`} title="Delete" onClick={() => remove(d)} className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-down/10 hover:text-down">
+                    <button type="button" aria-label={`Delete ${d.symbol} call`} title="Delete" onClick={() => remove(d)} className="grid h-8 w-8 place-items-center rounded-none text-muted-foreground transition-colors hover:bg-down/10 hover:text-down">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </td>

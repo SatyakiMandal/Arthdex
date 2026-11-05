@@ -47,7 +47,7 @@ export default async function AlertsPage() {
         </div>
 
         <div className="mt-8 space-y-4">
-          <Suspense fallback={<div className="h-48 animate-pulse rounded-2xl border border-border bg-surface" />}>
+          <Suspense fallback={<div className="h-48 animate-pulse rounded-none border border-border bg-surface" />}>
             <MyAlerts />
           </Suspense>
 

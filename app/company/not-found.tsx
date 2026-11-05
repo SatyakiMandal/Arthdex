@@ -18,13 +18,13 @@ export default function CompanyNotFound() {
         <div className="mt-8 flex flex-wrap gap-2">
           <Link
             href="/market-watch"
-            className="inline-block rounded-lg border border-border bg-surface-muted px-3 py-1.5 text-xs transition-colors hover:border-accent/50 hover:text-accent"
+            className="inline-block rounded-none border border-border bg-surface-muted px-3 py-1.5 text-xs transition-colors hover:border-accent/50 hover:text-accent"
           >
             Market watch
           </Link>
           <Link
             href="/ipo"
-            className="inline-block rounded-lg border border-border bg-surface-muted px-3 py-1.5 text-xs transition-colors hover:border-accent/50 hover:text-accent"
+            className="inline-block rounded-none border border-border bg-surface-muted px-3 py-1.5 text-xs transition-colors hover:border-accent/50 hover:text-accent"
           >
             IPO pipeline
           </Link>

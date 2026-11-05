@@ -78,7 +78,7 @@ export function CalendarView({ calendar }: { calendar: ApiCalendar }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end gap-x-5 gap-y-4 rounded-2xl border border-border bg-surface p-4">
+      <div className="flex flex-wrap items-end gap-x-5 gap-y-4 rounded-none border border-border bg-surface p-4">
         <div>
           <span className={label}>Show</span>
           <SegmentedControl options={views} value={view} onChange={setView} layoutGroupId="cal-view" />
@@ -100,7 +100,7 @@ export function CalendarView({ calendar }: { calendar: ApiCalendar }) {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Name or symbol"
-              className="h-9 w-full rounded-lg border border-border bg-surface-muted pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-accent/60"
+              className="h-9 w-full rounded-none border border-border bg-surface-muted pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-accent/60"
             />
           </div>
         </div>
@@ -125,7 +125,7 @@ export function CalendarView({ calendar }: { calendar: ApiCalendar }) {
         ) : (
           <div className="space-y-3">
             {groupByDate(actions, (a) => a.exDate).map(([date, rows]) => (
-              <section key={date} className="overflow-hidden rounded-2xl border border-border bg-surface">
+              <section key={date} className="overflow-hidden rounded-none border border-border bg-surface">
                 <h2 className="border-b border-border bg-surface-muted/40 px-4 py-2 text-xs font-semibold">
                   Ex-date {dayLabel(date || null)}
                 </h2>
@@ -152,7 +152,7 @@ export function CalendarView({ calendar }: { calendar: ApiCalendar }) {
       ) : (
         <div className="space-y-3">
           {groupByDate(meetings, (m) => m.date).map(([date, rows]) => (
-            <section key={date} className="overflow-hidden rounded-2xl border border-border bg-surface">
+            <section key={date} className="overflow-hidden rounded-none border border-border bg-surface">
               <h2 className="border-b border-border bg-surface-muted/40 px-4 py-2 text-xs font-semibold">
                 {dayLabel(date || null)} <span className="font-normal text-muted-foreground">· {rows.length}</span>
               </h2>
@@ -180,7 +180,7 @@ export function CalendarView({ calendar }: { calendar: ApiCalendar }) {
 
 function Empty() {
   return (
-    <p className="rounded-2xl border border-border bg-surface px-4 py-10 text-center text-sm text-muted-foreground">
+    <p className="rounded-none border border-border bg-surface px-4 py-10 text-center text-sm text-muted-foreground">
       Nothing matches those filters in the next 30 days.
     </p>
   );

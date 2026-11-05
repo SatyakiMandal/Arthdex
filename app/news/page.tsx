@@ -60,7 +60,7 @@ export default async function NewsPage({ searchParams }: PageProps) {
               key={option.id || "all"}
               href={`/news${option.id ? `?kind=${option.id}` : ""}`}
               className={cn(
-                "rounded-lg border px-3 py-1.5 text-xs transition-colors",
+                "rounded-none border px-3 py-1.5 text-xs transition-colors",
                 option.id === kind
                   ? "border-accent/50 bg-accent/10 text-accent"
                   : "border-border bg-surface-muted text-muted-foreground hover:text-foreground",

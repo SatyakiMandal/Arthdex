@@ -84,7 +84,7 @@ export function SectorTreemap({ pulse }: { pulse: ApiPulse }) {
 
   return (
     <div>
-      <div className="relative w-full overflow-hidden rounded-lg border border-border bg-border" style={{ aspectRatio: `${W} / ${H}` }} role="img" aria-label={`Nifty 500 by sector, tiles sized by market cap and coloured by today's move`}>
+      <div className="relative w-full overflow-hidden rounded-none border border-border bg-border" style={{ aspectRatio: `${W} / ${H}` }} role="img" aria-label={`Nifty 500 by sector, tiles sized by market cap and coloured by today's move`}>
         {sectors.map((sec) => {
           const info = sectorInfo.get(sec.item.industry);
           const showHeader = sec.h > HEADER * 2 && sec.w > 60;

@@ -2,13 +2,13 @@ import { cn } from "@/lib/utils";
 
 /** Pulsing placeholder used while a server component streams in. */
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn("animate-shimmer rounded-md bg-[linear-gradient(90deg,hsl(var(--muted))_25%,hsl(var(--surface-raised))_50%,hsl(var(--muted))_75%)] bg-[length:200%_100%]", className)} />;
+  return <div className={cn("animate-shimmer rounded-none bg-[linear-gradient(90deg,hsl(var(--muted))_25%,hsl(var(--surface-raised))_50%,hsl(var(--muted))_75%)] bg-[length:200%_100%]", className)} />;
 }
 
 /** Panel-shaped placeholder matching the DataCard footprint. */
 export function PanelSkeleton({ rows = 5, className }: { rows?: number; className?: string }) {
   return (
-    <div className={cn("rounded-xl border border-border bg-surface", className)}>
+    <div className={cn("rounded-none border border-border bg-surface", className)}>
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <Skeleton className="h-4 w-40" />
         <Skeleton className="h-4 w-20" />

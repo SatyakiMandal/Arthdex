@@ -58,21 +58,21 @@ export default async function DerivativesPage({ searchParams }: PageProps) {
                 href={`/derivatives?symbol=${i.id}`}
                 aria-current={symbol === i.id ? "page" : undefined}
                 className={cn(
-                  "rounded-md border px-3 py-1.5 text-sm transition-colors",
+                  "rounded-none border px-3 py-1.5 text-sm transition-colors",
                   symbol === i.id ? "border-foreground bg-foreground text-background" : "border-border text-muted-foreground hover:text-foreground",
                 )}
               >
                 {i.label}
               </Link>
             ))}
-            {!isIndex ? <span className="rounded-md border border-foreground bg-foreground px-3 py-1.5 font-mono text-sm text-background">{symbol}</span> : null}
+            {!isIndex ? <span className="rounded-none border border-foreground bg-foreground px-3 py-1.5 font-mono text-sm text-background">{symbol}</span> : null}
             <form action="/derivatives" className="ml-auto flex items-center gap-2">
               <label htmlFor="stock" className="text-sm text-muted-foreground">Stock</label>
               <input
                 id="stock"
                 name="symbol"
                 placeholder="e.g. RELIANCE"
-                className="w-36 rounded-md border border-border bg-surface px-2.5 py-1.5 font-mono text-sm uppercase placeholder:normal-case"
+                className="w-36 rounded-none border border-border bg-surface px-2.5 py-1.5 font-mono text-sm uppercase placeholder:normal-case"
               />
             </form>
           </nav>
