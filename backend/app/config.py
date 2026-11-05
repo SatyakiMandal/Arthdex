@@ -36,7 +36,7 @@ class Settings:
 
 def get_settings() -> Settings:
     return Settings(
-        quote_ttl=int(os.getenv("ARTHDEX_QUOTE_TTL", "60")),
+        quote_ttl=int(os.getenv("ARTHDEX_QUOTE_TTL", "1")),
         candles_ttl=int(os.getenv("ARTHDEX_CANDLES_TTL", "900")),
     )
 

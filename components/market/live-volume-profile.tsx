@@ -177,7 +177,7 @@ export function LiveVolumeProfile({
       setError(null);
       try {
         const res = await fetch(
-          `/api/orderflow?symbol=${encodeURIComponent(sym)}&market=nse&interval=${encodeURIComponent(intv)}`,
+          `/api/orderflow?symbol=${encodeURIComponent(sym)}&market=nse&interval=${encodeURIComponent(intv)}&_t=${Date.now()}`,
           { cache: "no-store" },
         );
         if (!res.ok) {
@@ -260,10 +260,13 @@ export function LiveVolumeProfile({
     const pollLiveQuote = async () => {
       if (autoRefreshSecs === 0) return; // paused
       try {
-        const res = await fetch(`/api/quote?symbol=${encodeURIComponent(symbol)}`, {
-          cache: "no-store",
-          headers: { "Cache-Control": "no-cache, no-store" },
-        });
+        const res = await fetch(
+          `/api/quote?symbol=${encodeURIComponent(symbol)}&_t=${Date.now()}`,
+          {
+            cache: "no-store",
+            headers: { "Cache-Control": "no-cache, no-store" },
+          },
+        );
         if (!res.ok) return;
         const payload = await res.json();
         if (isCancelled || !payload?.ok || !payload.data) return;
@@ -301,6 +304,7 @@ export function LiveVolumeProfile({
             asOf: q.asOf ?? null,
             source: q.sources?.used ?? "NSE",
           });
+          setLastRefreshed(new Date());
           setPollSeq((s) => s + 1);
         }
       } catch {
