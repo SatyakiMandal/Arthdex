@@ -7,6 +7,7 @@ import {
   ArrowUpRight,
   BarChart2,
   Compass,
+  Cpu,
   Gauge,
   Radio,
   RefreshCw,
@@ -18,6 +19,7 @@ import { cn } from "@/lib/utils";
 import type { ApiBuildUp, ApiFlows, ApiFnoBan, ApiIndex, ApiOptionChain, ApiPulse } from "@/lib/api/types";
 import { LiveVolumeProfile } from "./live-volume-profile";
 import { MacroMarketRadar } from "./macro-market-radar";
+import { ScenarioForecastCockpit } from "./scenario-forecast-cockpit";
 import { TickerTapeRibbon } from "./ticker-tape-ribbon";
 
 interface LiveMarketCockpitProps {
@@ -124,7 +126,7 @@ export function LiveMarketCockpit({
   );
 
   // Master Cockpit View Switcher
-  const [cockpitView, setCockpitView] = useState<"radar" | "volume_profile">("radar");
+  const [cockpitView, setCockpitView] = useState<"radar" | "volume_profile" | "scenario_engine">("radar");
   const [activeProfileSymbol, setActiveProfileSymbol] = useState<string>("RELIANCE");
 
   // Keep market status updated every 10 seconds
@@ -397,6 +399,18 @@ export function LiveMarketCockpit({
               <BarChart2 className="h-3.5 w-3.5 text-gold" />
               <span>TRADINGVIEW VOLUME PROFILE (VRVP)</span>
             </button>
+            <button
+              onClick={() => setCockpitView("scenario_engine")}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 text-2xs font-mono font-bold uppercase tracking-wider transition-all rounded-none",
+                cockpitView === "scenario_engine"
+                  ? "bg-surface text-accent shadow-xs border border-border"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Cpu className="h-3.5 w-3.5 text-accent" />
+              <span>MULTI-ALGO SCENARIOS & TRADE SIZER</span>
+            </button>
           </div>
 
           <div className="flex items-center gap-2 text-3xs font-mono text-muted-foreground">
@@ -410,7 +424,13 @@ export function LiveMarketCockpit({
       </div>
 
       {/* Render Active View */}
-      {cockpitView === "volume_profile" ? (
+      {cockpitView === "scenario_engine" ? (
+        <div className="animate-in fade-in-50">
+          <ScenarioForecastCockpit
+            initialSymbol={activeProfileSymbol}
+          />
+        </div>
+      ) : cockpitView === "volume_profile" ? (
         <div className="animate-in fade-in-50">
           <LiveVolumeProfile
             initialSymbol={activeProfileSymbol}

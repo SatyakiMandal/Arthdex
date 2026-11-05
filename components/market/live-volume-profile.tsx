@@ -152,6 +152,7 @@ export function LiveVolumeProfile({
 
   // Interactive View Toggles
   const [profileMode, setProfileMode] = useState<"tradingview" | "delta">("tradingview");
+  const [showVolumeProfile, setShowVolumeProfile] = useState<boolean>(true);
   const [showValueArea, setShowValueArea] = useState(true);
   const [showPocLine, setShowPocLine] = useState(true);
   const [showVwap, setShowVwap] = useState(true);
@@ -161,15 +162,20 @@ export function LiveVolumeProfile({
   const [showOptionWalls, setShowOptionWalls] = useState(true);
   const [optionWalls, setOptionWalls] = useState<OptionWallsData | null>(null);
 
+  // Zooming & Section Selection Window
+  const [zoomRange, setZoomRange] = useState<{ start: number; end: number } | null>(null);
+  const [isSelecting, setIsSelecting] = useState<boolean>(false);
+  const [selectionBox, setSelectionBox] = useState<{ startX: number; currentX: number } | null>(null);
+
   // Crosshair / Hover state
   const [hoverBarIdx, setHoverBarIdx] = useState<number | null>(null);
   const [hoverBinIdx, setHoverBinIdx] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // SVG Chart Dimensions (Dynamic for CVD Sub-Pane)
+  // SVG Chart Dimensions (Dynamic for CVD Sub-Pane & Profile Visibility)
   const W = 1100;
   const H = showCvd ? 580 : 480;
-  const PROFILE_WIDTH = 250;
+  const PROFILE_WIDTH = showVolumeProfile ? 250 : 0;
   const CHART_WIDTH = W - PROFILE_WIDTH - 60;
   const PADDING_TOP = 25;
   const PADDING_BOTTOM = 30;
@@ -418,11 +424,47 @@ export function LiveVolumeProfile({
   }, [symbol, timeframe, refreshLiveProfile]);
 
   // Candle Bars and Calculations
-  const bars = useMemo(() => data?.bars ?? [], [data?.bars]);
+  const allBars = useMemo(() => data?.bars ?? [], [data?.bars]);
+  const bars = useMemo(() => {
+    if (!zoomRange || allBars.length === 0) return allBars;
+    const start = Math.max(0, Math.min(allBars.length - 2, zoomRange.start));
+    const end = Math.min(allBars.length, Math.max(start + 2, zoomRange.end));
+    return allBars.slice(start, end);
+  }, [allBars, zoomRange]);
+  const barOffset = zoomRange ? zoomRange.start : 0;
   const nBars = bars.length;
   const profile = data?.profile;
 
-  // Price Extents
+  // Zoom Handler Functions
+  const handleZoomIn = useCallback(() => {
+    if (allBars.length <= 6) return;
+    const currentStart = zoomRange ? zoomRange.start : 0;
+    const currentEnd = zoomRange ? zoomRange.end : allBars.length;
+    const span = currentEnd - currentStart;
+    const delta = Math.max(2, Math.floor(span * 0.18));
+    const newStart = Math.min(currentStart + delta, currentEnd - 4);
+    const newEnd = Math.max(currentEnd - delta, newStart + 4);
+    setZoomRange({ start: newStart, end: newEnd });
+  }, [allBars.length, zoomRange]);
+
+  const handleZoomOut = useCallback(() => {
+    if (!zoomRange) return;
+    const span = zoomRange.end - zoomRange.start;
+    const delta = Math.max(2, Math.floor(span * 0.22));
+    const newStart = Math.max(0, zoomRange.start - delta);
+    const newEnd = Math.min(allBars.length, zoomRange.end + delta);
+    if (newStart === 0 && newEnd >= allBars.length) {
+      setZoomRange(null);
+    } else {
+      setZoomRange({ start: newStart, end: newEnd });
+    }
+  }, [allBars.length, zoomRange]);
+
+  const handleResetZoom = useCallback(() => {
+    setZoomRange(null);
+  }, []);
+
+  // Price Extents (Auto-fit to visible bars)
   const { minPrice, maxPrice, priceRange } = useMemo(() => {
     if (bars.length === 0) return { minPrice: 0, maxPrice: 100, priceRange: 100 };
     let mn = Infinity;
@@ -466,7 +508,13 @@ export function LiveVolumeProfile({
   );
 
   // CVD (Cumulative Volume Delta) Extents and Path
-  const cvdSeries = useMemo(() => data?.cvd ?? [], [data?.cvd]);
+  const allCvd = useMemo(() => data?.cvd ?? [], [data?.cvd]);
+  const cvdSeries = useMemo(() => {
+    if (!zoomRange || allCvd.length === 0) return allCvd;
+    const start = Math.max(0, Math.min(allCvd.length - 2, zoomRange.start));
+    const end = Math.min(allCvd.length, Math.max(start + 2, zoomRange.end));
+    return allCvd.slice(start, end);
+  }, [allCvd, zoomRange]);
   const { minCvd, maxCvd, cvdRange } = useMemo(() => {
     if (cvdSeries.length === 0) return { minCvd: 0, maxCvd: 1, cvdRange: 1 };
     let mn = Infinity;
@@ -536,8 +584,8 @@ export function LiveVolumeProfile({
   }, [profile]);
 
   // Active Bar for HUD (defaults to latest bar)
-  const activeBarIdx = hoverBarIdx !== null && hoverBarIdx < nBars ? hoverBarIdx : nBars - 1;
-  const activeBar = bars[activeBarIdx];
+  const activeBarIdx = hoverBarIdx !== null && hoverBarIdx < allBars.length ? hoverBarIdx : allBars.length - 1;
+  const activeBar = allBars[activeBarIdx] || bars[Math.max(0, nBars - 1)];
 
   // Current Price and Market Structure Status (Real-time live exchange quote prioritized)
   const lastClose = liveQuote?.cmp ?? data?.lastClose ?? activeBar?.c ?? null;
@@ -636,18 +684,34 @@ export function LiveVolumeProfile({
     return divisions;
   }, [bars, data?.intraday]);
 
-  // Handle Mouse Events for Crosshair
+  // Handle Mouse Events for Crosshair & Section Drag-to-Zoom
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!containerRef.current || nBars === 0) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const relX = (e.clientX - rect.left) / rect.width;
+    const svgX = relX * W;
+    if (svgX >= 15 && svgX <= CHART_WIDTH + 15) {
+      setIsSelecting(true);
+      setSelectionBox({ startX: svgX, currentX: svgX });
+    }
+  };
+
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!containerRef.current || nBars === 0) return;
     const rect = containerRef.current.getBoundingClientRect();
     const relX = (e.clientX - rect.left) / rect.width;
     const svgX = relX * W;
 
+    if (isSelecting && selectionBox) {
+      setSelectionBox((prev) => (prev ? { ...prev, currentX: Math.max(15, Math.min(CHART_WIDTH + 15, svgX)) } : null));
+      return;
+    }
+
     if (svgX >= 15 && svgX <= CHART_WIDTH + 15) {
       const barIndex = Math.floor((svgX - 15) / stepX);
-      setHoverBarIdx(Math.max(0, Math.min(nBars - 1, barIndex)));
+      setHoverBarIdx(Math.max(0, Math.min(nBars - 1, barIndex)) + barOffset);
       setHoverBinIdx(null);
-    } else if (svgX > CHART_WIDTH + 15) {
+    } else if (svgX > CHART_WIDTH + 15 && showVolumeProfile) {
       setHoverBarIdx(null);
       const relY = (e.clientY - rect.top) / rect.height;
       const svgY = relY * H;
@@ -658,12 +722,48 @@ export function LiveVolumeProfile({
         );
         setHoverBinIdx(binIndex !== -1 ? binIndex : null);
       }
+    } else {
+      setHoverBarIdx(null);
+      setHoverBinIdx(null);
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (isSelecting && selectionBox) {
+      const minX = Math.min(selectionBox.startX, selectionBox.currentX);
+      const maxX = Math.max(selectionBox.startX, selectionBox.currentX);
+      const dist = maxX - minX;
+      if (dist > 15) {
+        const startLocal = Math.max(0, Math.floor((minX - 15) / stepX));
+        const endLocal = Math.min(bars.length, Math.ceil((maxX - 15) / stepX));
+        if (endLocal - startLocal >= 2) {
+          setZoomRange({
+            start: startLocal + barOffset,
+            end: endLocal + barOffset,
+          });
+        }
+      }
+      setIsSelecting(false);
+      setSelectionBox(null);
     }
   };
 
   const handleMouseLeave = () => {
+    if (isSelecting) {
+      setIsSelecting(false);
+      setSelectionBox(null);
+    }
     setHoverBarIdx(null);
     setHoverBinIdx(null);
+  };
+
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (Math.abs(e.deltaY) < 5) return;
+    if (e.deltaY < 0) {
+      handleZoomIn();
+    } else {
+      handleZoomOut();
+    }
   };
 
   const handleCustomSubmit = (e: React.FormEvent) => {
@@ -686,10 +786,11 @@ export function LiveVolumeProfile({
         {/* Left: Active Live Status & Polling Engine */}
         <div className="flex flex-wrap items-center gap-2.5">
           <div className="flex items-center gap-1.5 bg-surface-raised border border-border px-2 py-0.5 rounded-none">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-up opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-up"></span>
-            </span>
+            <div className="flex items-end gap-0.5 h-3" title="Real-Time Exchange Data Stream">
+              <span className="w-0.5 h-3 bg-up animate-pulse" />
+              <span className="w-0.5 h-2 bg-up animate-pulse" style={{ animationDelay: "150ms" }} />
+              <span className="w-0.5 h-2.5 bg-up animate-pulse" style={{ animationDelay: "300ms" }} />
+            </div>
             <span className="font-bold text-foreground tracking-wide">
               LIVE #{pollSeq}
             </span>
@@ -707,7 +808,7 @@ export function LiveVolumeProfile({
             <div className="flex items-center gap-1 text-muted-foreground bg-surface-muted/60 px-1.5 py-0.5 border border-border/60 rounded-none">
               <span>Next poll:</span>
               <span className="font-bold text-accent">{countdown}s</span>
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-accent animate-pulse"></span>
+              <span className="inline-block h-2 w-0.5 bg-accent animate-pulse"></span>
             </div>
           )}
 
@@ -961,6 +1062,55 @@ export function LiveVolumeProfile({
               </button>
             </div>
 
+            {/* VRVP Profile Master Toggle */}
+            <button
+              onClick={() => setShowVolumeProfile((v) => !v)}
+              className={cn(
+                "flex items-center gap-1 px-2 py-0.5 text-3xs font-mono uppercase tracking-wider transition-all rounded-none",
+                showVolumeProfile
+                  ? "bg-gold/15 text-gold font-bold border border-gold/40 shadow-xs"
+                  : "border border-border bg-surface-muted text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <BarChart2 className="h-3 w-3" />
+              <span>VRVP: {showVolumeProfile ? "ON" : "OFF"}</span>
+            </button>
+
+            {/* Zoom Controls */}
+            <div className="flex items-center gap-1 border border-border bg-surface-muted p-0.5 rounded-none font-mono text-3xs">
+              <span className="px-1 text-muted-foreground uppercase font-semibold">Zoom:</span>
+              <button
+                onClick={handleZoomIn}
+                title="Zoom In (Fewer Bars)"
+                className="px-1.5 py-0.5 bg-surface text-foreground font-bold border border-border hover:bg-surface-raised rounded-none"
+              >
+                +
+              </button>
+              <button
+                onClick={handleZoomOut}
+                title="Zoom Out (More Bars)"
+                className="px-1.5 py-0.5 bg-surface text-foreground font-bold border border-border hover:bg-surface-raised rounded-none"
+              >
+                −
+              </button>
+              {zoomRange ? (
+                <button
+                  onClick={handleResetZoom}
+                  title="Click to reset zoom"
+                  className="px-1.5 py-0.5 bg-accent/15 text-accent border border-accent/40 font-bold hover:bg-accent/25 rounded-none animate-pulse"
+                >
+                  Reset ({zoomRange.end - zoomRange.start}b)
+                </button>
+              ) : (
+                <button
+                  onClick={handleResetZoom}
+                  className="px-1.5 py-0.5 text-muted-foreground hover:text-foreground rounded-none"
+                >
+                  All
+                </button>
+              )}
+            </div>
+
             {/* Feature Toggles */}
             <label className="flex items-center gap-1 cursor-pointer text-3xs hover:text-foreground">
               <input
@@ -1125,11 +1275,14 @@ export function LiveVolumeProfile({
           </div>
         )}
 
-        {/* SVG Interactive Canvas */}
+        {/* SVG Interactive Canvas with Drag-to-Select & Wheel Zoom */}
         <div
           ref={containerRef}
+          onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseLeave}
+          onWheel={handleWheel}
           className="relative w-full cursor-crosshair select-none overflow-x-auto"
         >
           <svg
@@ -1158,6 +1311,33 @@ export function LiveVolumeProfile({
             {/* Background Canvas & Grid */}
             <rect width={W} height={H} fill="hsl(var(--surface))" />
             <rect width={W} height={H} fill="url(#tv-grid)" />
+
+            {/* Interactive Section Selection Box */}
+            {selectionBox && (
+              <g>
+                <rect
+                  x={Math.min(selectionBox.startX, selectionBox.currentX)}
+                  y={PADDING_TOP}
+                  width={Math.max(2, Math.abs(selectionBox.currentX - selectionBox.startX))}
+                  height={USABLE_H}
+                  fill="hsl(var(--accent))"
+                  fillOpacity="0.18"
+                  stroke="hsl(var(--accent))"
+                  strokeWidth="1.2"
+                  strokeDasharray="4 2"
+                />
+                <text
+                  x={Math.min(selectionBox.startX, selectionBox.currentX) + 6}
+                  y={PADDING_TOP + 16}
+                  fill="hsl(var(--accent))"
+                  fontSize="10"
+                  fontFamily="monospace"
+                  fontWeight="bold"
+                >
+                  🔍 Release to Zoom Section ({Math.round(Math.abs(selectionBox.currentX - selectionBox.startX) / stepX)} Bars)
+                </text>
+              </g>
+            )}
 
             {/* Session Delimiters */}
             {showSessions &&
@@ -1338,15 +1518,14 @@ export function LiveVolumeProfile({
                   {/* Active Live Candle Indicator Badge on Latest Bar */}
                   {isLastBar && (
                     <g>
-                      <circle
-                        cx={xPos}
-                        cy={highY - 8}
-                        r="3"
+                      <rect
+                        x={xPos - 1}
+                        y={highY - 12}
+                        width={2}
+                        height={10}
                         fill="hsl(var(--gold))"
-                        className="animate-ping"
-                        opacity="0.8"
+                        className="animate-pulse"
                       />
-                      <circle cx={xPos} cy={highY - 8} r="2" fill="hsl(var(--gold))" />
                       <text
                         x={xPos}
                         y={highY - 14}
@@ -1501,26 +1680,32 @@ export function LiveVolumeProfile({
                 />
 
                 {/* Pulsating Radar Beacon at Volume Profile Frontier */}
-                <circle
-                  cx={profileStartX - 5}
-                  cy={priceToY(lastClose)}
-                  r="6"
-                  className="animate-ping"
-                  fill={
-                    tickFlash === "up"
-                      ? "hsl(var(--up))"
-                      : tickFlash === "down"
-                      ? "hsl(var(--down))"
-                      : "hsl(var(--accent))"
-                  }
-                  opacity="0.85"
-                />
-                <circle
-                  cx={profileStartX - 5}
-                  cy={priceToY(lastClose)}
-                  r="3.5"
-                  fill="hsl(var(--foreground))"
-                />
+                <g transform={`translate(${profileStartX - 6}, ${priceToY(lastClose) - 6})`}>
+                  <rect
+                    x={0}
+                    y={0}
+                    width={3}
+                    height={12}
+                    className="animate-pulse"
+                    fill={
+                      tickFlash === "up"
+                        ? "hsl(var(--up))"
+                        : tickFlash === "down"
+                        ? "hsl(var(--down))"
+                        : "hsl(var(--accent))"
+                    }
+                  />
+                  <rect
+                    x={-1}
+                    y={-1}
+                    width={5}
+                    height={14}
+                    fill="none"
+                    stroke="hsl(var(--foreground))"
+                    strokeWidth="0.8"
+                    opacity="0.6"
+                  />
+                </g>
 
                 {/* Floating POC Distance Pill on Live Beam */}
                 {pocPrice !== null && (
@@ -1684,19 +1869,21 @@ export function LiveVolumeProfile({
             )}
 
             {/* Divider Line between Candlestick Canvas and Volume Profile */}
-            <line
-              x1={profileStartX - 5}
-              y1={PADDING_TOP}
-              x2={profileStartX - 5}
-              y2={H - PADDING_BOTTOM}
-              stroke="hsl(var(--border))"
-              strokeWidth="1.2"
-            />
+            {showVolumeProfile && (
+              <line
+                x1={profileStartX - 5}
+                y1={PADDING_TOP}
+                x2={profileStartX - 5}
+                y2={H - PADDING_BOTTOM}
+                stroke="hsl(var(--border))"
+                strokeWidth="1.2"
+              />
+            )}
 
             {/* ======================================================== */}
             {/* VOLUME PROFILE (VRVP) HISTOGRAM (Right Zone)             */}
             {/* ======================================================== */}
-            {profile?.bins &&
+            {showVolumeProfile && profile?.bins &&
               profile.bins.map((bin, i) => {
                 const binTopY = priceToY(bin.hi);
                 const binBotY = priceToY(bin.lo);
