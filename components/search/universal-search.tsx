@@ -260,12 +260,12 @@ export function UniversalSearch({ className }: { className?: string }) {
               setQuery("");
               inputRef.current?.focus();
             }}
-            className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-foreground"
+            className="shrink-0 rounded-none p-0.5 text-muted-foreground hover:text-foreground"
           >
             <X className="h-3.5 w-3.5" />
           </button>
         ) : (
-          <kbd className="hidden shrink-0 lg:max-xl:hidden rounded border border-border px-1.5 py-0.5 font-mono text-2xs text-muted-foreground sm:inline">
+          <kbd className="hidden shrink-0 lg:max-xl:hidden rounded-none border border-border px-1.5 py-0.5 font-mono text-2xs text-muted-foreground sm:inline">
             ⌘K
           </kbd>
         )}
@@ -327,7 +327,7 @@ export function UniversalSearch({ className }: { className?: string }) {
                       </span>
                       <span
                         className={cn(
-                          "shrink-0 rounded border px-1.5 py-0.5 font-mono text-2xs uppercase tracking-wide",
+                          "shrink-0 rounded-none border px-1.5 py-0.5 font-mono text-2xs uppercase tracking-wide",
                           hit.kind === "unlisted" ? "border-flat/40 bg-flat/10 text-flat" : "border-border text-muted-foreground",
                         )}
                       >

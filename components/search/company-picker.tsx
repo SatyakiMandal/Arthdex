@@ -128,7 +128,7 @@ export function CompanyPicker({
             >
               <span className="truncate">{h.name}</span>
               {h.kind === "unlisted" ? (
-                <span className="shrink-0 rounded border border-flat/40 bg-flat/10 px-1.5 py-0.5 font-mono text-2xs uppercase text-flat">Unlisted</span>
+                <span className="shrink-0 rounded-none border border-flat/40 bg-flat/10 px-1.5 py-0.5 font-mono text-2xs uppercase text-flat">Unlisted</span>
               ) : (
                 <span className="shrink-0 font-mono text-2xs text-muted-foreground">{h.symbol}</span>
               )}

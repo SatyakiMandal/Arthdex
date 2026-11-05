@@ -87,7 +87,7 @@ export function LineChart({
       <div className="flex flex-wrap gap-x-4 gap-y-1 px-4 pb-3 text-2xs text-muted-foreground">
         {series.map((s) => (
           <span key={s.label} className="inline-flex items-center gap-1.5">
-            <span className="h-0.5 w-4 rounded" style={{ background: s.color }} />
+            <span className="h-0.5 w-4 rounded-none" style={{ background: s.color }} />
             {s.label}
           </span>
         ))}

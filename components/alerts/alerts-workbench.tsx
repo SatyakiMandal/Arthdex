@@ -348,7 +348,7 @@ export function AlertsWorkbench() {
                       type="button"
                       aria-label="Delete alert"
                       onClick={() => setAlerts((prev) => prev.filter((a) => a.id !== alert.id))}
-                      className="ml-auto rounded border border-border p-1 text-muted-foreground transition-colors hover:border-down/50 hover:text-down"
+                      className="ml-auto rounded-none border border-border p-1 text-muted-foreground transition-colors hover:border-down/50 hover:text-down"
                     >
                       <Trash2 className="h-3 w-3" />
                     </button>

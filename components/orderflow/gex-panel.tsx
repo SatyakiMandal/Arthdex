@@ -170,7 +170,7 @@ export function GexPanel({ symbol }: { symbol: string }) {
                 </svg>
                 {lines.map((l) =>
                   l.v != null && l.v >= chart.min && l.v <= chart.max ? (
-                    <span key={l.k} className="pointer-events-none absolute top-0 -translate-x-1/2 whitespace-nowrap rounded bg-surface px-1 font-mono text-2xs" style={{ left: `${(chart.x(l.v) / W) * 100}%`, color: l.color }}>
+                    <span key={l.k} className="pointer-events-none absolute top-0 -translate-x-1/2 whitespace-nowrap rounded-none bg-surface px-1 font-mono text-2xs" style={{ left: `${(chart.x(l.v) / W) * 100}%`, color: l.color }}>
                       {l.k}
                     </span>
                   ) : null,

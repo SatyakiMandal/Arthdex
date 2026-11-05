@@ -83,7 +83,7 @@ export function CompareChart({ series, title }: { series: CmpSeries[]; title?: s
       <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1">
         {readout.map(({ s, v }) => (
           <span key={s.name} className="inline-flex items-center gap-2 text-xs">
-            <span className="h-0.5 w-5 rounded" style={{ background: s.color, opacity: s.dashed ? 0.6 : 1 }} />
+            <span className="h-0.5 w-5 rounded-none" style={{ background: s.color, opacity: s.dashed ? 0.6 : 1 }} />
             <span className="text-muted-foreground">{s.name}</span>
             <span className={cn("font-mono tabular-nums", v >= 100 ? "text-up" : "text-down")}>{v.toFixed(1)}</span>
           </span>
@@ -116,7 +116,7 @@ export function CompareChart({ series, title }: { series: CmpSeries[]; title?: s
         {hover !== null ? <span className="pointer-events-none absolute inset-y-0 w-px bg-foreground/25" style={{ left: `${hover * 100}%` }} aria-hidden /> : null}
         <div className="pointer-events-none absolute inset-y-0 right-0 flex flex-col justify-between py-1">
           {[model.hi, model.lo].map((v, i) => (
-            <span key={i} className="rounded bg-surface px-1 font-mono text-2xs text-muted-foreground">
+            <span key={i} className="rounded-none bg-surface px-1 font-mono text-2xs text-muted-foreground">
               {v.toFixed(0)}
             </span>
           ))}

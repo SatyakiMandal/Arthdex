@@ -128,7 +128,7 @@ export function CustomAlertEngine({
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="rounded p-1 text-muted-foreground hover:text-foreground"
+                  className="rounded-none p-1 text-muted-foreground hover:text-foreground"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -288,7 +288,7 @@ export function CustomAlertEngine({
                                       ),
                                     )
                                   }
-                                  className="rounded border border-border px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:text-foreground"
+                                  className="rounded-none border border-border px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:text-foreground"
                                 >
                                   {a.enabled ? "Pause" : "Resume"}
                                 </button>
@@ -296,7 +296,7 @@ export function CustomAlertEngine({
                                   type="button"
                                   aria-label="Delete alert"
                                   onClick={() => setAlerts((prev) => prev.filter((x) => x.id !== a.id))}
-                                  className="rounded border border-border p-1 text-muted-foreground transition-colors hover:border-down/50 hover:text-down"
+                                  className="rounded-none border border-border p-1 text-muted-foreground transition-colors hover:border-down/50 hover:text-down"
                                 >
                                   <Trash2 className="h-3 w-3" />
                                 </button>

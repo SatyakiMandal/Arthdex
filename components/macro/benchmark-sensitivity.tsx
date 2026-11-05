@@ -74,7 +74,7 @@ export function BenchmarkSensitivityPanel({ sensitivity }: { sensitivity: ApiSen
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-medium">{row.benchmarkName}</span>
                       {isPrimary ? (
-                        <span className="rounded bg-accent/15 px-1.5 py-0.5 font-mono text-2xs uppercase tracking-wide text-accent">
+                        <span className="rounded-none bg-accent/15 px-1.5 py-0.5 font-mono text-2xs uppercase tracking-wide text-accent">
                           Primary
                         </span>
                       ) : null}

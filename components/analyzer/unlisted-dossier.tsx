@@ -35,7 +35,7 @@ function Sensitivity({ v }: { v: Blk }) {
             const t = hi > lo ? (val - lo) / (hi - lo) : 0.5;
             return (
               <Td key={c} right className={val >= price ? "text-up" : "text-foreground"}>
-                <span className="rounded px-1.5 py-0.5" style={{ background: `hsl(var(--accent) / ${(0.05 + t * 0.22).toFixed(2)})` }}>
+                <span className="rounded-none px-1.5 py-0.5" style={{ background: `hsl(var(--accent) / ${(0.05 + t * 0.22).toFixed(2)})` }}>
                   {formatINR(val, 2)}
                 </span>
               </Td>

@@ -109,7 +109,7 @@ export function AlertRunner() {
             type="button"
             aria-label="Dismiss"
             onClick={() => setToasts((all) => all.filter((x) => x.id !== t.id))}
-            className="rounded p-0.5 text-muted-foreground hover:text-foreground"
+            className="rounded-none p-0.5 text-muted-foreground hover:text-foreground"
           >
             <X className="h-3.5 w-3.5" />
           </button>

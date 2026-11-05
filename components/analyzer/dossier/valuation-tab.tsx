@@ -23,7 +23,7 @@ function Sensitivity({ rows, price }: { rows: Blk[]; price: number | null }) {
             const t = hi > lo ? (v - lo) / (hi - lo) : 0.5;
             return (
               <Td key={k} right className={cn(price != null && v >= price ? "text-up" : "text-foreground")}>
-                <span className="rounded px-1.5 py-0.5" style={{ background: `hsl(var(--accent) / ${(0.05 + t * 0.22).toFixed(2)})` }}>
+                <span className="rounded-none px-1.5 py-0.5" style={{ background: `hsl(var(--accent) / ${(0.05 + t * 0.22).toFixed(2)})` }}>
                   {formatINR(v, 0)}
                 </span>
               </Td>

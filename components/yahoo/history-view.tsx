@@ -125,8 +125,8 @@ export function HistoryView({ history, compare }: { history: ApiYHistory; compar
                 <tr key={r.date}>
                   <td className="whitespace-nowrap">
                     {r.date}
-                    {r.dividend ? <span className="ml-2 rounded bg-accent/15 px-1.5 text-2xs text-accent">Div {r.dividend}</span> : null}
-                    {r.split ? <span className="ml-2 rounded bg-flat/20 px-1.5 text-2xs">Split {r.split}</span> : null}
+                    {r.dividend ? <span className="ml-2 rounded-none bg-accent/15 px-1.5 text-2xs text-accent">Div {r.dividend}</span> : null}
+                    {r.split ? <span className="ml-2 rounded-none bg-flat/20 px-1.5 text-2xs">Split {r.split}</span> : null}
                   </td>
                   {[r.open, r.high, r.low, r.close, r.adjClose].map((v, i) => (
                     <td key={i} className="text-right font-mono tabular-nums">

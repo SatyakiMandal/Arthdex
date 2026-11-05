@@ -93,7 +93,7 @@ export function AnalystsView({ data }: { data: ApiYAnalysts }) {
                     <span className="block font-mono text-foreground">{num(v, 0)}</span>
                   </span>
                 ))}
-                {pos(px) != null ? <span className="absolute top-1/2 h-4 w-1 -translate-x-1/2 -translate-y-1/2 rounded bg-accent shadow" style={{ left: `${pos(px)}%` }} title={`Price ${num(px)}`} /> : null}
+                {pos(px) != null ? <span className="absolute top-1/2 h-4 w-1 -translate-x-1/2 -translate-y-1/2 rounded-none bg-accent shadow" style={{ left: `${pos(px)}%` }} title={`Price ${num(px)}`} /> : null}
               </div>
               <p className="mt-2 text-2xs text-muted-foreground">The accent marker is today&apos;s price against the range of analyst targets.</p>
             </div>

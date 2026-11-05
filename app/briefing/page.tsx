@@ -222,7 +222,7 @@ export default async function BriefingPage() {
                       <Link
                         key={sym}
                         href={`/company/${sym}`}
-                        className="rounded border border-rose-500/30 bg-rose-500/10 px-2 py-0.5 font-mono text-xs font-bold text-rose-400 hover:border-rose-500/60"
+                        className="rounded-none border border-rose-500/30 bg-rose-500/10 px-2 py-0.5 font-mono text-xs font-bold text-rose-400 hover:border-rose-500/60"
                       >
                         {sym}
                       </Link>

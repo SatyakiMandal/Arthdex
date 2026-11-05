@@ -102,7 +102,7 @@ function StackedHistory({ t }: { t: ShareholdingTable }) {
         {t.labels.map((label, i) => {
           const total = KEYS.reduce((a, k) => a + (t[k]?.[i] ?? 0), 0) || 100;
           return (
-            <div key={label} className={cn("flex h-full min-w-0 flex-1 flex-col-reverse overflow-hidden rounded-t-sm transition-opacity", hover != null && hover !== i && "opacity-55")} style={{ width: `${step}%` }}>
+            <div key={label} className={cn("flex h-full min-w-0 flex-1 flex-col-reverse overflow-hidden rounded-none transition-opacity", hover != null && hover !== i && "opacity-55")} style={{ width: `${step}%` }}>
               {KEYS.map((k) => {
                 const v = t[k]?.[i];
                 if (v == null) return null;
@@ -367,7 +367,7 @@ export function ShareholdingView({ data }: { data: ApiShareholding }) {
                   <tr key={`${r.name}-${r.filedOn ?? ""}-${i}`} className="border-b border-border last:border-0">
                     <td className="px-4 py-2">
                       {r.name}
-                      {r.promoterGroup ? <span className="ml-2 rounded border border-accent/30 px-1.5 text-2xs text-accent">Promoter group</span> : null}
+                      {r.promoterGroup ? <span className="ml-2 rounded-none border border-accent/30 px-1.5 text-2xs text-accent">Promoter group</span> : null}
                     </td>
                     <td className="px-3 py-2"><StatusPill label={r.action} tone={r.action === "Acquired" ? "up" : "down"} /></td>
                     <td className="px-3 py-2 text-right font-mono">{r.shares != null ? formatINR(r.shares, 0) : "—"}</td>
