@@ -335,6 +335,12 @@ def build(symbol: str, market: str, interval: str, df: pd.DataFrame, fp_bars: in
         "bars": bars,
         "cvd": [int(x) for x in cvd],
         "vwap": [_f(v) for v in ind.vwap(df, intraday).to_numpy()],
+        "vwapBands": {
+            "upper1": [_f(v) for v in ind.vwap_bands(df, intraday, (1.0, 2.0))["upper1"].to_numpy()],
+            "lower1": [_f(v) for v in ind.vwap_bands(df, intraday, (1.0, 2.0))["lower1"].to_numpy()],
+            "upper2": [_f(v) for v in ind.vwap_bands(df, intraday, (1.0, 2.0))["upper2"].to_numpy()],
+            "lower2": [_f(v) for v in ind.vwap_bands(df, intraday, (1.0, 2.0))["lower2"].to_numpy()],
+        },
         "profile": volume_profile(df, buy, sell),
         "footprint": fp,
         "imbalances": imbalances[-40:],

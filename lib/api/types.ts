@@ -937,6 +937,12 @@ export interface ApiOrderflow {
   cvd: number[];
   /** Absent when the data service predates it. */
   vwap?: (number | null)[];
+  vwapBands?: {
+    upper1: (number | null)[];
+    lower1: (number | null)[];
+    upper2: (number | null)[];
+    lower2: (number | null)[];
+  };
   profile: { bins: ProfileBin[]; poc: number; vah: number; val: number; total: number; valueAreaPct: number };
   footprint: { step: number; bars: FootprintBar[] };
   imbalances: { i: number; t: string; price: number; side: "buy" | "sell"; ratio: number }[];

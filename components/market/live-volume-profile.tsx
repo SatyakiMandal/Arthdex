@@ -1364,22 +1364,93 @@ export function LiveVolumeProfile({
               );
             })}
 
-            {/* VWAP Curve */}
+            {/* VWAP & Anchored Standard Deviation Dispersion Bands (±1σ, ±2σ) */}
             {showVwap && data?.vwap && data.vwap.length > 0 && (
-              <path
-                d={data.vwap
-                  .map((v, i) => {
-                    if (v === null || v === undefined) return "";
-                    const ptX = indexToX(i);
-                    const ptY = priceToY(v);
-                    return `${i === 0 ? "M" : "L"}${ptX.toFixed(1)} ${ptY.toFixed(1)}`;
-                  })
-                  .join(" ")}
-                fill="none"
-                stroke="hsl(var(--chart-clay))"
-                strokeWidth="1.2"
-                strokeDasharray="5 3"
-              />
+              <g>
+                {/* ±2σ Outer Upper Dispersion Band */}
+                {data.vwapBands?.upper2 && (
+                  <path
+                    d={data.vwapBands.upper2
+                      .map((v, i) => {
+                        if (v === null || v === undefined) return "";
+                        return `${i === 0 ? "M" : "L"}${indexToX(i).toFixed(1)} ${priceToY(v).toFixed(1)}`;
+                      })
+                      .join(" ")}
+                    fill="none"
+                    stroke="hsl(var(--chart-clay))"
+                    strokeWidth="0.7"
+                    strokeDasharray="4 4"
+                    opacity="0.45"
+                  />
+                )}
+
+                {/* ±1σ Inner Upper Value Band */}
+                {data.vwapBands?.upper1 && (
+                  <path
+                    d={data.vwapBands.upper1
+                      .map((v, i) => {
+                        if (v === null || v === undefined) return "";
+                        return `${i === 0 ? "M" : "L"}${indexToX(i).toFixed(1)} ${priceToY(v).toFixed(1)}`;
+                      })
+                      .join(" ")}
+                    fill="none"
+                    stroke="hsl(var(--chart-clay))"
+                    strokeWidth="0.8"
+                    strokeDasharray="2 3"
+                    opacity="0.6"
+                  />
+                )}
+
+                {/* Central VWAP Anchor Curve */}
+                <path
+                  d={data.vwap
+                    .map((v, i) => {
+                      if (v === null || v === undefined) return "";
+                      const ptX = indexToX(i);
+                      const ptY = priceToY(v);
+                      return `${i === 0 ? "M" : "L"}${ptX.toFixed(1)} ${ptY.toFixed(1)}`;
+                    })
+                    .join(" ")}
+                  fill="none"
+                  stroke="hsl(var(--chart-clay))"
+                  strokeWidth="1.4"
+                  strokeDasharray="5 3"
+                />
+
+                {/* ±1σ Inner Lower Value Band */}
+                {data.vwapBands?.lower1 && (
+                  <path
+                    d={data.vwapBands.lower1
+                      .map((v, i) => {
+                        if (v === null || v === undefined) return "";
+                        return `${i === 0 ? "M" : "L"}${indexToX(i).toFixed(1)} ${priceToY(v).toFixed(1)}`;
+                      })
+                      .join(" ")}
+                    fill="none"
+                    stroke="hsl(var(--chart-clay))"
+                    strokeWidth="0.8"
+                    strokeDasharray="2 3"
+                    opacity="0.6"
+                  />
+                )}
+
+                {/* ±2σ Outer Lower Dispersion Band */}
+                {data.vwapBands?.lower2 && (
+                  <path
+                    d={data.vwapBands.lower2
+                      .map((v, i) => {
+                        if (v === null || v === undefined) return "";
+                        return `${i === 0 ? "M" : "L"}${indexToX(i).toFixed(1)} ${priceToY(v).toFixed(1)}`;
+                      })
+                      .join(" ")}
+                    fill="none"
+                    stroke="hsl(var(--chart-clay))"
+                    strokeWidth="0.7"
+                    strokeDasharray="4 4"
+                    opacity="0.45"
+                  />
+                )}
+              </g>
             )}
 
             {/* Point of Control (POC) Bold Horizontal Line */}
