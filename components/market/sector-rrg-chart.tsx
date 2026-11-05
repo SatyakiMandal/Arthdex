@@ -34,7 +34,6 @@ export function SectorRrgChart() {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
 
     fetch("/api/sector-rotation")
       .then((r) => r.json())
