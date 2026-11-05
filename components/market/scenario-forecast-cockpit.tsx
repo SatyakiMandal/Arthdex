@@ -1088,34 +1088,34 @@ Timestamp: ${new Date().toLocaleString("en-IN")}`;
                               />
                             </div>
 
-                            {/* Right: Explicit Forecast Values with Deltas */}
-                            <div className="w-full md:w-64 shrink-0 flex items-center justify-between text-2xs tabular-nums">
+                            {/* Right: Explicit Forecast Values with Deltas (Wide Grid - Zero Clipping) */}
+                            <div className="w-full md:min-w-[320px] md:w-80 shrink-0 grid grid-cols-3 gap-1.5 text-2xs tabular-nums">
                               {/* Bear */}
-                              <div className="text-right">
-                                <div className="text-down font-bold">
-                                  ₹{m.bear.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 1 })}
+                              <div className="text-right pr-2">
+                                <div className="text-down font-bold whitespace-nowrap">
+                                  ₹{m.bear.toLocaleString("en-IN", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                                 </div>
-                                <div className="text-3xs text-down/80">
+                                <div className="text-3xs text-down/90 whitespace-nowrap">
                                   {bearDiff < 0 ? "" : "+"}₹{bearDiff.toFixed(1)} ({m.bear_pct}%)
                                 </div>
                               </div>
 
                               {/* Base */}
                               <div className="text-center px-2 border-x border-border/40">
-                                <div className="font-bold text-foreground">
-                                  ₹{m.base.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 1 })}
+                                <div className="font-bold text-foreground whitespace-nowrap">
+                                  ₹{m.base.toLocaleString("en-IN", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                                 </div>
-                                <div className={cn("text-3xs", baseDiff >= 0 ? "text-up" : "text-down")}>
+                                <div className={cn("text-3xs whitespace-nowrap", baseDiff >= 0 ? "text-up" : "text-down")}>
                                   {baseDiff >= 0 ? "+" : ""}₹{baseDiff.toFixed(1)} ({baseDiff >= 0 ? `+${m.base_pct}` : m.base_pct}%)
                                 </div>
                               </div>
 
                               {/* Bull */}
-                              <div className="text-left">
-                                <div className="text-up font-bold">
-                                  ₹{m.bull.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 1 })}
+                              <div className="text-left pl-2">
+                                <div className="text-up font-bold whitespace-nowrap">
+                                  ₹{m.bull.toLocaleString("en-IN", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                                 </div>
-                                <div className="text-3xs text-up/80">
+                                <div className="text-3xs text-up/90 whitespace-nowrap">
                                   +₹{bullDiff.toFixed(1)} (+{m.bull_pct}%)
                                 </div>
                               </div>
@@ -1193,31 +1193,31 @@ Timestamp: ${new Date().toLocaleString("en-IN")}`;
                               />
                             </div>
 
-                            {/* Right: Master Target Numbers & Deltas */}
-                            <div className="w-full md:w-64 shrink-0 flex items-center justify-between text-2xs tabular-nums font-black">
-                              <div className="text-right">
-                                <div className="text-down text-xs">
-                                  ₹{cons.consensus_bear.toLocaleString("en-IN", { minimumFractionDigits: 1 })}
+                            {/* Right: Master Target Numbers & Deltas (Wide Grid - Zero Clipping) */}
+                            <div className="w-full md:min-w-[320px] md:w-80 shrink-0 grid grid-cols-3 gap-1.5 text-2xs tabular-nums font-black">
+                              <div className="text-right pr-2">
+                                <div className="text-down text-xs font-black whitespace-nowrap">
+                                  ₹{cons.consensus_bear.toLocaleString("en-IN", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                                 </div>
-                                <div className="text-3xs text-down font-bold">
+                                <div className="text-3xs text-down font-bold whitespace-nowrap">
                                   {bearDiff < 0 ? "" : "+"}₹{bearDiff.toFixed(1)} ({cons.consensus_bear_pct}%)
                                 </div>
                               </div>
 
                               <div className="text-center px-2 border-x border-gold/40">
-                                <div className="text-gold text-sm font-black">
-                                  ₹{cons.consensus_base.toLocaleString("en-IN", { minimumFractionDigits: 1 })}
+                                <div className="text-gold text-xs sm:text-sm font-black whitespace-nowrap">
+                                  ₹{cons.consensus_base.toLocaleString("en-IN", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                                 </div>
-                                <div className={cn("text-3xs font-bold", baseDiff >= 0 ? "text-up" : "text-down")}>
+                                <div className={cn("text-3xs font-bold whitespace-nowrap", baseDiff >= 0 ? "text-up" : "text-down")}>
                                   {baseDiff >= 0 ? "+" : ""}₹{baseDiff.toFixed(1)} ({baseDiff >= 0 ? `+${cons.consensus_base_pct}` : cons.consensus_base_pct}%)
                                 </div>
                               </div>
 
-                              <div className="text-left">
-                                <div className="text-up text-xs">
-                                  ₹{cons.consensus_bull.toLocaleString("en-IN", { minimumFractionDigits: 1 })}
+                              <div className="text-left pl-2">
+                                <div className="text-up text-xs font-black whitespace-nowrap">
+                                  ₹{cons.consensus_bull.toLocaleString("en-IN", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                                 </div>
-                                <div className="text-3xs text-up font-bold">
+                                <div className="text-3xs text-up font-bold whitespace-nowrap">
                                   +₹{bullDiff.toFixed(1)} (+{cons.consensus_bull_pct}%)
                                 </div>
                               </div>
