@@ -78,7 +78,7 @@ export function CompanyTabs({
         aria-label={`${symbol} sections`}
         className={cn("chrome sticky z-40 -mt-px border-b border-border transition-shadow", stuck && "shadow-sm")}
       >
-        <div className="mx-auto flex max-w-[1600px] items-center gap-1 px-4 sm:px-6">
+        <div className="mx-auto flex w-full max-w-[1920px] items-center gap-1 px-2 sm:px-3 lg:px-4">
           <div
             className={cn(
               "flex shrink-0 items-baseline gap-2 overflow-hidden whitespace-nowrap transition-[max-width,opacity,margin] duration-300 ease-out motion-reduce:transition-none",
@@ -86,16 +86,16 @@ export function CompanyTabs({
             )}
             aria-hidden={!stuck}
           >
-            <span className="font-mono text-sm font-semibold">{symbol}</span>
+            <span className="font-mono text-xs font-bold text-accent">{symbol}</span>
             {price ? (
               <>
-                <span className="font-mono text-sm tabular-nums">₹{formatINR(price.cmp)}</span>
-                <span className={cn("hidden font-mono text-xs tabular-nums sm:inline", deltaColor(price.percent))}>
+                <span className="font-mono text-xs font-semibold tabular-nums">₹{formatINR(price.cmp)}</span>
+                <span className={cn("hidden font-mono text-3xs font-semibold tabular-nums sm:inline", deltaColor(price.percent))}>
                   {formatPct(price.percent)}
                 </span>
               </>
             ) : null}
-            <span className="ml-1 h-4 w-px self-center bg-border" />
+            <span className="ml-1 h-3.5 w-px self-center bg-border" />
           </div>
 
           <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto whitespace-nowrap [scrollbar-width:none]">
@@ -110,7 +110,7 @@ export function CompanyTabs({
                   onClick={() => (pathname === tab.href ? null : setClicked({ href: tab.href, from: pathname }))}
                   prefetch
                   className={cn(
-                    "relative px-3 py-3 text-sm transition-colors",
+                    "relative px-2.5 py-2 font-mono text-xs uppercase tracking-wider transition-colors rounded-none",
                     active ? "font-medium text-foreground" : "text-muted-foreground hover:text-foreground",
                   )}
                 >

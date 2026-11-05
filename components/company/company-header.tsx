@@ -137,7 +137,7 @@ export function CompanyHeader({
 
   return (
     <section className="border-b border-border bg-surface/30">
-      <div className="mx-auto max-w-[1920px] px-3 py-3 sm:px-4 lg:py-3.5">
+      <div className="mx-auto max-w-[1920px] px-2 py-2 sm:px-3 lg:px-4 lg:py-2.5">
         {/* Ticker strip top line */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/50 pb-2">
           <div className="flex flex-wrap items-baseline gap-2.5 min-w-0">

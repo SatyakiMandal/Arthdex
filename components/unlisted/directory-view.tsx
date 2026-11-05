@@ -159,7 +159,7 @@ export function DirectoryView({ companies, sectors }: { companies: ApiUnlistedLi
           <button
             type="button"
             onClick={() => setShown((n) => n + PAGE)}
-            className="btn-ghost px-5 active:scale-[0.98]"
+            className="btn-ghost px-5 active:scale-[0.98] rounded-none"
           >
             Show {Math.min(PAGE, rows.length - shown)} more
           </button>

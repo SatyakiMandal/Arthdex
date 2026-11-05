@@ -24,7 +24,7 @@ export default async function Page({ params }: PageProps) {
       {res.ok ? (
         <>
           {(res.data.latestQuarterAgeDays ?? 0) > 150 ? (
-            <p role="note" className="mb-6 rounded-none border border-flat/40 bg-flat/10 px-4 py-3 text-sm">
+            <p role="note" className="mb-2.5 rounded-none border border-flat/40 bg-flat/10 px-2.5 py-1.5 font-mono text-2xs text-muted-foreground">
               The newest quarterly statement here ended on {res.data.latestQuarter}, {res.data.latestQuarterAgeDays} days
               ago. Full line items come from a single source that is behind for this company; the Overview&apos;s
               quarterly results use a second, current source.

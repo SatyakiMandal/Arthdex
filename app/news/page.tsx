@@ -5,6 +5,7 @@ import { Eyebrow } from "@/components/ui/eyebrow";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { NewsFeed } from "@/components/macro/news-feed";
+import { KeyboardHud } from "@/components/ui/keyboard-hud";
 import { DataUnavailable, FreshnessBadge, SourceLine } from "@/components/ui/data-provenance";
 import { getNews } from "@/lib/api/endpoints";
 import { cn } from "@/lib/utils";
@@ -54,46 +55,66 @@ export default async function NewsPage({ searchParams }: PageProps) {
           {result.ok ? <FreshnessBadge meta={result.meta} /> : null}
         </div>
 
-        <nav className="mt-2.5 flex flex-wrap gap-1.5">
-          {KINDS.map((option) => (
-            <a
-              key={option.id || "all"}
-              href={`/news${option.id ? `?kind=${option.id}` : ""}`}
-              className={cn(
-                "rounded-none border px-3 py-1.5 text-xs transition-colors",
-                option.id === kind
-                  ? "border-accent/50 bg-accent/10 text-accent"
-                  : "border-border bg-surface-muted text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {option.label}
-            </a>
-          ))}
-        </nav>
+        {/* Tactical Keyboard & Command HUD */}
+        <KeyboardHud
+          contextLabel="NEWS &amp; FILINGS DESK · COMMAND HUD"
+          shortcuts={[
+            { key: "/", label: "Search Disclosures", accent: true },
+            { key: "1-3", label: "Filter All / Filings / Press" },
+            { key: "G + B", label: "Daily Bhavcopy Desk" },
+            { key: "G + M", label: "Market Watch" },
+            { key: "Shift+C", label: "Ultra Pitch Contrast" },
+            { key: "?", label: "All Hotkeys" },
+          ]}
+        />
+
+        <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2">
+          <nav className="flex flex-wrap gap-1">
+            {KINDS.map((option) => (
+              <a
+                key={option.id || "all"}
+                href={`/news${option.id ? `?kind=${option.id}` : ""}`}
+                className={cn(
+                  "rounded-none border px-2.5 py-1 font-mono text-2xs uppercase tracking-wider transition-colors",
+                  option.id === kind
+                    ? "border-accent bg-accent/15 text-accent font-bold"
+                    : "border-border bg-surface text-muted-foreground hover:text-foreground hover:bg-surface-muted",
+                )}
+              >
+                {option.label}
+              </a>
+            ))}
+          </nav>
+
+          {result.ok ? (
+            <div className="flex flex-wrap items-center gap-2.5 border border-border/80 bg-surface px-2.5 py-1 font-mono text-2xs">
+              <span className="flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 bg-accent rounded-none" />
+                <span className="text-muted-foreground uppercase tracking-wider text-3xs">Exchange Filings:</span>
+                <strong className="text-foreground">{result.data.counts.filings}</strong>
+              </span>
+              <span className="text-border">|</span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 bg-gold rounded-none" />
+                <span className="text-muted-foreground uppercase tracking-wider text-3xs">Press Items:</span>
+                <strong className="text-foreground">{result.data.counts.press}</strong>
+              </span>
+            </div>
+          ) : null}
+        </div>
 
         {symbol ? (
-          <p className="mt-4 text-2xs text-muted-foreground">
-            Filtered to <span className="font-mono text-foreground">{symbol.toUpperCase()}</span>.{" "}
+          <p className="mt-2 text-2xs text-muted-foreground font-mono">
+            Filtered to <span className="font-mono text-foreground font-bold">{symbol.toUpperCase()}</span>.{" "}
             <a href="/news" className="text-accent hover:underline">
               Clear filter
             </a>
           </p>
         ) : null}
 
-        <div className="mt-6">
+        <div className="mt-2.5">
           {result.ok ? (
             <>
-              <div className="mb-3 flex flex-wrap gap-4 text-2xs text-muted-foreground">
-                <span>
-                  <span className="font-mono text-foreground">{result.data.counts.filings}</span>{" "}
-                  exchange filings
-                </span>
-                <span>
-                  <span className="font-mono text-foreground">{result.data.counts.press}</span>{" "}
-                  press items
-                </span>
-              </div>
-
               <NewsFeed
                 items={result.data.items}
                 title={kind === "filing" ? "Exchange Filings" : kind === "press" ? "Press Coverage" : "Filings & Coverage"}

@@ -89,7 +89,7 @@ export function MyAlerts() {
           </div>
         </div>
         {permission === "default" ? (
-          <button type="button" onClick={enableNotifications} className="btn-ghost h-8 px-3 py-0 text-xs">
+          <button type="button" onClick={enableNotifications} className="btn-ghost h-8 px-3 py-0 text-xs rounded-none">
             Turn on browser notifications
           </button>
         ) : permission === "granted" ? (
@@ -130,7 +130,7 @@ export function MyAlerts() {
             className="h-8 w-full rounded-none border border-border bg-background px-2.5 font-mono text-xs outline-none transition-colors placeholder:text-muted-foreground focus:border-accent"
           />
         </div>
-        <button type="button" onClick={submit} className="btn-primary h-8 px-4 py-0 text-xs font-bold font-mono active:scale-[0.98]">
+        <button type="button" onClick={submit} className="btn-primary h-8 px-4 py-0 text-xs font-bold font-mono active:scale-[0.98] rounded-none">
           Add alert
         </button>
       </div>

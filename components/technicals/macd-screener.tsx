@@ -145,7 +145,7 @@ export function MacdScreener() {
           type="button"
           onClick={() => setTick((t) => t + 1)}
           disabled={loading}
-          className="btn-primary ml-auto h-9 px-4 py-0 active:scale-[0.98] disabled:opacity-60"
+          className="btn-primary ml-auto h-9 px-4 py-0 active:scale-[0.98] disabled:opacity-60 rounded-none"
         >
           <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} /> Refresh
         </button>

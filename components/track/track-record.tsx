@@ -63,7 +63,7 @@ export function TrackRecord() {
         <p className="mx-auto mt-1.5 max-w-md text-sm text-muted-foreground">
           Open any company&apos;s Technicals tab and press <strong>Log this call</strong>. It records today&apos;s indicator call and price, then scores it against Nifty after 1, 5 and 20 trading days.
         </p>
-        <Link href="/market-watch" className="btn-ghost mt-5 inline-flex px-4">
+        <Link href="/market-watch" className="btn-ghost mt-5 inline-flex px-4 rounded-none">
           Browse market watch
         </Link>
       </div>

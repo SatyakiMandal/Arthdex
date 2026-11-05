@@ -194,7 +194,7 @@ export function OrderflowWorkbench({
                     aria-label="NSE symbol"
                     className="h-7 w-28 rounded-none border border-border bg-surface-muted px-2 font-mono text-xs uppercase outline-none focus:border-accent/80"
                   />
-                  <button type="submit" className="btn-ghost h-7 px-2.5 text-xs font-mono">
+                  <button type="submit" className="btn-ghost h-7 px-2.5 text-xs font-mono rounded-none">
                     Load
                   </button>
                 </form>

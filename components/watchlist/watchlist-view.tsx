@@ -65,10 +65,10 @@ export function WatchlistView() {
           alerts on it.
         </p>
         <div className="mt-5 flex flex-wrap justify-center gap-2">
-          <Link href="/market-watch" className="btn-ghost px-4">
+          <Link href="/market-watch" className="btn-ghost px-4 rounded-none">
             Browse market watch
           </Link>
-          <Link href="/unlisted" className="btn-ghost px-4">
+          <Link href="/unlisted" className="btn-ghost px-4 rounded-none">
             Browse unlisted
           </Link>
         </div>
