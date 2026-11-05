@@ -299,7 +299,7 @@ export function PortfolioTerminal({
             <div className="space-y-1.5">
               <div className="font-semibold text-amber-300 uppercase tracking-wider text-2xs flex items-center gap-2">
                 <span>SAMPLE DATA DISCLAIMER · DEMO PORTFOLIO LOADED</span>
-                <span className="rounded bg-amber-500/20 px-1.5 py-0.5 text-3xs font-mono text-amber-300">ILLUSTRATIVE PRESET</span>
+                <span className="rounded-none bg-amber-500/20 px-1.5 py-0.5 text-3xs font-mono text-amber-300">ILLUSTRATIVE PRESET</span>
               </div>
               <p className="text-xs text-amber-200/90 leading-relaxed">
                 The holdings, purchase quantities, costs, and dates shown below are <strong>sample presets</strong> to demonstrate the Newton-Raphson XIRR engine and Section 112A tax-loss harvesting desk. While Current Market Prices (CMPs) are pulled live from NSE quotes, <strong>no personal portfolio data has been uploaded yet</strong>.
@@ -335,19 +335,19 @@ export function PortfolioTerminal({
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <div className="rounded-none border border-border bg-card p-4">
+        <div className="rounded-none border border-border bg-surface p-2.5">
           <div className="text-2xs text-muted-foreground uppercase tracking-wider font-semibold">Total Invested</div>
           <div className="mt-1 font-mono text-lg font-bold text-foreground">{fmtINR(summary.totalInvested)}</div>
           <div className="text-3xs text-muted-foreground mt-0.5 font-mono">{summary.lotsCount} lots across {summary.uniqueHoldingsCount} stocks</div>
         </div>
 
-        <div className="rounded-none border border-border bg-card p-4">
+        <div className="rounded-none border border-border bg-surface p-2.5">
           <div className="text-2xs text-muted-foreground uppercase tracking-wider font-semibold">Current Value</div>
           <div className="mt-1 font-mono text-lg font-bold text-foreground">{fmtINR(summary.currentValue)}</div>
           <div className="text-3xs text-muted-foreground mt-0.5">Live vetted NSE closes</div>
         </div>
 
-        <div className="rounded-none border border-border bg-card p-4">
+        <div className="rounded-none border border-border bg-surface p-2.5">
           <div className="text-2xs text-muted-foreground uppercase tracking-wider font-semibold">Total Unrealized P&amp;L</div>
           <div
             className={cn(
@@ -368,7 +368,7 @@ export function PortfolioTerminal({
           </div>
         </div>
 
-        <div className="rounded-none border border-border bg-card p-4">
+        <div className="rounded-none border border-border bg-surface p-2.5">
           <div className="text-2xs text-muted-foreground uppercase tracking-wider font-semibold flex items-center gap-1">
             <Calculator className="h-3.5 w-3.5 text-primary" /> True XIRR
           </div>
@@ -378,7 +378,7 @@ export function PortfolioTerminal({
           <div className="text-3xs text-muted-foreground mt-0.5">Annualized cash-flow return</div>
         </div>
 
-        <div className="rounded-none border border-emerald-500/40 bg-emerald-500/10 p-4">
+        <div className="rounded-none border border-emerald-500/40 bg-emerald-500/10 p-2.5">
           <div className="text-2xs text-emerald-400 uppercase tracking-wider font-semibold flex items-center gap-1">
             <Flame className="h-3.5 w-3.5" /> Tax Relief Potential
           </div>
@@ -491,7 +491,7 @@ export function PortfolioTerminal({
 
           {/* Actionable Harvesting Table */}
           <div className="rounded-none border border-border bg-card overflow-hidden">
-            <div className="border-b border-border/60 bg-muted/40 p-3.5 flex items-center justify-between">
+            <div className="border-b border-border/60 bg-muted/40 px-3 py-2 flex items-center justify-between">
               <div>
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-1.5">
                   <Flame className="h-4 w-4 text-emerald-500" /> Actionable Loss Harvesting Plan
@@ -510,12 +510,12 @@ export function PortfolioTerminal({
                 <thead>
                   <tr className="border-b border-border text-2xs text-muted-foreground uppercase tracking-wider">
                     <th className="p-3">Scrip</th>
-                    <th className="p-3 text-right">Holding Qty</th>
-                    <th className="p-3 text-right">Current Value</th>
-                    <th className="p-3 text-right">Unrealized Loss</th>
-                    <th className="p-3 text-center">Tax Bucket</th>
-                    <th className="p-3 text-right">Estimated Relief</th>
-                    <th className="p-3 text-left">Recommended Peer Swap</th>
+                    <th className="px-2 py-1.5 text-right">Holding Qty</th>
+                    <th className="px-2 py-1.5 text-right">Current Value</th>
+                    <th className="px-2 py-1.5 text-right">Unrealized Loss</th>
+                    <th className="px-2 py-1.5 text-center">Tax Bucket</th>
+                    <th className="px-2 py-1.5 text-right">Estimated Relief</th>
+                    <th className="px-2 py-1.5 text-left">Recommended Peer Swap</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/60 font-mono">
@@ -528,17 +528,17 @@ export function PortfolioTerminal({
                   ) : (
                     taxHarvesting.opportunities.map((opp, idx) => (
                       <tr key={idx} className="hover:bg-muted/30 transition-colors">
-                        <td className="p-3 font-sans">
+                        <td className="px-2 py-1.5 font-sans">
                           <Link href={`/company/${opp.symbol}`} className="font-bold text-foreground hover:text-primary transition-colors flex items-center gap-1">
                             {opp.symbol}
                             <ArrowUpRight className="h-3 w-3 text-muted-foreground" />
                           </Link>
                           <div className="text-3xs text-muted-foreground">Held {opp.daysHeld} days</div>
                         </td>
-                        <td className="p-3 text-right text-foreground">{opp.quantity}</td>
-                        <td className="p-3 text-right text-foreground font-medium">{fmtINR(opp.currentValue)}</td>
-                        <td className="p-3 text-right text-rose-500 font-semibold">- {fmtINR(opp.unrealizedLoss)}</td>
-                        <td className="p-3 text-center">
+                        <td className="px-2 py-1.5 text-right text-foreground">{opp.quantity}</td>
+                        <td className="px-2 py-1.5 text-right text-foreground font-medium">{fmtINR(opp.currentValue)}</td>
+                        <td className="px-2 py-1.5 text-right text-rose-500 font-semibold">- {fmtINR(opp.unrealizedLoss)}</td>
+                        <td className="px-2 py-1.5 text-center">
                           <span
                             className={cn(
                               "rounded px-2 py-0.5 text-3xs font-semibold uppercase tracking-wider",
@@ -548,17 +548,17 @@ export function PortfolioTerminal({
                             {opp.taxBucket} ({opp.taxRatePct}%)
                           </span>
                         </td>
-                        <td className="p-3 text-right text-emerald-400 font-bold">
+                        <td className="px-2 py-1.5 text-right text-emerald-400 font-bold">
                           +{fmtINR(opp.estimatedTaxSaving)}
                         </td>
-                        <td className="p-3 font-sans">
+                        <td className="px-2 py-1.5 font-sans">
                           <div className="flex flex-wrap gap-1">
                             {opp.recommendedSwaps.length > 0 ? (
                               opp.recommendedSwaps.map((pSym) => (
                                 <Link
                                   key={pSym}
                                   href={`/company/${pSym}`}
-                                  className="rounded border border-primary/30 bg-primary/10 px-2 py-0.5 text-3xs font-mono font-bold text-primary hover:bg-primary/20"
+                                  className="rounded-none border border-primary/30 bg-primary/10 px-2 py-0.5 text-3xs font-mono font-bold text-primary hover:bg-primary/20"
                                 >
                                   {pSym}
                                 </Link>
@@ -581,7 +581,7 @@ export function PortfolioTerminal({
       {/* TAB 2: Holdings Ledger */}
       {activeTab === "LEDGER" && (
         <div className="rounded-none border border-border bg-card overflow-hidden">
-          <div className="border-b border-border/60 bg-muted/40 p-3.5 flex items-center justify-between">
+          <div className="border-b border-border/60 bg-muted/40 px-3 py-2 flex items-center justify-between">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground">
               Holdings Ledger &amp; Lot Breakdown ({lots.length} Lots)
             </h3>
@@ -593,33 +593,33 @@ export function PortfolioTerminal({
               <thead>
                 <tr className="border-b border-border text-2xs text-muted-foreground uppercase tracking-wider">
                   <th className="p-3">Scrip</th>
-                  <th className="p-3 text-right">Quantity</th>
-                  <th className="p-3 text-right">Buy Price</th>
-                  <th className="p-3 text-right">Buy Date</th>
-                  <th className="p-3 text-right">Current Price</th>
-                  <th className="p-3 text-right">Invested</th>
-                  <th className="p-3 text-right">Current Value</th>
-                  <th className="p-3 text-right">Unrealized P&amp;L</th>
-                  <th className="p-3 text-center">Tenure / Bucket</th>
-                  <th className="p-3 text-center">Action</th>
+                  <th className="px-2 py-1.5 text-right">Quantity</th>
+                  <th className="px-2 py-1.5 text-right">Buy Price</th>
+                  <th className="px-2 py-1.5 text-right">Buy Date</th>
+                  <th className="px-2 py-1.5 text-right">Current Price</th>
+                  <th className="px-2 py-1.5 text-right">Invested</th>
+                  <th className="px-2 py-1.5 text-right">Current Value</th>
+                  <th className="px-2 py-1.5 text-right">Unrealized P&amp;L</th>
+                  <th className="px-2 py-1.5 text-center">Tenure / Bucket</th>
+                  <th className="px-2 py-1.5 text-center">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60 font-mono">
                 {lots.map((lot, idx) => (
                   <tr key={idx} className="hover:bg-muted/30 transition-colors">
-                    <td className="p-3 font-sans">
+                    <td className="px-2 py-1.5 font-sans">
                       <Link href={`/company/${lot.symbol}`} className="font-bold text-foreground hover:text-primary transition-colors flex items-center gap-1">
                         {lot.symbol}
                         <ArrowUpRight className="h-3 w-3 text-muted-foreground" />
                       </Link>
                     </td>
-                    <td className="p-3 text-right text-foreground">{lot.quantity}</td>
-                    <td className="p-3 text-right text-muted-foreground">{fmtINR(lot.buyPrice)}</td>
-                    <td className="p-3 text-right text-muted-foreground">{lot.buyDate}</td>
-                    <td className="p-3 text-right text-foreground font-semibold">{fmtINR(lot.currentPrice)}</td>
-                    <td className="p-3 text-right text-muted-foreground">{fmtINR(lot.investedAmount)}</td>
-                    <td className="p-3 text-right text-foreground font-medium">{fmtINR(lot.currentValue)}</td>
-                    <td className="p-3 text-right">
+                    <td className="px-2 py-1.5 text-right text-foreground">{lot.quantity}</td>
+                    <td className="px-2 py-1.5 text-right text-muted-foreground">{fmtINR(lot.buyPrice)}</td>
+                    <td className="px-2 py-1.5 text-right text-muted-foreground">{lot.buyDate}</td>
+                    <td className="px-2 py-1.5 text-right text-foreground font-semibold">{fmtINR(lot.currentPrice)}</td>
+                    <td className="px-2 py-1.5 text-right text-muted-foreground">{fmtINR(lot.investedAmount)}</td>
+                    <td className="px-2 py-1.5 text-right text-foreground font-medium">{fmtINR(lot.currentValue)}</td>
+                    <td className="px-2 py-1.5 text-right">
                       <span
                         className={cn(
                           "inline-flex items-center text-xs font-semibold",
@@ -629,7 +629,7 @@ export function PortfolioTerminal({
                         {lot.unrealizedPnL >= 0 ? "+" : ""}{fmtINR(lot.unrealizedPnL)} ({lot.unrealizedPnLPct >= 0 ? "+" : ""}{lot.unrealizedPnLPct.toFixed(1)}%)
                       </span>
                     </td>
-                    <td className="p-3 text-center">
+                    <td className="px-2 py-1.5 text-center">
                       <span
                         className={cn(
                           "rounded px-2 py-0.5 text-3xs font-semibold uppercase tracking-wider",
@@ -639,10 +639,10 @@ export function PortfolioTerminal({
                         {lot.holdingDays}d ({lot.taxBucket})
                       </span>
                     </td>
-                    <td className="p-3 text-center">
+                    <td className="px-2 py-1.5 text-center">
                       <button
                         onClick={() => handleDeleteLot(idx)}
-                        className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                        className="rounded-none p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
                         title="Delete Lot"
                       >
                         <Trash2 className="h-3.5 w-3.5" />

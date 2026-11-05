@@ -8,15 +8,15 @@ import type { ApiEarningsMovesResponse, ApiEarningsMove } from "@/lib/api/types"
 
 const VERDICT_STYLES: Record<string, { badge: string; text: string }> = {
   "High Volatility Priced": {
-    badge: "bg-rose-500/20 text-rose-400 border-rose-500/40",
+    badge: "bg-down/15 text-down border-down/40",
     text: "Market pricing wide swing (>6%). Straddle premium elevated.",
   },
   "Normal Volatility Priced": {
-    badge: "bg-primary/20 text-primary border-primary/40",
+    badge: "bg-accent/15 text-accent border-accent/40",
     text: "Moderate expectation (3% – 6%). Consistent with historical post-earnings move.",
   },
   "Low Volatility Priced": {
-    badge: "bg-emerald-500/20 text-emerald-400 border-emerald-500/40",
+    badge: "bg-up/15 text-up border-up/40",
     text: "Tight expected range (<3%). Straddle premium relatively subdued.",
   },
 };
@@ -32,26 +32,26 @@ export function EarningsImpliedMoves({
   const displayed = filter === "UPCOMING" ? moves.filter((m) => m.status === "upcoming") : moves;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 font-sans rounded-none">
       {/* Intro info bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground border-b border-border/60 pb-3">
-        <div className="flex items-center gap-2">
-          <Calculator className="h-4 w-4 text-primary" />
+      <div className="flex flex-wrap items-center justify-between gap-2.5 text-2xs text-muted-foreground border-b border-border/60 pb-2 font-mono">
+        <div className="flex items-center gap-1.5">
+          <Calculator className="h-3.5 w-3.5 text-accent" />
           <span>
-            ATM Straddle Implied Move Formula:{" "}
+            ATM Straddle Implied Move:{" "}
             <strong className="text-foreground font-mono">
               (CE_atm + PE_atm) / Spot × 100%
             </strong>
           </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <button
             onClick={() => setFilter("ALL")}
             className={cn(
-              "rounded-none px-2.5 py-0.5 text-2xs font-semibold uppercase tracking-wider transition-colors",
+              "rounded-none px-2 py-0.5 text-3xs font-mono font-bold uppercase tracking-wider transition-all border",
               filter === "ALL"
-                ? "bg-primary text-primary-foreground"
-                : "border border-border bg-card text-muted-foreground hover:bg-muted",
+                ? "bg-accent text-accent-foreground border-accent shadow-xs"
+                : "border-border/80 bg-surface text-muted-foreground hover:bg-surface-muted hover:text-foreground",
             )}
           >
             All Results ({moves.length})
@@ -59,10 +59,10 @@ export function EarningsImpliedMoves({
           <button
             onClick={() => setFilter("UPCOMING")}
             className={cn(
-              "rounded-none px-2.5 py-0.5 text-2xs font-semibold uppercase tracking-wider transition-colors",
+              "rounded-none px-2 py-0.5 text-3xs font-mono font-bold uppercase tracking-wider transition-all border",
               filter === "UPCOMING"
-                ? "bg-primary text-primary-foreground"
-                : "border border-border bg-card text-muted-foreground hover:bg-muted",
+                ? "bg-accent text-accent-foreground border-accent shadow-xs"
+                : "border-border/80 bg-surface text-muted-foreground hover:bg-surface-muted hover:text-foreground",
             )}
           >
             Upcoming Only
@@ -71,23 +71,23 @@ export function EarningsImpliedMoves({
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-none border border-border bg-card">
-        <table className="w-full text-left text-xs border-collapse">
+      <div className="overflow-x-auto rounded-none border border-border bg-surface">
+        <table className="w-full text-left text-2xs border-collapse font-mono tabular-nums">
           <thead>
-            <tr className="border-b border-border bg-muted/40 text-2xs text-muted-foreground uppercase tracking-wider">
-              <th className="p-3 font-semibold">Symbol &amp; Company</th>
-              <th className="p-3 font-semibold">Result Date</th>
-              <th className="p-3 text-right font-semibold">Spot Price</th>
-              <th className="p-3 text-right font-semibold">ATM Straddle</th>
-              <th className="p-3 text-center font-semibold min-w-36">Implied Move (±%)</th>
-              <th className="p-3 text-right font-semibold">Call IV / Put IV</th>
-              <th className="p-3 text-left font-semibold">Market Verdict</th>
+            <tr className="border-b border-border bg-surface-muted/50 text-3xs text-muted-foreground uppercase tracking-wider">
+              <th className="px-2 py-1.5 font-bold font-sans">Symbol &amp; Company</th>
+              <th className="px-2 py-1.5 font-bold font-sans">Result Date</th>
+              <th className="px-2 py-1.5 text-right font-bold">Spot Price</th>
+              <th className="px-2 py-1.5 text-right font-bold">ATM Straddle</th>
+              <th className="px-2 py-1.5 text-center font-bold min-w-32">Implied Move (±%)</th>
+              <th className="px-2 py-1.5 text-right font-bold">Call IV / Put IV</th>
+              <th className="px-2 py-1.5 text-left font-bold font-sans">Market Verdict</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border/60 font-mono">
+          <tbody className="divide-y divide-border/60">
             {displayed.length === 0 ? (
               <tr>
-                <td colSpan={7} className="p-8 text-center text-xs text-muted-foreground font-sans">
+                <td colSpan={7} className="p-6 text-center text-3xs text-muted-foreground font-sans">
                   No upcoming results with active option chains found in current cycle.
                 </td>
               </tr>
@@ -97,49 +97,49 @@ export function EarningsImpliedMoves({
                 const isUpcoming = m.status === "upcoming";
 
                 return (
-                  <tr key={m.symbol} className="hover:bg-muted/30 transition-colors">
-                    <td className="p-3 font-sans">
+                  <tr key={m.symbol} className="hover:bg-surface-muted/60 transition-colors">
+                    <td className="px-2 py-1.5 font-sans whitespace-nowrap">
                       <Link
                         href={`/company/${m.symbol}`}
-                        className="font-bold text-foreground hover:text-primary transition-colors flex items-center gap-1"
+                        className="font-bold text-foreground hover:text-accent transition-colors inline-flex items-center gap-1 font-mono text-xs"
                       >
                         {m.symbol}
-                        <ArrowUpRight className="h-3 w-3 text-muted-foreground" />
+                        <ArrowUpRight className="h-2.5 w-2.5 text-muted-foreground" />
                       </Link>
-                      <div className="text-2xs text-muted-foreground line-clamp-1">{m.companyName}</div>
+                      <div className="text-3xs text-muted-foreground line-clamp-1 max-w-[130px]">{m.companyName}</div>
                     </td>
 
-                    <td className="p-3 font-sans">
-                      <div className="flex items-center gap-1.5 font-medium text-foreground">
-                        <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                    <td className="px-2 py-1.5 font-sans whitespace-nowrap">
+                      <div className="flex items-center gap-1 font-semibold text-foreground text-3xs">
+                        <Calendar className="h-2.5 w-2.5 text-muted-foreground" />
                         <span>{m.resultDate}</span>
                       </div>
                       <span
                         className={cn(
-                          "mt-0.5 inline-block rounded px-1.5 py-0.2 text-3xs uppercase tracking-wider font-semibold",
-                          isUpcoming ? "bg-amber-500/20 text-amber-400" : "bg-muted text-muted-foreground",
+                          "mt-0.5 inline-block rounded-none px-1 py-0.2 text-4xs uppercase tracking-wider font-bold border",
+                          isUpcoming ? "bg-gold/15 text-gold border-gold/40" : "bg-surface-raised text-muted-foreground border-border/60",
                         )}
                       >
                         {isUpcoming ? "Upcoming" : "Reported"}
                       </span>
                     </td>
 
-                    <td className="p-3 text-right text-foreground font-semibold">
+                    <td className="px-2 py-1.5 text-right text-foreground font-semibold cell-glow">
                       {m.spotPrice !== null
                         ? `₹${m.spotPrice.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`
                         : "—"}
                     </td>
 
-                    <td className="p-3 text-right text-foreground font-medium">
+                    <td className="px-2 py-1.5 text-right text-foreground font-medium cell-glow">
                       {m.straddleAtmPrice !== null
                         ? `₹${m.straddleAtmPrice.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`
                         : "—"}
                     </td>
 
-                    <td className="p-3 text-center">
+                    <td className="px-2 py-1.5 text-center whitespace-nowrap cell-glow">
                       {m.impliedMovePct !== null ? (
-                        <div className="inline-flex items-center justify-center gap-1.5 rounded-none border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
-                          <TrendingUp className="h-3.5 w-3.5" />
+                        <div className="inline-flex items-center justify-center gap-1 rounded-none border border-accent/40 bg-accent/10 px-2 py-0.5 text-xs font-bold text-accent">
+                          <TrendingUp className="h-3 w-3" />
                           <span>±{m.impliedMovePct.toFixed(2)}%</span>
                         </div>
                       ) : (
@@ -147,16 +147,16 @@ export function EarningsImpliedMoves({
                       )}
                     </td>
 
-                    <td className="p-3 text-right text-muted-foreground">
+                    <td className="px-2 py-1.5 text-right text-muted-foreground cell-glow">
                       {m.callIv !== null && m.putIv !== null
                         ? `${m.callIv.toFixed(1)}% / ${m.putIv.toFixed(1)}%`
                         : "—"}
                     </td>
 
-                    <td className="p-3 font-sans">
+                    <td className="px-2 py-1.5 font-sans whitespace-nowrap">
                       <span
                         className={cn(
-                          "rounded px-2 py-0.5 text-3xs font-semibold uppercase tracking-wider border",
+                          "rounded-none px-1.5 py-0.5 text-3xs font-bold uppercase tracking-wider border",
                           verdictStyle.badge,
                         )}
                       >
@@ -172,12 +172,12 @@ export function EarningsImpliedMoves({
       </div>
 
       {/* Explainer card */}
-      <div className="rounded-none border border-border/80 bg-muted/30 p-4 text-xs text-muted-foreground space-y-1.5 font-sans">
-        <div className="font-semibold text-foreground flex items-center gap-1.5 text-2xs uppercase tracking-wider">
-          <HelpCircle className="h-3.5 w-3.5 text-primary" /> Understanding Pre-Earnings Implied Moves
+      <div className="rounded-none border border-border/80 bg-surface p-2.5 text-3xs text-muted-foreground space-y-0.5 font-sans">
+        <div className="font-bold text-foreground flex items-center gap-1.5 text-3xs uppercase tracking-wider font-mono">
+          <HelpCircle className="h-3 w-3 text-gold" /> Institutional ATM Straddle Volatility Pricing
         </div>
-        <p className="text-2xs leading-relaxed">
-          The At-The-Money (ATM) straddle price reflects the combined cost of buying the closest ATM Call and ATM Put option expiring right after the board meeting. Because option buyers need the underlying stock to move by more than the total straddle premium to break even, this percentage is the market’s collective consensus pricing of the post-earnings swing.
+        <p className="text-3xs leading-relaxed">
+          The At-The-Money (ATM) straddle price reflects the combined cost of buying the closest ATM Call and ATM Put option expiring immediately post-results. Because straddle buyers require the underlying stock to move beyond the premium paid to break even, this percentage serves as the option market&apos;s collective consensus pricing of post-earnings volatility.
         </p>
       </div>
     </div>
