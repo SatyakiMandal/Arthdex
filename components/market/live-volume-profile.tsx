@@ -9,12 +9,16 @@ import {
   BarChart2,
   Check,
   ChevronRight,
+  Clock,
   Eye,
   Flame,
   Info,
+  Keyboard,
   Layers,
   LineChart,
   Maximize2,
+  Play,
+  Pause,
   RefreshCw,
   Search,
   ShieldCheck,
@@ -91,11 +95,34 @@ export function LiveVolumeProfile({
 }: LiveVolumeProfileProps) {
   const [symbol, setSymbol] = useState(initialSymbol);
   const [customInput, setCustomInput] = useState("");
-  const [interval, setInterval] = useState<OrderflowInterval>(initialInterval);
+  const [timeframe, setTimeframe] = useState<OrderflowInterval>(initialInterval);
   const [data, setData] = useState<ApiOrderflow | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
+
+  // Live Engine Auto-Polling & Tick Motion States
+  const [autoRefreshSecs, setAutoRefreshSecs] = useState<number>(3); // 3s ultra-live polling
+  const [countdown, setCountdown] = useState<number>(3);
+  const [pollSeq, setPollSeq] = useState<number>(1);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [tickFlash, setTickFlash] = useState<"up" | "down" | null>(null);
+  const [volFlash, setVolFlash] = useState<boolean>(false);
+  const [showHotkeysModal, setShowHotkeysModal] = useState<boolean>(false);
+
+  const prevLastCloseRef = useRef<number | null>(null);
+  const prevTotalVolRef = useRef<number | null>(null);
+  const flashTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const volTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Sync state if initialSymbol prop changes from parent
+  useEffect(() => {
+    if (initialSymbol && initialSymbol !== symbol) {
+      setSymbol(initialSymbol);
+      prevLastCloseRef.current = null;
+      prevTotalVolRef.current = null;
+    }
+  }, [initialSymbol]);
 
   // Interactive View Toggles
   const [profileMode, setProfileMode] = useState<"tradingview" | "delta">("tradingview");
@@ -118,59 +145,132 @@ export function LiveVolumeProfile({
   const PADDING_BOTTOM = 30;
   const USABLE_H = H - PADDING_TOP - PADDING_BOTTOM;
 
-  // Load Orderflow Data
-  const refreshLiveProfile = useCallback(async (sym = symbol, intv = interval) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(
-        `/api/orderflow?symbol=${encodeURIComponent(sym)}&market=nse&interval=${encodeURIComponent(intv)}`,
-        { cache: "no-store" },
-      );
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || `Failed to fetch live profile for ${sym}`);
+  // Load Orderflow Data with Live Tick Detection
+  const refreshLiveProfile = useCallback(
+    async (sym = symbol, intv = timeframe, isSilent = false) => {
+      if (!isSilent) {
+        setLoading(true);
+      } else {
+        setIsSyncing(true);
       }
-      const json = await res.json();
-      setData(json);
-      setLastRefreshed(new Date());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error loading volume profile");
-    } finally {
-      setLoading(false);
-    }
-  }, [symbol, interval]);
-
-  useEffect(() => {
-    let ignore = false;
-    const fetchProfile = async () => {
+      setError(null);
       try {
         const res = await fetch(
-          `/api/orderflow?symbol=${encodeURIComponent(symbol)}&market=nse&interval=${encodeURIComponent(interval)}`,
+          `/api/orderflow?symbol=${encodeURIComponent(sym)}&market=nse&interval=${encodeURIComponent(intv)}`,
           { cache: "no-store" },
         );
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
-          throw new Error(body.error || `Failed to fetch live profile for ${symbol}`);
+          throw new Error(body.error || `Failed to fetch live profile for ${sym}`);
         }
-        const json = await res.json();
-        if (!ignore) {
-          setData(json);
-          setLoading(false);
-          setLastRefreshed(new Date());
+        const json: ApiOrderflow = await res.json();
+
+        // Detect price tick direction
+        const currentClose =
+          json.lastClose ?? (json.bars.length > 0 ? json.bars[json.bars.length - 1].c : null);
+        if (currentClose !== null && prevLastCloseRef.current !== null) {
+          if (currentClose > prevLastCloseRef.current) {
+            setTickFlash("up");
+            if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+            flashTimerRef.current = setTimeout(() => setTickFlash(null), 1400);
+          } else if (currentClose < prevLastCloseRef.current) {
+            setTickFlash("down");
+            if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+            flashTimerRef.current = setTimeout(() => setTickFlash(null), 1400);
+          }
         }
+        if (currentClose !== null) {
+          prevLastCloseRef.current = currentClose;
+        }
+
+        // Detect volume change
+        const currentTotalVol = json.profile?.total ?? 0;
+        if (prevTotalVolRef.current !== null && currentTotalVol > prevTotalVolRef.current) {
+          setVolFlash(true);
+          if (volTimerRef.current) clearTimeout(volTimerRef.current);
+          volTimerRef.current = setTimeout(() => setVolFlash(false), 900);
+        }
+        prevTotalVolRef.current = currentTotalVol;
+
+        setData(json);
+        setLastRefreshed(new Date());
+        setPollSeq((p) => p + 1);
       } catch (err) {
-        if (!ignore) {
+        if (!isSilent) {
           setError(err instanceof Error ? err.message : "Error loading volume profile");
-          setLoading(false);
         }
+      } finally {
+        setLoading(false);
+        setIsSyncing(false);
+      }
+    },
+    [symbol, timeframe],
+  );
+
+  // Initial load or symbol/interval changes
+  useEffect(() => {
+    void refreshLiveProfile(symbol, timeframe, false);
+  }, [symbol, timeframe, refreshLiveProfile]);
+
+  // Live Auto-Refresh Countdown Timer
+  useEffect(() => {
+    if (autoRefreshSecs === 0) return;
+    setCountdown(autoRefreshSecs);
+
+    const intervalTimer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          void refreshLiveProfile(symbol, timeframe, true);
+          return autoRefreshSecs;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(intervalTimer);
+  }, [autoRefreshSecs, symbol, timeframe, refreshLiveProfile]);
+
+  // Keyboard Shortcuts Engine (Space/R to refresh, 1..5 for TF, P for profile mode, [/] for scrips)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        document.activeElement?.tagName === "INPUT" ||
+        document.activeElement?.tagName === "TEXTAREA"
+      ) {
+        return;
+      }
+
+      if (e.key === " " || e.key === "r" || e.key === "R") {
+        e.preventDefault();
+        void refreshLiveProfile(symbol, timeframe, false);
+      } else if (e.key === "1") {
+        setTimeframe("1m");
+      } else if (e.key === "2") {
+        setTimeframe("5m");
+      } else if (e.key === "3") {
+        setTimeframe("15m");
+      } else if (e.key === "4") {
+        setTimeframe("1h");
+      } else if (e.key === "5") {
+        setTimeframe("1d");
+      } else if (e.key === "p" || e.key === "P") {
+        setProfileMode((prev) => (prev === "tradingview" ? "delta" : "tradingview"));
+      } else if (e.key === "[") {
+        const idx = BELLWETHERS.findIndex((b) => b.symbol === symbol);
+        const prevIdx = (idx - 1 + BELLWETHERS.length) % BELLWETHERS.length;
+        setSymbol(BELLWETHERS[prevIdx].symbol);
+      } else if (e.key === "]") {
+        const idx = BELLWETHERS.findIndex((b) => b.symbol === symbol);
+        const nextIdx = (idx + 1) % BELLWETHERS.length;
+        setSymbol(BELLWETHERS[nextIdx].symbol);
+      } else if (e.key === "?") {
+        setShowHotkeysModal((s) => !s);
       }
     };
-    void fetchProfile();
-    return () => {
-      ignore = true;
-    };
-  }, [symbol, interval]);
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [symbol, timeframe, refreshLiveProfile]);
 
   // Candle Bars and Calculations
   const bars = useMemo(() => data?.bars ?? [], [data?.bars]);
@@ -262,6 +362,23 @@ export function LiveVolumeProfile({
   const pocPrice = profile?.poc ?? null;
   const vahPrice = profile?.vah ?? null;
   const valPrice = profile?.val ?? null;
+
+  // Active Auction Bin (bin containing current lastClose)
+  const activePriceBinIdx = useMemo(() => {
+    if (lastClose === null || !profile?.bins || profile.bins.length === 0) return -1;
+    return profile.bins.findIndex((b) => lastClose >= b.lo && lastClose <= b.hi);
+  }, [lastClose, profile?.bins]);
+
+  // Price change relative to first bar in visible range
+  const priceChangeStats = useMemo(() => {
+    if (!bars || bars.length < 2 || lastClose === null) {
+      return { diff: 0, pct: 0, isPositive: true };
+    }
+    const firstBar = bars[0];
+    const diff = lastClose - firstBar.o;
+    const pct = (diff / firstBar.o) * 100;
+    return { diff, pct, isPositive: diff >= 0 };
+  }, [bars, lastClose]);
 
   const marketStructure = useMemo(() => {
     if (lastClose === null || pocPrice === null || vahPrice === null || valPrice === null) {
@@ -368,47 +485,133 @@ export function LiveVolumeProfile({
   const profileStartX = CHART_WIDTH + 20;
 
   return (
-    <div className="space-y-4 rounded-none font-sans">
-      {/* 1. Header Toolbar & Quick Ticker Selector (Arthdex Theme) */}
-      <div className="border border-border bg-surface p-3 sm:p-3.5 rounded-none shadow-sm space-y-2.5">
-        {/* Top bar: Title + Bellwether Chips */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-2.5">
-          <div className="flex items-center gap-2.5">
-            <div className="flex items-center gap-1.5 bg-accent/10 border border-accent/30 px-2 py-0.5 text-2xs font-mono font-bold text-accent rounded-none">
-              <BarChart2 className="h-3.5 w-3.5" />
-              <span>VOLUME PROFILE VRVP</span>
-            </div>
-            <div>
-              <h2 className="text-sm sm:text-base font-serif font-bold text-foreground tracking-tight flex items-center gap-2">
-                <span>{symbol}</span>
-                <span className="text-xs font-mono font-normal text-muted-foreground">
-                  {BELLWETHERS.find((b) => b.symbol === symbol)?.name ?? "NSE Equities"}
-                </span>
-              </h2>
-            </div>
+    <div className="space-y-3 rounded-none font-sans">
+      {/* ========================================================================= */}
+      {/* 1. BLOOMBERG LIVE TELEMETRY RIBBON (High-Frequency Real-Time Cockpit Bar) */}
+      {/* ========================================================================= */}
+      <div className="border border-border bg-surface px-3 py-2 rounded-none shadow-sm flex flex-wrap items-center justify-between gap-3 text-2xs font-mono">
+        {/* Left: Active Live Status & Polling Engine */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex items-center gap-1.5 bg-surface-raised border border-border px-2 py-0.5 rounded-none">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-up opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-up"></span>
+            </span>
+            <span className="font-bold text-foreground tracking-wide">
+              LIVE #{pollSeq}
+            </span>
           </div>
 
-          {/* Timeframe Chips */}
-          <div className="flex items-center gap-1 bg-surface-muted border border-border p-0.5 rounded-none">
-            {TIMEFRAMES.map((tf) => (
+          <div className="text-muted-foreground flex items-center gap-1">
+            <Clock className="h-3 w-3 text-gold" />
+            <span>Synced:</span>
+            <span className="text-foreground font-semibold">
+              {lastRefreshed.toLocaleTimeString("en-IN")}
+            </span>
+          </div>
+
+          {autoRefreshSecs > 0 && (
+            <div className="flex items-center gap-1 text-muted-foreground bg-surface-muted/60 px-1.5 py-0.5 border border-border/60 rounded-none">
+              <span>Next poll:</span>
+              <span className="font-bold text-accent">{countdown}s</span>
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-accent animate-pulse"></span>
+            </div>
+          )}
+
+          {/* Live Price Flash Pill */}
+          {lastClose !== null && (
+            <div
+              className={cn(
+                "flex items-center gap-1 px-2 py-0.5 border font-mono font-bold transition-all duration-300 rounded-none",
+                tickFlash === "up"
+                  ? "bg-up/20 border-up text-up animate-tick-up"
+                  : tickFlash === "down"
+                  ? "bg-down/20 border-down text-down animate-tick-down"
+                  : priceChangeStats.isPositive
+                  ? "bg-up/10 border-up/30 text-up"
+                  : "bg-down/10 border-down/30 text-down",
+              )}
+            >
+              <span>{symbol}:</span>
+              <span>{fmtINR(lastClose)}</span>
+              <span>
+                {priceChangeStats.isPositive ? "▲ +" : "▼ "}
+                {priceChangeStats.pct.toFixed(2)}%
+              </span>
+            </div>
+          )}
+
+          {/* POC Anchor Pill */}
+          {pocPrice !== null && (
+            <div className="hidden lg:flex items-center gap-1 text-muted-foreground bg-gold/10 border border-gold/30 px-2 py-0.5 rounded-none">
+              <span className="text-gold font-bold">POC:</span>
+              <span className="text-foreground font-semibold">{fmtINR(pocPrice)}</span>
+              <span className={marketStructure.distancePoc >= 0 ? "text-up" : "text-down"}>
+                ({marketStructure.distancePoc >= 0 ? "+" : ""}
+                {marketStructure.distancePocPct.toFixed(2)}%)
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Right: Refresh Rate Selectors, Hotkeys & Sync Button */}
+        <div className="flex items-center gap-2">
+          {/* Polling Interval Selector Chips */}
+          <div className="flex items-center border border-border bg-surface-muted rounded-none p-0.5">
+            <span className="text-3xs uppercase tracking-wider text-muted-foreground px-1.5 hidden sm:inline">
+              Cadence:
+            </span>
+            {[
+              { label: "3s LIVE", val: 3 },
+              { label: "5s", val: 5 },
+              { label: "10s", val: 10 },
+              { label: "30s", val: 30 },
+              { label: "Pause", val: 0 },
+            ].map((opt) => (
               <button
-                key={tf.id}
-                onClick={() => setInterval(tf.id)}
+                key={opt.val}
+                onClick={() => setAutoRefreshSecs(opt.val)}
                 className={cn(
-                  "px-2 py-0.5 text-2xs font-mono font-semibold transition-all rounded-none",
-                  interval === tf.id
+                  "px-1.5 py-0.5 text-3xs font-mono font-semibold transition-all rounded-none",
+                  autoRefreshSecs === opt.val
                     ? "bg-accent text-accent-foreground font-bold shadow-xs"
                     : "text-muted-foreground hover:text-foreground",
                 )}
-                title={tf.sub}
               >
-                {tf.label}
+                {opt.label}
               </button>
             ))}
           </div>
-        </div>
 
-        {/* Bellwethers Quick Selector Row */}
+          {/* Immediate Sync Button */}
+          <button
+            onClick={() => void refreshLiveProfile(symbol, timeframe, false)}
+            disabled={loading || isSyncing}
+            className="flex items-center gap-1.5 border border-border bg-surface-raised px-2 py-1 text-2xs font-mono font-semibold text-foreground hover:bg-surface-muted transition-colors rounded-none disabled:opacity-50"
+            title="Trigger immediate live synchronization (Space / R)"
+          >
+            <RefreshCw
+              className={cn("h-3 w-3", (loading || isSyncing) && "animate-spin text-accent")}
+            />
+            <span className="hidden sm:inline">Sync</span>
+          </button>
+
+          {/* Hotkey Helper Trigger */}
+          <button
+            onClick={() => setShowHotkeysModal(true)}
+            className="border border-border bg-surface-raised px-1.5 py-1 text-muted-foreground hover:text-foreground transition-colors rounded-none"
+            title="Keyboard Navigation Shortcuts (?)"
+          >
+            <Keyboard className="h-3 w-3" />
+          </button>
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 2. TICKER SELECTOR & VIEW CONTROLS TOOLBAR                               */}
+      {/* ========================================================================= */}
+      <div className="border border-border bg-surface p-2.5 rounded-none shadow-sm space-y-2">
+        {/* Top row: Bellwethers & Custom Search */}
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-1">
             <span className="text-3xs font-mono uppercase tracking-wider text-muted-foreground mr-1 flex items-center gap-1">
@@ -430,7 +633,29 @@ export function LiveVolumeProfile({
             ))}
           </div>
 
-          {/* Search Custom Ticker Form */}
+          {/* Timeframe Chips */}
+          <div className="flex items-center gap-1 bg-surface-muted border border-border p-0.5 rounded-none">
+            {TIMEFRAMES.map((tf) => (
+              <button
+                key={tf.id}
+                onClick={() => setTimeframe(tf.id)}
+                className={cn(
+                  "px-2 py-0.5 text-2xs font-mono font-semibold transition-all rounded-none",
+                  timeframe === tf.id
+                    ? "bg-accent text-accent-foreground font-bold shadow-xs"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+                title={tf.sub}
+              >
+                {tf.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Bottom row: Search Ticker + Profile Mode & Overlay Toggles */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5 border-t border-border/70 pt-2 text-2xs font-mono text-muted-foreground">
+          {/* Custom Ticker Search */}
           <form onSubmit={handleCustomSubmit} className="flex items-center gap-1">
             <div className="relative">
               <Search className="absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
@@ -448,22 +673,10 @@ export function LiveVolumeProfile({
             >
               Load
             </button>
-            <button
-              type="button"
-              onClick={() => void refreshLiveProfile(symbol, interval)}
-              disabled={loading}
-              className="h-6.5 border border-border bg-surface-raised px-1.5 text-muted-foreground hover:text-foreground rounded-none transition-colors"
-              title="Refresh Live Data"
-            >
-              <RefreshCw className={cn("h-3 w-3", loading && "animate-spin text-accent")} />
-            </button>
           </form>
-        </div>
 
-        {/* Display Toggles & Controls Row */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/70 pt-2 text-2xs font-mono text-muted-foreground">
+          {/* Profile Mode & Overlay Toggles */}
           <div className="flex flex-wrap items-center gap-3">
-            <span className="text-3xs uppercase tracking-wider text-muted-foreground">Terminals:</span>
             {/* Profile Mode Toggle */}
             <div className="flex items-center border border-border bg-surface-muted rounded-none p-0.5">
               <button
@@ -531,20 +744,12 @@ export function LiveVolumeProfile({
               <span>Session Boxes</span>
             </label>
           </div>
-
-          <div className="flex items-center gap-2 text-3xs font-mono">
-            <span className="text-up flex items-center gap-1 font-semibold">
-              <ShieldCheck className="h-3 w-3" /> 100% Genuine Live Exchange Bars
-            </span>
-            <span className="text-border">|</span>
-            <span className="text-muted-foreground">
-              Sync: {lastRefreshed.toLocaleTimeString("en-IN")}
-            </span>
-          </div>
         </div>
       </div>
 
-      {/* 2. Main Profile Terminal Canvas (Arthdex Palette) */}
+      {/* ========================================================================= */}
+      {/* 3. MAIN INTERACTIVE SVG VRVP & CANDLESTICK CANVAS                        */}
+      {/* ========================================================================= */}
       <div className="relative border border-border bg-surface p-1 rounded-none shadow-sm overflow-hidden">
         {loading && (
           <div className="absolute inset-0 z-30 flex items-center justify-center bg-background/80 backdrop-blur-xs font-mono text-xs text-accent">
@@ -562,7 +767,7 @@ export function LiveVolumeProfile({
             <button
               onClick={() => {
                 setSymbol("RELIANCE");
-                void refreshLiveProfile("RELIANCE", interval);
+                void refreshLiveProfile("RELIANCE", timeframe);
               }}
               className="mt-3 border border-border bg-surface px-3 py-1 text-2xs text-foreground hover:bg-surface-muted rounded-none"
             >
@@ -575,17 +780,30 @@ export function LiveVolumeProfile({
         {activeBar && (
           <div className="absolute top-2 left-3 z-20 flex flex-wrap items-center gap-x-3.5 gap-y-1 bg-surface-raised/95 border border-border px-2.5 py-1 text-2xs font-mono text-foreground rounded-none shadow-xs pointer-events-none">
             <span className="font-bold">{symbol}</span>
-            <span className="text-muted-foreground">{fmtDateLabel(activeBar.t, data?.intraday ?? true)}</span>
-            <span>O: <strong>{fmtINR(activeBar.o)}</strong></span>
-            <span>H: <strong className="text-up">{fmtINR(activeBar.h)}</strong></span>
-            <span>L: <strong className="text-down">{fmtINR(activeBar.l)}</strong></span>
+            <span className="text-muted-foreground">
+              {fmtDateLabel(activeBar.t, data?.intraday ?? true)}
+            </span>
+            <span>
+              O: <strong>{fmtINR(activeBar.o)}</strong>
+            </span>
+            <span>
+              H: <strong className="text-up">{fmtINR(activeBar.h)}</strong>
+            </span>
+            <span>
+              L: <strong className="text-down">{fmtINR(activeBar.l)}</strong>
+            </span>
             <span>
               C:{" "}
               <strong className={activeBar.c >= activeBar.o ? "text-up" : "text-down"}>
                 {fmtINR(activeBar.c)}
               </strong>
             </span>
-            <span>Vol: <strong className="text-gold">{fmtCompact(activeBar.v)}</strong></span>
+            <span>
+              Vol:{" "}
+              <strong className={cn("text-gold transition-colors duration-300", volFlash && "bg-gold/20 px-1")}>
+                {fmtCompact(activeBar.v)}
+              </strong>
+            </span>
             <span>
               Δ:{" "}
               <strong className={activeBar.delta >= 0 ? "text-up" : "text-down"}>
@@ -599,10 +817,21 @@ export function LiveVolumeProfile({
         {/* Profile Stats HUD Overlay (Top-Right) */}
         {profile && (
           <div className="absolute top-2 right-3 z-20 hidden md:flex items-center gap-3 bg-surface-raised/95 border border-border px-2.5 py-1 text-2xs font-mono text-muted-foreground rounded-none shadow-xs pointer-events-none">
-            <span>Rows: <strong className="text-foreground">{profile.bins.length}</strong></span>
-            <span>VA: <strong className="text-accent">70%</strong></span>
-            <span>POC: <strong className="text-gold font-bold">{fmtINR(profile.poc)}</strong></span>
-            <span>Total Vol: <strong className="text-foreground">{fmtCompact(profile.total)}</strong></span>
+            <span>
+              Rows: <strong className="text-foreground">{profile.bins.length}</strong>
+            </span>
+            <span>
+              VA: <strong className="text-accent">70%</strong>
+            </span>
+            <span>
+              POC: <strong className="text-gold font-bold">{fmtINR(profile.poc)}</strong>
+            </span>
+            <span>
+              Total Vol:{" "}
+              <strong className={cn("text-foreground transition-colors duration-300", volFlash && "text-gold")}>
+                {fmtCompact(profile.total)}
+              </strong>
+            </span>
           </div>
         )}
 
@@ -626,7 +855,13 @@ export function LiveVolumeProfile({
               </linearGradient>
 
               <pattern id="tv-grid" width="60" height="40" patternUnits="userSpaceOnUse">
-                <path d="M 60 0 L 0 0 0 40" fill="none" stroke="hsl(var(--border))" strokeOpacity="0.5" strokeWidth="0.8" />
+                <path
+                  d="M 60 0 L 0 0 0 40"
+                  fill="none"
+                  stroke="hsl(var(--border))"
+                  strokeOpacity="0.5"
+                  strokeWidth="0.8"
+                />
               </pattern>
             </defs>
 
@@ -704,6 +939,7 @@ export function LiveVolumeProfile({
               const highY = priceToY(b.h);
               const lowY = priceToY(b.l);
               const isBull = b.c >= b.o;
+              const isLastBar = i === nBars - 1;
               const color = isBull ? "hsl(var(--up))" : "hsl(var(--down))";
               const candleW = Math.max(stepX * 0.65, 1.2);
               const bodyTop = Math.min(openY, closeY);
@@ -729,7 +965,37 @@ export function LiveVolumeProfile({
                     strokeWidth="0.5"
                     rx="0"
                     ry="0"
+                    className={cn(
+                      isLastBar && tickFlash === "up" && "animate-tick-up",
+                      isLastBar && tickFlash === "down" && "animate-tick-down",
+                    )}
                   />
+
+                  {/* Active Live Candle Indicator Badge on Latest Bar */}
+                  {isLastBar && (
+                    <g>
+                      <circle
+                        cx={xPos}
+                        cy={highY - 8}
+                        r="3"
+                        fill="hsl(var(--gold))"
+                        className="animate-ping"
+                        opacity="0.8"
+                      />
+                      <circle cx={xPos} cy={highY - 8} r="2" fill="hsl(var(--gold))" />
+                      <text
+                        x={xPos}
+                        y={highY - 14}
+                        fill="hsl(var(--gold))"
+                        fontSize="7.5"
+                        fontFamily="monospace"
+                        fontWeight="bold"
+                        textAnchor="middle"
+                      >
+                        LIVE
+                      </text>
+                    </g>
+                  )}
                 </g>
               );
             })}
@@ -776,18 +1042,78 @@ export function LiveVolumeProfile({
               </g>
             )}
 
-            {/* Current Price / LTP Horizontal Line */}
+            {/* =================================================================== */}
+            {/* REAL-TIME LIVE MARKET PRICE (LTP) CURSOR BEAM & RADAR BEACON        */}
+            {/* =================================================================== */}
             {lastClose !== null && (
-              <line
-                x1={15}
-                y1={priceToY(lastClose)}
-                x2={W - 60}
-                y2={priceToY(lastClose)}
-                stroke="hsl(var(--foreground))"
-                strokeWidth="1"
-                strokeDasharray="2 3"
-                opacity="0.75"
-              />
+              <g>
+                {/* Horizontal Live LTP Beam */}
+                <line
+                  x1={15}
+                  y1={priceToY(lastClose)}
+                  x2={W - 60}
+                  y2={priceToY(lastClose)}
+                  stroke={
+                    tickFlash === "up"
+                      ? "hsl(var(--up))"
+                      : tickFlash === "down"
+                      ? "hsl(var(--down))"
+                      : "hsl(var(--foreground))"
+                  }
+                  strokeWidth={tickFlash ? "1.8" : "1.2"}
+                  strokeDasharray={tickFlash ? "none" : "3 3"}
+                  className={cn("transition-colors duration-300", tickFlash && "animate-pulse")}
+                />
+
+                {/* Pulsating Radar Beacon at Volume Profile Frontier */}
+                <circle
+                  cx={profileStartX - 5}
+                  cy={priceToY(lastClose)}
+                  r="6"
+                  className="animate-ping"
+                  fill={
+                    tickFlash === "up"
+                      ? "hsl(var(--up))"
+                      : tickFlash === "down"
+                      ? "hsl(var(--down))"
+                      : "hsl(var(--accent))"
+                  }
+                  opacity="0.85"
+                />
+                <circle
+                  cx={profileStartX - 5}
+                  cy={priceToY(lastClose)}
+                  r="3.5"
+                  fill="hsl(var(--foreground))"
+                />
+
+                {/* Floating POC Distance Pill on Live Beam */}
+                {pocPrice !== null && (
+                  <g transform={`translate(${CHART_WIDTH - 120}, ${priceToY(lastClose) - 9})`}>
+                    <rect
+                      x={0}
+                      y={0}
+                      width={115}
+                      height={15}
+                      fill="hsl(var(--surface-raised))"
+                      stroke="hsl(var(--border))"
+                      strokeWidth="0.8"
+                    />
+                    <text
+                      x={5}
+                      y={10.5}
+                      fill="hsl(var(--foreground))"
+                      fontSize="8"
+                      fontFamily="monospace"
+                      fontWeight="bold"
+                    >
+                      Δ POC: {lastClose >= pocPrice ? "+" : ""}
+                      {(lastClose - pocPrice).toFixed(1)} (
+                      {(((lastClose - pocPrice) / pocPrice) * 100).toFixed(2)}%)
+                    </text>
+                  </g>
+                )}
+              </g>
             )}
 
             {/* Divider Line between Candlestick Canvas and Volume Profile */}
@@ -815,6 +1141,7 @@ export function LiveVolumeProfile({
                   bin.mid <= vahPrice;
                 const isPocBin = pocPrice !== null && Math.abs(bin.mid - pocPrice) < 1e-4;
                 const isHovered = hoverBinIdx === i;
+                const isActiveBin = i === activePriceBinIdx;
 
                 if (profileMode === "tradingview") {
                   const buyWidth = (bin.buy / maxBinVolume) * PROFILE_WIDTH;
@@ -859,6 +1186,22 @@ export function LiveVolumeProfile({
                           ry="0"
                         />
                       )}
+                      {/* Active Auction Frontier Indicator */}
+                      {isActiveBin && (
+                        <rect
+                          x={profileStartX}
+                          y={binTopY}
+                          width={PROFILE_WIDTH}
+                          height={barH}
+                          fill="none"
+                          stroke="hsl(var(--accent))"
+                          strokeWidth="1.4"
+                          strokeDasharray="3 2"
+                          className="animate-pulse"
+                          rx="0"
+                          ry="0"
+                        />
+                      )}
                     </g>
                   );
                 } else {
@@ -878,6 +1221,21 @@ export function LiveVolumeProfile({
                         rx="0"
                         ry="0"
                       />
+                      {isActiveBin && (
+                        <rect
+                          x={profileStartX}
+                          y={binTopY}
+                          width={PROFILE_WIDTH * 0.85}
+                          height={barH}
+                          fill="none"
+                          stroke="hsl(var(--accent))"
+                          strokeWidth="1.4"
+                          strokeDasharray="3 2"
+                          className="animate-pulse"
+                          rx="0"
+                          ry="0"
+                        />
+                      )}
                     </g>
                   );
                 }
@@ -912,7 +1270,14 @@ export function LiveVolumeProfile({
                 const tickY = PADDING_TOP + pct * USABLE_H;
                 return (
                   <g key={pct}>
-                    <line x1={0} y1={tickY} x2={5} y2={tickY} stroke="hsl(var(--border))" strokeWidth="1" />
+                    <line
+                      x1={0}
+                      y1={tickY}
+                      x2={5}
+                      y2={tickY}
+                      stroke="hsl(var(--border))"
+                      strokeWidth="1"
+                    />
                     <text
                       x={8}
                       y={tickY + 3}
@@ -929,8 +1294,23 @@ export function LiveVolumeProfile({
               {/* VAH Price Tag */}
               {showValueArea && vahPrice !== null && (
                 <g transform={`translate(0, ${priceToY(vahPrice)})`}>
-                  <rect x={0} y={-7} width={56} height={14} fill="hsl(var(--accent))" rx="0" ry="0" />
-                  <text x={4} y={3} fill="hsl(var(--accent-foreground))" fontSize="8.5" fontFamily="monospace" fontWeight="bold">
+                  <rect
+                    x={0}
+                    y={-7}
+                    width={56}
+                    height={14}
+                    fill="hsl(var(--accent))"
+                    rx="0"
+                    ry="0"
+                  />
+                  <text
+                    x={4}
+                    y={3}
+                    fill="hsl(var(--accent-foreground))"
+                    fontSize="8.5"
+                    fontFamily="monospace"
+                    fontWeight="bold"
+                  >
                     VAH {vahPrice.toFixed(1)}
                   </text>
                 </g>
@@ -939,8 +1319,23 @@ export function LiveVolumeProfile({
               {/* POC Price Tag */}
               {showPocLine && pocPrice !== null && (
                 <g transform={`translate(0, ${priceToY(pocPrice)})`}>
-                  <rect x={0} y={-8} width={58} height={16} fill="hsl(var(--gold))" rx="0" ry="0" />
-                  <text x={4} y={3.5} fill="hsl(var(--surface-raised))" fontSize="9" fontFamily="monospace" fontWeight="bold">
+                  <rect
+                    x={0}
+                    y={-8}
+                    width={58}
+                    height={16}
+                    fill="hsl(var(--gold))"
+                    rx="0"
+                    ry="0"
+                  />
+                  <text
+                    x={4}
+                    y={3.5}
+                    fill="hsl(var(--surface-raised))"
+                    fontSize="9"
+                    fontFamily="monospace"
+                    fontWeight="bold"
+                  >
                     POC {pocPrice.toFixed(1)}
                   </text>
                 </g>
@@ -949,18 +1344,55 @@ export function LiveVolumeProfile({
               {/* VAL Price Tag */}
               {showValueArea && valPrice !== null && (
                 <g transform={`translate(0, ${priceToY(valPrice)})`}>
-                  <rect x={0} y={-7} width={56} height={14} fill="hsl(var(--accent))" rx="0" ry="0" />
-                  <text x={4} y={3} fill="hsl(var(--accent-foreground))" fontSize="8.5" fontFamily="monospace" fontWeight="bold">
+                  <rect
+                    x={0}
+                    y={-7}
+                    width={56}
+                    height={14}
+                    fill="hsl(var(--accent))"
+                    rx="0"
+                    ry="0"
+                  />
+                  <text
+                    x={4}
+                    y={3}
+                    fill="hsl(var(--accent-foreground))"
+                    fontSize="8.5"
+                    fontFamily="monospace"
+                    fontWeight="bold"
+                  >
                     VAL {valPrice.toFixed(1)}
                   </text>
                 </g>
               )}
 
-              {/* Current LTP Badge */}
+              {/* Dynamic Live LTP Badge (Flashes with tick updates) */}
               {lastClose !== null && (
                 <g transform={`translate(0, ${priceToY(lastClose)})`}>
-                  <rect x={0} y={-8} width={58} height={16} fill="hsl(var(--foreground))" rx="0" ry="0" />
-                  <text x={4} y={3.5} fill="hsl(var(--background))" fontSize="9" fontFamily="monospace" fontWeight="bold">
+                  <rect
+                    x={0}
+                    y={-8}
+                    width={58}
+                    height={16}
+                    fill={
+                      tickFlash === "up"
+                        ? "hsl(var(--up))"
+                        : tickFlash === "down"
+                        ? "hsl(var(--down))"
+                        : "hsl(var(--foreground))"
+                    }
+                    className="transition-colors duration-300"
+                    rx="0"
+                    ry="0"
+                  />
+                  <text
+                    x={4}
+                    y={3.5}
+                    fill="hsl(var(--background))"
+                    fontSize="9"
+                    fontFamily="monospace"
+                    fontWeight="bold"
+                  >
                     LTP {lastClose.toFixed(1)}
                   </text>
                 </g>
@@ -981,12 +1413,34 @@ export function LiveVolumeProfile({
                 Level: {fmtINR(profile.bins[hoverBinIdx].mid)}
               </div>
               <div className="mt-1 flex items-center gap-3 text-3xs text-muted-foreground">
-                <span>Total: <strong className="text-foreground">{fmtCompact(profile.bins[hoverBinIdx].v)}</strong></span>
-                <span>Buy: <strong className="text-gold">{fmtCompact(profile.bins[hoverBinIdx].buy)}</strong></span>
-                <span>Sell: <strong className="text-accent">{fmtCompact(profile.bins[hoverBinIdx].sell)}</strong></span>
-                <span>Δ: <strong className={profile.bins[hoverBinIdx].delta >= 0 ? "text-up" : "text-down"}>
-                  {fmtCompact(profile.bins[hoverBinIdx].delta)}
-                </strong></span>
+                <span>
+                  Total:{" "}
+                  <strong className="text-foreground">
+                    {fmtCompact(profile.bins[hoverBinIdx].v)}
+                  </strong>
+                </span>
+                <span>
+                  Buy:{" "}
+                  <strong className="text-gold">
+                    {fmtCompact(profile.bins[hoverBinIdx].buy)}
+                  </strong>
+                </span>
+                <span>
+                  Sell:{" "}
+                  <strong className="text-accent">
+                    {fmtCompact(profile.bins[hoverBinIdx].sell)}
+                  </strong>
+                </span>
+                <span>
+                  Δ:{" "}
+                  <strong
+                    className={
+                      profile.bins[hoverBinIdx].delta >= 0 ? "text-up" : "text-down"
+                    }
+                  >
+                    {fmtCompact(profile.bins[hoverBinIdx].delta)}
+                  </strong>
+                </span>
               </div>
             </div>
           )}
@@ -1015,16 +1469,22 @@ export function LiveVolumeProfile({
               <span className="h-2 w-4 border-t-2 border-dashed border-chart-clay inline-block" />
               <span>VWAP</span>
             </span>
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block h-2 w-2 rounded-full bg-up animate-ping" />
+              <span className="text-foreground font-semibold">Live LTP Cursor</span>
+            </span>
           </div>
 
           <div className="text-3xs text-muted-foreground">
-            Visible Window: {bars.length} {data?.intervalLabel ?? interval} bars · Sharp rectangular geometry
+            Window: {bars.length} {data?.intervalLabel ?? timeframe} bars · Razor-sharp Bloomberg geometry
           </div>
         </div>
       </div>
 
-      {/* 3. Microstructure Intelligence & Auction Theory Dashboard */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      {/* ========================================================================= */}
+      {/* 4. MICROSTRUCTURE AUCTION HUD & VOLUMETRIC METRICS (4 Bloomberg Tiles)    */}
+      {/* ========================================================================= */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         {/* Regime Status Card */}
         <div className="border border-border bg-surface p-3 rounded-none space-y-1.5 font-sans">
           <div className="flex items-center justify-between text-2xs font-mono uppercase tracking-wider text-muted-foreground">
@@ -1032,7 +1492,12 @@ export function LiveVolumeProfile({
             <span className="text-3xs">Auction Theory</span>
           </div>
           <div>
-            <span className={cn("px-2 py-0.5 text-xs font-mono font-bold rounded-none border", marketStructure.badgeBg)}>
+            <span
+              className={cn(
+                "px-2 py-0.5 text-xs font-mono font-bold rounded-none border",
+                marketStructure.badgeBg,
+              )}
+            >
               {marketStructure.label}
             </span>
           </div>
@@ -1044,7 +1509,7 @@ export function LiveVolumeProfile({
         {/* POC Proximity Card */}
         <div className="border border-border bg-surface p-3 rounded-none space-y-1.5 font-mono">
           <div className="flex items-center justify-between text-2xs uppercase tracking-wider text-muted-foreground">
-            <span>Point of Control Anchor</span>
+            <span>Point of Control</span>
             <span className="text-gold font-bold">{fmtINR(pocPrice)}</span>
           </div>
           <div className="flex items-baseline justify-between">
@@ -1061,31 +1526,147 @@ export function LiveVolumeProfile({
             </span>
           </div>
           <div className="text-3xs text-muted-foreground leading-tight">
-            POC serves as the primary magnetic attractor during balanced consolidation periods.
+            POC acts as the high-liquidity magnetic attractor during rotational auction phases.
           </div>
         </div>
 
-        {/* High Volume Node (HVN) vs Low Volume Node (LVN) */}
+        {/* Volume Nodes (HVN vs LVN) */}
         <div className="border border-border bg-surface p-3 rounded-none space-y-1.5 font-mono">
           <div className="flex items-center justify-between text-2xs uppercase tracking-wider text-muted-foreground">
-            <span>Volume Nodes (Structure)</span>
+            <span>Volume Nodes</span>
             <span className="text-accent text-3xs">Liquidity Shelf</span>
           </div>
           <div className="space-y-1 text-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-up font-semibold">HVN (Support Shelf):</span>
-              <span className="text-foreground font-bold">{hvnBin ? fmtINR(hvnBin.mid) : "—"}</span>
+              <span className="text-up font-semibold">HVN (Absorption Shelf):</span>
+              <span className="text-foreground font-bold">
+                {hvnBin ? fmtINR(hvnBin.mid) : "—"}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-down font-semibold">LVN (Fast Vacuum):</span>
-              <span className="text-foreground font-bold">{lvnBin ? fmtINR(lvnBin.mid) : "—"}</span>
+              <span className="text-foreground font-bold">
+                {lvnBin ? fmtINR(lvnBin.mid) : "—"}
+              </span>
             </div>
           </div>
           <div className="text-3xs text-muted-foreground leading-tight">
-            HVNs represent strong institutional absorption; LVNs are low-volume voids prone to rapid slippage.
+            HVN reflects strong two-sided liquidity; LVN is a low-volume void vulnerable to fast runs.
+          </div>
+        </div>
+
+        {/* Live Delta & Auction Velocity */}
+        <div className="border border-border bg-surface p-3 rounded-none space-y-1.5 font-mono">
+          <div className="flex items-center justify-between text-2xs uppercase tracking-wider text-muted-foreground">
+            <span>Auction Velocity</span>
+            <span className="text-gold text-3xs">Order-Flow Flow</span>
+          </div>
+          <div className="space-y-1 text-2xs">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Latest Bar Delta:</span>
+              <span
+                className={cn(
+                  "font-bold",
+                  activeBar && activeBar.delta >= 0 ? "text-up" : "text-down",
+                )}
+              >
+                {activeBar && activeBar.delta >= 0 ? "+" : ""}
+                {activeBar ? fmtCompact(activeBar.delta) : "—"}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Cumulative Delta (CVD):</span>
+              <span
+                className={cn(
+                  "font-bold",
+                  data?.cvd && data.cvd.length > 0 && data.cvd[data.cvd.length - 1] >= 0
+                    ? "text-up"
+                    : "text-down",
+                )}
+              >
+                {data?.cvd && data.cvd.length > 0
+                  ? fmtCompact(data.cvd[data.cvd.length - 1])
+                  : "—"}
+              </span>
+            </div>
+          </div>
+          <div className="text-3xs text-muted-foreground leading-tight">
+            Real-time delta indicates aggressive market order pressure versus passive limit absorption.
           </div>
         </div>
       </div>
+
+      {/* ========================================================================= */}
+      {/* 5. KEYBOARD HOTKEYS MODAL                                                 */}
+      {/* ========================================================================= */}
+      {showHotkeysModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
+          onClick={() => setShowHotkeysModal(false)}
+        >
+          <div
+            className="w-full max-w-md border border-border bg-surface p-5 rounded-none shadow-xl space-y-4 font-mono text-xs"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-border pb-2">
+              <div className="flex items-center gap-2">
+                <Keyboard className="h-4 w-4 text-accent" />
+                <h3 className="font-bold text-foreground text-sm">VRVP Cockpit Hotkeys</h3>
+              </div>
+              <button
+                onClick={() => setShowHotkeysModal(false)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-2 text-2xs">
+              <div className="flex items-center justify-between border-b border-border/40 py-1">
+                <span className="text-muted-foreground">Live Instant Sync</span>
+                <kbd className="border border-border bg-surface-raised px-1.5 py-0.5 font-bold text-foreground">
+                  Space / R
+                </kbd>
+              </div>
+              <div className="flex items-center justify-between border-b border-border/40 py-1">
+                <span className="text-muted-foreground">Timeframe: 1m / 5m / 15m / 1h / 1d</span>
+                <kbd className="border border-border bg-surface-raised px-1.5 py-0.5 font-bold text-foreground">
+                  1 / 2 / 3 / 4 / 5
+                </kbd>
+              </div>
+              <div className="flex items-center justify-between border-b border-border/40 py-1">
+                <span className="text-muted-foreground">Toggle Profile / Delta Mode</span>
+                <kbd className="border border-border bg-surface-raised px-1.5 py-0.5 font-bold text-foreground">
+                  P
+                </kbd>
+              </div>
+              <div className="flex items-center justify-between border-b border-border/40 py-1">
+                <span className="text-muted-foreground">Cycle Bellwether Stocks</span>
+                <kbd className="border border-border bg-surface-raised px-1.5 py-0.5 font-bold text-foreground">
+                  [ / ]
+                </kbd>
+              </div>
+              <div className="flex items-center justify-between py-1">
+                <span className="text-muted-foreground">Toggle this hotkey reference</span>
+                <kbd className="border border-border bg-surface-raised px-1.5 py-0.5 font-bold text-foreground">
+                  ?
+                </kbd>
+              </div>
+            </div>
+
+            <div className="border-t border-border pt-3 text-right">
+              <button
+                onClick={() => setShowHotkeysModal(false)}
+                className="border border-border bg-surface-raised px-3 py-1 text-2xs text-foreground hover:bg-surface-muted transition-colors rounded-none"
+              >
+                Close (Esc)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

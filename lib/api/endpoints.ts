@@ -205,7 +205,7 @@ export const getTechnicals = (symbol: string, interval: string) =>
 export const getOrderflow = (symbol: string, market: string, interval: string) =>
   apiGet<ApiOrderflow>(
     `/api/v1/orderflow/${encodeURIComponent(symbol)}?market=${encodeURIComponent(market)}&interval=${encodeURIComponent(interval)}`,
-    30,
+    REVALIDATE.quote,
   );
 
 export const getRisk = (symbol: string) =>

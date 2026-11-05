@@ -32,7 +32,8 @@ def get_orderflow(
         return orderflow.build(sym, market, interval, orderflow.fetch_bars(sym, market, interval))
 
     try:
-        data, age = CACHE.get_or_fetch(f"orderflow:{market}:{sym}:{interval}", 90 if intraday else 900, compute)
+        ttl = SETTINGS.quote_ttl if intraday else 300
+        data, age = CACHE.get_or_fetch(f"orderflow:{market}:{sym}:{interval}", ttl, compute)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except Exception as exc:
