@@ -123,12 +123,12 @@ export function WatchlistView() {
       </header>
 
       {failed ? (
-        <p role="alert" className="border-b border-border bg-down/[0.06] px-4 py-2 text-2xs text-down">
+        <p role="alert" className="border-b border-border bg-down/[0.06] px-2.5 py-1 text-2xs text-down">
           Could not reach the data service, so prices below may be missing or out of date.
         </p>
       ) : null}
       {snap && !snap.unlistedReady && items.some((i) => i.kind === "unlisted") ? (
-        <p className="border-b border-border px-4 py-2 text-2xs text-muted-foreground">
+        <p className="border-b border-border px-2.5 py-1 text-2xs text-muted-foreground">
           Unlisted prices are still loading. They will appear on the next refresh.
         </p>
       ) : null}
@@ -162,7 +162,7 @@ export function WatchlistView() {
                   {item.kind === "listed" ? (
                     <span>{item.id}</span>
                   ) : (
-                    <span className="rounded border border-flat/40 bg-flat/10 px-1 text-flat">Unlisted</span>
+                    <span className="rounded-none border border-flat/40 bg-flat/10 px-1 text-flat">Unlisted</span>
                   )}
                 </div>
               </Link>
@@ -196,38 +196,38 @@ export function WatchlistView() {
           <table className="data-table w-full text-sm">
           <thead className="text-2xs text-muted-foreground">
             <tr className="border-b border-border">
-              <th className="px-4 py-2 text-left font-medium">Company</th>
-              <th className="px-4 py-2 text-right font-medium">Price</th>
-              <th className="px-4 py-2 text-right font-medium">Day</th>
-              <th className="w-px px-4 py-2" />
+              <th className="px-2.5 py-1 text-left font-medium">Company</th>
+              <th className="px-2.5 py-1 text-right font-medium">Price</th>
+              <th className="px-2.5 py-1 text-right font-medium">Day</th>
+              <th className="w-px px-2.5 py-1" />
             </tr>
           </thead>
           <tbody>
             {rows.map(({ item, price, changePct }) => (
-              <tr key={`${item.kind}:${item.id}`} className="border-b border-border/60 last:border-0">
-                <td className="px-4 py-2.5">
+              <tr key={`${item.kind}:${item.id}`} className="border-b border-border/60 last:border-0 cell-glow hover:bg-surface-muted/50 transition-colors">
+                <td className="px-2.5 py-1.5">
                   <Link href={href(item)} className="font-medium hover:text-accent">
                     {item.name}
                   </Link>
                   <div className="mt-0.5 flex items-center gap-2 font-mono text-2xs text-muted-foreground">
                     {item.kind === "listed" ? item.id : null}
                     {item.kind === "unlisted" ? (
-                      <span className="rounded border border-flat/40 bg-flat/10 px-1.5 text-flat">Unlisted</span>
+                      <span className="rounded-none border border-flat/40 bg-flat/10 px-1.5 text-flat">Unlisted</span>
                     ) : null}
                   </div>
                 </td>
-                <td className="px-4 py-2.5 text-right font-mono tabular-nums">
+                <td className="px-2.5 py-1.5 text-right font-mono tabular-nums">
                   {price == null ? <span className="text-muted-foreground">{loading || !snap ? "…" : "n/a"}</span> : money(price)}
                 </td>
                 <td
                   className={cn(
-                    "px-4 py-2.5 text-right font-mono tabular-nums",
+                    "px-2.5 py-1.5 text-right font-mono tabular-nums",
                     changePct == null ? "text-muted-foreground" : changePct >= 0 ? "text-up" : "text-down",
                   )}
                 >
                   {changePct == null ? (item.kind === "unlisted" ? "revised, not daily" : "n/a") : formatPct(changePct, 2)}
                 </td>
-                <td className="px-4 py-2.5">
+                <td className="px-2.5 py-1.5">
                   <div className="flex items-center justify-end gap-1">
                     <Link
                       href={`/alerts?kind=${item.kind}&target=${encodeURIComponent(item.id)}&name=${encodeURIComponent(item.name)}`}
@@ -254,7 +254,7 @@ export function WatchlistView() {
           </table>
         </div>
       )}
-      <p className="border-t border-border px-4 py-2 text-2xs text-muted-foreground">
+      <p className="border-t border-border px-2.5 py-1 text-2xs text-muted-foreground">
         Your watchlist is saved in this browser only. Listed prices are about 15 minutes delayed; unlisted prices are
         indicative dealer levels.
       </p>

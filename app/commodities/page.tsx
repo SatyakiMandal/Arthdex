@@ -44,34 +44,34 @@ function Group({ title, rows }: { title: string; rows: ApiCommodity[] }) {
   if (rows.length === 0) return null;
   const maxByHorizon = Object.fromEntries(HORIZONS.map((h) => [h, Math.max(...rows.map((r) => Math.abs(r.change[h] ?? 0)), 1)])) as Record<(typeof HORIZONS)[number], number>;
   return (
-    <section className="mt-6 rounded-none border border-border bg-surface">
-      <h2 className="border-b border-border px-4 py-3 text-sm font-semibold tracking-tight">{title}</h2>
+    <section className="mt-2.5 rounded-none border border-border bg-surface">
+      <h2 className="border-b border-border/70 px-3 py-1.5 font-mono text-xs uppercase font-bold text-accent tracking-wider">{title}</h2>
       <div className="overflow-x-auto">
         <table className="data-table w-full min-w-[900px] border-collapse text-sm">
           <thead className="text-2xs text-muted-foreground">
             <tr className="border-b border-border">
-              <th className="px-3 py-2 text-left font-medium">Commodity</th>
-              <th className="px-3 py-2 text-right font-medium">Price</th>
+              <th className="px-2 py-1 font-mono text-3xs uppercase tracking-wider text-left font-medium">Commodity</th>
+              <th className="px-2 py-1 font-mono text-3xs uppercase tracking-wider text-right font-medium">Price</th>
               {HORIZONS.map((h) => (
                 <th key={h} className="px-3 py-2 text-right font-medium">
                   {h}
                 </th>
               ))}
-              <th className="px-3 py-2 text-left font-medium">1Y trend</th>
-              <th className="px-3 py-2 text-left font-medium">52W range</th>
-              <th className="px-3 py-2 text-left font-medium">What moves it</th>
+              <th className="px-2 py-1 font-mono text-3xs uppercase tracking-wider text-left font-medium">1Y trend</th>
+              <th className="px-2 py-1 font-mono text-3xs uppercase tracking-wider text-left font-medium">52W range</th>
+              <th className="px-2 py-1 font-mono text-3xs uppercase tracking-wider text-left font-medium">What moves it</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => {
               const pos = r.rangePosition;
               return (
-                <tr key={r.id} className="border-b border-border/60 last:border-0 hover:bg-surface-muted">
-                  <td className="px-3 py-2">
+                <tr key={r.id} className="border-b border-border/60 last:border-0 cell-glow hover:bg-surface-muted/60 transition-colors font-mono text-2xs">
+                  <td className="px-2 py-1">
                     <p className="font-medium">{r.name}</p>
                     <p className="font-mono text-2xs text-muted-foreground">{r.symbol}</p>
                   </td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums">
+                  <td className="px-2 py-1 text-right font-mono tabular-nums">
                     {formatINR(r.price, r.price < 10 ? 3 : 2)} <span className="text-2xs text-muted-foreground">{r.unit}</span>
                   </td>
                   {HORIZONS.map((h) => (
@@ -79,10 +79,10 @@ function Group({ title, rows }: { title: string; rows: ApiCommodity[] }) {
                       <Chg v={r.change[h]} max={maxByHorizon[h]} />
                     </td>
                   ))}
-                  <td className="px-3 py-2">
+                  <td className="px-2 py-1">
                     <Spark values={r.spark} up={(r.change["1Y"] ?? r.change["3M"] ?? 0) >= 0} />
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="px-2 py-1">
                     {pos == null ? (
                       "—"
                     ) : (

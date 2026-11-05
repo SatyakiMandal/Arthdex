@@ -96,9 +96,9 @@ export function CompanyComparisonMatrix({
   const deHighlight = getBestWorst((c) => c.balanceSheet?.debtToEquity, "lowest_is_best");
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-2.5">
       {/* Top action bar and quick peer presets */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-2">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
             <Sparkles className="h-3 w-3 text-amber-500" /> Quick Peer Sets:
@@ -130,7 +130,7 @@ export function CompanyComparisonMatrix({
             <h4 className="text-xs font-semibold text-foreground">Select a Company to Compare</h4>
             <button
               onClick={() => setShowPicker(false)}
-              className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="rounded-none p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               <X className="h-4 w-4" />
             </button>
@@ -150,11 +150,11 @@ export function CompanyComparisonMatrix({
         <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="border-b border-border bg-muted/40">
-              <th className="sticky left-0 z-10 w-48 min-w-44 bg-muted/60 p-3.5 font-semibold text-muted-foreground uppercase text-2xs tracking-wider backdrop-blur">
+              <th className="sticky left-0 z-10 w-48 min-w-44 bg-muted/60 px-2.5 py-1.5 font-semibold text-muted-foreground uppercase text-3xs tracking-wider backdrop-blur">
                 Metric / Company
               </th>
               {companies.map((c) => (
-                <th key={c.symbol} className="min-w-56 p-3.5 border-l border-border/60">
+                <th key={c.symbol} className="min-w-52 px-2.5 py-1.5 border-l border-border/60">
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <Link
@@ -165,7 +165,7 @@ export function CompanyComparisonMatrix({
                         <ArrowUpRight className="h-3 w-3 text-muted-foreground" />
                       </Link>
                       <div className="text-2xs text-muted-foreground line-clamp-1">{c.name}</div>
-                      <span className="mt-1 inline-block rounded bg-secondary px-1.5 py-0.5 text-3xs text-secondary-foreground font-mono">
+                      <span className="mt-1 inline-block rounded-none bg-secondary px-1.5 py-0.5 text-3xs text-secondary-foreground font-mono">
                         {c.sector || "Unclassified"}
                       </span>
                     </div>
@@ -173,7 +173,7 @@ export function CompanyComparisonMatrix({
                       <button
                         onClick={() => handleRemove(c.symbol)}
                         title={`Remove ${c.symbol}`}
-                        className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                        className="rounded-none p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
                       >
                         <X className="h-3.5 w-3.5" />
                       </button>
@@ -212,65 +212,65 @@ export function CompanyComparisonMatrix({
           <tbody className="divide-y divide-border/60 font-mono">
             {/* --- Valuation Section --- */}
             <tr className="bg-muted/20 font-sans">
-              <td colSpan={companies.length + 1} className="p-2 text-2xs font-semibold text-primary uppercase tracking-wider">
+              <td colSpan={companies.length + 1} className="px-2.5 py-1 text-3xs font-mono font-bold text-accent uppercase tracking-wider">
                 1. Valuation Multiples
               </td>
             </tr>
-            <tr className="hover:bg-muted/30">
-              <td className="sticky left-0 bg-card p-3 font-sans text-xs text-foreground font-medium">
+            <tr className="cell-glow hover:bg-muted/30">
+              <td className="sticky left-0 bg-card px-2.5 py-1 font-sans text-2xs text-foreground font-medium">
                 P/E Ratio (Trailing)
               </td>
               {companies.map((c) => {
                 const val = c.valuation?.peRatio;
                 const isBest = peHighlight.best === c.symbol;
                 return (
-                  <td key={c.symbol} className={cn("p-3 border-l border-border/60", isBest && "bg-emerald-500/10 font-bold text-emerald-500")}>
+                  <td key={c.symbol} className={cn("px-2.5 py-1 border-l border-border/60 font-mono text-2xs tabular-nums", isBest && "bg-emerald-500/10 font-bold text-emerald-500")}>
                     {fmtNum(val, "x")}
                     {isBest && <span className="ml-1 text-3xs font-sans uppercase text-emerald-500">(Lowest)</span>}
                   </td>
                 );
               })}
             </tr>
-            <tr className="hover:bg-muted/30">
-              <td className="sticky left-0 bg-card p-3 font-sans text-xs text-foreground font-medium">
+            <tr className="cell-glow hover:bg-muted/30">
+              <td className="sticky left-0 bg-card px-2.5 py-1 font-sans text-2xs text-foreground font-medium">
                 P/B Ratio
               </td>
               {companies.map((c) => {
                 const val = c.valuation?.pbRatio;
                 const isBest = pbHighlight.best === c.symbol;
                 return (
-                  <td key={c.symbol} className={cn("p-3 border-l border-border/60", isBest && "bg-emerald-500/10 font-bold text-emerald-500")}>
+                  <td key={c.symbol} className={cn("px-2.5 py-1 border-l border-border/60 font-mono text-2xs tabular-nums", isBest && "bg-emerald-500/10 font-bold text-emerald-500")}>
                     {fmtNum(val, "x")}
                   </td>
                 );
               })}
             </tr>
-            <tr className="hover:bg-muted/30">
-              <td className="sticky left-0 bg-card p-3 font-sans text-xs text-foreground font-medium">
+            <tr className="cell-glow hover:bg-muted/30">
+              <td className="sticky left-0 bg-card px-2.5 py-1 font-sans text-2xs text-foreground font-medium">
                 EV / EBITDA
               </td>
               {companies.map((c) => (
-                <td key={c.symbol} className="p-3 border-l border-border/60">
+                <td key={c.symbol} className="px-2.5 py-1 border-l border-border/60 font-mono text-2xs tabular-nums">
                   {fmtNum(c.valuation?.evToEbitda, "x")}
                 </td>
               ))}
             </tr>
-            <tr className="hover:bg-muted/30">
-              <td className="sticky left-0 bg-card p-3 font-sans text-xs text-foreground font-medium">
+            <tr className="cell-glow hover:bg-muted/30">
+              <td className="sticky left-0 bg-card px-2.5 py-1 font-sans text-2xs text-foreground font-medium">
                 EV / Sales
               </td>
               {companies.map((c) => (
-                <td key={c.symbol} className="p-3 border-l border-border/60">
+                <td key={c.symbol} className="px-2.5 py-1 border-l border-border/60 font-mono text-2xs tabular-nums">
                   {fmtNum(c.valuation?.evToSales, "x")}
                 </td>
               ))}
             </tr>
-            <tr className="hover:bg-muted/30">
-              <td className="sticky left-0 bg-card p-3 font-sans text-xs text-foreground font-medium">
+            <tr className="cell-glow hover:bg-muted/30">
+              <td className="sticky left-0 bg-card px-2.5 py-1 font-sans text-2xs text-foreground font-medium">
                 Dividend Yield
               </td>
               {companies.map((c) => (
-                <td key={c.symbol} className="p-3 border-l border-border/60">
+                <td key={c.symbol} className="px-2.5 py-1 border-l border-border/60 font-mono text-2xs tabular-nums">
                   {fmtNum(c.valuation?.dividendYieldPct, "%")}
                 </td>
               ))}
@@ -278,75 +278,75 @@ export function CompanyComparisonMatrix({
 
             {/* --- Profitability & Return Ratios --- */}
             <tr className="bg-muted/20 font-sans">
-              <td colSpan={companies.length + 1} className="p-2 text-2xs font-semibold text-primary uppercase tracking-wider">
+              <td colSpan={companies.length + 1} className="px-2.5 py-1 text-3xs font-mono font-bold text-accent uppercase tracking-wider">
                 2. Return Ratios & Quality of Earnings
               </td>
             </tr>
-            <tr className="hover:bg-muted/30">
-              <td className="sticky left-0 bg-card p-3 font-sans text-xs text-foreground font-medium">
+            <tr className="cell-glow hover:bg-muted/30">
+              <td className="sticky left-0 bg-card px-2.5 py-1 font-sans text-2xs text-foreground font-medium">
                 Return on Equity (ROE)
               </td>
               {companies.map((c) => {
                 const val = c.valuation?.roePct;
                 const isBest = roeHighlight.best === c.symbol;
                 return (
-                  <td key={c.symbol} className={cn("p-3 border-l border-border/60", isBest && "bg-emerald-500/10 font-bold text-emerald-500")}>
+                  <td key={c.symbol} className={cn("px-2.5 py-1 border-l border-border/60 font-mono text-2xs tabular-nums", isBest && "bg-emerald-500/10 font-bold text-emerald-500")}>
                     {fmtNum(val, "%")}
                     {isBest && <span className="ml-1 text-3xs font-sans uppercase text-emerald-500">(Highest)</span>}
                   </td>
                 );
               })}
             </tr>
-            <tr className="hover:bg-muted/30">
-              <td className="sticky left-0 bg-card p-3 font-sans text-xs text-foreground font-medium">
+            <tr className="cell-glow hover:bg-muted/30">
+              <td className="sticky left-0 bg-card px-2.5 py-1 font-sans text-2xs text-foreground font-medium">
                 ROCE
               </td>
               {companies.map((c) => {
                 const val = c.profitability?.rocePct;
                 const isBest = roceHighlight.best === c.symbol;
                 return (
-                  <td key={c.symbol} className={cn("p-3 border-l border-border/60", isBest && "bg-emerald-500/10 font-bold text-emerald-500")}>
+                  <td key={c.symbol} className={cn("px-2.5 py-1 border-l border-border/60 font-mono text-2xs tabular-nums", isBest && "bg-emerald-500/10 font-bold text-emerald-500")}>
                     {fmtNum(val, "%")}
                   </td>
                 );
               })}
             </tr>
-            <tr className="hover:bg-muted/30">
-              <td className="sticky left-0 bg-card p-3 font-sans text-xs text-foreground font-medium">
+            <tr className="cell-glow hover:bg-muted/30">
+              <td className="sticky left-0 bg-card px-2.5 py-1 font-sans text-2xs text-foreground font-medium">
                 Operating Margin (OPM)
               </td>
               {companies.map((c) => (
-                <td key={c.symbol} className="p-3 border-l border-border/60">
+                <td key={c.symbol} className="px-2.5 py-1 border-l border-border/60 font-mono text-2xs tabular-nums">
                   {fmtNum(c.profitability?.opmPct, "%")}
                 </td>
               ))}
             </tr>
-            <tr className="hover:bg-muted/30">
-              <td className="sticky left-0 bg-card p-3 font-sans text-xs text-foreground font-medium">
+            <tr className="cell-glow hover:bg-muted/30">
+              <td className="sticky left-0 bg-card px-2.5 py-1 font-sans text-2xs text-foreground font-medium">
                 Net Profit Margin (NPM)
               </td>
               {companies.map((c) => (
-                <td key={c.symbol} className="p-3 border-l border-border/60">
+                <td key={c.symbol} className="px-2.5 py-1 border-l border-border/60 font-mono text-2xs tabular-nums">
                   {fmtNum(c.profitability?.npmPct, "%")}
                 </td>
               ))}
             </tr>
-            <tr className="hover:bg-muted/30">
-              <td className="sticky left-0 bg-card p-3 font-sans text-xs text-foreground font-medium">
+            <tr className="cell-glow hover:bg-muted/30">
+              <td className="sticky left-0 bg-card px-2.5 py-1 font-sans text-2xs text-foreground font-medium">
                 3Y Sales Growth
               </td>
               {companies.map((c) => (
-                <td key={c.symbol} className="p-3 border-l border-border/60">
+                <td key={c.symbol} className="px-2.5 py-1 border-l border-border/60 font-mono text-2xs tabular-nums">
                   {fmtNum(c.profitability?.salesGrowth3yPct, "%")}
                 </td>
               ))}
             </tr>
-            <tr className="hover:bg-muted/30">
-              <td className="sticky left-0 bg-card p-3 font-sans text-xs text-foreground font-medium">
+            <tr className="cell-glow hover:bg-muted/30">
+              <td className="sticky left-0 bg-card px-2.5 py-1 font-sans text-2xs text-foreground font-medium">
                 3Y Profit Growth
               </td>
               {companies.map((c) => (
-                <td key={c.symbol} className="p-3 border-l border-border/60">
+                <td key={c.symbol} className="px-2.5 py-1 border-l border-border/60 font-mono text-2xs tabular-nums">
                   {fmtNum(c.profitability?.profitGrowth3yPct, "%")}
                 </td>
               ))}
@@ -354,50 +354,50 @@ export function CompanyComparisonMatrix({
 
             {/* --- Balance Sheet & Solvency --- */}
             <tr className="bg-muted/20 font-sans">
-              <td colSpan={companies.length + 1} className="p-2 text-2xs font-semibold text-primary uppercase tracking-wider">
+              <td colSpan={companies.length + 1} className="px-2.5 py-1 text-3xs font-mono font-bold text-accent uppercase tracking-wider">
                 3. Balance Sheet & Solvency
               </td>
             </tr>
-            <tr className="hover:bg-muted/30">
-              <td className="sticky left-0 bg-card p-3 font-sans text-xs text-foreground font-medium">
+            <tr className="cell-glow hover:bg-muted/30">
+              <td className="sticky left-0 bg-card px-2.5 py-1 font-sans text-2xs text-foreground font-medium">
                 Debt to Equity
               </td>
               {companies.map((c) => {
                 const val = c.balanceSheet?.debtToEquity;
                 const isBest = deHighlight.best === c.symbol;
                 return (
-                  <td key={c.symbol} className={cn("p-3 border-l border-border/60", isBest && "bg-emerald-500/10 font-bold text-emerald-500")}>
+                  <td key={c.symbol} className={cn("px-2.5 py-1 border-l border-border/60 font-mono text-2xs tabular-nums", isBest && "bg-emerald-500/10 font-bold text-emerald-500")}>
                     {fmtNum(val, "x")}
                   </td>
                 );
               })}
             </tr>
-            <tr className="hover:bg-muted/30">
-              <td className="sticky left-0 bg-card p-3 font-sans text-xs text-foreground font-medium">
+            <tr className="cell-glow hover:bg-muted/30">
+              <td className="sticky left-0 bg-card px-2.5 py-1 font-sans text-2xs text-foreground font-medium">
                 Interest Coverage
               </td>
               {companies.map((c) => (
-                <td key={c.symbol} className="p-3 border-l border-border/60">
+                <td key={c.symbol} className="px-2.5 py-1 border-l border-border/60 font-mono text-2xs tabular-nums">
                   {fmtNum(c.balanceSheet?.interestCoverage, "x")}
                 </td>
               ))}
             </tr>
-            <tr className="hover:bg-muted/30">
-              <td className="sticky left-0 bg-card p-3 font-sans text-xs text-foreground font-medium">
+            <tr className="cell-glow hover:bg-muted/30">
+              <td className="sticky left-0 bg-card px-2.5 py-1 font-sans text-2xs text-foreground font-medium">
                 Total Debt
               </td>
               {companies.map((c) => (
-                <td key={c.symbol} className="p-3 border-l border-border/60">
+                <td key={c.symbol} className="px-2.5 py-1 border-l border-border/60 font-mono text-2xs tabular-nums">
                   {fmtNum(c.balanceSheet?.totalDebtCr, " Cr", "₹")}
                 </td>
               ))}
             </tr>
-            <tr className="hover:bg-muted/30">
-              <td className="sticky left-0 bg-card p-3 font-sans text-xs text-foreground font-medium">
+            <tr className="cell-glow hover:bg-muted/30">
+              <td className="sticky left-0 bg-card px-2.5 py-1 font-sans text-2xs text-foreground font-medium">
                 Cash & Equivalents
               </td>
               {companies.map((c) => (
-                <td key={c.symbol} className="p-3 border-l border-border/60">
+                <td key={c.symbol} className="px-2.5 py-1 border-l border-border/60 font-mono text-2xs tabular-nums">
                   {fmtNum(c.balanceSheet?.cashAndEquivalentsCr, " Cr", "₹")}
                 </td>
               ))}
@@ -405,12 +405,12 @@ export function CompanyComparisonMatrix({
 
             {/* --- Forensics & Quality --- */}
             <tr className="bg-muted/20 font-sans">
-              <td colSpan={companies.length + 1} className="p-2 text-2xs font-semibold text-primary uppercase tracking-wider">
+              <td colSpan={companies.length + 1} className="px-2.5 py-1 text-3xs font-mono font-bold text-accent uppercase tracking-wider">
                 4. Forensic Diagnostics & Health Checks
               </td>
             </tr>
-            <tr className="hover:bg-muted/30">
-              <td className="sticky left-0 bg-card p-3 font-sans text-xs text-foreground font-medium">
+            <tr className="cell-glow hover:bg-muted/30">
+              <td className="sticky left-0 bg-card px-2.5 py-1 font-sans text-2xs text-foreground font-medium">
                 Piotroski F-Score (0-9)
               </td>
               {companies.map((c) => {
@@ -430,8 +430,8 @@ export function CompanyComparisonMatrix({
                 );
               })}
             </tr>
-            <tr className="hover:bg-muted/30">
-              <td className="sticky left-0 bg-card p-3 font-sans text-xs text-foreground font-medium">
+            <tr className="cell-glow hover:bg-muted/30">
+              <td className="sticky left-0 bg-card px-2.5 py-1 font-sans text-2xs text-foreground font-medium">
                 Altman Z-Score
               </td>
               {companies.map((c) => {
@@ -451,8 +451,8 @@ export function CompanyComparisonMatrix({
                 );
               })}
             </tr>
-            <tr className="hover:bg-muted/30">
-              <td className="sticky left-0 bg-card p-3 font-sans text-xs text-foreground font-medium">
+            <tr className="cell-glow hover:bg-muted/30">
+              <td className="sticky left-0 bg-card px-2.5 py-1 font-sans text-2xs text-foreground font-medium">
                 Beneish M-Score
               </td>
               {companies.map((c) => {

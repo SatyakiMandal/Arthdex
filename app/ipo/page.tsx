@@ -48,23 +48,23 @@ function IssueRow({ issue }: { issue: ApiIpoIssue }) {
   const isListed = issue.status === "listed";
 
   return (
-    <tr className="border-b border-border/60 last:border-0 hover:bg-surface-muted">
-      <td className="px-3 py-2">
+    <tr className="border-b border-border/60 last:border-0 cell-glow hover:bg-surface-muted/60 transition-colors">
+      <td className="px-2.5 py-1">
         <div className="text-xs font-medium">{issue.name ?? issue.symbol}</div>
         <div className="font-mono text-2xs text-muted-foreground">
           {issue.symbol}
           {issue.issueStartDate ? ` · ${issue.issueStartDate} → ${issue.issueEndDate ?? "?"}` : ""}
         </div>
       </td>
-      <td className="px-3 py-2 text-right font-mono tabular-nums">
+      <td className="px-2.5 py-1 text-right font-mono tabular-nums">
         {banded
           ? `₹${formatINR(issue.priceBandLow!, 0)}–${formatINR(issue.priceBandHigh!, 0)}`
           : "—"}
       </td>
-      <td className="px-3 py-2 text-right font-mono tabular-nums">
+      <td className="px-2.5 py-1 text-right font-mono tabular-nums">
         {issue.subscriptionTimes ? `${issue.subscriptionTimes.toFixed(2)}x` : "—"}
       </td>
-      <td className="px-3 py-2 text-right font-mono tabular-nums">
+      <td className="px-2.5 py-1 text-right font-mono tabular-nums">
         {isListed && issue.listingGainPct !== undefined ? (
           <span className={deltaColor(issue.listingGainPct)}>
             {formatPct(issue.listingGainPct, 1)}
@@ -73,7 +73,7 @@ function IssueRow({ issue }: { issue: ApiIpoIssue }) {
           <span className="text-muted-foreground">{issue.listingDate ?? "—"}</span>
         )}
       </td>
-      <td className="px-3 py-2 text-right font-mono tabular-nums">
+      <td className="px-2.5 py-1 text-right font-mono tabular-nums">
         {issue.cmpVsIssuePct !== undefined ? (
           <span className={deltaColor(issue.cmpVsIssuePct)}>
             {formatPct(issue.cmpVsIssuePct, 1)}
@@ -149,7 +149,7 @@ export default async function IpoPage({ searchParams }: PageProps) {
           ))}
         </nav>
 
-        <dl className="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-none border border-border bg-border sm:grid-cols-4">
+        <dl className="mt-2.5 grid grid-cols-2 gap-px overflow-hidden rounded-none border border-border bg-border sm:grid-cols-4">
           {ORDER.map((status) => (
             <div key={status} className="bg-surface px-4 py-2.5">
               <dt className="text-2xs text-muted-foreground">
@@ -162,9 +162,9 @@ export default async function IpoPage({ searchParams }: PageProps) {
           ))}
         </dl>
 
-        <DeskAnalysis insights={result.data.insights} title="Primary-market analysis" className="mt-6" />
+        <DeskAnalysis insights={result.data.insights} title="Primary-market analysis" className="mt-2.5" />
 
-        <div className="mt-6 space-y-4">
+        <div className="mt-2.5 space-y-2.5">
           {sections.map((section) => (
             <DataCard
               key={section.status}
@@ -176,14 +176,14 @@ export default async function IpoPage({ searchParams }: PageProps) {
               <div className="overflow-x-auto p-2">
                 <table className="w-full min-w-[760px] border-collapse text-sm">
                   <thead>
-                    <tr className="border-b border-border text-2xs text-muted-foreground">
-                      <th className="px-3 py-2 text-left font-medium">Issue</th>
-                      <th className="px-3 py-2 text-right font-medium">Price Band</th>
-                      <th className="px-3 py-2 text-right font-medium">Subscription</th>
-                      <th className="px-3 py-2 text-right font-medium">
+                    <tr className="border-b border-border text-3xs font-mono uppercase tracking-wider text-muted-foreground">
+                      <th className="px-2.5 py-1 text-left font-medium">Issue</th>
+                      <th className="px-2.5 py-1 text-right font-medium">Price Band</th>
+                      <th className="px-2.5 py-1 text-right font-medium">Subscription</th>
+                      <th className="px-2.5 py-1 text-right font-medium">
                         {section.status === "listed" ? "Listing Gain" : "Lists"}
                       </th>
-                      <th className="px-3 py-2 text-right font-medium">CMP vs Issue</th>
+                      <th className="px-2.5 py-1 text-right font-medium">CMP vs Issue</th>
                     </tr>
                   </thead>
                   <tbody>

@@ -76,7 +76,7 @@ export function NewsFeed({
     >
       <ul className="divide-y divide-border/60">
         {items.map((item) => (
-          <li key={item.id} className="px-3 py-2 transition-colors hover:bg-surface-muted">
+          <li key={item.id} className="cell-glow px-2.5 py-1.5 transition-colors hover:bg-surface-muted/60">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
               <span
                 className={cn(
@@ -139,7 +139,7 @@ export function NewsFeed({
                   <Link
                     key={symbol}
                     href={`/company/${symbol}`}
-                    className="rounded border border-border px-1.5 py-0.5 font-mono text-2xs text-muted-foreground transition-colors hover:border-accent/50 hover:text-accent"
+                    className="rounded-none border border-border/80 px-1.5 py-0.5 font-mono text-3xs font-bold text-accent bg-accent/5 transition-colors hover:border-accent hover:text-accent"
                   >
                     {symbol}
                   </Link>
