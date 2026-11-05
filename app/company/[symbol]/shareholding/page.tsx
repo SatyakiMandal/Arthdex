@@ -20,8 +20,8 @@ export default async function ShareholdingPage({ params }: PageProps) {
   const res = await getShareholding(upper);
 
   return (
-    <div className="mx-auto max-w-[1600px] px-4 py-8 lg:py-10 sm:px-6">
-      <SectionHead title="Shareholding" note="Who owns the company, how that has changed and how much promoters have pledged" className="mb-8" />
+    <div className="mx-auto w-full max-w-[1920px] px-2 py-2 sm:px-3 lg:px-4 space-y-3">
+      <SectionHead title="Shareholding" note="Who owns the company, how that has changed and how much promoters have pledged" className="mb-2.5 sm:mb-3" />
       {res.ok ? (
         <>
           <ShareholdingView data={res.data} />

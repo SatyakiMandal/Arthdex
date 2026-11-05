@@ -14,8 +14,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function ResearchPage({ params }: PageProps) {
   const { symbol } = await params;
   return (
-    <div className="mx-auto max-w-[1600px] px-4 py-8 lg:py-10 sm:px-6">
-      <SectionHead title="Research dossier" note="A structured analysis of the company across several lenses, run on demand" className="mb-8" />
+    <div className="mx-auto w-full max-w-[1920px] px-2 py-2 sm:px-3 lg:px-4 space-y-3">
+      <SectionHead title="Research dossier" note="A structured analysis of the company across several lenses, run on demand" className="mb-2.5 sm:mb-3" />
       <ResearchPanel symbol={symbol.toUpperCase()} />
     </div>
   );

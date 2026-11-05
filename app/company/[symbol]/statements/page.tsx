@@ -19,8 +19,8 @@ export default async function Page({ params }: PageProps) {
   const upper = symbol.toUpperCase();
   const res = await getYStatements(upper);
   return (
-    <div className="mx-auto max-w-[1600px] px-4 py-8 lg:py-10 sm:px-6">
-      <SectionHead title="Financial statements" note="Income statement, balance sheet and cash flow, annual or quarterly" className="mb-8" />
+    <div className="mx-auto w-full max-w-[1920px] px-2 py-2 sm:px-3 lg:px-4 space-y-3">
+      <SectionHead title="Financial statements" note="Income statement, balance sheet and cash flow, annual or quarterly" className="mb-2.5 sm:mb-3" />
       {res.ok ? (
         <>
           {(res.data.latestQuarterAgeDays ?? 0) > 150 ? (

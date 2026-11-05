@@ -24,8 +24,8 @@ export default async function QuantPage({ params }: PageProps) {
 
   if (!quant) {
     return (
-      <div className="mx-auto max-w-[1600px] px-4 py-8 lg:py-10 sm:px-6">
-        <SectionHead title="Quant engine" note="Return forecasts, volatility models, tail risk and the market regime the stock is in" className="mb-8" />
+      <div className="mx-auto w-full max-w-[1920px] px-2 py-2 sm:px-3 lg:px-4 space-y-3">
+        <SectionHead title="Quant engine" note="Return forecasts, volatility models, tail risk and the market regime the stock is in" className="mb-2.5 sm:mb-3" />
         <DataUnavailable
           title="Quant engine unavailable"
           message={`No model output could be produced for ${upper}. This usually means the data service is not running, or the ticker has too little price history to fit a model.`}
@@ -37,8 +37,8 @@ export default async function QuantPage({ params }: PageProps) {
   const { volatility, var: varSuite, merton, regime, forecasts, microstructure } = quant.data;
 
   return (
-    <div className="mx-auto max-w-[1600px] px-4 py-8 lg:py-10 sm:px-6">
-      <SectionHead title="Quant engine" note="Return forecasts, volatility models, tail risk and the market regime the stock is in" className="mb-8" />
+    <div className="mx-auto w-full max-w-[1920px] px-2 py-2 sm:px-3 lg:px-4 space-y-3">
+      <SectionHead title="Quant engine" note="Return forecasts, volatility models, tail risk and the market regime the stock is in" className="mb-2.5 sm:mb-3" />
       <div className="grid items-start gap-4 xl:grid-cols-2">
         <ReturnForecasts forecasts={forecasts} />
         <VolatilityEnsemble volatility={volatility} />

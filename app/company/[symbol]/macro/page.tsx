@@ -27,8 +27,8 @@ export default async function CompanyMacroPage({ params }: PageProps) {
   ]);
 
   return (
-    <div className="mx-auto max-w-[1600px] space-y-6 px-4 py-8 lg:py-10 sm:px-6">
-      <SectionHead title="Macro and news" note="How the stock moves with its benchmarks, and the filings and news that mention it" className="mb-8" />
+    <div className="mx-auto w-full max-w-[1920px] px-2 py-2 sm:px-3 lg:px-4 space-y-3">
+      <SectionHead title="Macro and news" note="How the stock moves with its benchmarks, and the filings and news that mention it" className="mb-2.5 sm:mb-3" />
       
       {filings ? (
         <>

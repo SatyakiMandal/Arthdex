@@ -69,7 +69,7 @@ export default async function CompanyOverviewPage({ params }: PageProps) {
   };
 
   return (
-    <div className="mx-auto w-full max-w-[1920px] space-y-4 px-2 py-3 sm:px-3 sm:space-y-5 lg:px-4">
+    <div className="mx-auto w-full max-w-[1920px] space-y-3 px-2 py-2 sm:px-3 lg:px-4">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
