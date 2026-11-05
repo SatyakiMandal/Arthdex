@@ -40,6 +40,16 @@ interface LiveQuoteState {
   source: string | null;
 }
 
+interface OptionWallsData {
+  pcr: number;
+  maxPain: number | null;
+  callWall: { strike: number; oi: number } | null;
+  putWall: { strike: number; oi: number } | null;
+  atmIv: number | null;
+  impliedMovePct: number | null;
+  expiry: string | null;
+}
+
 interface LiveVolumeProfileProps {
   initialSymbol?: string;
   initialInterval?: OrderflowInterval;
@@ -148,6 +158,8 @@ export function LiveVolumeProfile({
   const [showSessions, setShowSessions] = useState(true);
   const [showCvd, setShowCvd] = useState(true);
   const [showAbsorption, setShowAbsorption] = useState(true);
+  const [showOptionWalls, setShowOptionWalls] = useState(true);
+  const [optionWalls, setOptionWalls] = useState<OptionWallsData | null>(null);
 
   // Crosshair / Hover state
   const [hoverBarIdx, setHoverBarIdx] = useState<number | null>(null);
@@ -321,6 +333,42 @@ export function LiveVolumeProfile({
     };
   }, [symbol, autoRefreshSecs]);
 
+  // Load Institutional Derivatives & Dealer Option Walls (GEX)
+  useEffect(() => {
+    let isCancelled = false;
+    const fetchOptionsData = async () => {
+      try {
+        const res = await fetch(`/api/derivatives/chain?symbol=${encodeURIComponent(symbol)}`);
+        if (!res.ok) {
+          if (!isCancelled) setOptionWalls(null);
+          return;
+        }
+        const json = await res.json();
+        if (isCancelled || !json?.data) return;
+        const d = json.data;
+        const callWallItem = d.resistance && d.resistance.length > 0 ? d.resistance[0] : null;
+        const putWallItem = d.support && d.support.length > 0 ? d.support[0] : null;
+
+        setOptionWalls({
+          pcr: typeof d.pcr === "number" ? d.pcr : 1.0,
+          maxPain: typeof d.maxPain === "number" ? d.maxPain : null,
+          callWall: callWallItem ? { strike: callWallItem.strike, oi: callWallItem.oi } : null,
+          putWall: putWallItem ? { strike: putWallItem.strike, oi: putWallItem.oi } : null,
+          atmIv: typeof d.atmIv === "number" ? d.atmIv : null,
+          impliedMovePct: d.impliedMove?.pct ?? null,
+          expiry: d.expiry ?? null,
+        });
+      } catch {
+        if (!isCancelled) setOptionWalls(null);
+      }
+    };
+
+    void fetchOptionsData();
+    return () => {
+      isCancelled = true;
+    };
+  }, [symbol]);
+
   // Keyboard Shortcuts Engine (Space/R to refresh, 1..5 for TF, P for profile mode, [/] for scrips)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -350,6 +398,8 @@ export function LiveVolumeProfile({
         setShowCvd((prev) => !prev);
       } else if (e.key === "a" || e.key === "A") {
         setShowAbsorption((prev) => !prev);
+      } else if (e.key === "w" || e.key === "W") {
+        setShowOptionWalls((prev) => !prev);
       } else if (e.key === "[") {
         const idx = BELLWETHERS.findIndex((b) => b.symbol === symbol);
         const prevIdx = (idx - 1 + BELLWETHERS.length) % BELLWETHERS.length;
@@ -712,6 +762,54 @@ export function LiveVolumeProfile({
               </span>
             </div>
           )}
+
+          {/* Dealer Option Walls (GEX) Exposure Pill */}
+          {optionWalls && (
+            <div className="hidden 2xl:flex items-center gap-1.5 text-3xs font-mono text-muted-foreground bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-none">
+              <span className="text-amber-400 font-bold">GEX:</span>
+              <span>
+                PCR:{" "}
+                <span
+                  className={cn("font-bold", optionWalls.pcr >= 1 ? "text-up" : "text-down")}
+                >
+                  {optionWalls.pcr.toFixed(2)}
+                </span>
+              </span>
+              {optionWalls.callWall && (
+                <>
+                  <span className="text-border">|</span>
+                  <span>
+                    CW:{" "}
+                    <span className="text-amber-400 font-bold">
+                      ₹{optionWalls.callWall.strike}
+                    </span>
+                  </span>
+                </>
+              )}
+              {optionWalls.putWall && (
+                <>
+                  <span className="text-border">|</span>
+                  <span>
+                    PW:{" "}
+                    <span className="text-blue-400 font-bold">
+                      ₹{optionWalls.putWall.strike}
+                    </span>
+                  </span>
+                </>
+              )}
+              {optionWalls.maxPain && (
+                <>
+                  <span className="text-border">|</span>
+                  <span>
+                    Pain:{" "}
+                    <span className="text-purple-400 font-bold">
+                      ₹{optionWalls.maxPain}
+                    </span>
+                  </span>
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Right: Refresh Rate Selectors, Hotkeys & Sync Button */}
@@ -922,6 +1020,18 @@ export function LiveVolumeProfile({
                 className="accent-gold rounded-none"
               />
               <span className={cn(showAbsorption && "text-gold font-bold")}>Absorption Signals</span>
+            </label>
+
+            <label className="flex items-center gap-1 cursor-pointer text-3xs hover:text-foreground">
+              <input
+                type="checkbox"
+                checked={showOptionWalls}
+                onChange={(e) => setShowOptionWalls(e.target.checked)}
+                className="accent-amber-400 rounded-none"
+              />
+              <span className={cn(showOptionWalls && "text-amber-400 font-bold")}>
+                Option Walls (GEX)
+              </span>
             </label>
           </div>
         </div>
@@ -1370,6 +1480,138 @@ export function LiveVolumeProfile({
               </g>
             )}
 
+            {/* =================================================================== */}
+            {/* INSTITUTIONAL OPTION WALLS (GEX) & MAX PAIN BOUNDARY RAYS           */}
+            {/* =================================================================== */}
+            {showOptionWalls && optionWalls && (
+              <g>
+                {/* Major Call Wall Ray (Resistance / Gamma Cap) */}
+                {optionWalls.callWall &&
+                  optionWalls.callWall.strike >= minPrice &&
+                  optionWalls.callWall.strike <= maxPrice && (
+                    <g>
+                      <line
+                        x1={15}
+                        y1={priceToY(optionWalls.callWall.strike)}
+                        x2={W - 60}
+                        y2={priceToY(optionWalls.callWall.strike)}
+                        stroke="hsl(38 92% 50%)"
+                        strokeWidth="1.2"
+                        strokeDasharray="4 4"
+                        opacity="0.85"
+                      />
+                      <g
+                        transform={`translate(20, ${priceToY(optionWalls.callWall.strike) - 8})`}
+                      >
+                        <rect
+                          x={0}
+                          y={0}
+                          width={130}
+                          height={14}
+                          fill="hsl(var(--surface-raised))"
+                          stroke="hsl(38 92% 50%)"
+                          strokeWidth="0.8"
+                        />
+                        <text
+                          x={4}
+                          y={9.5}
+                          fill="hsl(38 92% 50%)"
+                          fontSize="7.5"
+                          fontFamily="monospace"
+                          fontWeight="bold"
+                        >
+                          CALL WALL ₹{optionWalls.callWall.strike.toFixed(1)} (
+                          {fmtCompact(optionWalls.callWall.oi)})
+                        </text>
+                      </g>
+                    </g>
+                  )}
+
+                {/* Major Put Wall Ray (Support / Downside Magnet) */}
+                {optionWalls.putWall &&
+                  optionWalls.putWall.strike >= minPrice &&
+                  optionWalls.putWall.strike <= maxPrice && (
+                    <g>
+                      <line
+                        x1={15}
+                        y1={priceToY(optionWalls.putWall.strike)}
+                        x2={W - 60}
+                        y2={priceToY(optionWalls.putWall.strike)}
+                        stroke="hsl(217 91% 60%)"
+                        strokeWidth="1.2"
+                        strokeDasharray="4 4"
+                        opacity="0.85"
+                      />
+                      <g
+                        transform={`translate(20, ${priceToY(optionWalls.putWall.strike) - 8})`}
+                      >
+                        <rect
+                          x={0}
+                          y={0}
+                          width={130}
+                          height={14}
+                          fill="hsl(var(--surface-raised))"
+                          stroke="hsl(217 91% 60%)"
+                          strokeWidth="0.8"
+                        />
+                        <text
+                          x={4}
+                          y={9.5}
+                          fill="hsl(217 91% 60%)"
+                          fontSize="7.5"
+                          fontFamily="monospace"
+                          fontWeight="bold"
+                        >
+                          PUT WALL ₹{optionWalls.putWall.strike.toFixed(1)} (
+                          {fmtCompact(optionWalls.putWall.oi)})
+                        </text>
+                      </g>
+                    </g>
+                  )}
+
+                {/* Max Pain Strike Ray */}
+                {optionWalls.maxPain !== null &&
+                  optionWalls.maxPain >= minPrice &&
+                  optionWalls.maxPain <= maxPrice && (
+                    <g>
+                      <line
+                        x1={15}
+                        y1={priceToY(optionWalls.maxPain)}
+                        x2={W - 60}
+                        y2={priceToY(optionWalls.maxPain)}
+                        stroke="hsl(280 84% 65%)"
+                        strokeWidth="1.0"
+                        strokeDasharray="2 4"
+                        opacity="0.75"
+                      />
+                      <g
+                        transform={`translate(${CHART_WIDTH - 100}, ${priceToY(optionWalls.maxPain) - 8})`}
+                      >
+                        <rect
+                          x={0}
+                          y={0}
+                          width={95}
+                          height={14}
+                          fill="hsl(var(--surface-raised))"
+                          stroke="hsl(280 84% 65%)"
+                          strokeWidth="0.8"
+                        />
+                        <text
+                          x={4}
+                          y={9.5}
+                          fill="hsl(280 84% 65%)"
+                          fontSize="7.5"
+                          fontFamily="monospace"
+                          fontWeight="bold"
+                        >
+                          MAX PAIN ₹{optionWalls.maxPain.toFixed(1)}
+                        </text>
+                      </g>
+                    </g>
+                  )}
+              </g>
+            )}
+
             {/* Divider Line between Candlestick Canvas and Volume Profile */}
             <line
               x1={profileStartX - 5}
@@ -1619,6 +1861,62 @@ export function LiveVolumeProfile({
                   </text>
                 </g>
               )}
+
+              {/* Call Wall Axis Tag */}
+              {showOptionWalls &&
+                optionWalls?.callWall &&
+                optionWalls.callWall.strike >= minPrice &&
+                optionWalls.callWall.strike <= maxPrice && (
+                  <g transform={`translate(0, ${priceToY(optionWalls.callWall.strike)})`}>
+                    <rect
+                      x={0}
+                      y={-7}
+                      width={58}
+                      height={14}
+                      fill="hsl(38 92% 50%)"
+                      rx="0"
+                      ry="0"
+                    />
+                    <text
+                      x={3}
+                      y={3}
+                      fill="#000000"
+                      fontSize="8"
+                      fontFamily="monospace"
+                      fontWeight="bold"
+                    >
+                      CW {optionWalls.callWall.strike.toFixed(1)}
+                    </text>
+                  </g>
+                )}
+
+              {/* Put Wall Axis Tag */}
+              {showOptionWalls &&
+                optionWalls?.putWall &&
+                optionWalls.putWall.strike >= minPrice &&
+                optionWalls.putWall.strike <= maxPrice && (
+                  <g transform={`translate(0, ${priceToY(optionWalls.putWall.strike)})`}>
+                    <rect
+                      x={0}
+                      y={-7}
+                      width={58}
+                      height={14}
+                      fill="hsl(217 91% 60%)"
+                      rx="0"
+                      ry="0"
+                    />
+                    <text
+                      x={3}
+                      y={3}
+                      fill="#ffffff"
+                      fontSize="8"
+                      fontFamily="monospace"
+                      fontWeight="bold"
+                    >
+                      PW {optionWalls.putWall.strike.toFixed(1)}
+                    </text>
+                  </g>
+                )}
 
               {/* Dynamic Live LTP Badge (Flashes with tick updates) */}
               {lastClose !== null && (
