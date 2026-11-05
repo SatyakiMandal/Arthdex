@@ -15,13 +15,16 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { ApiIndex, ApiPulse } from "@/lib/api/types";
+import type { ApiBuildUp, ApiFlows, ApiFnoBan, ApiIndex, ApiPulse } from "@/lib/api/types";
 import { LiveVolumeProfile } from "./live-volume-profile";
 import { MacroMarketRadar } from "./macro-market-radar";
 
 interface LiveMarketCockpitProps {
   initialPulse: ApiPulse;
   initialIndices?: ApiIndex[];
+  initialBuildUp?: ApiBuildUp | null;
+  initialFnoBan?: ApiFnoBan | null;
+  initialFlows?: ApiFlows | null;
   initialIndex?: string;
 }
 
@@ -84,10 +87,16 @@ const KEY_INDEX_IDS = [
 export function LiveMarketCockpit({
   initialPulse,
   initialIndices = [],
+  initialBuildUp = null,
+  initialFnoBan = null,
+  initialFlows = null,
   initialIndex = "nifty500",
 }: LiveMarketCockpitProps) {
   const [pulse, setPulse] = useState<ApiPulse>(initialPulse);
   const [indices, setIndices] = useState<ApiIndex[]>(initialIndices);
+  const [buildup, setBuildup] = useState<ApiBuildUp | null>(initialBuildUp);
+  const [fnoBan, setFnoBan] = useState<ApiFnoBan | null>(initialFnoBan);
+  const [flows, setFlows] = useState<ApiFlows | null>(initialFlows);
   const [currentIndex, setCurrentIndex] = useState<string>(initialIndex);
   const [, startTransition] = useTransition();
   const [loading, setLoading] = useState<boolean>(false);
@@ -111,9 +120,12 @@ export function LiveMarketCockpit({
   const refreshData = useCallback(async (idx = currentIndex) => {
     setLoading(true);
     try {
-      const [pulseRes, indicesRes] = await Promise.all([
+      const [pulseRes, indicesRes, buildupRes, fnoBanRes, flowsRes] = await Promise.all([
         fetch(`/api/pulse?index=${encodeURIComponent(idx)}`, { cache: "no-store" }),
         fetch("/api/indices", { cache: "no-store" }),
+        fetch("/api/derivatives/buildup", { cache: "no-store" }),
+        fetch("/api/derivatives/fno-ban", { cache: "no-store" }),
+        fetch("/api/flows?days=5", { cache: "no-store" }),
       ]);
 
       if (pulseRes.ok) {
@@ -123,6 +135,18 @@ export function LiveMarketCockpit({
       if (indicesRes.ok) {
         const json = await indicesRes.json();
         if (json.data) setIndices(json.data);
+      }
+      if (buildupRes.ok) {
+        const json = await buildupRes.json();
+        if (json.data) setBuildup(json.data);
+      }
+      if (fnoBanRes.ok) {
+        const json = await fnoBanRes.json();
+        if (json.data) setFnoBan(json.data);
+      }
+      if (flowsRes.ok) {
+        const json = await flowsRes.json();
+        if (json.data) setFlows(json.data);
       }
     } catch {
       // Retain active state
@@ -329,6 +353,10 @@ export function LiveMarketCockpit({
         <div className="animate-in fade-in-50">
           <MacroMarketRadar
             pulse={pulse}
+            indices={indices}
+            buildup={buildup}
+            fnoBan={fnoBan}
+            flows={flows}
             currentIndex={currentIndex}
             onUniverseChange={handleUniverseChange}
             onSelectStock={handleOpenVolumeProfile}

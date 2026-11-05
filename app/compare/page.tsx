@@ -34,7 +34,7 @@ export default async function ComparePage({ searchParams }: PageProps) {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <main id="main" className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6">
+      <main id="main" className="mx-auto w-full max-w-[1920px] px-2.5 py-6 sm:px-4 lg:px-6">
         <Eyebrow>Research</Eyebrow>
         <h1 className="mt-4 text-balance text-4xl sm:text-5xl">Compare Companies</h1>
         <p className="mt-3 max-w-3xl text-muted-foreground">

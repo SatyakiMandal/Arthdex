@@ -1,20 +1,28 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CalendarDays, FileBarChart, Layers, Zap } from "lucide-react";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { SectionHead } from "@/components/ui/section-head";
 import { DataUnavailable, SourceLine } from "@/components/ui/data-provenance";
-import { getResultsSeason } from "@/lib/api/endpoints";
+import { CalendarView } from "@/components/market/calendar-view";
+import { getCalendar, getEarningsMoves, getResultsSeason } from "@/lib/api/endpoints";
 import type { ApiReportedResult } from "@/lib/api/types";
 import { cn, deltaColor, formatINR, formatPct } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: "Results season · Arthdex",
-  description: "The quarterly results season across the Nifty 500: who has reported, how revenue and profit compare with a year ago, and who reports next.",
+  title: "Earnings & Results Desk · Arthdex",
+  description:
+    "Unified institutional earnings desk: quarterly scorecard across the Nifty 500, 30-day corporate actions and board meetings calendar, and derivatives ATM implied moves.",
 };
 
-const day = (iso: string) => new Date(`${iso}T00:00:00`).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
+const day = (iso: string) =>
+  new Date(`${iso}T00:00:00`).toLocaleDateString("en-IN", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
 const growth = (v: number | null) => (v == null ? "—" : formatPct(v, 1));
 
 const SORTS: { key: keyof ApiReportedResult; label: string }[] = [
@@ -25,141 +33,280 @@ const SORTS: { key: keyof ApiReportedResult; label: string }[] = [
 ];
 
 interface PageProps {
-  searchParams: Promise<{ sort?: string }>;
+  searchParams: Promise<{ sort?: string; tab?: string }>;
 }
 
 export default async function ResultsPage({ searchParams }: PageProps) {
-  const { sort = "netProfit" } = await searchParams;
-  const res = await getResultsSeason();
+  const { sort = "netProfit", tab = "scorecard" } = await searchParams;
+
+  const [res, calendarRes, movesRes] = await Promise.all([
+    getResultsSeason().catch(() => null),
+    getCalendar().catch(() => null),
+    getEarningsMoves().catch(() => null),
+  ]);
+
   const key = (SORTS.find((s) => s.key === sort)?.key ?? "netProfit") as keyof ApiReportedResult;
+
+  const calendarData = calendarRes?.ok ? calendarRes.data : null;
+  const movesData = movesRes?.ok && movesRes.data?.moves ? movesRes.data.moves : [];
 
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <main id="main" className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6">
-        <Eyebrow>Markets</Eyebrow>
-        <h1 className="mt-4 text-balance text-4xl sm:text-5xl">Results season</h1>
-        {!res.ok ? (
-          <div className="mt-8">
-            <DataUnavailable title="Results season unavailable" message={res.message} />
+      <main id="main" className="mx-auto w-full max-w-[1920px] px-2.5 py-6 sm:px-4 lg:px-6">
+        <Eyebrow icon={FileBarChart}>MARKETS</Eyebrow>
+        <div className="mt-2 flex flex-wrap items-baseline justify-between gap-4 border-b border-border/70 pb-4">
+          <div>
+            <h1 className="text-balance text-3xl sm:text-4xl font-serif tracking-tight text-foreground">
+              Earnings &amp; Results Desk
+            </h1>
+            <p className="mt-1 max-w-3xl text-xs text-muted-foreground leading-relaxed">
+              Unified command center for Indian corporate earnings: quarterly vetted scorecards, 30-day board meetings &amp; corporate actions schedule, and derivatives implied volatility moves.
+            </p>
           </div>
-        ) : (
-          (() => {
-            const d = res.data;
-            const s = d.summary;
-            const rows = [...d.reported].sort((a, b) => {
-              const x = a[key] as number | null;
-              const y = b[key] as number | null;
-              return (y ?? -Infinity) - (x ?? -Infinity);
-            });
-            const ledger = [
-              { label: "Reported so far", value: `${s.reported} of ${d.covered}` },
-              { label: "Revenue up on a year ago", value: s.comparable ? `${s.revenueUp} of ${s.comparable}` : "—" },
-              { label: "Profit up on a year ago", value: s.comparable ? `${s.profitUp} of ${s.comparable}` : "—" },
-              { label: "Revenue growth, combined", value: growth(s.aggregateRevenueGrowth), tone: s.aggregateRevenueGrowth },
-              { label: "Profit growth, combined", value: growth(s.aggregateProfitGrowth), tone: s.aggregateProfitGrowth },
-              { label: "Median profit growth", value: growth(s.medianProfitGrowth), tone: s.medianProfitGrowth },
-            ];
-            return (
-              <>
-                <p className="mt-3 max-w-2xl text-muted-foreground">
-                  {d.quarter ?? "The latest quarter"}
-                  {d.season ? `, ended ${new Date(`${d.season}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}` : ""}, across
-                  the Nifty 500: each company&apos;s quarter against the same quarter a year before, from Arthdex&apos;s vetted figures.
-                </p>
 
-                <dl className="mt-8 grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3 xl:grid-cols-6">
-                  {ledger.map((l) => (
-                    <div key={l.label} className="border-t border-border pt-3">
-                      <dt className="text-xs text-muted-foreground">{l.label}</dt>
-                      <dd className={cn("mt-1 font-mono text-[15px] font-medium tabular-nums", typeof l.tone === "number" && deltaColor(l.tone))}>{l.value}</dd>
-                    </div>
-                  ))}
-                </dl>
+          {/* Unified Desk View Switcher */}
+          <div className="flex items-center border border-border bg-surface-muted p-0.5 rounded-none font-mono text-2xs">
+            <Link
+              href="/results?tab=scorecard"
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 font-bold uppercase tracking-wider transition-all rounded-none",
+                tab === "scorecard"
+                  ? "bg-surface text-foreground shadow-xs border border-border"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <FileBarChart className="h-3.5 w-3.5 text-accent" />
+              <span>Results Scorecard</span>
+            </Link>
+            <Link
+              href="/results?tab=calendar"
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 font-bold uppercase tracking-wider transition-all rounded-none",
+                tab === "calendar"
+                  ? "bg-surface text-foreground shadow-xs border border-border"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <CalendarDays className="h-3.5 w-3.5 text-gold" />
+              <span>Calendar &amp; Actions ({calendarData?.meetings?.length ?? 0})</span>
+            </Link>
+            <Link
+              href="/results?tab=implied"
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 font-bold uppercase tracking-wider transition-all rounded-none",
+                tab === "implied"
+                  ? "bg-surface text-foreground shadow-xs border border-border"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Zap className="h-3.5 w-3.5 text-accent" />
+              <span>ATM Implied Moves</span>
+            </Link>
+          </div>
+        </div>
 
-                <div className="mt-12 grid gap-12 xl:grid-cols-[minmax(0,3fr)_minmax(0,1fr)]">
-                  <section aria-labelledby="reported">
-                    <SectionHead id="reported" title="Reported" note="₹ crore; growth against the same quarter a year ago" />
-                    <nav aria-label="Sort" className="mt-4 flex flex-wrap gap-1.5 text-sm">
-                      {SORTS.map((o) => (
-                        <Link
-                          key={o.key}
-                          href={`/results?sort=${o.key}`}
-                          aria-current={key === o.key ? "page" : undefined}
-                          className={cn("rounded-md px-2.5 py-1", key === o.key ? "bg-surface-muted text-foreground ring-1 ring-border" : "text-muted-foreground hover:text-foreground")}
-                        >
-                          {o.label}
-                        </Link>
-                      ))}
-                    </nav>
-                    {rows.length ? (
-                      <div className="mt-4 overflow-x-auto">
-                        <table className="w-full min-w-[760px] border-collapse text-sm">
-                          <thead>
-                            <tr className="border-b border-border text-xs text-muted-foreground">
-                              <th scope="col" className="py-2 pr-4 text-left font-medium">Company</th>
-                              <th scope="col" className="px-2 py-2 text-right font-medium">Revenue</th>
-                              <th scope="col" className="px-2 py-2 text-right font-medium">Growth</th>
-                              <th scope="col" className="px-2 py-2 text-right font-medium">Net profit</th>
-                              <th scope="col" className="px-2 py-2 text-right font-medium">Growth</th>
-                              <th scope="col" className="px-2 py-2 text-right font-medium">EPS growth</th>
-                              <th scope="col" className="px-2 py-2 text-right font-medium">Margin change</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {rows.map((r) => (
-                              <tr key={r.symbol} className="border-b border-border/60 hover:bg-surface-muted">
-                                <th scope="row" className="py-1.5 pr-4 text-left font-normal">
-                                  <Link href={`/company/${r.symbol}`} className="underline decoration-border underline-offset-4 hover:decoration-gold">{r.name}</Link>
-                                  <span className="ml-2 font-mono text-xs text-muted-foreground">{r.symbol}</span>
-                                  {r.unresolved ? <span className="ml-1 text-muted-foreground" title="A figure the two sources still dispute">*</span> : null}
-                                </th>
-                                <td className="px-2 py-1.5 text-right font-mono tabular-nums">{r.revenue != null ? formatINR(r.revenue, 0) : "—"}</td>
-                                <td className={cn("px-2 py-1.5 text-right font-mono tabular-nums", deltaColor(r.revenueGrowth ?? 0))}>{growth(r.revenueGrowth)}</td>
-                                <td className="px-2 py-1.5 text-right font-mono tabular-nums">{r.netProfit != null ? formatINR(r.netProfit, 0) : "—"}</td>
-                                <td className={cn("px-2 py-1.5 text-right font-mono tabular-nums", deltaColor(r.profitGrowth ?? 0))}>{growth(r.profitGrowth)}</td>
-                                <td className={cn("px-2 py-1.5 text-right font-mono tabular-nums", deltaColor(r.epsGrowth ?? 0))}>{growth(r.epsGrowth)}</td>
-                                <td className={cn("px-2 py-1.5 text-right font-mono tabular-nums", deltaColor(r.marginChange ?? 0))}>
-                                  {r.marginChange == null ? "—" : `${r.marginChange > 0 ? "+" : ""}${r.marginChange.toFixed(1)} pts`}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <p className="mt-4 text-sm text-muted-foreground">No company in the snapshot has reported this quarter yet.</p>
-                    )}
-                    <p className="mt-3 text-xs text-muted-foreground">
-                      Combined growth adds up the {s.comparable} companies with a year-ago quarter on file and compares the totals. Each company&apos;s two
-                      quarters come from one source, so growth compares like with like; across lenders, revenue is gross interest earned on one source and
-                      net interest income on the other, so compare banks on growth rather than size. A dash means the year-ago quarter is not on file yet.
+        {/* TAB 1: RESULTS SCORECARD */}
+        {tab === "scorecard" && (
+          <div className="mt-6 animate-in fade-in-50">
+            {!res || !res.ok ? (
+              <DataUnavailable title="Results season unavailable" message={res?.message ?? "Failed to load results season."} />
+            ) : (
+              (() => {
+                const d = res.data;
+                const s = d.summary;
+                const rows = [...d.reported].sort((a, b) => {
+                  const x = a[key] as number | null;
+                  const y = b[key] as number | null;
+                  return (y ?? -Infinity) - (x ?? -Infinity);
+                });
+                const ledger = [
+                  { label: "Reported so far", value: `${s.reported} of ${d.covered}` },
+                  { label: "Revenue up on a year ago", value: s.comparable ? `${s.revenueUp} of ${s.comparable}` : "—" },
+                  { label: "Profit up on a year ago", value: s.comparable ? `${s.profitUp} of ${s.comparable}` : "—" },
+                  { label: "Revenue growth, combined", value: growth(s.aggregateRevenueGrowth), tone: s.aggregateRevenueGrowth },
+                  { label: "Profit growth, combined", value: growth(s.aggregateProfitGrowth), tone: s.aggregateProfitGrowth },
+                  { label: "Median profit growth", value: growth(s.medianProfitGrowth), tone: s.medianProfitGrowth },
+                ];
+                return (
+                  <>
+                    <p className="max-w-3xl text-xs text-muted-foreground">
+                      {d.quarter ?? "The latest quarter"}
+                      {d.season ? `, ended ${new Date(`${d.season}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}` : ""}, across
+                      the Nifty 500: each company&apos;s quarter against the same quarter a year before, from Arthdex&apos;s vetted figures.
                     </p>
-                  </section>
 
-                  <section aria-labelledby="upcoming">
-                    <SectionHead id="upcoming" title="Next to report" />
-                    {d.awaitingFigures.length ? (
-                      <p className="mt-4 text-xs text-muted-foreground">
-                        {d.awaitingFigures.length} compan{d.awaitingFigures.length === 1 ? "y has" : "ies have"} held a results meeting whose figures are still being
-                        recorded; they appear above within a few hours.
-                      </p>
-                    ) : null}
-                    <ul className="mt-4 divide-y divide-border/60">
-                      {d.upcoming.slice(0, 30).map((u) => (
-                        <li key={u.symbol} className="flex items-baseline justify-between gap-3 py-1.5 text-sm">
-                          <Link href={`/company/${u.symbol}`} className="min-w-0 truncate hover:underline">{u.name}</Link>
-                          <span className="shrink-0 font-mono text-xs tabular-nums text-muted-foreground">{day(u.date)}</span>
-                        </li>
+                    <dl className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6 font-mono">
+                      {ledger.map((l) => (
+                        <div key={l.label} className="border border-border bg-surface p-2.5 rounded-none shadow-xs">
+                          <dt className="text-3xs uppercase tracking-wider text-muted-foreground">{l.label}</dt>
+                          <dd className={cn("mt-1 text-sm font-bold tabular-nums", typeof l.tone === "number" && deltaColor(l.tone))}>
+                            {l.value}
+                          </dd>
+                        </div>
                       ))}
-                    </ul>
-                    {!d.upcoming.length ? <p className="mt-4 text-sm text-muted-foreground">No results meetings scheduled in the snapshot set.</p> : null}
-                  </section>
+                    </dl>
+
+                    <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,3.2fr)_minmax(0,1fr)]">
+                      <section aria-labelledby="reported">
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/70 pb-2">
+                          <SectionHead id="reported" title="Reported Results Ledger" note="₹ crore; growth against the same quarter a year ago" />
+                          <nav aria-label="Sort" className="flex flex-wrap gap-1 text-2xs font-mono">
+                            {SORTS.map((o) => (
+                              <Link
+                                key={o.key}
+                                href={`/results?tab=scorecard&sort=${o.key}`}
+                                aria-current={key === o.key ? "page" : undefined}
+                                className={cn(
+                                  "px-2 py-0.5 border rounded-none transition-colors",
+                                  key === o.key
+                                    ? "bg-accent text-accent-foreground font-bold border-accent"
+                                    : "bg-surface-muted/60 text-muted-foreground hover:bg-surface-muted hover:text-foreground border-border",
+                                )}
+                              >
+                                {o.label}
+                              </Link>
+                            ))}
+                          </nav>
+                        </div>
+
+                        {rows.length ? (
+                          <div className="mt-3 overflow-x-auto border border-border">
+                            <table className="w-full min-w-[760px] border-collapse text-xs font-mono">
+                              <thead className="bg-surface-muted border-b border-border text-3xs text-muted-foreground uppercase tracking-wider font-semibold">
+                                <tr>
+                                  <th scope="col" className="p-2 text-left font-medium">Company</th>
+                                  <th scope="col" className="p-2 text-right font-medium">Revenue</th>
+                                  <th scope="col" className="p-2 text-right font-medium">Growth</th>
+                                  <th scope="col" className="p-2 text-right font-medium">Net profit</th>
+                                  <th scope="col" className="p-2 text-right font-medium">Growth</th>
+                                  <th scope="col" className="p-2 text-right font-medium">EPS growth</th>
+                                  <th scope="col" className="p-2 text-right font-medium">Margin change</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-border/60 text-2xs">
+                                {rows.map((r) => (
+                                  <tr key={r.symbol} className="hover:bg-surface-muted/50 transition-colors">
+                                    <th scope="row" className="p-2 text-left font-normal">
+                                      <Link href={`/company/${r.symbol}`} className="font-bold text-foreground hover:text-accent">
+                                        {r.symbol}
+                                      </Link>
+                                      <span className="ml-2 text-3xs text-muted-foreground font-sans truncate max-w-[140px] inline-block align-bottom">
+                                        {r.name}
+                                      </span>
+                                    </th>
+                                    <td className="p-2 text-right tabular-nums">{r.revenue != null ? formatINR(r.revenue, 0) : "—"}</td>
+                                    <td className={cn("p-2 text-right tabular-nums font-bold", deltaColor(r.revenueGrowth ?? 0))}>{growth(r.revenueGrowth)}</td>
+                                    <td className="p-2 text-right tabular-nums">{r.netProfit != null ? formatINR(r.netProfit, 0) : "—"}</td>
+                                    <td className={cn("p-2 text-right tabular-nums font-bold", deltaColor(r.profitGrowth ?? 0))}>{growth(r.profitGrowth)}</td>
+                                    <td className={cn("p-2 text-right tabular-nums font-bold", deltaColor(r.epsGrowth ?? 0))}>{growth(r.epsGrowth)}</td>
+                                    <td className={cn("p-2 text-right tabular-nums font-bold", deltaColor(r.marginChange ?? 0))}>
+                                      {r.marginChange == null ? "—" : `${r.marginChange > 0 ? "+" : ""}${r.marginChange.toFixed(1)} pts`}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        ) : (
+                          <p className="mt-4 text-sm text-muted-foreground">No company in the snapshot has reported this quarter yet.</p>
+                        )}
+                      </section>
+
+                      {/* Next to Report Sidebar */}
+                      <section aria-labelledby="upcoming" className="border border-border bg-surface p-3 rounded-none shadow-xs space-y-2">
+                        <SectionHead id="upcoming" title="Next to report" />
+                        {d.awaitingFigures.length ? (
+                          <p className="text-3xs text-muted-foreground leading-snug">
+                            {d.awaitingFigures.length} compan{d.awaitingFigures.length === 1 ? "y has" : "ies have"} held a results meeting whose figures are being recorded.
+                          </p>
+                        ) : null}
+                        <ul className="divide-y divide-border/60 max-h-[500px] overflow-y-auto pr-1">
+                          {d.upcoming.slice(0, 30).map((u) => (
+                            <li key={u.symbol} className="flex items-baseline justify-between gap-2 py-1.5 text-2xs font-mono">
+                              <Link href={`/company/${u.symbol}`} className="min-w-0 truncate hover:text-accent font-semibold text-foreground">
+                                {u.symbol}
+                              </Link>
+                              <span className="shrink-0 text-3xs text-muted-foreground">{day(u.date)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        {!d.upcoming.length ? <p className="text-xs text-muted-foreground">No results meetings scheduled in the snapshot set.</p> : null}
+                      </section>
+                    </div>
+                    <SourceLine meta={res.meta} className="mt-6" />
+                  </>
+                );
+              })()
+            )}
+          </div>
+        )}
+
+        {/* TAB 2: CORPORATE ACTIONS & BOARD MEETINGS CALENDAR */}
+        {tab === "calendar" && (
+          <div className="mt-6 animate-in fade-in-50">
+            {!calendarData ? (
+              <DataUnavailable title="Calendar unavailable" message={calendarRes && !calendarRes.ok ? calendarRes.message : "Failed to load corporate calendar."} />
+            ) : (
+              <div>
+                <CalendarView calendar={calendarData} />
+                {calendarRes && calendarRes.ok && <SourceLine meta={calendarRes.meta} className="mt-4" />}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 3: EARNINGS IMPLIED VOLATILITY MOVES */}
+        {tab === "implied" && (
+          <div className="mt-6 animate-in fade-in-50 space-y-4">
+            <div className="border border-border bg-surface p-3.5 rounded-none shadow-xs">
+              <h2 className="text-base font-bold text-foreground font-mono">
+                At-The-Money Straddle Implied Volatility Moves
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Calculated as (Price(ATM CE) + Price(ATM PE)) / Spot, indicating institutional options pricing expectation for the results session.
+              </p>
+
+              {movesData.length === 0 ? (
+                <div className="p-8 text-center text-xs text-muted-foreground border border-border mt-3 font-mono">
+                  No upcoming results matched with active at-the-money straddles in the current cycle.
                 </div>
-                <SourceLine meta={res.meta} className="mt-8" />
-              </>
-            );
-          })()
+              ) : (
+                <div className="overflow-x-auto border border-border mt-3">
+                  <table className="w-full text-left text-xs border-collapse font-mono">
+                    <thead className="bg-surface-muted border-b border-border text-3xs text-muted-foreground uppercase tracking-wider font-semibold">
+                      <tr>
+                        <th className="p-2">Scrip</th>
+                        <th className="p-2">Result Date</th>
+                        <th className="p-2 text-right">Spot Price (₹)</th>
+                        <th className="p-2 text-right">ATM Straddle (₹)</th>
+                        <th className="p-2 text-right">Implied Move (%)</th>
+                        <th className="p-2">Pricing Verdict</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/60 text-2xs">
+                      {movesData.map((m) => (
+                        <tr key={m.symbol} className="hover:bg-surface-muted/50 transition-colors">
+                          <td className="p-2 font-bold text-foreground">
+                            <Link href={`/company/${m.symbol}`} className="hover:text-accent">
+                              {m.symbol}
+                            </Link>
+                          </td>
+                          <td className="p-2 text-muted-foreground">{m.resultDate}</td>
+                          <td className="p-2 text-right">{m.spotPrice != null ? formatINR(m.spotPrice, 2) : "—"}</td>
+                          <td className="p-2 text-right font-semibold">{m.straddleAtmPrice != null ? formatINR(m.straddleAtmPrice, 2) : "—"}</td>
+                          <td className="p-2 text-right font-bold text-gold">
+                            {m.impliedMovePct ? `±${m.impliedMovePct.toFixed(2)}%` : "—"}
+                          </td>
+                          <td className="p-2 text-muted-foreground">{m.pricingVerdict}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
         )}
       </main>
       <SiteFooter />

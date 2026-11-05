@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { Eyebrow } from "@/components/ui/eyebrow";
-import { getIndices, getPulse } from "@/lib/api/endpoints";
-import type { ApiIndex, ApiPulse } from "@/lib/api/types";
+import { getBuildUp, getFlows, getFnoBan, getIndices, getPulse } from "@/lib/api/endpoints";
+import type { ApiBuildUp, ApiFlows, ApiFnoBan, ApiIndex, ApiPulse } from "@/lib/api/types";
 import { LiveMarketCockpit } from "@/components/market/live-market-cockpit";
 
 export const metadata: Metadata = {
@@ -27,11 +27,17 @@ const FALLBACK_PULSE: ApiPulse = {
 export default async function LiveMarketPage() {
   let initialPulse: ApiPulse = FALLBACK_PULSE;
   let initialIndices: ApiIndex[] = [];
+  let initialBuildUp: ApiBuildUp | null = null;
+  let initialFnoBan: ApiFnoBan | null = null;
+  let initialFlows: ApiFlows | null = null;
 
   try {
-    const [pulseRes, indicesRes] = await Promise.all([
+    const [pulseRes, indicesRes, buildupRes, fnoBanRes, flowsRes] = await Promise.all([
       getPulse("nifty500").catch(() => null),
       getIndices().catch(() => null),
+      getBuildUp().catch(() => null),
+      getFnoBan().catch(() => null),
+      getFlows(5).catch(() => null),
     ]);
 
     if (pulseRes?.ok && pulseRes.data) {
@@ -40,6 +46,15 @@ export default async function LiveMarketPage() {
     if (indicesRes?.ok && indicesRes.data) {
       initialIndices = indicesRes.data;
     }
+    if (buildupRes?.data) {
+      initialBuildUp = buildupRes.data;
+    }
+    if (fnoBanRes?.ok && fnoBanRes.data) {
+      initialFnoBan = fnoBanRes.data;
+    }
+    if (flowsRes?.data) {
+      initialFlows = flowsRes.data;
+    }
   } catch {
     // Graceful fallback
   }
@@ -47,7 +62,7 @@ export default async function LiveMarketPage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <main id="main" className="mx-auto max-w-[1700px] px-3 py-6 sm:px-5">
+      <main id="main" className="mx-auto w-full max-w-[1920px] px-2.5 py-4 sm:px-3 lg:px-4">
         <Eyebrow>REAL-TIME MARKET ACTION</Eyebrow>
         <div className="mt-2 flex flex-wrap items-baseline justify-between gap-4 border-b border-border/60 pb-4">
           <div>
@@ -68,6 +83,9 @@ export default async function LiveMarketPage() {
           <LiveMarketCockpit
             initialPulse={initialPulse}
             initialIndices={initialIndices}
+            initialBuildUp={initialBuildUp}
+            initialFnoBan={initialFnoBan}
+            initialFlows={initialFlows}
             initialIndex="nifty500"
           />
         </div>

@@ -14,7 +14,7 @@ export default function TrackRecordPage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <main id="main" className="mx-auto max-w-[1100px] px-4 py-10 sm:px-6">
+      <main id="main" className="mx-auto w-full max-w-[1920px] px-2.5 py-6 sm:px-4 lg:px-6">
         <div className="max-w-2xl">
           <Eyebrow icon={ClipboardCheck}>Track record</Eyebrow>
           <h1 className="mt-4 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">How the calls actually did</h1>

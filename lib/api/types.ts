@@ -73,6 +73,8 @@ export interface ApiIndex {
   oneYearChangePct: number | null;
   high52w: number | null;
   low52w: number | null;
+  high?: number | null;
+  low?: number | null;
   asOf: string;
 }
 
@@ -1070,6 +1072,8 @@ export interface ApiPulseStock {
   previousClose?: number | null;
   marketCapCr: number | null;
   series?: string | null;
+  high?: number | null;
+  low?: number | null;
 }
 
 export interface ApiPulseSector {
@@ -1299,20 +1303,34 @@ export interface ApiResultsSeason {
 
 // -- F&O ban and MWPL --------------------------------------------------------
 
+export interface ApiFnoBanItem {
+  symbol: string;
+  status: string;
+  mwplStatus: string;
+  exitThreshold: string;
+  tradingRule: string;
+}
+
 export interface ApiFnoBanRules {
-  entry: string;
-  restriction: string;
-  exit: string;
+  entry?: string;
+  restriction?: string;
+  exit?: string;
+  entryTrigger?: string;
+  exitTrigger?: string;
+  penalty?: string;
 }
 
 export interface ApiFnoBan {
   tradeDate: string;
   bannedSymbols: string[];
   bannedCount: number;
-  mwplThreshold: string;
-  exitThreshold: string;
-  rules: ApiFnoBanRules;
-  dangerWatchlist: string[];
+  banned?: ApiFnoBanItem[];
+  totalBanned?: number;
+  mwplThreshold?: string;
+  exitThreshold?: string;
+  rules?: ApiFnoBanRules;
+  rule?: ApiFnoBanRules;
+  dangerWatchlist?: string[];
   note?: string;
 }
 

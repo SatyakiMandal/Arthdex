@@ -49,7 +49,7 @@ const COLUMNS = [
 export function SiteFooter() {
   return (
     <footer className="border-t border-border bg-surface-muted/40">
-      <div className="mx-auto grid max-w-[1600px] gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.2fr_repeat(2,0.6fr)_1.6fr]">
+      <div className="mx-auto grid w-full max-w-[1920px] gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.2fr_repeat(2,0.6fr)_1.6fr]">
         <div>
           <Link href="/" className="inline-flex">
             <Logo full />
@@ -101,7 +101,7 @@ export function SiteFooter() {
       </div>
 
       {/* Sign-off: the name set as large as the page allows, artha (wealth, meaning) beside it */}
-      <div className="mx-auto max-w-[1600px] overflow-hidden px-4 sm:px-6">
+      <div className="mx-auto w-full max-w-[1920px] overflow-hidden px-4 sm:px-6">
         <div className="flex items-end justify-between gap-6 border-t border-border pt-6">
           <p className="select-none font-display text-[clamp(4rem,17vw,15rem)] font-semibold leading-[0.78] tracking-[-0.055em] text-foreground/[0.9]" aria-hidden>
             Arthdex

@@ -80,6 +80,8 @@ def get_fno_ban_status() -> dict[str, Any]:
         return {
             "tradeDate": trade_date or today_iso,
             "banned": banned_items,
+            "bannedSymbols": symbols,
+            "bannedCount": len(banned_items),
             "totalBanned": len(banned_items),
             "asOf": datetime.now().isoformat(),
             "rule": {

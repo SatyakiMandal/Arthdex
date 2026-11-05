@@ -41,26 +41,25 @@ const GROUPS: Group[] = [
     label: "Markets",
     blurb: "What the market is doing now",
     items: [
-      { label: "Market watch", href: "/market-watch", icon: CandlestickChart, hint: "Indices, movers, breadth and sector RRG" },
       { label: "Live market cockpit", href: "/live", icon: Radio, hint: "God's-eye live trading radar & pulse" },
-      { label: "Derivatives", href: "/derivatives", icon: Sigma, hint: "Option chains, open interest, F&O build-up" },
-      { label: "Commodities", href: "/commodities", icon: Coins, hint: "Metals, energy and the rupee" },
+      { label: "Market watch", href: "/market-watch", icon: CandlestickChart, hint: "Indices, movers, breadth and sector RRG" },
+      { label: "Derivatives & F&O", href: "/derivatives", icon: Sigma, hint: "Option chains, open interest, build-up & ban" },
       { label: "Order flow", href: "/orderflow", icon: Activity, hint: "Profile, footprint, CVD and GEX" },
-      { label: "Bhavcopy", href: "/bhavcopy", icon: Layers, hint: "End-of-day delivery data" },
-      { label: "Bulk and block deals", href: "/deals", icon: ArrowLeftRight, hint: "Large trades disclosed today" },
-      { label: "Results season", href: "/results", icon: FileBarChart, hint: "Who reported, and how they did against last year" },
-      { label: "Results calendar", href: "/calendar", icon: CalendarDays, hint: "Board meetings and actions, 30 days" },
+      { label: "Earnings & Results desk", href: "/results", icon: FileBarChart, hint: "Scorecard, board meetings & implied moves" },
+      { label: "Bhavcopy & Delivery", href: "/bhavcopy", icon: Layers, hint: "End-of-day delivery and accumulation" },
+      { label: "Bulk & block deals", href: "/deals", icon: ArrowLeftRight, hint: "Large institutional trades disclosed today" },
       { label: "Catalyst desk", href: "/catalysts", icon: Sparkles, hint: "Index rebalances, IPO lock-ins, buybacks" },
+      { label: "Commodities", href: "/commodities", icon: Coins, hint: "Metals, energy and the rupee" },
     ],
   },
   {
     label: "Companies",
     blurb: "Listed, unlisted and about to list",
     items: [
-      { label: "IPO desk", href: "/ipo", icon: Rocket, hint: "Open, upcoming and listed issues" },
-      { label: "Unlisted", href: "/unlisted", icon: Building2, hint: "Dealer prices for private companies" },
-      { label: "News and filings", href: "/news", icon: Newspaper, hint: "Exchange filings and the press" },
-      { label: "Morning briefing", href: "/briefing", icon: Sunrise, hint: "Today in one page" },
+      { label: "Briefing & Intelligence", href: "/briefing", icon: Sunrise, hint: "Today in one page: morning memo, news & triggers" },
+      { label: "Exchange filings", href: "/news", icon: Newspaper, hint: "Corporate announcements & press releases" },
+      { label: "IPO & Primary desk", href: "/ipo", icon: Rocket, hint: "Open, upcoming, SME & listed issues" },
+      { label: "Unlisted companies", href: "/unlisted", icon: Building2, hint: "Dealer prices for private equity" },
       { label: "Watchlist", href: "/watchlist", icon: Star, hint: "Your companies at a glance" },
       { label: "Portfolio & tax desk", href: "/portfolio", icon: Briefcase, hint: "Holdings, XIRR and ₹1.25L tax harvester" },
     ],
@@ -69,13 +68,11 @@ const GROUPS: Group[] = [
     label: "Research",
     blurb: "Models, screens and the record",
     items: [
-      { label: "Screener", href: "/screener", icon: ScanSearch, hint: "Factor, momentum and MACD screens" },
-      { label: "Compare companies", href: "/compare", icon: ArrowLeftRight, hint: "Head-to-head ledger for up to four stocks" },
+      { label: "Stock screener", href: "/screener", icon: ScanSearch, hint: "Factor, momentum, MACD & fundamental screens" },
+      { label: "Compare companies", href: "/compare", icon: ArrowLeftRight, hint: "Head-to-head multi-scrip ledger" },
       { label: "Event analyzer", href: "/analyzer", icon: FlaskConical, hint: "What one event did to a stock" },
-      { label: "Track record", href: "/track-record", icon: ClipboardCheck, hint: "Every logged call, scored" },
       { label: "Alerts", href: "/alerts", icon: Bell, hint: "Price levels and new filings" },
-      { label: "Methodology", href: "/methodology", icon: ScrollText, hint: "How each figure is computed" },
-      { label: "Data status", href: "/status", icon: Gauge, hint: "Feed freshness and the watchdog" },
+      { label: "Platform transparency", href: "/status", icon: Gauge, hint: "Feed freshness, mathematical methodology & audit" },
     ],
   },
 ];
@@ -124,7 +121,7 @@ function GroupMenu({ group, pathname, open, onOpen, onClose }: { group: Group; p
             transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
             className="absolute left-0 top-full z-50 pt-2"
           >
-            <div className="grid w-[38rem] grid-cols-[11rem_1fr] overflow-hidden rounded-lg border border-border bg-surface-raised shadow-xl">
+            <div className="grid w-[38rem] grid-cols-[11rem_1fr] overflow-hidden rounded-none border border-border bg-surface-raised shadow-xl">
               <div className="border-r border-border bg-surface-muted/60 p-4">
                 <span className="block h-px w-6 bg-gold" aria-hidden />
                 <p className="mt-3 font-display text-lg font-semibold leading-tight">{group.label}</p>
@@ -140,7 +137,7 @@ function GroupMenu({ group, pathname, open, onOpen, onClose }: { group: Group; p
                         href={m.href}
                         onClick={onClose}
                         aria-current={here ? "page" : undefined}
-                        className={cn("group flex items-start gap-2.5 rounded-md px-2.5 py-2 transition-colors hover:bg-surface-muted", here && "bg-surface-muted")}
+                        className={cn("group flex items-start gap-2.5 rounded-none px-2.5 py-2 transition-colors hover:bg-surface-muted", here && "bg-surface-muted")}
                       >
                         <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-accent" strokeWidth={1.75} aria-hidden />
                         <span className="min-w-0">
@@ -187,7 +184,7 @@ export function HeaderBar() {
 
   return (
     <div className="chrome border-b border-border">
-      <div className="mx-auto flex h-14 max-w-[1600px] items-stretch gap-2 px-4 sm:gap-4 sm:px-6">
+      <div className="mx-auto flex h-14 w-full max-w-[1920px] items-stretch gap-2 px-2.5 sm:gap-3 sm:px-4 lg:px-6">
         <Link href="/" className="flex shrink-0 items-center">
           <Logo />
         </Link>
@@ -214,7 +211,7 @@ export function HeaderBar() {
             aria-label="Toggle navigation"
             aria-expanded={mobileOpen}
             onClick={() => setMobileOpen((v) => !v)}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-surface text-muted-foreground transition-colors hover:text-foreground lg:hidden"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-none border border-border bg-surface text-muted-foreground transition-colors hover:text-foreground lg:hidden"
           >
             {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </button>

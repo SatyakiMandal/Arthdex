@@ -36,7 +36,7 @@ export default async function UnlistedCompanyPage({ params }: PageProps) {
     <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      <main id="main" className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6">
+      <main id="main" className="mx-auto w-full max-w-[1920px] px-2.5 py-4 sm:px-4 lg:px-6">
         <Link
           href="/unlisted"
           className="group inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-accent"

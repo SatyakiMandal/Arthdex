@@ -51,7 +51,7 @@ export default function MethodologyPage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <main id="main" className="mx-auto max-w-[900px] px-4 py-12 sm:px-6">
+      <main id="main" className="mx-auto w-full max-w-[1920px] px-2.5 py-6 sm:px-4 lg:px-6">
         <Reveal>
           <Eyebrow icon={BookOpenCheck}>Methodology</Eyebrow>
           <h1 className="mt-4 text-balance text-4xl sm:text-5xl">

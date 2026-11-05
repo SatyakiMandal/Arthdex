@@ -91,7 +91,7 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
     <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      <main id="main" className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6">
+      <main id="main" className="mx-auto w-full max-w-[1920px] px-2.5 py-6 sm:px-4 lg:px-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="max-w-2xl">
             <Eyebrow icon={CandlestickChart}>Markets</Eyebrow>

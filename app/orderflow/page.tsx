@@ -14,7 +14,7 @@ export default function OrderflowPage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <main id="main" className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6">
+      <main id="main" className="mx-auto w-full max-w-[1920px] px-2.5 py-4 sm:px-4 lg:px-6">
         <Eyebrow icon={Activity}>Order flow</Eyebrow>
         <h1 className="mt-4 text-balance text-3xl font-semibold tracking-tight">Participation, liquidity and aggression</h1>
         <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
