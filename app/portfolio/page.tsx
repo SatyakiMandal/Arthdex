@@ -202,7 +202,7 @@ export default async function PortfolioPage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <main id="main" className="w-full px-2 py-3 sm:px-3 lg:px-4">
+      <main id="main" className="w-full px-2 pt-1 pb-3 sm:px-3 lg:px-4">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-2">
           <div className="flex flex-wrap items-baseline gap-2.5">
             <h1 className="text-xl sm:text-2xl font-serif font-bold tracking-tight text-foreground flex items-center gap-2">

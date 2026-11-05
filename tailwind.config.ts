@@ -60,7 +60,8 @@ const config: Config = {
         mono: ["var(--font-mono)", "ui-monospace", "SFMono-Regular", "monospace"],
       },
       fontSize: {
-        /* 12px floor: the old 11px size failed legibility on phones */
+        /* Bloomberg Terminal micro-scale typography */
+        "3xs": ["0.625rem", { lineHeight: "0.85rem" }],
         "2xs": ["0.75rem", { lineHeight: "1rem" }],
       },
       keyframes: {

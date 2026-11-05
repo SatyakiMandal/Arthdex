@@ -3,13 +3,13 @@ import Link from "next/link";
 import { Sigma } from "lucide-react";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
-import { Eyebrow } from "@/components/ui/eyebrow";
 import { SectionHead } from "@/components/ui/section-head";
 import { DataUnavailable, SourceLine } from "@/components/ui/data-provenance";
 import { OptionChainView } from "@/components/derivatives/option-chain";
 import { BuildUpView } from "@/components/derivatives/build-up";
 import { FnoBanTracker } from "@/components/derivatives/fno-ban-tracker";
 import { EarningsImpliedMoves } from "@/components/derivatives/earnings-implied-moves";
+import { KeyboardHud } from "@/components/ui/keyboard-hud";
 import { getBuildUp, getOptionChain, getFnoBan, getEarningsMoves } from "@/lib/api/endpoints";
 import { cn } from "@/lib/utils";
 
@@ -43,7 +43,7 @@ export default async function DerivativesPage({ searchParams }: PageProps) {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <main id="main" className="w-full px-2 py-3 sm:px-3 lg:px-4">
+      <main id="main" className="w-full px-2 pt-1 pb-3 sm:px-3 lg:px-4 space-y-3">
         {/* Bloomberg Top Command Ribbon */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-2">
           <div className="flex flex-wrap items-baseline gap-2.5">
@@ -52,36 +52,50 @@ export default async function DerivativesPage({ searchParams }: PageProps) {
               <span>Derivatives &amp; F&amp;O Desk</span>
             </h1>
             <span className="text-border">|</span>
-            <span className="text-2xs font-mono text-muted-foreground">
-              Institutional Option Chains, Strike Walls, Open Interest Buildup &amp; MWPL Ban
+            <span className="text-3xs font-mono text-muted-foreground uppercase tracking-wider">
+              Option Chains · Strike Walls · Buildup Quadrants · MWPL Ban Tracker
             </span>
           </div>
         </div>
 
-        <section aria-labelledby="chain" className="mt-3">
+        {/* Tactical Keyboard Command HUD */}
+        <KeyboardHud
+          contextLabel="DERIVATIVES DESK · COMMAND HUD"
+          shortcuts={[
+            { key: "/", label: "Stock Search", accent: true },
+            { key: "1-4", label: "Nifty / BankNifty / FinNifty / Midcap" },
+            { key: "G + B", label: "Daily Bhavcopy Desk" },
+            { key: "G + M", label: "Market Watch Radar" },
+            { key: "G + O", label: "Live Orderflow & Deals" },
+            { key: "Shift+C", label: "Ultra Pitch Mode" },
+            { key: "?", label: "All Hotkeys" },
+          ]}
+        />
+
+        <section aria-labelledby="chain" className="mt-2">
           <SectionHead id="chain" title={`Option chain${isIndex ? "" : `: ${symbol}`}`} note="NSE, delayed 15 minutes" />
-          <nav aria-label="Underlying" className="mt-2.5 flex flex-wrap items-center gap-2">
+          <nav aria-label="Underlying" className="mt-2 flex flex-wrap items-center gap-2 font-mono">
             {INDICES.map((i) => (
               <Link
                 key={i.id}
                 href={`/derivatives?symbol=${i.id}`}
                 aria-current={symbol === i.id ? "page" : undefined}
                 className={cn(
-                  "rounded-none border px-3 py-1.5 text-sm transition-colors",
-                  symbol === i.id ? "border-foreground bg-foreground text-background" : "border-border text-muted-foreground hover:text-foreground",
+                  "rounded-none border px-2.5 py-1 text-2xs font-bold transition-colors",
+                  symbol === i.id ? "border-foreground bg-foreground text-background" : "border-border text-muted-foreground hover:text-foreground hover:bg-surface-muted",
                 )}
               >
                 {i.label}
               </Link>
             ))}
-            {!isIndex ? <span className="rounded-none border border-foreground bg-foreground px-3 py-1.5 font-mono text-sm text-background">{symbol}</span> : null}
+            {!isIndex ? <span className="rounded-none border border-accent bg-accent/20 px-2.5 py-1 font-mono text-2xs font-bold text-accent">{symbol}</span> : null}
             <form action="/derivatives" className="ml-auto flex items-center gap-2">
-              <label htmlFor="stock" className="text-sm text-muted-foreground">Stock</label>
+              <label htmlFor="stock" className="text-3xs uppercase tracking-wider text-muted-foreground font-mono">Search Scrip</label>
               <input
                 id="stock"
                 name="symbol"
-                placeholder="e.g. RELIANCE"
-                className="w-36 rounded-none border border-border bg-surface px-2.5 py-1.5 font-mono text-sm uppercase placeholder:normal-case"
+                placeholder="e.g. RELIANCE [/]"
+                className="w-36 h-7 rounded-none border border-border/80 bg-surface px-2 font-mono text-2xs uppercase placeholder:normal-case focus:outline-none focus:border-accent"
               />
             </form>
           </nav>
@@ -89,7 +103,7 @@ export default async function DerivativesPage({ searchParams }: PageProps) {
             {chain ? (
               <>
                 <OptionChainView chain={chain.data} />
-                <SourceLine meta={chain.meta} className="mt-4" />
+                <SourceLine meta={chain.meta} className="mt-3" />
               </>
             ) : (
               <DataUnavailable title={`No option chain for ${symbol}`} message="Either the symbol has no listed options, or NSE did not answer. Index options are always listed." />
@@ -103,13 +117,14 @@ export default async function DerivativesPage({ searchParams }: PageProps) {
             {buildUp ? (
               <>
                 <BuildUpView data={buildUp.data} />
-                <SourceLine meta={buildUp.meta} className="mt-4" />
+                <SourceLine meta={buildUp.meta} className="mt-3" />
               </>
             ) : (
               <DataUnavailable title="Build-up unavailable" message="NSE's open-interest data did not load." />
             )}
           </div>
         </section>
+
         {fnoBan && fnoBan.ok ? (
           <section aria-labelledby="fnoban" className="mt-4">
             <SectionHead
@@ -119,7 +134,7 @@ export default async function DerivativesPage({ searchParams }: PageProps) {
             />
             <div className="mt-3">
               <FnoBanTracker banData={fnoBan.data} />
-              <SourceLine meta={fnoBan.meta} className="mt-4" />
+              <SourceLine meta={fnoBan.meta} className="mt-3" />
             </div>
           </section>
         ) : null}
@@ -133,7 +148,7 @@ export default async function DerivativesPage({ searchParams }: PageProps) {
             />
             <div className="mt-3">
               <EarningsImpliedMoves initialData={earningsMoves.data} />
-              <SourceLine meta={earningsMoves.meta} className="mt-4" />
+              <SourceLine meta={earningsMoves.meta} className="mt-3" />
             </div>
           </section>
         ) : null}

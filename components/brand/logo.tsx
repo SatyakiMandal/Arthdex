@@ -37,7 +37,7 @@ export function Logo({ tagline = true, className }: { tagline?: boolean; full?: 
     <span className={cn("inline-flex items-center gap-2.5", className)}>
       <LogoMark />
       <span aria-hidden className="hidden h-9 w-px bg-[#F4B942] sm:block" />
-      <span className="flex flex-col justify-center gap-[6px]">
+      <span className="flex flex-col justify-center gap-[3px]">
         <Wordmark className="text-[1.4rem]" />
         {tagline ? (
           <span aria-hidden className="hidden items-center gap-[0.4em] whitespace-nowrap font-sans text-[0.5rem] font-medium leading-none tracking-[0.17em] text-[#0B2D5B]/85 dark:text-[#E8EEF4]/75 xl:flex">

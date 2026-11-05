@@ -182,15 +182,15 @@ export function DeliveryScanner({
         <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="border-b border-border bg-muted/40 text-2xs text-muted-foreground uppercase tracking-wider">
-              <th className="p-3 font-semibold">Symbol</th>
-              <th className="p-3 text-right font-semibold">Close</th>
-              <th className="p-3 text-right font-semibold">% Chg</th>
-              <th className="p-3 text-left font-semibold min-w-36">Delivery %</th>
-              <th className="p-3 text-right font-semibold">Delivery Vol</th>
-              <th className="p-3 text-right font-semibold">Total Vol</th>
-              <th className="p-3 text-right font-semibold">Turnover</th>
-              <th className="p-3 text-right font-semibold">Vol vs 20D</th>
-              <th className="p-3 text-left font-semibold">Signals</th>
+              <th className="px-2.5 py-1.5 font-semibold">Symbol</th>
+              <th className="px-2 py-1.5 text-right font-semibold">Close</th>
+              <th className="px-2 py-1.5 text-right font-semibold">% Chg</th>
+              <th className="px-2 py-1.5 text-left font-semibold min-w-32">Delivery %</th>
+              <th className="px-2 py-1.5 text-right font-semibold">Delivery Vol</th>
+              <th className="px-2 py-1.5 text-right font-semibold">Total Vol</th>
+              <th className="px-2 py-1.5 text-right font-semibold">Turnover</th>
+              <th className="px-2 py-1.5 text-right font-semibold">Vol vs 20D</th>
+              <th className="px-2.5 py-1.5 text-left font-semibold">Signals</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/60 font-mono">
@@ -203,7 +203,7 @@ export function DeliveryScanner({
             ) : (
               filtered.map((stock) => (
                 <tr key={stock.symbol} className="hover:bg-muted/30 transition-colors">
-                  <td className="p-3 font-sans">
+                  <td className="px-2.5 py-1 font-sans cell-glow">
                     <Link
                       href={`/company/${stock.symbol}`}
                       className="font-bold text-foreground hover:text-primary transition-colors flex items-center gap-1"
@@ -212,10 +212,10 @@ export function DeliveryScanner({
                       <ArrowUpRight className="h-3 w-3 text-muted-foreground" />
                     </Link>
                   </td>
-                  <td className="p-3 text-right text-foreground font-semibold">
+                  <td className="px-2 py-1 text-right text-foreground font-semibold cell-glow">
                     ₹{stock.close.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
                   </td>
-                  <td className="p-3 text-right">
+                  <td className="px-2 py-1 text-right cell-glow">
                     <span
                       className={cn(
                         "inline-flex items-center text-xs font-semibold",
@@ -231,7 +231,7 @@ export function DeliveryScanner({
                       {stock.changePct.toFixed(2)}%
                     </span>
                   </td>
-                  <td className="p-3">
+                  <td className="px-2 py-1">
                     <div className="flex items-center gap-2">
                       <div className="w-16 h-2 rounded-none bg-muted overflow-hidden">
                         <div
@@ -251,19 +251,19 @@ export function DeliveryScanner({
                       </span>
                     </div>
                   </td>
-                  <td className="p-3 text-right text-muted-foreground">
+                  <td className="px-2 py-1 text-right text-muted-foreground cell-glow">
                     {stock.deliveryVolume.toLocaleString("en-IN")}
                   </td>
-                  <td className="p-3 text-right text-muted-foreground">
+                  <td className="px-2 py-1 text-right text-muted-foreground cell-glow">
                     {stock.totalVolume.toLocaleString("en-IN")}
                   </td>
-                  <td className="p-3 text-right text-foreground font-medium">
+                  <td className="px-2 py-1 text-right text-foreground font-medium cell-glow">
                     ₹{stock.turnoverCr.toLocaleString("en-IN", { maximumFractionDigits: 2 })} Cr
                   </td>
-                  <td className="p-3 text-right">
+                  <td className="px-2 py-1 text-right cell-glow">
                     <span
                       className={cn(
-                        "rounded px-1.5 py-0.5 text-2xs font-bold",
+                        "rounded-none px-1.5 py-0.5 text-3xs font-bold font-mono",
                         stock.volumeVs20dAvg >= 2.5
                           ? "bg-cyan-500/20 text-cyan-400"
                           : stock.volumeVs20dAvg >= 1.6
@@ -274,7 +274,7 @@ export function DeliveryScanner({
                       {stock.volumeVs20dAvg.toFixed(1)}x
                     </span>
                   </td>
-                  <td className="p-3 font-sans">
+                  <td className="px-2.5 py-1 font-sans cell-glow">
                     <div className="flex flex-wrap gap-1">
                       {stock.signals.map((sig) => {
                         const meta = SIGNAL_LABELS[sig];
@@ -282,7 +282,7 @@ export function DeliveryScanner({
                           <span
                             key={sig}
                             className={cn(
-                              "rounded px-1.5 py-0.5 text-3xs font-semibold uppercase tracking-wider border",
+                              "rounded-none px-1.5 py-0.5 text-3xs font-semibold uppercase tracking-wider border",
                               meta ? meta.badge : "bg-muted text-muted-foreground border-border",
                             )}
                           >

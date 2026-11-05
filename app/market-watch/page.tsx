@@ -100,7 +100,7 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
     <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      <main id="main" className="w-full px-2 py-3 sm:px-3 lg:px-4">
+      <main id="main" className="w-full px-2 pt-1 pb-3 sm:px-3 lg:px-4">
         {/* Bloomberg Top Command Ribbon */}
         <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-border/70 pb-2">
           <div className="flex flex-wrap items-baseline gap-2">

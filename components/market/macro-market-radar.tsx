@@ -688,8 +688,8 @@ export function MacroMarketRadar({
               )}
             >
               {vixAnalytics.isWithinEnvelope
-                ? `Normal · ${(vixAnalytics.envelopeDistance * 100).toFixed(0)}%σ`
-                : "Breakout >1σ"}
+                ? `Normal · ${(vixAnalytics.envelopeDistance * 100).toFixed(0)}% of 1σ`
+                : "Breakout > 1σ"}
             </span>
           </div>
 
