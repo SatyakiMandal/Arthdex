@@ -7,6 +7,7 @@ No network and no model weights are needed; the cache and the packages are simul
 from __future__ import annotations
 
 import os
+import sys
 import unittest
 from unittest import mock
 
@@ -63,10 +64,12 @@ class NoSilentFallback(unittest.TestCase):
 
     def test_load_failure_raises_when_strict(self):
         scorer = sentiment.FinBertScorer()
-        with mock.patch.object(ml, "strict", return_value=True), \
+        fake_tf = mock.MagicMock()
+        fake_tf.AutoTokenizer.from_pretrained.side_effect = OSError("offline")
+        with mock.patch.dict(sys.modules, {"transformers": fake_tf, "torch": mock.MagicMock()}), \
+             mock.patch.object(ml, "strict", return_value=True), \
              mock.patch.object(sentiment, "strict", return_value=True), \
-             mock.patch.object(sentiment, "disabled", return_value=False), \
-             mock.patch("transformers.AutoTokenizer.from_pretrained", side_effect=OSError("offline")):
+             mock.patch.object(sentiment, "disabled", return_value=False):
             with self.assertRaises(ml.ModelUnavailable) as caught:
                 scorer._classify(["profit up"])
         self.assertIn("Language model unavailable", str(caught.exception))
@@ -74,18 +77,23 @@ class NoSilentFallback(unittest.TestCase):
 
     def test_load_failure_falls_back_when_not_strict(self):
         scorer = sentiment.FinBertScorer()
-        with mock.patch.object(sentiment, "strict", return_value=False), \
-             mock.patch.object(sentiment, "disabled", return_value=False), \
-             mock.patch("transformers.AutoTokenizer.from_pretrained", side_effect=OSError("offline")):
+        fake_tf = mock.MagicMock()
+        fake_tf.AutoTokenizer.from_pretrained.side_effect = OSError("offline")
+        with mock.patch.dict(sys.modules, {"transformers": fake_tf, "torch": mock.MagicMock()}), \
+             mock.patch.object(sentiment, "strict", return_value=False), \
+             mock.patch.object(sentiment, "disabled", return_value=False):
             result = scorer._classify(["profit growth and a dividend"])
         self.assertEqual(result[0].label, "positive")  # the word-list scorer, used knowingly
 
     def test_off_uses_the_word_list_without_touching_the_models(self):
         scorer = sentiment.FinBertScorer()
-        with mock.patch.object(sentiment, "disabled", return_value=True), \
-             mock.patch("transformers.AutoTokenizer.from_pretrained", side_effect=AssertionError("must not load")):
+        fake_tf = mock.MagicMock()
+        fake_tf.AutoTokenizer.from_pretrained.side_effect = AssertionError("must not load")
+        with mock.patch.dict(sys.modules, {"transformers": fake_tf, "torch": mock.MagicMock()}), \
+             mock.patch.object(sentiment, "disabled", return_value=True):
             result = scorer._classify(["fraud probe and a penalty"])
         self.assertEqual(result[0].label, "negative")
+        fake_tf.AutoTokenizer.from_pretrained.assert_not_called()
 
 
 class ServiceWiring(unittest.TestCase):
