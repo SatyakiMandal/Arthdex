@@ -2,7 +2,6 @@ import { GlobalSentiment } from "@/components/macro/global-sentiment";
 import { PageStamp } from "@/components/layout/refresh-control";
 import type { Metadata } from "next";
 import { CandlestickChart, TrendingDown, TrendingUp } from "lucide-react";
-import { Eyebrow } from "@/components/ui/eyebrow";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { MoversTable } from "@/components/market/movers-table";
@@ -16,7 +15,16 @@ import { InstitutionalFlows } from "@/components/market/institutional-flows";
 import { SectorTreemap } from "@/components/market/sector-treemap";
 import { SectorRotationRrg } from "@/components/market/sector-rotation-rrg";
 import { SectionHead } from "@/components/ui/section-head";
-import { getFactorScreens, getFlows, getIndices, getPulse, getMovers, getMoversExplained, getWindowedMovers, getSectorRotation } from "@/lib/api/endpoints";
+import {
+  getFactorScreens,
+  getFlows,
+  getIndices,
+  getPulse,
+  getMovers,
+  getMoversExplained,
+  getWindowedMovers,
+  getSectorRotation,
+} from "@/lib/api/endpoints";
 import { cn, deltaColor, formatINR, formatPct } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -46,10 +54,10 @@ const UNIVERSES = [
 /** Price bands applied to the CMP of each mover. */
 const PRICE_BANDS = [
   { id: "all", label: "All prices", test: () => true },
-  { id: "penny", label: "Penny < ₹50", test: (p: number) => p < 50 },
-  { id: "small", label: "₹50 – 500", test: (p: number) => p >= 50 && p <= 500 },
-  { id: "mid", label: "₹500 – 2,000", test: (p: number) => p > 500 && p <= 2000 },
-  { id: "large", label: "Above ₹2,000", test: (p: number) => p > 2000 },
+  { id: "penny", label: "< ₹50", test: (p: number) => p < 50 },
+  { id: "small", label: "₹50–500", test: (p: number) => p >= 50 && p <= 500 },
+  { id: "mid", label: "₹500–2,000", test: (p: number) => p > 500 && p <= 2000 },
+  { id: "large", label: "> ₹2,000", test: (p: number) => p > 2000 },
 ];
 
 export default async function MarketWatchPage({ searchParams }: PageProps) {
@@ -63,18 +71,19 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
 
   // Daily comes straight from NSE's live variation feed; weekly and monthly are
   // computed from index-constituent history, because NSE publishes daily only.
-  const [gainers, losers, indices, windowed, factors, explainedUp, explainedDown, flows, pulse500, sectorRotation] = await Promise.all([
-    getMovers("gainers", universe, band.id === "all" ? 15 : 50),
-    getMovers("losers", universe, band.id === "all" ? 15 : 50),
-    getIndices(),
-    activeWindow === "daily" ? Promise.resolve(null) : getWindowedMovers(activeWindow),
-    getFactorScreens("nifty100", 8),
-    getMoversExplained("gainers", 8),
-    getMoversExplained("losers", 8),
-    getFlows(90),
-    getPulse("nifty500"),
-    getSectorRotation(),
-  ]);
+  const [gainers, losers, indices, windowed, factors, explainedUp, explainedDown, flows, pulse500, sectorRotation] =
+    await Promise.all([
+      getMovers("gainers", universe, band.id === "all" ? 15 : 50),
+      getMovers("losers", universe, band.id === "all" ? 15 : 50),
+      getIndices(),
+      activeWindow === "daily" ? Promise.resolve(null) : getWindowedMovers(activeWindow),
+      getFactorScreens("nifty100", 8),
+      getMoversExplained("gainers", 8),
+      getMoversExplained("losers", 8),
+      getFlows(90),
+      getPulse("nifty500"),
+      getSectorRotation(),
+    ]);
 
   // Advances and declines are reported per index constituent set
   const breadth = indices.ok
@@ -91,143 +100,112 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
     <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      <main id="main" className="mx-auto w-full max-w-[1920px] px-2.5 py-6 sm:px-4 lg:px-6">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div className="max-w-2xl">
-            <Eyebrow icon={CandlestickChart}>Markets</Eyebrow>
-            <h1 className="mt-4 text-balance text-4xl sm:text-5xl">Market watch</h1>
-            <p className="mt-3 text-muted-foreground">
-              The day&apos;s movers, the whole Nifty 500 by sector, and what institutions bought and sold. Rights entitlements are left out of the
-              movers, since they are not shares in the company.
-            </p>
-          </div>
-          {gainers.ok ? <FreshnessBadge meta={gainers.meta} /> : null}
-        </div>
-
-        {/* Links rather than state, so the chosen universe is shareable and survives reload */}
-        <nav className="mt-6 flex flex-wrap gap-1.5">
-          {UNIVERSES.map((option) => (
-            <a
-              key={option.id}
-              href={href({ universe: option.id })}
-              className={cn(
-                "rounded-none border px-3 py-1.5 text-xs transition-colors",
-                option.id === universe
-                  ? "border-accent/50 bg-accent/10 text-accent"
-                  : "border-border bg-surface-muted text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {option.label}
-            </a>
-          ))}
-        </nav>
-
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <span className="text-2xs text-muted-foreground">Window</span>
-          {WINDOWS.map((option) => (
-            <a
-              key={option.id}
-              href={href({ window: option.id })}
-              className={cn(
-                "rounded-none border px-3 py-1.5 text-xs transition-colors",
-                option.id === activeWindow
-                  ? "border-accent/50 bg-accent/10 text-accent"
-                  : "border-border bg-surface-muted text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {option.label}
-            </a>
-          ))}
-        </div>
-
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <span className="text-2xs text-muted-foreground">Price</span>
-          {PRICE_BANDS.map((option) => (
-            <a
-              key={option.id}
-              href={href({ price: option.id })}
-              className={cn(
-                "rounded-none border px-3 py-1.5 text-xs transition-colors",
-                option.id === band.id
-                  ? "border-accent/50 bg-accent/10 text-accent"
-                  : "border-border bg-surface-muted text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {option.label}
-            </a>
-          ))}
-        </div>
-
-        {breadth && breadth.advances + breadth.declines > 0 ? (
-          <div className="mt-6 flex flex-wrap items-center gap-4 rounded-none border border-border bg-surface px-4 py-3">
-            <span className="text-2xs text-muted-foreground">
-              Index constituent breadth
-            </span>
-            <span className="font-mono text-sm">
-              <span className="text-up">{breadth.advances} advancing</span>
-              <span className="mx-2 text-muted-foreground">/</span>
-              <span className="text-down">{breadth.declines} declining</span>
+      <main id="main" className="w-full px-2 py-3 sm:px-3 lg:px-4">
+        {/* Bloomberg Top Command Ribbon */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-border/70 pb-2">
+          <div className="flex flex-wrap items-baseline gap-2">
+            <h1 className="text-lg sm:text-xl font-serif font-bold tracking-tight text-foreground flex items-center gap-2">
+              <CandlestickChart className="h-4 w-4 text-accent" />
+              <span>Market Watch</span>
+            </h1>
+            <span className="text-border">|</span>
+            <span className="text-2xs font-mono text-muted-foreground">
+              NSE Movers, Sector Capital Rotation & Whole-Market Breadth
             </span>
           </div>
-        ) : null}
+          <div className="flex items-center gap-2.5">
+            {breadth && breadth.advances + breadth.declines > 0 ? (
+              <div className="flex items-center gap-2 border border-border bg-surface px-2 py-0.5 text-2xs font-mono rounded-none">
+                <span className="text-muted-foreground">Breadth:</span>
+                <span className="text-up font-bold">▲ {breadth.advances} Adv</span>
+                <span className="text-muted-foreground">/</span>
+                <span className="text-down font-bold">▼ {breadth.declines} Dec</span>
+              </div>
+            ) : null}
+            {gainers.ok ? <FreshnessBadge meta={gainers.meta} /> : null}
+            {gainers.ok && losers.ok ? (
+              <ExportCsv
+                filename={`arthdex-movers-${universe}`}
+                header={["Direction", "Symbol", "Price", "Change %"]}
+                rows={[
+                  ...gainers.data.filter((r) => band.test(r.cmp)).map((r) => ["gainer", r.symbol, r.cmp, r.change.percent]),
+                  ...losers.data.filter((r) => band.test(r.cmp)).map((r) => ["loser", r.symbol, r.cmp, r.change.percent]),
+                ]}
+              />
+            ) : null}
+          </div>
+        </div>
 
-        {pulse500.ok ? (
-          <section aria-labelledby="sector-map" className="mt-12">
-            <SectionHead id="sector-map" title="Sector map" note={`Nifty 500 today: ${pulse500.data.advances} up, ${pulse500.data.declines} down`} />
-            <div className="mt-6">
-              <SectorTreemap pulse={pulse500.data} />
+        {/* Multi-Segment Bloomberg Filter Toolbar */}
+        <div className="mt-2 border border-border bg-surface px-2.5 py-1.5 rounded-none flex flex-wrap items-center justify-between gap-2 text-2xs font-mono">
+          {/* Universe Segment */}
+          <div className="flex flex-wrap items-center gap-1">
+            <span className="text-3xs uppercase tracking-wider text-muted-foreground mr-1">Universe:</span>
+            {UNIVERSES.map((option) => (
+              <a
+                key={option.id}
+                href={href({ universe: option.id })}
+                className={cn(
+                  "px-2 py-0.5 text-2xs font-mono transition-colors rounded-none border",
+                  option.id === universe
+                    ? "border-accent bg-accent/15 text-accent font-bold"
+                    : "border-border/70 bg-surface-muted/50 text-muted-foreground hover:bg-surface-muted hover:text-foreground",
+                )}
+              >
+                {option.label}
+              </a>
+            ))}
+          </div>
+
+          {/* Window & Price Segments */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex items-center gap-1">
+              <span className="text-3xs uppercase tracking-wider text-muted-foreground mr-1">Window:</span>
+              {WINDOWS.map((option) => (
+                <a
+                  key={option.id}
+                  href={href({ window: option.id })}
+                  className={cn(
+                    "px-1.5 py-0.5 text-2xs font-mono transition-colors rounded-none border",
+                    option.id === activeWindow
+                      ? "border-accent bg-accent text-accent-foreground font-bold"
+                      : "border-border/70 bg-surface-muted/50 text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {option.label}
+                </a>
+              ))}
             </div>
-            <SourceLine meta={pulse500.meta} className="mt-2" />
-          </section>
-        ) : null}
 
-        {flows ? (
-          <section aria-labelledby="flows" className="mt-12">
-            <SectionHead id="flows" title="Institutional flows" note="Who bought and sold in the cash market" />
-            <div className="mt-6">
-              <InstitutionalFlows flows={flows.data} />
+            <div className="flex items-center gap-1 border-l border-border/70 pl-2.5">
+              <span className="text-3xs uppercase tracking-wider text-muted-foreground mr-1">Price:</span>
+              {PRICE_BANDS.map((option) => (
+                <a
+                  key={option.id}
+                  href={href({ price: option.id })}
+                  className={cn(
+                    "px-1.5 py-0.5 text-2xs font-mono transition-colors rounded-none border",
+                    option.id === band.id
+                      ? "border-accent bg-accent/15 text-accent font-bold"
+                      : "border-border/70 bg-surface-muted/50 text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {option.label}
+                </a>
+              ))}
             </div>
-            <SourceLine meta={flows.meta} className="mt-4" />
-          </section>
-        ) : null}
-
-        {activeWindow !== "daily" && windowed ? (
-          <div className="mt-6">
-            <WindowedMovers movers={windowed.data} />
-            <p className="mt-2 text-2xs text-muted-foreground">
-              {windowed.meta.note} Covering {windowed.data.universeCovered} constituents.
-            </p>
           </div>
-        ) : activeWindow !== "daily" ? (
-          <div className="mt-6">
-            <DataUnavailable
-              title={`${activeWindow} window unavailable`}
-              message="The universe screener could not be computed. Daily movers are still live below."
-            />
-          </div>
-        ) : null}
+        </div>
 
-        {gainers.ok && losers.ok ? (
-          <div className="mt-6 flex justify-end">
-            <ExportCsv
-              filename={`arthdex-movers-${universe}`}
-              header={["Direction", "Symbol", "Price", "Change %"]}
-              rows={[
-                ...gainers.data.filter((r) => band.test(r.cmp)).map((r) => ["gainer", r.symbol, r.cmp, r.change.percent]),
-                ...losers.data.filter((r) => band.test(r.cmp)).map((r) => ["loser", r.symbol, r.cmp, r.change.percent]),
-              ]}
-            />
-          </div>
-        ) : null}
-
-        <div className={cn("grid gap-4 xl:grid-cols-2", activeWindow === "daily" ? "mt-3" : "mt-4")}>
+        {/* Top Movers Dual Grid */}
+        <div className="mt-3 grid gap-3 xl:grid-cols-2">
           <DataCard title="Top Gainers" subtitle={`Universe: ${universeLabel}`} icon={TrendingUp}>
             {gainers.ok ? (
-              <div className="p-2">
+              <div className="p-1">
                 <MoversTable rows={gainers.data.filter((r) => band.test(r.cmp)).slice(0, 15)} tone="up" />
               </div>
             ) : (
-              <div className="p-4">
+              <div className="p-3">
                 <DataUnavailable message={gainers.message} />
               </div>
             )}
@@ -235,57 +213,79 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
 
           <DataCard title="Top Losers" subtitle={`Universe: ${universeLabel}`} icon={TrendingDown}>
             {losers.ok ? (
-              <div className="p-2">
+              <div className="p-1">
                 <MoversTable rows={losers.data.filter((r) => band.test(r.cmp)).slice(0, 15)} tone="down" />
               </div>
             ) : (
-              <div className="p-4">
+              <div className="p-3">
                 <DataUnavailable message={losers.message} />
               </div>
             )}
           </DataCard>
         </div>
 
+        {/* Windowed Movers (if non-daily active) */}
+        {activeWindow !== "daily" && windowed ? (
+          <div className="mt-3">
+            <WindowedMovers movers={windowed.data} />
+            <p className="mt-1.5 text-2xs text-muted-foreground font-mono">
+              {windowed.meta.note} Covering {windowed.data.universeCovered} constituents.
+            </p>
+          </div>
+        ) : activeWindow !== "daily" ? (
+          <div className="mt-3">
+            <DataUnavailable
+              title={`${activeWindow} window unavailable`}
+              message="The universe screener could not be computed. Daily movers are still live above."
+            />
+          </div>
+        ) : null}
+
+        {/* Movers Explained */}
         {explainedUp.ok && explainedDown.ok ? (
-          <div className="mt-6">
+          <div className="mt-3.5">
             <MoversExplained gainers={explainedUp.data} losers={explainedDown.data} />
           </div>
         ) : null}
 
+        {/* Index Levels */}
         {indices.ok ? (
-          <section className="mt-6 rounded-none border border-border bg-surface">
-            <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
-              <h2 className="text-sm font-semibold tracking-tight">Index Levels</h2>
+          <section className="mt-3.5 rounded-none border border-border bg-surface">
+            <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
+              <div className="flex items-center gap-2">
+                <h2 className="text-xs font-semibold uppercase tracking-wider font-mono">Index Levels & Multiples</h2>
+                <span className="text-2xs font-mono text-muted-foreground">NSE Official Benchmark Gauges</span>
+              </div>
               <FreshnessBadge meta={indices.meta} />
             </header>
 
-            <div className="overflow-x-auto p-2">
-              <table className="data-table w-full min-w-[820px] border-collapse text-sm">
+            <div className="overflow-x-auto p-1">
+              <table className="data-table w-full min-w-[820px] border-collapse text-xs">
                 <thead>
-                  <tr className="border-b border-border text-2xs text-muted-foreground">
-                    <th className="px-3 py-2 text-left font-medium">Index</th>
-                    <th className="px-3 py-2 text-right font-medium">Level</th>
-                    <th className="px-3 py-2 text-right font-medium">% Chg</th>
-                    <th className="px-3 py-2 text-right font-medium">1M</th>
-                    <th className="px-3 py-2 text-right font-medium">1Y</th>
-                    <th className="px-3 py-2 text-right font-medium">P/E</th>
-                    <th className="px-3 py-2 text-right font-medium">52W High</th>
-                    <th className="px-3 py-2 text-right font-medium">52W Low</th>
+                  <tr className="border-b border-border text-2xs text-muted-foreground font-mono uppercase tracking-wider">
+                    <th className="px-2.5 py-1.5 text-left font-medium">Index</th>
+                    <th className="px-2.5 py-1.5 text-right font-medium">Level</th>
+                    <th className="px-2.5 py-1.5 text-right font-medium">% Chg</th>
+                    <th className="px-2.5 py-1.5 text-right font-medium">1M</th>
+                    <th className="px-2.5 py-1.5 text-right font-medium">1Y</th>
+                    <th className="px-2.5 py-1.5 text-right font-medium">P/E</th>
+                    <th className="px-2.5 py-1.5 text-right font-medium">52W High</th>
+                    <th className="px-2.5 py-1.5 text-right font-medium">52W Low</th>
                   </tr>
                 </thead>
                 <tbody>
                   {indices.data.map((index) => (
                     <tr
                       key={index.id}
-                      className="border-b border-border/60 last:border-0 hover:bg-surface-muted"
+                      className="border-b border-border/40 last:border-0 hover:bg-surface-muted/80 transition-colors duration-150"
                     >
-                      <td className="px-3 py-2 text-xs font-medium">{index.name}</td>
-                      <td className="px-3 py-2 text-right font-mono tabular-nums">
+                      <td className="px-2.5 py-1.5 text-xs font-medium font-mono text-foreground">{index.name}</td>
+                      <td className="px-2.5 py-1.5 text-right font-mono tabular-nums font-medium">
                         {formatINR(index.level, 2)}
                       </td>
                       <td
                         className={cn(
-                          "px-3 py-2 text-right font-mono tabular-nums",
+                          "px-2.5 py-1.5 text-right font-mono tabular-nums",
                           deltaColor(index.change.percent),
                         )}
                       >
@@ -293,7 +293,7 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
                       </td>
                       <td
                         className={cn(
-                          "px-3 py-2 text-right font-mono tabular-nums",
+                          "px-2.5 py-1.5 text-right font-mono tabular-nums text-2xs",
                           deltaColor(index.oneMonthChangePct ?? 0),
                         )}
                       >
@@ -303,7 +303,7 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
                       </td>
                       <td
                         className={cn(
-                          "px-3 py-2 text-right font-mono tabular-nums",
+                          "px-2.5 py-1.5 text-right font-mono tabular-nums text-2xs",
                           deltaColor(index.oneYearChangePct ?? 0),
                         )}
                       >
@@ -311,13 +311,13 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
                           ? "—"
                           : formatPct(index.oneYearChangePct, 1)}
                       </td>
-                      <td className="px-3 py-2 text-right font-mono tabular-nums text-muted-foreground">
+                      <td className="px-2.5 py-1.5 text-right font-mono tabular-nums text-muted-foreground text-2xs">
                         {index.peRatio ?? "—"}
                       </td>
-                      <td className="px-3 py-2 text-right font-mono tabular-nums text-muted-foreground">
+                      <td className="px-2.5 py-1.5 text-right font-mono tabular-nums text-muted-foreground text-2xs">
                         {index.high52w === null ? "—" : formatINR(index.high52w, 0)}
                       </td>
-                      <td className="px-3 py-2 text-right font-mono tabular-nums text-muted-foreground">
+                      <td className="px-2.5 py-1.5 text-right font-mono tabular-nums text-muted-foreground text-2xs">
                         {index.low52w === null ? "—" : formatINR(index.low52w, 0)}
                       </td>
                     </tr>
@@ -326,23 +326,46 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
               </table>
             </div>
 
-            <div className="border-t border-border px-4 py-2">
-<PageStamp meta={indices.meta} />
+            <div className="border-t border-border px-3 py-1.5 flex items-center justify-between text-2xs">
+              <PageStamp meta={indices.meta} />
               <SourceLine meta={indices.meta} />
             </div>
           </section>
         ) : null}
 
-        <section id="sector-rotation" className="mt-8 rounded-none border border-border bg-card p-5 sm:p-6 shadow-sm scroll-mt-20">
+        {/* Sector Map */}
+        {pulse500.ok ? (
+          <section aria-labelledby="sector-map" className="mt-4">
+            <SectionHead id="sector-map" title="Sector Map" note={`Nifty 500 today: ${pulse500.data.advances} up, ${pulse500.data.declines} down`} />
+            <div className="mt-2.5">
+              <SectorTreemap pulse={pulse500.data} />
+            </div>
+            <SourceLine meta={pulse500.meta} className="mt-1 text-2xs" />
+          </section>
+        ) : null}
+
+        {/* Institutional Flows */}
+        {flows ? (
+          <section aria-labelledby="flows" className="mt-4">
+            <SectionHead id="flows" title="Institutional Flows" note="Cash market FII / DII net turnover" />
+            <div className="mt-2.5">
+              <InstitutionalFlows flows={flows.data} />
+            </div>
+            <SourceLine meta={flows.meta} className="mt-1 text-2xs" />
+          </section>
+        ) : null}
+
+        {/* Sector Rotation RRG */}
+        <section id="sector-rotation" className="mt-4 rounded-none border border-border bg-card p-3 sm:p-4 shadow-sm scroll-mt-20">
           <SectionHead
             title="Sector Rotation (Relative Rotation Graph)"
             note="10 NSE sectors against Nifty 50 · 12-week trailing vectors"
           />
-          <div className="mt-6">
+          <div className="mt-3">
             {sectorRotation && sectorRotation.ok ? (
               <>
                 <SectorRotationRrg rotationData={sectorRotation.data} />
-                <div className="mt-4 border-t border-border/40 pt-3">
+                <div className="mt-3 border-t border-border/40 pt-2 text-2xs">
                   <SourceLine meta={sectorRotation.meta} />
                 </div>
               </>
@@ -355,15 +378,19 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
           </div>
         </section>
 
+        {/* Factor Screens */}
         {factors ? (
-          <div className="mt-6">
+          <div className="mt-4">
             <FactorScreens screens={factors.data} />
-            <div className="mt-2">
+            <div className="mt-1.5 text-2xs">
               <SourceLine meta={factors.meta} />
             </div>
           </div>
         ) : null}
-        <GlobalSentiment />
+
+        <div className="mt-4">
+          <GlobalSentiment />
+        </div>
       </main>
 
       <SiteFooter />

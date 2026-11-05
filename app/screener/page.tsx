@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Eyebrow } from "@/components/ui/eyebrow";
+import { Filter } from "lucide-react";
 import { SectionHead } from "@/components/ui/section-head";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
@@ -24,17 +24,27 @@ export default async function ScreenerPage({ searchParams }: PageProps) {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <main id="main" className="mx-auto w-full max-w-[1920px] px-2.5 py-6 sm:px-4 lg:px-6">
-        <Eyebrow>Research</Eyebrow>
-        <h1 className="mt-4 text-balance text-4xl sm:text-5xl">Screener</h1>
-        <p className="mt-3 max-w-2xl text-muted-foreground">
-          Filter the Nifty 500 on fundamentals that have been checked against a second source and the companies&apos; own filings, or find stocks whose
-          momentum just turned.
-        </p>
+      <main id="main" className="w-full px-2 py-3 sm:px-3 lg:px-4">
+        {/* Bloomberg Top Command Ribbon */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-border/70 pb-2">
+          <div className="flex flex-wrap items-baseline gap-2">
+            <h1 className="text-lg sm:text-xl font-serif font-bold tracking-tight text-foreground flex items-center gap-2">
+              <Filter className="h-4 w-4 text-accent" />
+              <span>Multi-Factor Screener</span>
+            </h1>
+            <span className="text-border">|</span>
+            <span className="text-2xs font-mono text-muted-foreground">
+              Vetted Fundamentals, Live Price Multiples & Technical Momentum Engine
+            </span>
+          </div>
+          <div className="flex items-center gap-2 text-2xs font-mono text-muted-foreground">
+            <span className="border border-border bg-surface px-2 py-0.5">Universe: NIFTY 500</span>
+          </div>
+        </div>
 
-        <section id="fundamental" aria-labelledby="fundamental-head" className="mt-10 scroll-mt-28">
-          <SectionHead id="fundamental-head" title="Fundamental screen" note="Vetted figures, live multiples" />
-          <div className="mt-6">
+        <section id="fundamental" aria-labelledby="fundamental-head" className="mt-3.5 scroll-mt-20">
+          <SectionHead id="fundamental-head" title="Fundamental Screen" note="Vetted figures, live NSE multiples" />
+          <div className="mt-2.5">
             <FundamentalScreen
               data={screen.ok ? screen.data : null}
               q={q}
@@ -45,9 +55,9 @@ export default async function ScreenerPage({ searchParams }: PageProps) {
           </div>
         </section>
 
-        <section id="macd" aria-labelledby="macd-head" className="mt-14 scroll-mt-28">
-          <SectionHead id="macd-head" title="MACD crossovers" note="MACD line crossing its signal, any bar size" />
-          <div className="mt-6">
+        <section id="macd" aria-labelledby="macd-head" className="mt-5 scroll-mt-20">
+          <SectionHead id="macd-head" title="MACD Crossovers" note="MACD line crossing its signal, all bar frequencies" />
+          <div className="mt-2.5">
             <MacdScreener />
           </div>
         </section>

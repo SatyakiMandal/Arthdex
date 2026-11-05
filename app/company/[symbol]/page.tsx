@@ -13,7 +13,17 @@ import { SectionHead } from "@/components/ui/section-head";
 import { PreIpoPanel } from "@/components/company/pre-ipo-panel";
 import { PeBandRail, PeersPanel } from "@/components/company/peers-panel";
 import { QualityPanel } from "@/components/company/quality-panel";
-import { getCandles, getFinancials, getForensics, getPeBand, getPeers, getPreIpo, getProfile, getUnlistedCompany, getValuation } from "@/lib/api/endpoints";
+import {
+  getCandles,
+  getFinancials,
+  getForensics,
+  getPeBand,
+  getPeers,
+  getPreIpo,
+  getProfile,
+  getUnlistedCompany,
+  getValuation,
+} from "@/lib/api/endpoints";
 
 interface PageProps {
   params: Promise<{ symbol: string }>;
@@ -59,7 +69,7 @@ export default async function CompanyOverviewPage({ params }: PageProps) {
   };
 
   return (
-    <div className="mx-auto w-full max-w-[1920px] space-y-10 px-2.5 py-6 sm:px-4 lg:px-6">
+    <div className="mx-auto w-full max-w-[1920px] space-y-4 px-2 py-3 sm:px-3 sm:space-y-5 lg:px-4">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -69,7 +79,7 @@ export default async function CompanyOverviewPage({ params }: PageProps) {
           <>
             <PriceChart symbol={upper} initialCandles={candles.data.candles} initialPeriod="1Y" />
             <PageStamp meta={candles.meta} />
-            <SourceLine meta={candles.meta} className="mt-2 px-1" />
+            <SourceLine meta={candles.meta} className="mt-1 text-2xs px-1" />
           </>
         ) : (
           <DataUnavailable title="Price history unavailable" message={candles.message} />
@@ -79,12 +89,12 @@ export default async function CompanyOverviewPage({ params }: PageProps) {
       {profile || valuation ? (
         <section aria-labelledby="business">
           <SectionHead id="business" title="The business" note="From the company's profile and reported figures" />
-          <div className="mt-6 grid gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16">
+          <div className="mt-2.5 grid gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-6">
             {profile ? <CompanyAbout profile={profile.data} /> : null}
             {valuation ? (
               <div className={profile ? undefined : "lg:col-span-2"}>
-                <h3 className="font-sans text-sm font-semibold tracking-normal">Valuation</h3>
-                <div className="mt-2">
+                <h3 className="font-sans text-xs font-semibold uppercase tracking-wider text-muted-foreground">Valuation Multiple Ledger</h3>
+                <div className="mt-1.5">
                   <ValuationPanel valuation={valuation.data} />
                 </div>
               </div>
@@ -96,8 +106,8 @@ export default async function CompanyOverviewPage({ params }: PageProps) {
       {peers || band ? (
         <section aria-labelledby="peers">
           <SectionHead id="peers" title="Against its peers and its past" note="Industry peers by market cap; P/E over five years" />
-          <div className="mt-6 grid gap-10 lg:grid-cols-[minmax(0,8fr)_minmax(0,4fr)] lg:gap-14">
-            {peers ? <PeersPanel peers={peers.data} symbol={upper} /> : <p className="text-sm text-muted-foreground">No industry peers are available for this company.</p>}
+          <div className="mt-2.5 grid gap-4 lg:grid-cols-[minmax(0,8fr)_minmax(0,4fr)] lg:gap-6">
+            {peers ? <PeersPanel peers={peers.data} symbol={upper} /> : <p className="text-xs text-muted-foreground">No industry peers are available for this company.</p>}
             {band ? <PeBandRail band={band.data} /> : null}
           </div>
         </section>
@@ -106,7 +116,7 @@ export default async function CompanyOverviewPage({ params }: PageProps) {
       {forensics ? (
         <section aria-labelledby="quality">
           <SectionHead id="quality" title="Quality checks" note="Forensic scores, and the growth the price implies" />
-          <div className="mt-6">
+          <div className="mt-2.5">
             <QualityPanel data={forensics.data} />
           </div>
         </section>
@@ -114,19 +124,19 @@ export default async function CompanyOverviewPage({ params }: PageProps) {
 
       {preIpo?.ok ? <PreIpoPanel company={preIpo.data} /> : null}
 
-      <section aria-labelledby="financials" className="space-y-4">
+      <section aria-labelledby="financials" className="space-y-3">
         <SectionHead id="financials" title="Financials" note="Quarterly and annual, as reported" />
         {financials ? (
           <>
-            <div className="pt-2">
+            <div className="pt-1">
               <QuarterlyPnLPanel financials={financials.data} />
             </div>
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid gap-3 lg:grid-cols-2">
               <AnnualPnLPanel financials={financials.data} />
               <KeyRatiosPanel financials={financials.data} />
             </div>
             <BalanceSheetPanel financials={financials.data} />
-            <SourceLine meta={financials.meta} className="px-1" />
+            <SourceLine meta={financials.meta} className="px-1 text-2xs" />
           </>
         ) : (
           <DataUnavailable

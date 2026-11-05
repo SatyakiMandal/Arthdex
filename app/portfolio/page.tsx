@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { Briefcase } from "lucide-react";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { postPortfolioAnalyze } from "@/lib/api/endpoints";
 import type { ApiPortfolioAnalysis } from "@/lib/api/types";
@@ -201,20 +202,21 @@ export default async function PortfolioPage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <main id="main" className="mx-auto w-full max-w-[1920px] px-2.5 py-6 sm:px-4 lg:px-6">
-        <Eyebrow>COMPANIES &amp; WEALTH</Eyebrow>
-        <div className="mt-3 flex flex-wrap items-baseline justify-between gap-4 border-b border-border/60 pb-6">
-          <div>
-            <h1 className="text-balance text-4xl sm:text-5xl font-serif tracking-tight text-foreground">
-              Portfolio &amp; Tax Harvester
+      <main id="main" className="w-full px-2 py-3 sm:px-3 lg:px-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-2">
+          <div className="flex flex-wrap items-baseline gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-serif font-bold tracking-tight text-foreground flex items-center gap-2">
+              <Briefcase className="h-4 w-4 text-accent" />
+              <span>Portfolio &amp; Section 112A Tax Harvester</span>
             </h1>
-            <p className="mt-2 max-w-3xl text-sm text-muted-foreground leading-relaxed">
-              Consolidated multi-lot equity analytics: true Newton-Raphson cash-flow XIRR, Sector &amp; Market Cap risk exposure, and Section 112A tax-loss harvesting with Budget 2024 tax rules (STCG 20%, LTCG 12.5% with ₹1.25 Lakh annual tax-free exemption) plus replacement peer swaps.
-            </p>
+            <span className="text-border">|</span>
+            <span className="text-2xs font-mono text-muted-foreground">
+              True Newton-Raphson XIRR, Budget 2024 Capital Gains Optimiser &amp; Peer Swaps
+            </span>
           </div>
         </div>
 
-        <div className="mt-8">
+        <div className="mt-3">
           <PortfolioTerminal initialAnalysis={initialData} />
         </div>
       </main>

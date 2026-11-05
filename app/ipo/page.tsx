@@ -96,7 +96,7 @@ export default async function IpoPage({ searchParams }: PageProps) {
     return (
       <div className="min-h-screen bg-background">
         <SiteHeader />
-        <main id="main" className="mx-auto w-full max-w-[1920px] px-2.5 py-6 sm:px-4 lg:px-6">
+        <main id="main" className="w-full px-2 py-3 sm:px-3 lg:px-4">
           <DataUnavailable title="IPO pipeline unavailable" message={result.message} />
         </main>
         <SiteFooter />
@@ -117,22 +117,22 @@ export default async function IpoPage({ searchParams }: PageProps) {
     <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      <main id="main" className="mx-auto w-full max-w-[1920px] px-2.5 py-6 sm:px-4 lg:px-6">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div className="max-w-2xl">
-            <Eyebrow icon={Rocket}>Primary markets</Eyebrow>
-            <h1 className="mt-4 text-balance text-4xl sm:text-5xl">
-              IPO intelligence
+      <main id="main" className="w-full px-2 py-3 sm:px-3 lg:px-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-2">
+          <div className="flex flex-wrap items-baseline gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-serif font-bold tracking-tight text-foreground flex items-center gap-2">
+              <Rocket className="h-4 w-4 text-accent" />
+              <span>IPO &amp; Primary Markets Desk</span>
             </h1>
-            <p className="mt-3 text-muted-foreground">
-              Live NSE issue data. Listing performance is reconstructed from actual post-listing
-              price history, not quoted from a summary.
-            </p>
+            <span className="text-border">|</span>
+            <span className="text-2xs font-mono text-muted-foreground">
+              Live NSE Issue Pipeline, Subscription Status &amp; Reconstructed Post-Listing Alpha
+            </span>
           </div>
           <FreshnessBadge meta={result.meta} />
         </div>
 
-        <nav className="mt-6 flex flex-wrap gap-1.5">
+        <nav className="mt-2.5 flex flex-wrap gap-1.5">
           {SEGMENTS.map((option) => (
             <a
               key={option.id || "all"}

@@ -19,22 +19,22 @@ export default async function UnlistedIndexPage() {
     <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      <main id="main" className="mx-auto w-full max-w-[1920px] px-2.5 py-6 sm:px-4 lg:px-6">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div className="max-w-2xl">
-            <Eyebrow icon={Building2}>Unlisted space</Eyebrow>
-            <h1 className="mt-4 text-balance text-4xl sm:text-5xl">
-              Private-market coverage
+      <main id="main" className="w-full px-2 py-3 sm:px-3 lg:px-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-2">
+          <div className="flex flex-wrap items-baseline gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-serif font-bold tracking-tight text-foreground flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-accent" />
+              <span>Unlisted &amp; Private Equity Desk</span>
             </h1>
-            <p className="mt-3 text-muted-foreground">
-              Indicative prices and key ratios for unlisted and pre-IPO companies, with the full revision history behind
-              each price.
-            </p>
+            <span className="text-border">|</span>
+            <span className="text-2xs font-mono text-muted-foreground">
+              Dealer Indicative OTC Marks, Reconstructed Valuations &amp; Revision History
+            </span>
           </div>
           {result.ok ? <FreshnessBadge meta={result.meta} /> : null}
         </div>
 
-        <div className="mt-6 rounded-none border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-200">
+        <div className="mt-2.5 rounded-none border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-200">
           <div className="flex items-start gap-3">
             <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
             <div className="space-y-1">
@@ -48,7 +48,7 @@ export default async function UnlistedIndexPage() {
           </div>
         </div>
 
-        <div className="mt-8">
+        <div className="mt-3">
           {result.ok ? (
             <>
               <DirectoryView companies={result.data.companies} sectors={result.data.sectors} />

@@ -1,7 +1,6 @@
 import type { ResponseMeta } from "@/lib/api/client";
 import type { ApiProfile, ApiQuote, ApiValuation } from "@/lib/api/types";
 import { WatchButton } from "@/components/watchlist/watch-button";
-import { Eyebrow } from "@/components/ui/eyebrow";
 import { DataUnavailable, FreshnessBadge } from "@/components/ui/data-provenance";
 import { cn, deltaColor, formatDelta, formatINR, formatPct } from "@/lib/utils";
 
@@ -24,22 +23,19 @@ function shortName(name: string): string {
 function readQuote(name: string, quote: ApiQuote, valuation: ApiValuation | null): string {
   const pct = quote.change.percent;
   const today =
-    Math.abs(pct) < 0.05 ? "is flat today" : `is ${pct > 0 ? "up" : "down"} ${Math.abs(pct).toFixed(1)}% today`;
+    Math.abs(pct) < 0.05 ? "flat today" : `${pct > 0 ? "up" : "down"} ${Math.abs(pct).toFixed(1)}% today`;
 
   const fromHigh = ((quote.high52w - quote.cmp) / quote.high52w) * 100;
   const fromLow = ((quote.cmp - quote.low52w) / quote.low52w) * 100;
   let band: string;
-  if (fromHigh <= 2) band = "close to its 52-week high";
-  else if (fromLow <= 2) band = "close to its 52-week low";
-  else if (fromHigh <= fromLow) band = `${fromHigh.toFixed(1)}% below its 52-week high`;
-  else band = `${fromLow.toFixed(1)}% above its 52-week low`;
+  if (fromHigh <= 2) band = "near 52W high";
+  else if (fromLow <= 2) band = "near 52W low";
+  else if (fromHigh <= fromLow) band = `${fromHigh.toFixed(1)}% below 52W high`;
+  else band = `${fromLow.toFixed(1)}% above 52W low`;
 
   const pe = valuation?.peRatio;
-  const multiple = pe && pe > 0 ? `, at ${pe.toFixed(1)} times trailing earnings` : "";
-  const ex = quote.adjustedBase
-    ? ` It went ex today: the change is measured from ₹${formatINR(quote.adjustedBase)}, the previous close of ₹${formatINR(quote.previousClose)} adjusted by the exchange.`
-    : "";
-  return `${shortName(name)} ${today}, ${band}${multiple}.${ex}`;
+  const multiple = pe && pe > 0 ? `, ${pe.toFixed(1)}x trailing P/E` : "";
+  return `${shortName(name)} is ${today} (${band}${multiple}).`;
 }
 
 /** Volume in lakh or crore shares, the way Indian market data is usually read. */
@@ -73,23 +69,23 @@ function RangeRail({
   const start = position(from, low, high);
   const left = Math.min(at, start);
   const width = Math.abs(at - start);
-  const fill = { up: "bg-up", down: "bg-down", flat: "bg-muted-foreground", ink: "bg-foreground/35" }[tone];
+  const fill = { up: "bg-up", down: "bg-down", flat: "bg-muted-foreground", ink: "bg-foreground/40" }[tone];
 
   return (
-    <div>
-      <div className="flex items-baseline justify-between gap-3 text-xs">
-        <span className="font-medium text-foreground">{label}</span>
-        <span className="text-muted-foreground">
-          {at >= 99 ? "at the high" : at <= 1 ? "at the low" : `${at.toFixed(0)}% of the way up`}
+    <div className="border border-border/60 bg-surface/50 px-2.5 py-1.5 rounded-none">
+      <div className="flex items-baseline justify-between gap-2 text-2xs font-mono">
+        <span className="font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
+        <span className="text-3xs text-muted-foreground">
+          {at >= 99 ? "At High" : at <= 1 ? "At Low" : `${at.toFixed(0)}% in band`}
         </span>
       </div>
-      <div className="relative mt-3 h-px bg-border" aria-hidden>
-        <span className={cn("absolute top-1/2 h-[3px] -translate-y-1/2", fill)} style={{ left: `${left}%`, width: `${width}%` }} />
-        <span className="absolute top-1/2 h-3.5 w-[2px] -translate-x-1/2 -translate-y-1/2 bg-foreground" style={{ left: `${at}%` }} />
+      <div className="relative my-1.5 h-1 bg-border/60 overflow-hidden" aria-hidden>
+        <span className={cn("absolute top-0 bottom-0", fill)} style={{ left: `${left}%`, width: `${width}%` }} />
+        <span className="absolute top-0 bottom-0 w-1 bg-foreground" style={{ left: `calc(${at}% - 2px)` }} />
       </div>
-      <div className="mt-2.5 flex justify-between font-mono text-xs tabular-nums text-muted-foreground">
-        <span>₹{formatINR(low)}</span>
-        <span>₹{formatINR(high)}</span>
+      <div className="flex justify-between font-mono text-3xs tabular-nums text-muted-foreground">
+        <span>₹{formatINR(low, 0)}</span>
+        <span>₹{formatINR(high, 0)}</span>
       </div>
     </div>
   );
@@ -113,9 +109,9 @@ export function CompanyHeader({
   if (!quote) {
     return (
       <section className="border-b border-border">
-        <div className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6">
-          <h1 className="font-mono text-3xl font-semibold">{symbol}</h1>
-          <div className="mt-5">
+        <div className="mx-auto max-w-[1920px] px-3 py-4 sm:px-4">
+          <h1 className="font-mono text-2xl font-semibold">{symbol}</h1>
+          <div className="mt-3">
             <DataUnavailable title={`Could not load a quote for ${symbol}`} message={error ?? "Unknown error"} />
           </div>
         </div>
@@ -128,73 +124,89 @@ export function CompanyHeader({
   const dayTone = pct > 0 ? "up" : pct < 0 ? "down" : "flat";
 
   const ledger = [
-    { label: "Market cap", value: quote.marketCapCr ? `₹${formatINR(quote.marketCapCr, 0)} Cr` : "—" },
+    { label: "Market Cap", value: quote.marketCapCr ? `₹${formatINR(quote.marketCapCr, 0)} Cr` : "—" },
     { label: "P/E", value: valuation?.peRatio ? valuation.peRatio.toFixed(2) : "—" },
     { label: "P/B", value: valuation?.pbRatio ? valuation.pbRatio.toFixed(2) : "—" },
-    { label: "Return on equity", value: valuation?.roePct != null ? `${valuation.roePct.toFixed(1)}%` : "—" },
-    { label: "Dividend yield", value: valuation?.dividendYieldPct != null ? `${valuation.dividendYieldPct.toFixed(2)}%` : "—" },
+    { label: "ROE", value: valuation?.roePct != null ? `${valuation.roePct.toFixed(1)}%` : "—" },
+    { label: "Div Yield", value: valuation?.dividendYieldPct != null ? `${valuation.dividendYieldPct.toFixed(2)}%` : "—" },
     { label: "Volume", value: quote.volume ? formatVolume(quote.volume) : "—" },
     { label: "Open", value: `₹${formatINR(quote.open)}` },
-    { label: "Previous close", value: `₹${formatINR(quote.previousClose)}` },
+    { label: "Prev Close", value: `₹${formatINR(quote.previousClose)}` },
   ];
 
   return (
-    <section className="border-b border-border">
-      <div className="mx-auto max-w-[1600px] px-4 pb-8 pt-8 sm:px-6 lg:pt-12">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-16">
-          <div className="min-w-0">
-            <Eyebrow>{profile ? `${profile.sector} · ${profile.industry}` : quote.exchange}</Eyebrow>
-            <h1 className="mt-4 text-balance text-[2.5rem] leading-[1.02] sm:text-5xl lg:text-[3.6rem]">{name}</h1>
-            <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted-foreground">
-              <span className="font-mono font-semibold text-foreground">{quote.symbol}</span>
-              <span aria-hidden>·</span>
-              <span>{quote.exchange}</span>
-              {profile?.isin ? (
-                <>
-                  <span aria-hidden className="hidden sm:inline">·</span>
-                  <span className="hidden font-mono text-xs sm:inline">{profile.isin}</span>
-                </>
-              ) : null}
-              {meta ? <FreshnessBadge meta={meta} /> : null}
-            </div>
-            <p className="mt-5 max-w-[62ch] text-pretty text-base leading-relaxed text-muted-foreground">
-              {readQuote(name, quote, valuation)}
-            </p>
+    <section className="border-b border-border bg-surface/30">
+      <div className="mx-auto max-w-[1920px] px-3 py-3 sm:px-4 lg:py-3.5">
+        {/* Ticker strip top line */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/50 pb-2">
+          <div className="flex flex-wrap items-baseline gap-2.5 min-w-0">
+            <span className="font-mono text-base font-bold text-accent tracking-tight">{quote.symbol}</span>
+            <span className="text-border">|</span>
+            <h1 className="text-base sm:text-lg font-serif font-semibold text-foreground truncate">{name}</h1>
+            <span className="text-border">|</span>
+            <span className="text-2xs font-mono text-muted-foreground uppercase tracking-wider">
+              {profile ? `${profile.sector} · ${profile.industry}` : quote.exchange}
+            </span>
+            {profile?.isin ? (
+              <>
+                <span className="text-border hidden sm:inline">|</span>
+                <span className="text-3xs font-mono text-muted-foreground hidden sm:inline">{profile.isin}</span>
+              </>
+            ) : null}
           </div>
 
-          <div className="flex items-end justify-between gap-6 lg:flex-col lg:items-end lg:justify-end">
-            <div className="lg:text-right">
-              <p className="text-xs text-muted-foreground">Last price</p>
-              <p className="mt-1 font-mono text-[2.75rem] font-medium leading-none tracking-tight tabular-nums sm:text-[3.25rem]">
-                <span className="mr-1 align-top text-[0.5em] font-normal text-muted-foreground">₹</span>
-                {formatINR(quote.cmp)}
-              </p>
-              <p className={cn("mt-2 font-mono text-sm tabular-nums", deltaColor(pct))}>
-                {formatDelta(quote.change.absolute)} · {formatPct(pct)}
-                <span className="ml-1.5 font-sans text-muted-foreground">today</span>
-              </p>
-            </div>
+          <div className="flex items-center gap-3">
+            {meta ? <FreshnessBadge meta={meta} /> : null}
             <WatchButton kind="listed" id={quote.symbol} name={name} />
           </div>
         </div>
 
-        <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:gap-16">
-          <RangeRail
-            label="Today"
-            low={Math.min(quote.dayLow, quote.adjustedBase ?? quote.previousClose)}
-            high={Math.max(quote.dayHigh, quote.adjustedBase ?? quote.previousClose)}
-            value={quote.cmp}
-            from={quote.adjustedBase ?? quote.previousClose}
-            tone={dayTone}
-          />
-          <RangeRail label="52 weeks" low={quote.low52w} high={quote.high52w} value={quote.cmp} from={quote.low52w} tone="ink" />
+        {/* Central Metric Strip */}
+        <div className="mt-2.5 grid gap-3 lg:grid-cols-[auto_1fr_auto] lg:items-center">
+          {/* Price & Change */}
+          <div className="flex items-baseline gap-3 shrink-0">
+            <div className="flex items-baseline">
+              <span className="mr-1 text-sm font-mono text-muted-foreground">₹</span>
+              <span className="font-mono text-2xl sm:text-3xl font-bold tracking-tight tabular-nums text-foreground">
+                {formatINR(quote.cmp)}
+              </span>
+            </div>
+            <div className={cn("flex items-baseline gap-1.5 font-mono text-xs font-semibold tabular-nums", deltaColor(pct))}>
+              <span>{formatDelta(quote.change.absolute)}</span>
+              <span>({formatPct(pct)})</span>
+            </div>
+            <span className="text-3xs font-mono text-muted-foreground hidden sm:inline">
+              {readQuote(name, quote, valuation)}
+            </span>
+          </div>
+
+          {/* Intraday & 52W Range Rails */}
+          <div className="grid gap-2 sm:grid-cols-2">
+            <RangeRail
+              label="Day Range"
+              low={Math.min(quote.dayLow, quote.adjustedBase ?? quote.previousClose)}
+              high={Math.max(quote.dayHigh, quote.adjustedBase ?? quote.previousClose)}
+              value={quote.cmp}
+              from={quote.adjustedBase ?? quote.previousClose}
+              tone={dayTone}
+            />
+            <RangeRail
+              label="52-Week Range"
+              low={quote.low52w}
+              high={quote.high52w}
+              value={quote.cmp}
+              from={quote.low52w}
+              tone="ink"
+            />
+          </div>
         </div>
 
-        <dl className="mt-10 grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4 xl:grid-cols-8">
+        {/* Multiples Micro-Ledger */}
+        <dl className="mt-2.5 grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-8 border-t border-border/50 pt-2">
           {ledger.map((item) => (
-            <div key={item.label} className="border-t border-border pt-3">
-              <dt className="text-xs text-muted-foreground">{item.label}</dt>
-              <dd className={cn("mt-1 font-mono text-[15px] font-medium tabular-nums", item.value === "—" && "text-muted-foreground")}>
+            <div key={item.label} className="border border-border/40 bg-surface/40 px-2 py-1 rounded-none">
+              <dt className="text-3xs uppercase font-mono tracking-wider text-muted-foreground">{item.label}</dt>
+              <dd className={cn("mt-0.5 font-mono text-xs font-semibold tabular-nums text-foreground", item.value === "—" && "text-muted-foreground")}>
                 {item.value}
               </dd>
             </div>

@@ -14,17 +14,20 @@ export default function WatchlistPage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <main id="main" className="mx-auto w-full max-w-[1920px] px-2.5 py-6 sm:px-4 lg:px-6">
-        <div className="max-w-2xl">
-          <Eyebrow icon={Star}>Watchlist</Eyebrow>
-          <h1 className="mt-4 text-balance text-4xl sm:text-5xl">
-            Your companies, listed and unlisted
-          </h1>
-          <p className="mt-3 text-muted-foreground">
-            One list for NSE stocks and pre-IPO names. Add a company from its page, then set a price alert on it.
-          </p>
+      <main id="main" className="w-full px-2 py-3 sm:px-3 lg:px-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-2">
+          <div className="flex flex-wrap items-baseline gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-serif font-bold tracking-tight text-foreground flex items-center gap-2">
+              <Star className="h-4 w-4 text-gold" />
+              <span>Institutional Watchlist &amp; Tracking Portfolio</span>
+            </h1>
+            <span className="text-border">|</span>
+            <span className="text-2xs font-mono text-muted-foreground">
+              Unified Tracking for Listed NSE Equities, OTC Unlisted &amp; Pre-IPO Issues
+            </span>
+          </div>
         </div>
-        <div className="mt-8">
+        <div className="mt-3">
           <WatchlistView />
         </div>
       </main>

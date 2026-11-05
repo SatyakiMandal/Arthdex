@@ -30,21 +30,17 @@ export default async function OrderflowPage({ searchParams }: PageProps) {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <main id="main" className="mx-auto w-full max-w-[1920px] px-2.5 py-4 sm:px-4 lg:px-6">
-        <Eyebrow icon={isDeals ? ArrowLeftRight : Activity}>
-          {isDeals ? "INSTITUTIONAL DISCLOSURES" : "ORDER FLOW"}
-        </Eyebrow>
-
-        <div className="mt-2 flex flex-wrap items-baseline justify-between gap-4 border-b border-border/70 pb-4">
-          <div>
-            <h1 className="text-balance text-3xl font-semibold tracking-tight">
-              {isDeals ? "Bulk & Block Deals" : "Participation, Liquidity and Aggression"}
+      <main id="main" className="w-full px-2 py-3 sm:px-3 lg:px-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-2">
+          <div className="flex flex-wrap items-baseline gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-serif font-bold tracking-tight text-foreground flex items-center gap-2">
+              {isDeals ? <ArrowLeftRight className="h-4 w-4 text-gold" /> : <Activity className="h-4 w-4 text-accent" />}
+              <span>{isDeals ? "Institutional Bulk & Block Deals" : "Order Flow & Microstructure Workbench"}</span>
             </h1>
-            <p className="mt-1 max-w-3xl text-sm text-muted-foreground leading-relaxed">
-              {isDeals
-                ? "Large institutional trades disclosed directly by the exchange: bulk deals, block windows, and short-selling disclosures with net positioning."
-                : "Volume profile, delta, CVD, footprint, absorption and large volume, with gamma, delta and theta exposure, open interest and 0DTE from listed options."}
-            </p>
+            <span className="text-border">|</span>
+            <span className="text-2xs font-mono text-muted-foreground">
+              {isDeals ? "Direct Exchange Window Large-Lot Disclosures" : "Volume Profile, CVD, Footprint & Net Dealer Gamma Exposure"}
+            </span>
           </div>
 
           {/* Unified Desk View Switcher */}
@@ -77,7 +73,7 @@ export default async function OrderflowPage({ searchParams }: PageProps) {
         </div>
 
         {isDeals ? (
-          <div className="mt-6">
+          <div className="mt-3">
             {dealsResult && dealsResult.ok ? (
               <>
                 <div className="mb-4 flex justify-end">
@@ -95,7 +91,7 @@ export default async function OrderflowPage({ searchParams }: PageProps) {
           </div>
         ) : (
           <>
-            <div className="mt-4 rounded-none border border-primary/30 bg-primary/5 p-3.5 text-xs text-muted-foreground flex items-start gap-2.5">
+            <div className="mt-2.5 rounded-none border border-primary/30 bg-primary/5 p-3.5 text-xs text-muted-foreground flex items-start gap-2.5">
               <Info className="h-4 w-4 shrink-0 text-primary mt-0.5" />
               <div className="space-y-0.5">
                 <span className="font-semibold text-foreground text-2xs uppercase tracking-wider">
@@ -107,7 +103,7 @@ export default async function OrderflowPage({ searchParams }: PageProps) {
               </div>
             </div>
 
-            <div className="mt-6">
+            <div className="mt-3">
               <OrderflowWorkbench symbol="NQ" market="futures" selectable />
             </div>
           </>

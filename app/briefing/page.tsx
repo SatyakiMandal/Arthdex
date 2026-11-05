@@ -104,17 +104,22 @@ export default async function BriefingPage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <main id="main" className="mx-auto w-full max-w-[1920px] px-2.5 py-6 sm:px-4 lg:px-6">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div className="max-w-2xl">
-            <Eyebrow icon={Sunrise}>Morning briefing</Eyebrow>
-            <h1 className="mt-4 text-balance text-4xl sm:text-5xl">{dateLabel}</h1>
-            <p className="mt-3 text-pretty text-muted-foreground">{headline}</p>
+      <main id="main" className="w-full px-2 py-3 sm:px-3 lg:px-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-2">
+          <div className="flex flex-wrap items-baseline gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-serif font-bold tracking-tight text-foreground flex items-center gap-2">
+              <Sunrise className="h-4 w-4 text-gold" />
+              <span>Morning Executive Briefing · {dateLabel}</span>
+            </h1>
+            <span className="text-border">|</span>
+            <span className="text-2xs font-mono text-muted-foreground">
+              {headline}
+            </span>
           </div>
           <CopyText text={lines.join("\n")} />
         </div>
 
-        <div className="mt-8 grid gap-4 md:grid-cols-2 print:block print:space-y-3">
+        <div className="mt-3 grid gap-3 md:grid-cols-2 print:block print:space-y-3">
           <Block title="Indices" href="/market-watch">
             {indices.ok ? (
               <ul className="divide-y divide-border/60">

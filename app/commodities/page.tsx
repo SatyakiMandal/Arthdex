@@ -109,15 +109,22 @@ export default async function CommoditiesPage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <main id="main" className="mx-auto w-full max-w-[1920px] px-2.5 py-6 sm:px-4 lg:px-6">
-        <Eyebrow icon={Coins}>Commodities</Eyebrow>
-        <h1 className="mt-4 text-balance text-4xl sm:text-5xl">Metals, energy &amp; agriculture</h1>
-        <p className="mt-3 max-w-2xl text-muted-foreground">
-          The commodity prices that move Indian earnings and inflation, next to the Nifty indices that trade them.
-        </p>
+      <main id="main" className="w-full px-2 py-3 sm:px-3 lg:px-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-2">
+          <div className="flex flex-wrap items-baseline gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-serif font-bold tracking-tight text-foreground flex items-center gap-2">
+              <Coins className="h-4 w-4 text-gold" />
+              <span>Commodities Desk · Metals, Energy &amp; Rupee</span>
+            </h1>
+            <span className="text-border">|</span>
+            <span className="text-2xs font-mono text-muted-foreground">
+              Key Raw Material Inputs, Inflation Drivers &amp; Sectoral Sensitivity
+            </span>
+          </div>
+        </div>
 
         {related.length > 0 ? (
-          <div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
             {related.map((i) => (
               <div key={i.id} className="rounded-none border border-border bg-surface px-4 py-3">
                 <p className="text-2xs text-muted-foreground">{i.name}</p>

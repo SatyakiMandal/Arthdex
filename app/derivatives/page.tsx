@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Sigma } from "lucide-react";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { Eyebrow } from "@/components/ui/eyebrow";
@@ -42,16 +43,24 @@ export default async function DerivativesPage({ searchParams }: PageProps) {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <main id="main" className="mx-auto w-full max-w-[1920px] px-2.5 py-6 sm:px-4 lg:px-6">
-        <Eyebrow>Markets</Eyebrow>
-        <h1 className="mt-4 text-balance text-4xl sm:text-5xl">Derivatives</h1>
-        <p className="mt-3 max-w-2xl text-muted-foreground">
-          Where option writers are positioned, what the market is pricing in, and which F&amp;O stocks are seeing fresh long or short positions today.
-        </p>
+      <main id="main" className="w-full px-2 py-3 sm:px-3 lg:px-4">
+        {/* Bloomberg Top Command Ribbon */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-2">
+          <div className="flex flex-wrap items-baseline gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-serif font-bold tracking-tight text-foreground flex items-center gap-2">
+              <Sigma className="h-4 w-4 text-accent" />
+              <span>Derivatives &amp; F&amp;O Desk</span>
+            </h1>
+            <span className="text-border">|</span>
+            <span className="text-2xs font-mono text-muted-foreground">
+              Institutional Option Chains, Strike Walls, Open Interest Buildup &amp; MWPL Ban
+            </span>
+          </div>
+        </div>
 
-        <section aria-labelledby="chain" className="mt-12">
+        <section aria-labelledby="chain" className="mt-3">
           <SectionHead id="chain" title={`Option chain${isIndex ? "" : `: ${symbol}`}`} note="NSE, delayed 15 minutes" />
-          <nav aria-label="Underlying" className="mt-5 flex flex-wrap items-center gap-2">
+          <nav aria-label="Underlying" className="mt-2.5 flex flex-wrap items-center gap-2">
             {INDICES.map((i) => (
               <Link
                 key={i.id}
@@ -76,7 +85,7 @@ export default async function DerivativesPage({ searchParams }: PageProps) {
               />
             </form>
           </nav>
-          <div className="mt-6">
+          <div className="mt-3">
             {chain ? (
               <>
                 <OptionChainView chain={chain.data} />
@@ -88,9 +97,9 @@ export default async function DerivativesPage({ searchParams }: PageProps) {
           </div>
         </section>
 
-        <section aria-labelledby="buildup" className="mt-16">
+        <section aria-labelledby="buildup" className="mt-4">
           <SectionHead id="buildup" title="F&O build-up" note="Price and open interest, today" />
-          <div className="mt-6">
+          <div className="mt-3">
             {buildUp ? (
               <>
                 <BuildUpView data={buildUp.data} />
@@ -102,13 +111,13 @@ export default async function DerivativesPage({ searchParams }: PageProps) {
           </div>
         </section>
         {fnoBan && fnoBan.ok ? (
-          <section aria-labelledby="fnoban" className="mt-16">
+          <section aria-labelledby="fnoban" className="mt-4">
             <SectionHead
               id="fnoban"
               title="F&O Ban List & MWPL Tracker"
               note="Banned from fresh positions at 95% MWPL"
             />
-            <div className="mt-6">
+            <div className="mt-3">
               <FnoBanTracker banData={fnoBan.data} />
               <SourceLine meta={fnoBan.meta} className="mt-4" />
             </div>
@@ -116,13 +125,13 @@ export default async function DerivativesPage({ searchParams }: PageProps) {
         ) : null}
 
         {earningsMoves && earningsMoves.ok ? (
-          <section aria-labelledby="earningsmoves" className="mt-16">
+          <section aria-labelledby="earningsmoves" className="mt-4">
             <SectionHead
               id="earningsmoves"
               title="Pre-Earnings Implied Move Tracker"
               note="ATM straddle expected post-results move"
             />
-            <div className="mt-6">
+            <div className="mt-3">
               <EarningsImpliedMoves initialData={earningsMoves.data} />
               <SourceLine meta={earningsMoves.meta} className="mt-4" />
             </div>

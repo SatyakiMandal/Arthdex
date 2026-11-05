@@ -83,16 +83,17 @@ export default async function ResultsPage({ searchParams }: PageProps) {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <main id="main" className="mx-auto w-full max-w-[1920px] px-2.5 py-6 sm:px-4 lg:px-6">
-        <Eyebrow icon={FileBarChart}>MARKETS</Eyebrow>
-        <div className="mt-2 flex flex-wrap items-baseline justify-between gap-4 border-b border-border/70 pb-4">
-          <div>
-            <h1 className="text-balance text-3xl sm:text-4xl font-serif tracking-tight text-foreground">
-              Earnings &amp; Results Desk
+      <main id="main" className="w-full px-2 py-3 sm:px-3 lg:px-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-2">
+          <div className="flex flex-wrap items-baseline gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-serif font-bold tracking-tight text-foreground flex items-center gap-2">
+              <FileBarChart className="h-4 w-4 text-accent" />
+              <span>Earnings &amp; Catalysts Command Desk</span>
             </h1>
-            <p className="mt-1 max-w-3xl text-xs text-muted-foreground leading-relaxed">
-              Unified command center for Indian corporate earnings: quarterly vetted scorecards, 30-day board meetings &amp; corporate actions schedule, and derivatives implied volatility moves.
-            </p>
+            <span className="text-border">|</span>
+            <span className="text-2xs font-mono text-muted-foreground">
+              Vetted Scorecards, Upcoming Board Meetings, Index Rebalances &amp; Implied Straddle Volatility
+            </span>
           </div>
 
           {/* Unified Desk View Switcher */}
@@ -276,7 +277,7 @@ export default async function ResultsPage({ searchParams }: PageProps) {
                         {!d.upcoming.length ? <p className="text-xs text-muted-foreground">No results meetings scheduled in the snapshot set.</p> : null}
                       </section>
                     </div>
-                    <SourceLine meta={res.meta} className="mt-6" />
+                    <SourceLine meta={res.meta} className="mt-3" />
                   </>
                 );
               })()

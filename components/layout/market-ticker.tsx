@@ -35,7 +35,7 @@ export async function MarketTicker() {
     const down = result.status === 0;
     return (
       <div role="status" className={cn("w-full border-b px-4 py-1.5 text-xs", down ? "border-flat/30 bg-flat/10 text-foreground" : "border-border bg-background text-muted-foreground")}>
-        <div className="mx-auto flex w-full max-w-[1920px] flex-wrap items-center gap-x-3 gap-y-0.5">
+        <div className="flex w-full flex-wrap items-center gap-x-3 gap-y-0.5 px-2 sm:px-3">
           <span className="font-medium">{down ? "Data service offline. Live figures will not load." : "Index feed unavailable."}</span>
           <span className="text-muted-foreground">{down ? "Start it with npm run dev, which runs the site and the data service together." : result.message}</span>
           <Link href="/status" className="ml-auto font-medium text-accent underline-offset-4 hover:underline">Data status</Link>

@@ -67,24 +67,24 @@ export default async function LiveMarketPage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <main id="main" className="mx-auto w-full max-w-[1920px] px-2.5 py-4 sm:px-3 lg:px-4">
-        <Eyebrow>REAL-TIME MARKET ACTION</Eyebrow>
-        <div className="mt-2 flex flex-wrap items-baseline justify-between gap-4 border-b border-border/60 pb-4">
-          <div>
-            <h1 className="text-balance text-3xl sm:text-4xl font-serif tracking-tight text-foreground flex items-center gap-3">
+      <main id="main" className="w-full px-2 py-2.5 sm:px-3 lg:px-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-2">
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-serif font-bold tracking-tight text-foreground flex items-center gap-2.5">
               <span>Live Market Cockpit</span>
-              <span className="flex h-2.5 w-2.5 relative">
+              <span className="flex h-2 w-2 relative">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-none bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-none h-2.5 w-2.5 bg-emerald-500"></span>
+                <span className="relative inline-flex rounded-none h-2 w-2 bg-emerald-500"></span>
               </span>
             </h1>
-            <p className="mt-1 max-w-4xl text-xs text-muted-foreground leading-relaxed">
-              Institutional mission-control radar: real-time advance/decline breadth, sector capital flow treemap, institutional block consolidation, volume distribution, and live exchange ticks with zero synthetic interpolation.
+            <span className="hidden sm:inline-block text-border">|</span>
+            <p className="hidden sm:inline-block text-2xs font-mono text-muted-foreground">
+              Institutional mission-control radar · Real-time whole-market breadth & tick streaming
             </p>
           </div>
         </div>
 
-        <div className="mt-4">
+        <div className="mt-2.5">
           <LiveMarketCockpit
             initialPulse={initialPulse}
             initialIndices={initialIndices}

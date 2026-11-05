@@ -182,7 +182,7 @@ export function HeaderBar() {
 
   return (
     <div className="chrome border-b border-border">
-      <div className="mx-auto flex h-14 w-full max-w-[1920px] items-stretch gap-2 px-2.5 sm:gap-3 sm:px-4 lg:px-6">
+      <div className="flex h-12 w-full items-stretch gap-2 px-2 sm:gap-3 sm:px-3 lg:px-4">
         <Link href="/" className="flex shrink-0 items-center">
           <Logo />
         </Link>
