@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import type { ApiBuildUp, ApiFlows, ApiFnoBan, ApiIndex, ApiOptionChain, ApiPulse } from "@/lib/api/types";
 import { LiveVolumeProfile } from "./live-volume-profile";
 import { MacroMarketRadar } from "./macro-market-radar";
+import { TickerTapeRibbon } from "./ticker-tape-ribbon";
 
 interface LiveMarketCockpitProps {
   initialPulse: ApiPulse;
@@ -108,7 +109,11 @@ export function LiveMarketCockpit({
   const [countdown, setCountdown] = useState<number>(5);
   const [marketStatus, setMarketStatus] = useState(getMarketSession());
   const prevPricesRef = useRef<Map<string, number>>(new Map());
+  const prevVolumesRef = useRef<Map<string, number>>(new Map());
   const [priceTicks, setPriceTicks] = useState<Map<string, "up" | "down">>(new Map());
+  const [volumeTicks, setVolumeTicks] = useState<Set<string>>(new Set());
+  const [tickCount, setTickCount] = useState<number>(1);
+  const [justSynced, setJustSynced] = useState<boolean>(false);
   const [lastSyncTime, setLastSyncTime] = useState<string>(() =>
     new Date().toLocaleTimeString("en-IN", {
       hour: "2-digit",
@@ -155,10 +160,26 @@ export function LiveMarketCockpit({
               }
               prevPricesRef.current.set(s.symbol, s.last);
             });
+            const newVolTicks = new Set<string>();
+            json.data.stocks.forEach((s: any) => {
+              const prevV = prevVolumesRef.current.get(s.symbol);
+              if (prevV !== undefined && s.volume && s.volume > prevV) {
+                newVolTicks.add(s.symbol);
+              }
+              if (s.volume) prevVolumesRef.current.set(s.symbol, s.volume);
+            });
+
             if (newTicks.size > 0) {
               setPriceTicks(newTicks);
-              setTimeout(() => setPriceTicks(new Map()), 1200);
+              setTimeout(() => setPriceTicks(new Map()), 1500);
             }
+            if (newVolTicks.size > 0) {
+              setVolumeTicks(newVolTicks);
+              setTimeout(() => setVolumeTicks(new Set()), 1500);
+            }
+            setTickCount((prev) => prev + 1);
+            setJustSynced(true);
+            setTimeout(() => setJustSynced(false), 900);
           }
           setPulse(json.data);
           setLastSyncTime(
@@ -310,8 +331,9 @@ export function LiveMarketCockpit({
                 <Radio className="h-3 w-3 text-accent animate-pulse" /> Sync:
               </span>
               {[
+                { sec: 3, label: "3s Live" },
+                { sec: 5, label: "5s" },
                 { sec: 10, label: "10s" },
-                { sec: 15, label: "15s" },
                 { sec: 30, label: "30s" },
                 { sec: 0, label: "Pause" },
               ].map((opt) => (
@@ -344,6 +366,9 @@ export function LiveMarketCockpit({
             </button>
           </div>
         </div>
+
+        {/* Bloomberg-Grade Compact Multi-Ticker Tape Ribbon (UX-01) */}
+        <TickerTapeRibbon indices={indices} />
 
         {/* Master Navigation Switcher: Whole Market Radar vs TradingView Volume Profile */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5">
@@ -402,6 +427,9 @@ export function LiveMarketCockpit({
             flows={flows}
             optionChain={optionChain}
             priceTicks={priceTicks}
+            volumeTicks={volumeTicks}
+            tickCount={tickCount}
+            justSynced={justSynced}
             lastSyncTime={lastSyncTime}
             countdown={countdown}
             isSyncing={loading}

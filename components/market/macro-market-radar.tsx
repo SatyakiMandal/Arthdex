@@ -44,6 +44,9 @@ interface MacroMarketRadarProps {
   flows?: ApiFlows | null;
   optionChain?: ApiOptionChain | null;
   priceTicks?: Map<string, "up" | "down">;
+  volumeTicks?: Set<string>;
+  tickCount?: number;
+  justSynced?: boolean;
   lastSyncTime?: string;
   countdown?: number;
   isSyncing?: boolean;
@@ -83,6 +86,9 @@ export function MacroMarketRadar({
   flows = null,
   optionChain = null,
   priceTicks,
+  volumeTicks,
+  tickCount = 1,
+  justSynced = false,
   lastSyncTime,
   countdown,
   isSyncing,
@@ -937,14 +943,16 @@ export function MacroMarketRadar({
                 <span className={cn("animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75", isSyncing && "bg-gold")} />
                 <span className={cn("relative inline-flex rounded-full h-2 w-2 bg-emerald-500", isSyncing && "bg-gold")} />
               </span>
-              <span className="text-3xs font-mono font-bold text-foreground">
-                {isSyncing ? "SYNCING..." : "LIVE FEED"}
+              <span className="text-3xs font-mono font-bold text-foreground flex items-center gap-1">
+                {isSyncing ? "FETCHING..." : justSynced ? (
+                  <span className="text-gold font-extrabold animate-pulse">⚡ TICK #{tickCount}</span>
+                ) : (
+                  <span>LIVE #{tickCount}</span>
+                )}
               </span>
-              {lastSyncTime && (
-                <span className="text-3xs font-mono text-muted-foreground">
-                  · {lastSyncTime} ({countdown ?? 5}s)
-                </span>
-              )}
+              <span className="text-3xs font-mono text-muted-foreground hidden sm:inline">
+                · NSE: <strong className="text-foreground">{pulse.asOf}</strong> ({countdown ?? 5}s)
+              </span>
               {onManualSync && (
                 <button
                   onClick={onManualSync}
@@ -1694,14 +1702,30 @@ export function MacroMarketRadar({
                         <td className="p-1.5 text-right text-foreground font-bold">
                           {s.turnoverCr ? fmtINR(s.turnoverCr, "₹") : "—"}
                         </td>
-                        <td className="p-1.5 text-right text-muted-foreground text-3xs">
-                          {s.volume ? fmtCompact(s.volume) : "—"}
-                        </td>
-                        {/* Day Range Mini-Bar */}
+                        {(() => {
+                          const hasVolTick = volumeTicks?.has(s.symbol);
+                          return (
+                            <td
+                              className={cn(
+                                "p-1.5 text-right text-3xs font-mono transition-colors",
+                                hasVolTick
+                                  ? "animate-tick-up text-gold font-bold bg-gold/15"
+                                  : "text-muted-foreground",
+                              )}
+                            >
+                              {s.volume ? fmtCompact(s.volume) : "—"}
+                            </td>
+                          );
+                        })()}
+                        {/* Day Range Mini-Bar with Live Pulsing Radar */}
                         <td className="p-1.5 text-center w-20">
-                          <div className="relative h-1 w-16 bg-muted mx-auto rounded-none overflow-hidden">
+                          <div className="relative h-1.5 w-16 bg-muted mx-auto rounded-none overflow-hidden">
                             <div
                               className="absolute top-0 bottom-0 bg-accent h-full w-1"
+                              style={{ left: `${Math.max(0, Math.min(95, rangePos))}%` }}
+                            />
+                            <span
+                              className="absolute top-1/2 -translate-y-1/2 -ml-1 h-2 w-2 rounded-full bg-accent animate-ping opacity-60"
                               style={{ left: `${Math.max(0, Math.min(95, rangePos))}%` }}
                             />
                           </div>
