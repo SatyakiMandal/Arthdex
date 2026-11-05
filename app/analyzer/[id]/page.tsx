@@ -23,7 +23,7 @@ export default async function RunPage({ params }: Props) {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <main id="main" className="mx-auto max-w-[1800px] px-3 py-6 sm:px-5">
+      <main id="main" className="w-full max-w-[1920px] px-2 pt-1 pb-3 sm:px-3 lg:px-4">
         <RunView initial={run} />
       </main>
       <SiteFooter />

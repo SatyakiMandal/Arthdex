@@ -19,7 +19,7 @@ export function RunStatusPill({ status }: { status: RunStatus }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-none border px-2 py-0.5 font-mono text-2xs uppercase tracking-wider",
+        "inline-flex items-center rounded-none border px-1.5 py-0.2 font-mono text-3xs uppercase tracking-wider",
         TONE[status],
       )}
     >
@@ -62,7 +62,7 @@ export function RunList({
 
   if (runs.length === 0) {
     return (
-      <p className="rounded-none border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
+      <p className="rounded-none border border-dashed border-border px-3 py-4 text-center font-mono text-2xs text-muted-foreground">
         {empty}
       </p>
     );
@@ -73,65 +73,65 @@ export function RunList({
   return (
     <div>
       {deletable && unsuccessful > 1 ? (
-        <div className="mb-3 flex justify-end">
+        <div className="mb-2 flex justify-end">
           <button
             type="button"
             disabled={busy}
             onClick={() => call("/api/analyzer/runs/clear-unsuccessful", "POST")}
-            className="inline-flex h-8 items-center gap-1.5 rounded-none border border-border px-3 text-2xs text-muted-foreground hover:bg-surface-muted hover:text-foreground disabled:opacity-50"
+            className="inline-flex h-6 items-center gap-1 rounded-none border border-border px-2 font-mono text-3xs uppercase tracking-wider text-muted-foreground hover:bg-surface-muted hover:text-foreground disabled:opacity-50"
           >
-            <Trash2 className="h-3 w-3" /> Clear {unsuccessful} failed &amp; cancelled
+            <Trash2 className="h-2.5 w-2.5" /> Clear {unsuccessful} failed &amp; cancelled
           </button>
         </div>
       ) : null}
       {error ? (
-        <p role="alert" className="mb-3 rounded-none border border-down/40 bg-down/10 px-3 py-2 text-2xs text-down">
+        <p role="alert" className="mb-2 rounded-none border border-down/40 bg-down/10 px-2.5 py-1 font-mono text-3xs text-down">
           {error}
         </p>
       ) : null}
-      <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
         {runs.map((r) => (
           <li key={r.id} className="relative">
             <Link
               href={`/analyzer/${r.id}`}
-              className="group flex h-full flex-col rounded-none border border-border bg-surface p-4 transition-colors hover:border-accent/50"
+              className="group flex h-full flex-col rounded-none border border-border bg-surface p-2.5 transition-colors hover:border-accent/50 cell-glow"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold tracking-tight">{r.company}</p>
-                  <p className="mt-0.5 font-mono text-2xs text-muted-foreground">
+                  <p className="truncate text-xs font-bold font-mono tracking-tight text-foreground">{r.company}</p>
+                  <p className="mt-0.5 font-mono text-3xs text-muted-foreground">
                     {r.ticker ?? "Unlisted"} · {r.start} → {r.end}
                   </p>
                 </div>
                 <RunStatusPill status={r.status} />
               </div>
-              <div className="mt-3 flex items-center justify-between text-2xs text-muted-foreground">
+              <div className="mt-2 flex items-center justify-between font-mono text-3xs text-muted-foreground">
                 <span>{r.kind === "unlisted" ? "Unlisted price-move study" : "Full event-impact report"}</span>
-                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:text-accent" />
+                <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5 group-hover:text-accent" />
               </div>
               {r.status === "FAILED" && r.error ? (
-                <p className="mt-2 line-clamp-2 text-2xs text-down">{r.error}</p>
+                <p className="mt-1.5 line-clamp-2 font-mono text-3xs text-down">{r.error}</p>
               ) : null}
-              {deletable && FINISHED.includes(r.status) ? <div className="h-7" aria-hidden /> : null}
+              {deletable && FINISHED.includes(r.status) ? <div className="h-6" aria-hidden /> : null}
             </Link>
 
             {deletable && FINISHED.includes(r.status) ? (
-              <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
+              <div className="absolute bottom-2 right-2 flex items-center gap-1 font-mono">
                 {confirming === r.id ? (
                   <>
-                    <span className="text-2xs text-muted-foreground">Delete this analysis?</span>
+                    <span className="text-3xs text-muted-foreground">Delete?</span>
                     <button
                       type="button"
                       disabled={busy}
                       onClick={() => call(`/api/analyzer/runs/${r.id}`, "DELETE")}
-                      className="h-7 rounded-none border border-down/40 bg-down/10 px-2 text-2xs font-medium text-down hover:bg-down/20 disabled:opacity-50"
+                      className="h-5 rounded-none border border-down/40 bg-down/10 px-1.5 text-3xs font-bold text-down hover:bg-down/20 disabled:opacity-50"
                     >
                       Delete
                     </button>
                     <button
                       type="button"
                       onClick={() => setConfirming(null)}
-                      className="h-7 rounded-none border border-border px-2 text-2xs text-muted-foreground hover:bg-surface-muted"
+                      className="h-5 rounded-none border border-border px-1.5 text-3xs text-muted-foreground hover:bg-surface-muted"
                     >
                       Keep
                     </button>
@@ -142,9 +142,9 @@ export function RunList({
                     aria-label={`Delete analysis of ${r.company}`}
                     title="Delete this analysis (the company's scraped news is kept)"
                     onClick={() => setConfirming(r.id)}
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-none border border-border text-muted-foreground hover:border-down/40 hover:text-down"
+                    className="inline-flex h-5 w-5 items-center justify-center rounded-none border border-border text-muted-foreground hover:border-down/40 hover:text-down"
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
+                    <Trash2 className="h-2.5 w-2.5" />
                   </button>
                 )}
               </div>
@@ -153,7 +153,7 @@ export function RunList({
         ))}
       </ul>
       {deletable ? (
-        <p className="mt-3 text-2xs text-muted-foreground">
+        <p className="mt-2 font-mono text-3xs text-muted-foreground">
           Deleting removes the report, workbook and results for that run only. Scraped news for each company is
           kept and reused by later runs.
         </p>

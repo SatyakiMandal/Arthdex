@@ -54,7 +54,7 @@ export function CalendarView({ calendar }: { calendar: ApiCalendar }) {
 
   const views = [
     { id: "results" as const, label: `Results (${resultsCount})` },
-    { id: "meetings" as const, label: `All board meetings (${calendar.meetings.length})` },
+    { id: "meetings" as const, label: `All meetings (${calendar.meetings.length})` },
     { id: "actions" as const, label: `Corporate actions (${calendar.actions.length})` },
   ];
 
@@ -74,11 +74,11 @@ export function CalendarView({ calendar }: { calendar: ApiCalendar }) {
     [calendar.actions, kind, q],
   );
 
-  const label = "mb-1.5 block text-2xs font-medium text-muted-foreground";
+  const label = "mb-1 block text-3xs font-mono font-bold uppercase tracking-wider text-muted-foreground";
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-end gap-x-5 gap-y-4 rounded-none border border-border bg-surface p-4">
+    <div className="space-y-2.5">
+      <div className="flex flex-wrap items-end gap-x-4 gap-y-2 rounded-none border border-border bg-surface p-2.5">
         <div>
           <span className={label}>Show</span>
           <SegmentedControl options={views} value={view} onChange={setView} layoutGroupId="cal-view" />
@@ -94,13 +94,13 @@ export function CalendarView({ calendar }: { calendar: ApiCalendar }) {
             Company
           </label>
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <input
               id="cal-search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Name or symbol"
-              className="h-9 w-full rounded-none border border-border bg-surface-muted pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-accent/60"
+              className="h-7 w-full rounded-none border border-border bg-surface-muted pl-8 pr-2 font-mono text-2xs outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-accent"
             />
           </div>
         </div>
@@ -123,23 +123,23 @@ export function CalendarView({ calendar }: { calendar: ApiCalendar }) {
         actions.length === 0 ? (
           <Empty />
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {groupByDate(actions, (a) => a.exDate).map(([date, rows]) => (
               <section key={date} className="overflow-hidden rounded-none border border-border bg-surface">
-                <h2 className="border-b border-border bg-surface-muted/40 px-4 py-2 text-xs font-semibold">
+                <h2 className="border-b border-border bg-surface-muted/60 px-3 py-1 font-mono text-2xs font-bold uppercase tracking-wider text-foreground">
                   Ex-date {dayLabel(date || null)}
                 </h2>
                 <ul className="divide-y divide-border/60">
                   {rows.map((a, i) => (
-                    <li key={`${a.symbol}-${i}`} className="flex flex-wrap items-center justify-between gap-3 px-3 py-1.5">
+                    <li key={`${a.symbol}-${i}`} className="flex flex-wrap items-center justify-between gap-2 px-2.5 py-1 cell-glow hover:bg-surface-muted/40 transition-colors">
                       <div className="min-w-0">
-                        <Link href={`/company/${a.symbol}`} className="font-mono text-xs font-semibold hover:text-accent">
+                        <Link href={`/company/${a.symbol}`} className="font-mono text-xs font-bold hover:text-accent">
                           {a.symbol}
                         </Link>
-                        <span className="ml-2 text-2xs text-muted-foreground">{a.name}</span>
-                        <p className="mt-0.5 text-sm">{a.subject}</p>
+                        <span className="ml-2 font-mono text-3xs text-muted-foreground">{a.name}</span>
+                        <p className="mt-0.5 text-xs text-foreground/90 font-mono">{a.subject}</p>
                       </div>
-                      <span className={cn("rounded-none border px-1.5 py-0.5 font-mono text-3xs font-bold uppercase tracking-wider", KIND_TONE[a.kind])}>{a.kind}</span>
+                      <span className={cn("rounded-none border px-1.5 py-0.2 font-mono text-3xs font-bold uppercase tracking-wider", KIND_TONE[a.kind])}>{a.kind}</span>
                     </li>
                   ))}
                 </ul>
@@ -150,23 +150,23 @@ export function CalendarView({ calendar }: { calendar: ApiCalendar }) {
       ) : meetings.length === 0 ? (
         <Empty />
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {groupByDate(meetings, (m) => m.date).map(([date, rows]) => (
             <section key={date} className="overflow-hidden rounded-none border border-border bg-surface">
-              <h2 className="border-b border-border bg-surface-muted/40 px-4 py-2 text-xs font-semibold">
-                {dayLabel(date || null)} <span className="font-normal text-muted-foreground">· {rows.length}</span>
+              <h2 className="border-b border-border bg-surface-muted/60 px-3 py-1 font-mono text-2xs font-bold uppercase tracking-wider text-foreground">
+                {dayLabel(date || null)} <span className="font-normal text-muted-foreground font-mono">· {rows.length}</span>
               </h2>
               <ul className="divide-y divide-border/60">
                 {rows.map((m, i) => (
-                  <li key={`${m.symbol}-${i}`} className="px-3 py-1.5">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Link href={`/company/${m.symbol}`} className="font-mono text-xs font-semibold hover:text-accent">
+                  <li key={`${m.symbol}-${i}`} className="px-2.5 py-1 cell-glow hover:bg-surface-muted/40 transition-colors">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <Link href={`/company/${m.symbol}`} className="font-mono text-xs font-bold hover:text-accent">
                         {m.symbol}
                       </Link>
-                      <span className="text-2xs text-muted-foreground">{m.name}</span>
-                      {m.isResults ? <span className="rounded-none border border-accent/30 bg-accent/10 px-1.5 py-0.2 font-mono text-3xs font-bold text-accent uppercase">Results</span> : null}
+                      <span className="font-mono text-3xs text-muted-foreground">{m.name}</span>
+                      {m.isResults ? <span className="rounded-none border border-accent/30 bg-accent/10 px-1 py-0.2 font-mono text-3xs font-bold text-accent uppercase">Results</span> : null}
                     </div>
-                    <p className="mt-0.5 line-clamp-2 text-2xs text-muted-foreground">{m.purpose}{m.detail ? `: ${m.detail}` : ""}</p>
+                    <p className="mt-0.5 line-clamp-2 font-mono text-3xs text-muted-foreground">{m.purpose}{m.detail ? `: ${m.detail}` : ""}</p>
                   </li>
                 ))}
               </ul>
@@ -180,7 +180,7 @@ export function CalendarView({ calendar }: { calendar: ApiCalendar }) {
 
 function Empty() {
   return (
-    <p className="rounded-none border border-border bg-surface px-4 py-10 text-center text-sm text-muted-foreground">
+    <p className="rounded-none border border-border bg-surface px-4 py-8 text-center font-mono text-xs text-muted-foreground">
       Nothing matches those filters in the next 30 days.
     </p>
   );

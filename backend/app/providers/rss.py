@@ -12,7 +12,10 @@ import re
 from datetime import datetime, timezone
 from typing import Any
 
-import feedparser
+try:
+    import feedparser
+except ImportError:
+    feedparser = None
 
 # Business Standard's markets feed returns zero entries and is excluded.
 FEEDS: list[tuple[str, str]] = [
@@ -50,6 +53,8 @@ def _published_iso(entry: Any) -> str:
 
 
 def fetch_rss(limit_per_feed: int = 25) -> list[dict[str, Any]]:
+    if feedparser is None:
+        return []
     items: list[dict[str, Any]] = []
 
     for source, url in FEEDS:

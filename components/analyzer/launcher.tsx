@@ -157,18 +157,19 @@ export function Launcher() {
   }
 
   return (
-    <div className="rounded-none border border-border bg-surface p-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold tracking-tight">Run a new analysis</h2>
+    <div className="rounded-none border border-border bg-surface p-3 font-mono text-2xs">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-1.5">
+        <h2 className="text-2xs font-bold uppercase tracking-wider text-foreground">Initiate Event Impact Study</h2>
+        <span className="text-3xs text-muted-foreground">Scrapes 8 News Outlets · FinBERT Emotion Tags · 11 Multi-Factor Models</span>
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+      <div className="mt-2.5 grid gap-3 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <div className="relative">
-          <label htmlFor="an-company" className="text-2xs text-muted-foreground">
-            Listed or unlisted company
+          <label htmlFor="an-company" className="text-3xs uppercase tracking-wider text-muted-foreground font-semibold">
+            Target Scrip / Company Name
           </label>
-          <div className="relative mt-1.5">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <div className="relative mt-1">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <input
               id="an-company"
               role="combobox"
@@ -186,7 +187,7 @@ export function Launcher() {
               onFocus={() => setOpen(true)}
               onBlur={() => setTimeout(() => setOpen(false), 120)}
               onKeyDown={onKey}
-              className="h-10 w-full rounded-none border border-border bg-background pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-accent"
+              className="h-7 w-full rounded-none border border-border bg-background pl-8 pr-2 font-mono text-2xs outline-none transition-colors placeholder:text-muted-foreground focus:border-accent"
             />
           </div>
 
@@ -194,7 +195,7 @@ export function Launcher() {
             <ul
               id="an-listbox"
               role="listbox"
-              className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-none border border-border bg-surface-raised p-1 shadow-lg"
+              className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-none border border-border bg-surface-raised p-0.5 shadow-lg font-mono text-2xs"
             >
               {visibleHits.map((h, i) => (
                 <li
@@ -207,49 +208,49 @@ export function Launcher() {
                   }}
                   onMouseEnter={() => setActive(i)}
                   className={cn(
-                    "flex cursor-pointer items-center justify-between gap-3 rounded-none px-3 py-2 text-sm",
-                    i === active ? "bg-surface-muted" : "",
+                    "flex cursor-pointer items-center justify-between gap-2 rounded-none px-2 py-1 text-2xs",
+                    i === active ? "bg-surface-muted text-accent" : "",
                   )}
                 >
                   <span className="min-w-0">
-                    <span className="block truncate">{h.name}</span>
-                    {h.sector ? <span className="block truncate text-2xs text-muted-foreground">{h.sector}</span> : null}
+                    <span className="block truncate font-bold">{h.name}</span>
+                    {h.sector ? <span className="block truncate text-3xs text-muted-foreground">{h.sector}</span> : null}
                   </span>
                   {h.kind === "unlisted" ? (
-                    <span className="shrink-0 rounded border border-flat/40 bg-flat/10 px-1.5 py-0.5 font-mono text-2xs uppercase tracking-wide text-flat">
+                    <span className="shrink-0 rounded-none border border-gold/40 bg-gold/10 px-1 py-0.2 font-mono text-3xs uppercase tracking-wide text-gold">
                       Unlisted
                     </span>
                   ) : (
-                    <span className="shrink-0 font-mono text-2xs text-muted-foreground">{h.symbol}</span>
+                    <span className="shrink-0 font-mono text-3xs text-muted-foreground">{h.symbol}</span>
                   )}
                 </li>
               ))}
             </ul>
           ) : null}
 
-          <p className="mt-1.5 min-h-4 text-2xs text-muted-foreground">
+          <p className="mt-1 min-h-4 text-3xs text-muted-foreground font-sans">
             {searchError ? (
               <span className="text-down">{searchError}</span>
             ) : picked ? (
               kind === "listed" ? (
-                <>Will analyse <span className="font-mono">{picked.ticker}</span> against Nifty 50.</>
+                <>Will analyse <span className="font-mono font-bold text-foreground">{picked.ticker}</span> against Nifty 50 benchmark.</>
               ) : (
-                "Unlisted company. Price history comes from indicative dealer quotes, so the analysis reports revisions rather than a daily event study."
+                "Unlisted company. Price history sourced from indicative OTC dealer marks."
               )
             ) : rawTicker ? (
-              <>No match picked. Will use <span className="font-mono">{query.trim().toUpperCase()}</span> as the ticker (add .NS or .BO if needed).</>
+              <>Direct ticker: <span className="font-mono font-bold text-foreground">{query.trim().toUpperCase()}</span>.</>
             ) : !unlistedReady && query.trim().length >= 2 ? (
-              "Unlisted companies are still loading. Listed matches are shown; search again in a moment for unlisted ones."
+              "Unlisted companies loading. Showing listed matches."
             ) : (
-              "Searches all NSE-listed equities and the unlisted / pre-IPO directory."
+              "Searches all NSE-listed equities and OTC pre-IPO unlisted directory."
             )}
           </p>
         </div>
 
         <div>
           <div className="flex items-center justify-between">
-            <span className="text-2xs text-muted-foreground">Window</span>
-            <div className="flex gap-1">
+            <span className="text-3xs uppercase tracking-wider text-muted-foreground font-semibold">Observation Horizon</span>
+            <div className="flex gap-1 font-mono">
               {PRESETS.map((p) => (
                 <button
                   key={p.label}
@@ -258,21 +259,21 @@ export function Launcher() {
                     setEnd(daysAgo(0));
                     setStart(daysAgo(p.days));
                   }}
-                  className="rounded-none border border-border px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:bg-surface-muted hover:text-foreground"
+                  className="rounded-none border border-border bg-surface px-1.5 py-0.2 text-3xs text-muted-foreground transition-colors hover:bg-surface-muted hover:text-foreground"
                 >
                   {p.label}
                 </button>
               ))}
             </div>
           </div>
-          <div className="mt-1.5 grid grid-cols-2 gap-2">
+          <div className="mt-1 grid grid-cols-2 gap-2">
             <input
               type="date"
               aria-label="Start date"
               value={start}
               max={end || undefined}
               onChange={(e) => setStart(e.target.value)}
-              className="h-10 rounded-none border border-border bg-background px-3 font-mono text-sm outline-none focus:border-accent"
+              className="h-7 rounded-none border border-border bg-background px-2 font-mono text-2xs outline-none focus:border-accent"
             />
             <input
               type="date"
@@ -281,32 +282,31 @@ export function Launcher() {
               min={start || undefined}
               max={daysAgo(0)}
               onChange={(e) => setEnd(e.target.value)}
-              className="h-10 rounded-none border border-border bg-background px-3 font-mono text-sm outline-none focus:border-accent"
+              className="h-7 rounded-none border border-border bg-background px-2 font-mono text-2xs outline-none focus:border-accent"
             />
           </div>
-          <p className="mt-1.5 text-2xs text-muted-foreground">
-            {span === null ? "" : `${span} days. Between 45 and 800 days.`}
+          <p className="mt-1 text-3xs text-muted-foreground font-mono">
+            {span === null ? "" : `${span} trading days span (Minimum: 45 days, Maximum: 800 days).`}
           </p>
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-border pt-4">
+      <div className="mt-2.5 flex flex-wrap items-center gap-2.5 border-t border-border pt-2 font-mono">
         <button
           type="button"
           disabled={!ready}
           onClick={submit}
-          className="inline-flex h-10 items-center gap-2 rounded-none bg-accent px-4 text-sm font-medium text-accent-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex h-7 items-center gap-1.5 rounded-none bg-accent px-3 text-2xs font-bold uppercase tracking-wider text-accent-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
         >
-          {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-          Run full analysis
+          {submitting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3" />}
+          Run Full Event Study
         </button>
-        <p className="text-2xs text-muted-foreground">
-          Scrapes eight news sources, scores sentiment with FinBERT, then runs the event study,
-          volatility, risk, technical and valuation models. Expect several minutes.
+        <p className="text-3xs text-muted-foreground font-sans">
+          Scrapes 8 national news desks, scores sentiment with FinBERT, and generates 11 econometric validation models.
         </p>
       </div>
       {error ? (
-        <p role="alert" className="mt-3 rounded-none border border-down/40 bg-down/10 px-3 py-2 text-sm text-down">
+        <p role="alert" className="mt-2 rounded-none border border-down/40 bg-down/10 px-2.5 py-1 text-3xs text-down font-mono">
           {error}
         </p>
       ) : null}

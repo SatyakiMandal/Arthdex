@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CalendarDays, FileBarChart, Layers, Sparkles, Zap } from "lucide-react";
+import { CalendarDays, FileBarChart, Sparkles, Zap } from "lucide-react";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
-import { Eyebrow } from "@/components/ui/eyebrow";
 import { SectionHead } from "@/components/ui/section-head";
 import { DataUnavailable, SourceLine } from "@/components/ui/data-provenance";
 import { CalendarView } from "@/components/market/calendar-view";
@@ -101,7 +100,7 @@ export default async function ResultsPage({ searchParams }: PageProps) {
             <Link
               href="/results?tab=scorecard"
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 font-bold uppercase tracking-wider transition-all rounded-none",
+                "flex items-center gap-1.5 px-3 py-1 font-bold uppercase tracking-wider transition-all rounded-none",
                 tab === "scorecard"
                   ? "bg-surface text-foreground shadow-xs border border-border"
                   : "text-muted-foreground hover:text-foreground",
@@ -113,7 +112,7 @@ export default async function ResultsPage({ searchParams }: PageProps) {
             <Link
               href="/results?tab=calendar"
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 font-bold uppercase tracking-wider transition-all rounded-none",
+                "flex items-center gap-1.5 px-3 py-1 font-bold uppercase tracking-wider transition-all rounded-none",
                 tab === "calendar"
                   ? "bg-surface text-foreground shadow-xs border border-border"
                   : "text-muted-foreground hover:text-foreground",
@@ -125,7 +124,7 @@ export default async function ResultsPage({ searchParams }: PageProps) {
             <Link
               href="/results?tab=implied"
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 font-bold uppercase tracking-wider transition-all duration-150 rounded-none",
+                "flex items-center gap-1.5 px-3 py-1 font-bold uppercase tracking-wider transition-all duration-150 rounded-none",
                 tab === "implied"
                   ? "bg-surface text-foreground shadow-xs border border-border"
                   : "text-muted-foreground hover:text-foreground",
@@ -137,7 +136,7 @@ export default async function ResultsPage({ searchParams }: PageProps) {
             <Link
               href="/results?tab=catalysts"
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 font-bold uppercase tracking-wider transition-all duration-150 rounded-none",
+                "flex items-center gap-1.5 px-3 py-1 font-bold uppercase tracking-wider transition-all duration-150 rounded-none",
                 tab === "catalysts"
                   ? "bg-surface text-foreground shadow-xs border border-border"
                   : "text-muted-foreground hover:text-foreground",
@@ -151,7 +150,7 @@ export default async function ResultsPage({ searchParams }: PageProps) {
 
         {/* TAB 1: RESULTS SCORECARD */}
         {tab === "scorecard" && (
-          <div className="mt-6 animate-in fade-in-50">
+          <div className="mt-2.5 animate-in fade-in-50 space-y-2.5">
             {!res || !res.ok ? (
               <DataUnavailable title="Results season unavailable" message={res?.message ?? "Failed to load results season."} />
             ) : (
@@ -173,26 +172,26 @@ export default async function ResultsPage({ searchParams }: PageProps) {
                 ];
                 return (
                   <>
-                    <p className="max-w-3xl text-xs text-muted-foreground">
+                    <p className="max-w-3xl text-2xs text-muted-foreground font-mono">
                       {d.quarter ?? "The latest quarter"}
                       {d.season ? `, ended ${new Date(`${d.season}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}` : ""}, across
                       the Nifty 500: each company&apos;s quarter against the same quarter a year before, from Arthdex&apos;s vetted figures.
                     </p>
 
-                    <dl className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6 font-mono">
+                    <dl className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 xl:grid-cols-6 font-mono">
                       {ledger.map((l) => (
-                        <div key={l.label} className="border border-border bg-surface p-2.5 rounded-none shadow-xs">
+                        <div key={l.label} className="border border-border bg-surface p-2 rounded-none shadow-xs cell-glow">
                           <dt className="text-3xs uppercase tracking-wider text-muted-foreground">{l.label}</dt>
-                          <dd className={cn("mt-1 text-sm font-bold tabular-nums", typeof l.tone === "number" && deltaColor(l.tone))}>
+                          <dd className={cn("mt-0.5 text-xs font-bold tabular-nums", typeof l.tone === "number" && deltaColor(l.tone))}>
                             {l.value}
                           </dd>
                         </div>
                       ))}
                     </dl>
 
-                    <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,3.2fr)_minmax(0,1fr)]">
+                    <div className="mt-2.5 grid gap-3 xl:grid-cols-[minmax(0,3.2fr)_minmax(0,1fr)]">
                       <section aria-labelledby="reported">
-                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/70 pb-2">
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/70 pb-1.5">
                           <SectionHead id="reported" title="Reported Results Ledger" note="₹ crore; growth against the same quarter a year ago" />
                           <nav aria-label="Sort" className="flex flex-wrap gap-1 text-2xs font-mono">
                             {SORTS.map((o) => (
@@ -214,23 +213,23 @@ export default async function ResultsPage({ searchParams }: PageProps) {
                         </div>
 
                         {rows.length ? (
-                          <div className="mt-3 overflow-x-auto border border-border">
-                            <table className="w-full min-w-[760px] border-collapse text-xs font-mono">
+                          <div className="mt-2 overflow-x-auto border border-border">
+                            <table className="w-full min-w-[760px] border-collapse text-2xs font-mono tabular-nums">
                               <thead className="bg-surface-muted border-b border-border text-3xs text-muted-foreground uppercase tracking-wider font-semibold">
                                 <tr>
-                                  <th scope="col" className="p-2 text-left font-medium">Company</th>
-                                  <th scope="col" className="p-2 text-right font-medium">Revenue</th>
-                                  <th scope="col" className="p-2 text-right font-medium">Growth</th>
-                                  <th scope="col" className="p-2 text-right font-medium">Net profit</th>
-                                  <th scope="col" className="p-2 text-right font-medium">Growth</th>
-                                  <th scope="col" className="p-2 text-right font-medium">EPS growth</th>
-                                  <th scope="col" className="p-2 text-right font-medium">Margin change</th>
+                                  <th scope="col" className="px-2.5 py-1 text-left font-medium">Company</th>
+                                  <th scope="col" className="px-2.5 py-1 text-right font-medium">Revenue</th>
+                                  <th scope="col" className="px-2.5 py-1 text-right font-medium">Growth</th>
+                                  <th scope="col" className="px-2.5 py-1 text-right font-medium">Net profit</th>
+                                  <th scope="col" className="px-2.5 py-1 text-right font-medium">Growth</th>
+                                  <th scope="col" className="px-2.5 py-1 text-right font-medium">EPS growth</th>
+                                  <th scope="col" className="px-2.5 py-1 text-right font-medium">Margin change</th>
                                 </tr>
                               </thead>
-                              <tbody className="divide-y divide-border/60 text-2xs">
+                              <tbody className="divide-y divide-border/60">
                                 {rows.map((r) => (
                                   <tr key={r.symbol} className="hover:bg-surface-muted/50 transition-colors">
-                                    <th scope="row" className="p-2 text-left font-normal">
+                                    <th scope="row" className="px-2.5 py-1 text-left font-normal">
                                       <Link href={`/company/${r.symbol}`} className="font-bold text-foreground hover:text-accent">
                                         {r.symbol}
                                       </Link>
@@ -238,12 +237,12 @@ export default async function ResultsPage({ searchParams }: PageProps) {
                                         {r.name}
                                       </span>
                                     </th>
-                                    <td className="p-2 text-right tabular-nums">{r.revenue != null ? formatINR(r.revenue, 0) : "—"}</td>
-                                    <td className={cn("p-2 text-right tabular-nums font-bold", deltaColor(r.revenueGrowth ?? 0))}>{growth(r.revenueGrowth)}</td>
-                                    <td className="p-2 text-right tabular-nums">{r.netProfit != null ? formatINR(r.netProfit, 0) : "—"}</td>
-                                    <td className={cn("p-2 text-right tabular-nums font-bold", deltaColor(r.profitGrowth ?? 0))}>{growth(r.profitGrowth)}</td>
-                                    <td className={cn("p-2 text-right tabular-nums font-bold", deltaColor(r.epsGrowth ?? 0))}>{growth(r.epsGrowth)}</td>
-                                    <td className={cn("p-2 text-right tabular-nums font-bold", deltaColor(r.marginChange ?? 0))}>
+                                    <td className="px-2.5 py-1 text-right tabular-nums cell-glow">{r.revenue != null ? formatINR(r.revenue, 0) : "—"}</td>
+                                    <td className={cn("px-2.5 py-1 text-right tabular-nums font-bold cell-glow", deltaColor(r.revenueGrowth ?? 0))}>{growth(r.revenueGrowth)}</td>
+                                    <td className="px-2.5 py-1 text-right tabular-nums cell-glow">{r.netProfit != null ? formatINR(r.netProfit, 0) : "—"}</td>
+                                    <td className={cn("px-2.5 py-1 text-right tabular-nums font-bold cell-glow", deltaColor(r.profitGrowth ?? 0))}>{growth(r.profitGrowth)}</td>
+                                    <td className={cn("px-2.5 py-1 text-right tabular-nums font-bold cell-glow", deltaColor(r.epsGrowth ?? 0))}>{growth(r.epsGrowth)}</td>
+                                    <td className={cn("px-2.5 py-1 text-right tabular-nums font-bold cell-glow", deltaColor(r.marginChange ?? 0))}>
                                       {r.marginChange == null ? "—" : `${r.marginChange > 0 ? "+" : ""}${r.marginChange.toFixed(1)} pts`}
                                     </td>
                                   </tr>
@@ -252,12 +251,12 @@ export default async function ResultsPage({ searchParams }: PageProps) {
                             </table>
                           </div>
                         ) : (
-                          <p className="mt-4 text-sm text-muted-foreground">No company in the snapshot has reported this quarter yet.</p>
+                          <p className="mt-3 text-xs text-muted-foreground">No company in the snapshot has reported this quarter yet.</p>
                         )}
                       </section>
 
                       {/* Next to Report Sidebar */}
-                      <section aria-labelledby="upcoming" className="border border-border bg-surface p-3 rounded-none shadow-xs space-y-2">
+                      <section aria-labelledby="upcoming" className="border border-border bg-surface p-2.5 rounded-none shadow-xs space-y-1.5 font-mono">
                         <SectionHead id="upcoming" title="Next to report" />
                         {d.awaitingFigures.length ? (
                           <p className="text-3xs text-muted-foreground leading-snug">
@@ -266,7 +265,7 @@ export default async function ResultsPage({ searchParams }: PageProps) {
                         ) : null}
                         <ul className="divide-y divide-border/60 max-h-[500px] overflow-y-auto pr-1">
                           {d.upcoming.slice(0, 30).map((u) => (
-                            <li key={u.symbol} className="flex items-baseline justify-between gap-2 py-1.5 text-2xs font-mono">
+                            <li key={u.symbol} className="flex items-baseline justify-between gap-2 py-1 text-2xs font-mono">
                               <Link href={`/company/${u.symbol}`} className="min-w-0 truncate hover:text-accent font-semibold text-foreground">
                                 {u.symbol}
                               </Link>
@@ -274,10 +273,10 @@ export default async function ResultsPage({ searchParams }: PageProps) {
                             </li>
                           ))}
                         </ul>
-                        {!d.upcoming.length ? <p className="text-xs text-muted-foreground">No results meetings scheduled in the snapshot set.</p> : null}
+                        {!d.upcoming.length ? <p className="text-2xs text-muted-foreground">No results meetings scheduled in the snapshot set.</p> : null}
                       </section>
                     </div>
-                    <SourceLine meta={res.meta} className="mt-3" />
+                    <SourceLine meta={res.meta} className="mt-2" />
                   </>
                 );
               })()
@@ -287,13 +286,13 @@ export default async function ResultsPage({ searchParams }: PageProps) {
 
         {/* TAB 2: CORPORATE ACTIONS & BOARD MEETINGS CALENDAR */}
         {tab === "calendar" && (
-          <div className="mt-6 animate-in fade-in-50">
+          <div className="mt-2.5 animate-in fade-in-50">
             {!calendarData ? (
               <DataUnavailable title="Calendar unavailable" message={calendarRes && !calendarRes.ok ? calendarRes.message : "Failed to load corporate calendar."} />
             ) : (
               <div>
                 <CalendarView calendar={calendarData} />
-                {calendarRes && calendarRes.ok && <SourceLine meta={calendarRes.meta} className="mt-4" />}
+                {calendarRes && calendarRes.ok && <SourceLine meta={calendarRes.meta} className="mt-3" />}
               </div>
             )}
           </div>
@@ -301,47 +300,47 @@ export default async function ResultsPage({ searchParams }: PageProps) {
 
         {/* TAB 3: EARNINGS IMPLIED VOLATILITY MOVES */}
         {tab === "implied" && (
-          <div className="mt-6 animate-in fade-in-50 space-y-4">
-            <div className="border border-border bg-surface p-3.5 rounded-none shadow-xs">
-              <h2 className="text-base font-bold text-foreground font-mono">
+          <div className="mt-2.5 animate-in fade-in-50 space-y-2.5">
+            <div className="border border-border bg-surface p-2.5 rounded-none shadow-xs font-mono">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
                 At-The-Money Straddle Implied Volatility Moves
               </h2>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-3xs text-muted-foreground mt-0.5 font-sans">
                 Calculated as (Price(ATM CE) + Price(ATM PE)) / Spot, indicating institutional options pricing expectation for the results session.
               </p>
 
               {movesData.length === 0 ? (
-                <div className="p-8 text-center text-xs text-muted-foreground border border-border mt-3 font-mono">
+                <div className="p-6 text-center text-2xs text-muted-foreground border border-border mt-2 font-mono">
                   No upcoming results matched with active at-the-money straddles in the current cycle.
                 </div>
               ) : (
-                <div className="overflow-x-auto border border-border mt-3">
-                  <table className="w-full text-left text-xs border-collapse font-mono">
+                <div className="overflow-x-auto border border-border mt-2">
+                  <table className="w-full text-left text-2xs border-collapse font-mono tabular-nums">
                     <thead className="bg-surface-muted border-b border-border text-3xs text-muted-foreground uppercase tracking-wider font-semibold">
                       <tr>
-                        <th className="p-2">Scrip</th>
-                        <th className="p-2">Result Date</th>
-                        <th className="p-2 text-right">Spot Price (₹)</th>
-                        <th className="p-2 text-right">ATM Straddle (₹)</th>
-                        <th className="p-2 text-right">Implied Move (%)</th>
-                        <th className="p-2">Pricing Verdict</th>
+                        <th className="px-2.5 py-1">Scrip</th>
+                        <th className="px-2.5 py-1">Result Date</th>
+                        <th className="px-2.5 py-1 text-right">Spot Price (₹)</th>
+                        <th className="px-2.5 py-1 text-right">ATM Straddle (₹)</th>
+                        <th className="px-2.5 py-1 text-right">Implied Move (%)</th>
+                        <th className="px-2.5 py-1">Pricing Verdict</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-border/60 text-2xs">
+                    <tbody className="divide-y divide-border/60">
                       {movesData.map((m) => (
                         <tr key={m.symbol} className="hover:bg-surface-muted/50 transition-colors">
-                          <td className="p-2 font-bold text-foreground">
+                          <td className="px-2.5 py-1 font-bold text-foreground">
                             <Link href={`/company/${m.symbol}`} className="hover:text-accent">
                               {m.symbol}
                             </Link>
                           </td>
-                          <td className="p-2 text-muted-foreground">{m.resultDate}</td>
-                          <td className="p-2 text-right">{m.spotPrice != null ? formatINR(m.spotPrice, 2) : "—"}</td>
-                          <td className="p-2 text-right font-semibold">{m.straddleAtmPrice != null ? formatINR(m.straddleAtmPrice, 2) : "—"}</td>
-                          <td className="p-2 text-right font-bold text-gold">
+                          <td className="px-2.5 py-1 text-muted-foreground">{m.resultDate}</td>
+                          <td className="px-2.5 py-1 text-right cell-glow">{m.spotPrice != null ? formatINR(m.spotPrice, 2) : "—"}</td>
+                          <td className="px-2.5 py-1 text-right font-semibold cell-glow">{m.straddleAtmPrice != null ? formatINR(m.straddleAtmPrice, 2) : "—"}</td>
+                          <td className="px-2.5 py-1 text-right font-bold text-gold cell-glow">
                             {m.impliedMovePct ? `±${m.impliedMovePct.toFixed(2)}%` : "—"}
                           </td>
-                          <td className="p-2 text-muted-foreground">{m.pricingVerdict}</td>
+                          <td className="px-2.5 py-1 text-muted-foreground">{m.pricingVerdict}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -354,9 +353,9 @@ export default async function ResultsPage({ searchParams }: PageProps) {
 
         {/* TAB 4: CORPORATE CATALYSTS */}
         {tab === "catalysts" && (
-          <div className="mt-8 space-y-12 animate-in fade-in-50">
+          <div className="mt-2.5 space-y-4 animate-in fade-in-50">
             {/* Section 1: Index Rebalance Predictor */}
-            <section className="space-y-4">
+            <section className="space-y-2">
               <SectionHead
                 title="Index Rebalance Forecast"
                 note="Semi-annual rebalance forecasting for Nifty 50, Bank Nifty, and Nifty Next 50. Anticipates passive ETF flows."
@@ -365,7 +364,7 @@ export default async function ResultsPage({ searchParams }: PageProps) {
             </section>
 
             {/* Section 2: IPO Lock-in Expiry Calendar */}
-            <section className="space-y-4">
+            <section className="space-y-2">
               <SectionHead
                 title="IPO Anchor & Promoter Lock-in Expiries"
                 note="Anchor 30-day, Anchor 90-day, and 1-year Pre-IPO quotas with volume-relative Supply Impact Ratios."
@@ -374,7 +373,7 @@ export default async function ResultsPage({ searchParams }: PageProps) {
             </section>
 
             {/* Section 3: Tender Offer Buyback Arbitrage Desk */}
-            <section className="space-y-4">
+            <section className="space-y-2">
               <SectionHead
                 title="Buyback Arbitrage & Small Shareholder Quota"
                 note="SEBI 15% retail reserved tender quota under ₹2,00,000 threshold with acceptance ratio payoff curves."

@@ -216,7 +216,7 @@ export default async function PortfolioPage() {
           </div>
         </div>
 
-        <div className="mt-3">
+        <div className="mt-2">
           <PortfolioTerminal initialAnalysis={initialData} />
         </div>
       </main>

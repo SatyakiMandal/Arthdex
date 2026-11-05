@@ -13,7 +13,7 @@ const POLL_MS = 2500;
 const ACTIVE = ["QUEUED", "RUNNING"];
 
 const BTN =
-  "inline-flex h-9 items-center gap-1.5 rounded-none border border-border bg-surface px-3 text-sm hover:bg-surface-muted";
+  "inline-flex h-7 items-center gap-1 rounded-none border border-border bg-surface px-2 font-mono text-2xs uppercase tracking-wider hover:bg-surface-muted transition-colors";
 
 function elapsed(from: string | null, now: number): string {
   if (!from) return "0:00";
@@ -73,40 +73,41 @@ export function RunView({ initial }: { initial: AnalyzerRun }) {
   const log = run.log ?? [];
 
   return (
-    <div>
-      <Link href="/analyzer" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="h-3.5 w-3.5" /> All analyses
-      </Link>
-
-      <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-balance text-2xl font-semibold tracking-tight sm:text-3xl">{run.company}</h1>
-          <p className="mt-1 font-mono text-2xs text-muted-foreground">
+    <div className="space-y-3 font-sans">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/70 pb-2">
+        <div className="flex flex-wrap items-baseline gap-2">
+          <Link href="/analyzer" className="inline-flex items-center gap-1 font-mono text-2xs text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-3 w-3" /> Back
+          </Link>
+          <span className="text-border">|</span>
+          <h1 className="text-xl sm:text-2xl font-serif font-bold tracking-tight text-foreground">{run.company}</h1>
+          <span className="text-border">|</span>
+          <span className="font-mono text-2xs text-muted-foreground">
             {run.ticker ?? "Unlisted"} · {run.start} → {run.end}
             {run.origin === "sample" ? " · sample report" : ""}
-          </p>
+          </span>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 font-mono">
           <RunStatusPill status={run.status} />
           {run.status === "COMPLETED" ? (
             <>
               {run.hasReport ? (
                 <a href={`/api/analyzer/runs/${id}/report`} target="_blank" rel="noopener noreferrer" className={BTN}>
-                  <ExternalLink className="h-3.5 w-3.5" /> Full report
+                  <ExternalLink className="h-3 w-3" /> Full report
                 </a>
               ) : null}
               {run.hasReport ? (
                 <a href={`/api/analyzer/runs/${id}/download/report.html`} className={BTN}>
-                  <Download className="h-3.5 w-3.5" /> HTML
+                  <Download className="h-3 w-3" /> HTML
                 </a>
               ) : null}
               {run.hasWorkbook ? (
                 <a href={`/api/analyzer/runs/${id}/download/model.xlsx`} className={BTN}>
-                  <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
+                  <FileSpreadsheet className="h-3 w-3" /> Excel
                 </a>
               ) : null}
               <a href={`/api/analyzer/runs/${id}/download/analysis.json`} className={BTN}>
-                <Download className="h-3.5 w-3.5" /> JSON
+                <Download className="h-3 w-3" /> JSON
               </a>
               <RunActions run={run} />
             </>
@@ -117,18 +118,18 @@ export function RunView({ initial }: { initial: AnalyzerRun }) {
       {active ? <RunProgress progress={run.progress} elapsed={elapsed(run.startedAt ?? run.createdAt, now)} logs={log} onCancel={cancel} pollError={pollError} /> : null}
 
       {run.status === "FAILED" || run.status === "CANCELLED" ? (
-        <section className="mt-8 rounded-none border border-down/40 bg-down/10 p-5">
-          <p className="text-sm font-semibold text-down">
+        <section className="mt-4 rounded-none border border-down/40 bg-down/10 p-3 font-mono">
+          <p className="text-xs font-bold uppercase tracking-wider text-down">
             {run.status === "CANCELLED" ? "This run was cancelled." : "The analysis did not finish."}
           </p>
-          {run.error ? <p className="mt-2 break-words font-mono text-2xs text-foreground/80">{run.error}</p> : null}
-          <Link href="/analyzer" className={`${BTN} mt-4`}>
-            <RotateCcw className="h-3.5 w-3.5" /> Start another
+          {run.error ? <p className="mt-1.5 break-words font-mono text-2xs text-foreground/80">{run.error}</p> : null}
+          <Link href="/analyzer" className={`${BTN} mt-3`}>
+            <RotateCcw className="h-3 w-3" /> Start another
           </Link>
           {log.length > 0 ? (
-            <details className="mt-4">
-              <summary className="cursor-pointer text-2xs text-muted-foreground">Engine log</summary>
-              <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-none border border-border bg-background p-3 font-mono text-2xs text-muted-foreground">
+            <details className="mt-3">
+              <summary className="cursor-pointer text-3xs text-muted-foreground uppercase tracking-wider">Engine log</summary>
+              <pre className="mt-1.5 max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-none border border-border bg-background p-2 font-mono text-3xs text-muted-foreground">
                 {log.join("\n")}
               </pre>
             </details>
@@ -137,19 +138,18 @@ export function RunView({ initial }: { initial: AnalyzerRun }) {
       ) : null}
 
       {run.status === "COMPLETED" ? (
-        <div className="mt-8 space-y-10">
+        <div className="mt-3 space-y-3">
           {summaryError ? (
-            <p role="alert" className="rounded-none border border-down/40 bg-down/10 px-4 py-3 text-sm text-down">
+            <p role="alert" className="rounded-none border border-down/40 bg-down/10 px-3 py-2 font-mono text-2xs text-down">
               {summaryError}
             </p>
           ) : summary === null ? (
-            <p className="text-sm text-muted-foreground">Loading results…</p>
+            <p className="font-mono text-2xs text-muted-foreground">Loading results…</p>
           ) : summary.kind === "listed" ? (
             <ListedSummaryView s={summary} />
           ) : (
             <UnlistedSummaryView s={summary} />
           )}
-
         </div>
       ) : null}
     </div>

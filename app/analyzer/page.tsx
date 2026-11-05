@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { FlaskConical } from "lucide-react";
-import { Eyebrow } from "@/components/ui/eyebrow";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { Suspense } from "react";
@@ -28,57 +27,56 @@ export default async function AnalyzerPage() {
     <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      <main id="main" className="mx-auto w-full max-w-[1920px] px-2.5 py-6 sm:px-4 lg:px-6">
-        <div className="max-w-3xl">
-          <Eyebrow icon={FlaskConical}>Event impact analyzer</Eyebrow>
-          <h1 className="mt-4 text-balance text-4xl sm:text-5xl">
-            What did the news do to the stock?
-          </h1>
-          <p className="mt-3 text-muted-foreground">
-            Pick a company and a window. The analyzer scrapes Indian financial press, aligns
-            coverage against benchmark-adjusted returns, flags the days where unusual coverage
-            met an unusual move, and layers on volatility, risk, technical and valuation
-            models. Unlisted names get a dealer-price move study attributed to headlines.
-          </p>
+      <main id="main" className="w-full max-w-[1920px] px-2 pt-1 pb-3 sm:px-3 lg:px-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-2">
+          <div className="flex flex-wrap items-baseline gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-serif font-bold tracking-tight text-foreground flex items-center gap-2">
+              <FlaskConical className="h-4 w-4 text-accent" />
+              <span>Event Impact Analyzer</span>
+            </h1>
+            <span className="text-border">|</span>
+            <span className="text-2xs font-mono text-muted-foreground">
+              News-Driven Abnormal Return Studies, Sentiment Shocks &amp; Multi-Factor Valuation
+            </span>
+          </div>
         </div>
 
         {models ? <ModelNotice status={models} /> : null}
 
-        <div className="mt-8">
-          <Suspense fallback={<div className="h-56 animate-pulse rounded-none border border-border bg-surface" />}>
+        <div className="mt-2.5">
+          <Suspense fallback={<div className="h-40 animate-pulse rounded-none border border-border bg-surface" />}>
             <Launcher />
           </Suspense>
         </div>
 
         {mine === null && samples === null ? (
-          <p role="alert" className="mt-8 rounded-none border border-down/40 bg-down/10 px-4 py-3 text-sm text-down">
+          <p role="alert" className="mt-3 rounded-none border border-down/40 bg-down/10 px-3 py-1.5 font-mono text-2xs text-down">
             The data service is not reachable, so runs cannot be started or listed.
           </p>
         ) : null}
 
-        <section className="mt-12">
-          <h2 className="text-sm font-semibold tracking-tight">Your analyses</h2>
-          <p className="mt-1 text-2xs text-muted-foreground">Runs started from this page, newest first.</p>
-          <div className="mt-4">
+        <section className="mt-4">
+          <div className="border-b border-border/70 pb-1 flex items-baseline justify-between">
+            <h2 className="text-xs font-bold font-mono uppercase tracking-wider text-foreground">Your Analyses</h2>
+            <span className="text-3xs font-mono text-muted-foreground">Active and Completed Case Studies</span>
+          </div>
+          <div className="mt-2">
             <RunList deletable runs={mine?.runs ?? []} empty="Nothing run yet. Your finished reports will appear here." />
           </div>
         </section>
 
-        <section className="mt-12">
-          <h2 className="text-sm font-semibold tracking-tight">Sample reports</h2>
-          <p className="mt-1 text-2xs text-muted-foreground">
-            Reports the tool generated earlier, kept as they were produced. Their dates reflect
-            when they were run, not today.
-          </p>
-          <div className="mt-4">
+        <section className="mt-4">
+          <div className="border-b border-border/70 pb-1 flex items-baseline justify-between">
+            <h2 className="text-xs font-bold font-mono uppercase tracking-wider text-foreground">Reference Sample Reports</h2>
+            <span className="text-3xs font-mono text-muted-foreground">Institutional Case Studies</span>
+          </div>
+          <div className="mt-2">
             <RunList runs={samples?.runs ?? []} empty="No sample reports are bundled." />
           </div>
         </section>
 
-        <p className="mt-12 max-w-3xl text-2xs text-muted-foreground">
-          A structured case-study generator, not a trading signal. Coincidence between coverage
-          and a price move is not proof of causation, and the model-derived calls in each
-          report are outputs of the analysis, not investment advice.
+        <p className="mt-4 max-w-3xl font-mono text-3xs text-muted-foreground">
+          Structured case-study engine, not investment advice. Coincidence between financial press coverage and abnormal market return is non-causal.
         </p>
       </main>
 
@@ -116,5 +114,5 @@ function ModelNotice({ status }: { status: ModelStatus }) {
 
 function Note({ tone, children }: { tone: "up" | "flat"; children: React.ReactNode }) {
   const style = tone === "up" ? "border-up/30 bg-up/5 text-muted-foreground" : "border-flat/40 bg-flat/10 text-foreground";
-  return <p className={`mt-6 max-w-3xl rounded-none border px-4 py-2.5 text-2xs ${style}`}>{children}</p>;
+  return <p className={`mt-2.5 max-w-full rounded-none border px-2.5 py-1.5 font-mono text-3xs ${style}`}>{children}</p>;
 }
