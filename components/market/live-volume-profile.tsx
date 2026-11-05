@@ -30,6 +30,16 @@ import {
 import { cn } from "@/lib/utils";
 import type { ApiOrderflow, OrderflowInterval } from "@/lib/api/types";
 
+interface LiveQuoteState {
+  cmp: number;
+  change: { absolute: number; percent: number } | null;
+  dayHigh: number | null;
+  dayLow: number | null;
+  volume: number | null;
+  asOf: string | null;
+  source: string | null;
+}
+
 interface LiveVolumeProfileProps {
   initialSymbol?: string;
   initialInterval?: OrderflowInterval;
@@ -110,8 +120,11 @@ export function LiveVolumeProfile({
   const [volFlash, setVolFlash] = useState<boolean>(false);
   const [showHotkeysModal, setShowHotkeysModal] = useState<boolean>(false);
 
+  const [liveQuote, setLiveQuote] = useState<LiveQuoteState | null>(null);
   const prevLastCloseRef = useRef<number | null>(null);
   const prevTotalVolRef = useRef<number | null>(null);
+  const prevCmpRef = useRef<number | null>(null);
+  const prevLiveVolRef = useRef<number | null>(null);
   const flashTimerRef = useRef<NodeJS.Timeout | null>(null);
   const volTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -121,6 +134,9 @@ export function LiveVolumeProfile({
       setSymbol(initialSymbol);
       prevLastCloseRef.current = null;
       prevTotalVolRef.current = null;
+      prevCmpRef.current = null;
+      prevLiveVolRef.current = null;
+      setLiveQuote(null);
     }
   }, [initialSymbol]);
 
@@ -234,6 +250,72 @@ export function LiveVolumeProfile({
 
     return () => clearInterval(intervalTimer);
   }, [autoRefreshSecs, symbol, timeframe, refreshLiveProfile]);
+
+  // Real-Time High-Frequency Live Exchange Tick Engine (1.5s sub-interval)
+  // Polls authentic exchange quote to animate the horizontal LTP beam and tick flashes
+  useEffect(() => {
+    let isCancelled = false;
+    let tickTimer: NodeJS.Timeout | null = null;
+
+    const pollLiveQuote = async () => {
+      if (autoRefreshSecs === 0) return; // paused
+      try {
+        const res = await fetch(`/api/quote?symbol=${encodeURIComponent(symbol)}`, {
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache, no-store" },
+        });
+        if (!res.ok) return;
+        const payload = await res.json();
+        if (isCancelled || !payload?.ok || !payload.data) return;
+
+        const q = payload.data;
+        const newCmp: number | null = typeof q.cmp === "number" ? q.cmp : null;
+        if (newCmp !== null) {
+          if (prevCmpRef.current !== null && newCmp !== prevCmpRef.current) {
+            const dir = newCmp > prevCmpRef.current ? "up" : "down";
+            setTickFlash(dir);
+            if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+            flashTimerRef.current = setTimeout(() => setTickFlash(null), 1200);
+          }
+          prevCmpRef.current = newCmp;
+
+          if (
+            typeof q.volume === "number" &&
+            prevLiveVolRef.current !== null &&
+            q.volume > prevLiveVolRef.current
+          ) {
+            setVolFlash(true);
+            if (volTimerRef.current) clearTimeout(volTimerRef.current);
+            volTimerRef.current = setTimeout(() => setVolFlash(false), 900);
+          }
+          if (typeof q.volume === "number") {
+            prevLiveVolRef.current = q.volume;
+          }
+
+          setLiveQuote({
+            cmp: newCmp,
+            change: q.change ?? null,
+            dayHigh: q.dayHigh ?? null,
+            dayLow: q.dayLow ?? null,
+            volume: q.volume ?? null,
+            asOf: q.asOf ?? null,
+            source: q.sources?.used ?? "NSE",
+          });
+          setPollSeq((s) => s + 1);
+        }
+      } catch {
+        // network/abort silence
+      }
+    };
+
+    void pollLiveQuote();
+    tickTimer = setInterval(pollLiveQuote, 1500);
+
+    return () => {
+      isCancelled = true;
+      if (tickTimer) clearInterval(tickTimer);
+    };
+  }, [symbol, autoRefreshSecs]);
 
   // Keyboard Shortcuts Engine (Space/R to refresh, 1..5 for TF, P for profile mode, [/] for scrips)
   useEffect(() => {
@@ -403,8 +485,8 @@ export function LiveVolumeProfile({
   const activeBarIdx = hoverBarIdx !== null && hoverBarIdx < nBars ? hoverBarIdx : nBars - 1;
   const activeBar = bars[activeBarIdx];
 
-  // Current Price and Market Structure Status
-  const lastClose = data?.lastClose ?? activeBar?.c ?? null;
+  // Current Price and Market Structure Status (Real-time live exchange quote prioritized)
+  const lastClose = liveQuote?.cmp ?? data?.lastClose ?? activeBar?.c ?? null;
   const pocPrice = profile?.poc ?? null;
   const vahPrice = profile?.vah ?? null;
   const valPrice = profile?.val ?? null;
@@ -415,8 +497,19 @@ export function LiveVolumeProfile({
     return profile.bins.findIndex((b) => lastClose >= b.lo && lastClose <= b.hi);
   }, [lastClose, profile?.bins]);
 
-  // Price change relative to first bar in visible range
+  // Price change relative to authentic live quote or first bar in visible range
   const priceChangeStats = useMemo(() => {
+    if (
+      liveQuote?.change &&
+      typeof liveQuote.change.absolute === "number" &&
+      typeof liveQuote.change.percent === "number"
+    ) {
+      return {
+        diff: liveQuote.change.absolute,
+        pct: liveQuote.change.percent,
+        isPositive: liveQuote.change.absolute >= 0,
+      };
+    }
     if (!bars || bars.length < 2 || lastClose === null) {
       return { diff: 0, pct: 0, isPositive: true };
     }
@@ -424,7 +517,7 @@ export function LiveVolumeProfile({
     const diff = lastClose - firstBar.o;
     const pct = (diff / firstBar.o) * 100;
     return { diff, pct, isPositive: diff >= 0 };
-  }, [bars, lastClose]);
+  }, [liveQuote?.change, bars, lastClose]);
 
   const marketStructure = useMemo(() => {
     if (lastClose === null || pocPrice === null || vahPrice === null || valPrice === null) {
@@ -564,26 +657,43 @@ export function LiveVolumeProfile({
             </div>
           )}
 
-          {/* Live Price Flash Pill */}
+          {/* Live Price Flash Pill with Sub-Second Tick Animation */}
           {lastClose !== null && (
             <div
               className={cn(
-                "flex items-center gap-1 px-2 py-0.5 border font-mono font-bold transition-all duration-300 rounded-none",
+                "flex items-center gap-1.5 px-2 py-0.5 border font-mono font-bold transition-all duration-200 rounded-none",
                 tickFlash === "up"
-                  ? "bg-up/20 border-up text-up animate-tick-up"
+                  ? "bg-up/25 border-up text-up animate-tick-up shadow-[0_0_10px_rgba(16,185,129,0.35)]"
                   : tickFlash === "down"
-                  ? "bg-down/20 border-down text-down animate-tick-down"
+                  ? "bg-down/25 border-down text-down animate-tick-down shadow-[0_0_10px_rgba(239,68,68,0.35)]"
                   : priceChangeStats.isPositive
                   ? "bg-up/10 border-up/30 text-up"
                   : "bg-down/10 border-down/30 text-down",
               )}
             >
               <span>{symbol}:</span>
-              <span>{fmtINR(lastClose)}</span>
+              <span>{fmtINR(lastClose, 2)}</span>
               <span>
                 {priceChangeStats.isPositive ? "▲ +" : "▼ "}
-                {priceChangeStats.pct.toFixed(2)}%
+                {Math.abs(priceChangeStats.diff).toFixed(2)} ({priceChangeStats.pct >= 0 ? "+" : ""}{priceChangeStats.pct.toFixed(2)}%)
               </span>
+            </div>
+          )}
+
+          {/* Real-time Day Range & Exchange Quote Provenance */}
+          {liveQuote && liveQuote.dayHigh != null && liveQuote.dayLow != null && (
+            <div className="hidden xl:flex items-center gap-1.5 text-3xs font-mono text-muted-foreground bg-surface-muted/70 px-2 py-0.5 border border-border/60 rounded-none">
+              <span>L: <span className="text-down font-bold">{fmtINR(liveQuote.dayLow, 2)}</span></span>
+              <span className="text-border">|</span>
+              <span>H: <span className="text-up font-bold">{fmtINR(liveQuote.dayHigh, 2)}</span></span>
+              {liveQuote.volume && (
+                <>
+                  <span className="text-border">|</span>
+                  <span>Vol: <span className="text-foreground font-semibold">{fmtCompact(liveQuote.volume)}</span></span>
+                </>
+              )}
+              <span className="text-border">|</span>
+              <span className="text-accent font-bold uppercase tracking-wider">{liveQuote.source ?? "NSE"} LIVE</span>
             </div>
           )}
 
@@ -1229,26 +1339,26 @@ export function LiveVolumeProfile({
 
                 {/* Floating POC Distance Pill on Live Beam */}
                 {pocPrice !== null && (
-                  <g transform={`translate(${CHART_WIDTH - 120}, ${priceToY(lastClose) - 9})`}>
+                  <g transform={`translate(${CHART_WIDTH - 135}, ${priceToY(lastClose) - 9})`}>
                     <rect
                       x={0}
                       y={0}
-                      width={115}
-                      height={15}
+                      width={130}
+                      height={16}
                       fill="hsl(var(--surface-raised))"
                       stroke="hsl(var(--border))"
                       strokeWidth="0.8"
                     />
                     <text
                       x={5}
-                      y={10.5}
+                      y={11}
                       fill="hsl(var(--foreground))"
                       fontSize="8"
                       fontFamily="monospace"
                       fontWeight="bold"
                     >
                       Δ POC: {lastClose >= pocPrice ? "+" : ""}
-                      {(lastClose - pocPrice).toFixed(1)} (
+                      {(lastClose - pocPrice).toFixed(2)} (
                       {(((lastClose - pocPrice) / pocPrice) * 100).toFixed(2)}%)
                     </text>
                   </g>
@@ -1437,7 +1547,7 @@ export function LiveVolumeProfile({
                   <rect
                     x={0}
                     y={-7}
-                    width={56}
+                    width={58}
                     height={14}
                     fill="hsl(var(--accent))"
                     rx="0"
@@ -1451,7 +1561,7 @@ export function LiveVolumeProfile({
                     fontFamily="monospace"
                     fontWeight="bold"
                   >
-                    VAH {vahPrice.toFixed(1)}
+                    VAH {vahPrice.toFixed(2)}
                   </text>
                 </g>
               )}
@@ -1462,7 +1572,7 @@ export function LiveVolumeProfile({
                   <rect
                     x={0}
                     y={-8}
-                    width={58}
+                    width={64}
                     height={16}
                     fill="hsl(var(--gold))"
                     rx="0"
@@ -1472,11 +1582,11 @@ export function LiveVolumeProfile({
                     x={4}
                     y={3.5}
                     fill="hsl(var(--surface-raised))"
-                    fontSize="9"
+                    fontSize="8.5"
                     fontFamily="monospace"
                     fontWeight="bold"
                   >
-                    POC {pocPrice.toFixed(1)}
+                    POC {pocPrice.toFixed(2)}
                   </text>
                 </g>
               )}
@@ -1487,7 +1597,7 @@ export function LiveVolumeProfile({
                   <rect
                     x={0}
                     y={-7}
-                    width={56}
+                    width={58}
                     height={14}
                     fill="hsl(var(--accent))"
                     rx="0"
@@ -1501,7 +1611,7 @@ export function LiveVolumeProfile({
                     fontFamily="monospace"
                     fontWeight="bold"
                   >
-                    VAL {valPrice.toFixed(1)}
+                    VAL {valPrice.toFixed(2)}
                   </text>
                 </g>
               )}
@@ -1512,7 +1622,7 @@ export function LiveVolumeProfile({
                   <rect
                     x={0}
                     y={-8}
-                    width={58}
+                    width={68}
                     height={16}
                     fill={
                       tickFlash === "up"
@@ -1521,7 +1631,7 @@ export function LiveVolumeProfile({
                         ? "hsl(var(--down))"
                         : "hsl(var(--foreground))"
                     }
-                    className="transition-colors duration-300"
+                    className="transition-colors duration-200"
                     rx="0"
                     ry="0"
                   />
@@ -1529,11 +1639,11 @@ export function LiveVolumeProfile({
                     x={4}
                     y={3.5}
                     fill="hsl(var(--background))"
-                    fontSize="9"
+                    fontSize="8.5"
                     fontFamily="monospace"
                     fontWeight="bold"
                   >
-                    LTP {lastClose.toFixed(1)}
+                    {tickFlash === "up" ? "▲ " : tickFlash === "down" ? "▼ " : ""}LTP {lastClose.toFixed(2)}
                   </text>
                 </g>
               )}

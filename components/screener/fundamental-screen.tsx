@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ApiFundamentalScreen } from "@/lib/api/types";
 import { cn, deltaColor, formatINR } from "@/lib/utils";
+import { Proximity52WGauge } from "@/components/screener/proximity-52w-gauge";
 
 const COLUMNS: { key: string; digits: number; tone?: boolean }[] = [
   { key: "price", digits: 2 },
@@ -16,6 +17,7 @@ const COLUMNS: { key: string; digits: number; tone?: boolean }[] = [
   { key: "opm", digits: 1 },
   { key: "divyield", digits: 2 },
 ];
+
 const SHORT: Record<string, string> = {
   price: "Price",
   change: "Today",
@@ -32,6 +34,7 @@ const SHORT: Record<string, string> = {
 };
 
 const QUICK_TOKENS = [
+  { label: "⚡ 52W Coiling (Quality)", q: "roe > 18 AND de < 0.5 AND pe < 30" },
   { label: "P/E < 15 & ROE > 18%", q: "pe < 15 AND roe > 18" },
   { label: "Low Debt (D/E < 0.3)", q: "de < 0.3 AND roe > 15" },
   { label: "High Margin (OPM > 25%)", q: "opm > 25 AND profitgrowth > 15" },
@@ -151,12 +154,15 @@ export function FundamentalScreen({
           </div>
 
           <div className="overflow-x-auto border border-border bg-surface">
-            <table className="w-full min-w-[1100px] border-collapse text-xs">
+            <table className="w-full min-w-[1240px] border-collapse text-xs">
               <thead>
                 <tr className="border-b border-border text-2xs text-muted-foreground font-mono uppercase tracking-wider">
-                  <th scope="col" className="px-2.5 py-1.5 text-left font-medium">#</th>
-                  <th scope="col" className="px-2.5 py-1.5 text-left font-medium">Company</th>
-                  {COLUMNS.map((c) => {
+                  <th scope="col" className="px-2 py-1.5 text-left font-medium">#</th>
+                  <th scope="col" className="px-2.5 py-1.5 text-left font-medium min-w-[140px]">Company</th>
+                  <th scope="col" className="px-2 py-1.5 text-right font-medium">Price</th>
+                  <th scope="col" className="px-2 py-1.5 text-right font-medium">Today</th>
+                  <th scope="col" className="px-2 py-1.5 text-center font-medium min-w-[115px]">52W Proximity</th>
+                  {COLUMNS.slice(2).map((c) => {
                     const on = sort === c.key;
                     const next = on && order === "desc" ? "asc" : "desc";
                     return (
@@ -179,46 +185,67 @@ export function FundamentalScreen({
                 </tr>
               </thead>
               <tbody>
-                {data.rows.map((r, idx) => (
-                  <tr
-                    key={r.symbol}
-                    className="border-b border-border/40 last:border-0 hover:bg-surface-muted/80 transition-colors duration-150"
-                  >
-                    <td className="px-2.5 py-1 text-2xs font-mono text-muted-foreground/60">{idx + 1}</td>
-                    <th scope="row" className="px-2.5 py-1 text-left font-normal">
-                      <Link
-                        href={`/company/${r.symbol}`}
-                        className="font-mono text-xs font-semibold text-foreground hover:text-accent transition-colors"
-                      >
-                        {r.symbol}
-                      </Link>
-                      {r.unresolved ? (
-                        <span className="ml-1 text-muted-foreground" title="A figure still disputed between sources">*</span>
-                      ) : null}
-                      <span className="ml-2 text-2xs font-sans text-muted-foreground truncate">{r.sector}</span>
-                    </th>
-                    {COLUMNS.map((c) => {
-                      const v = r[c.key];
-                      return (
-                        <td
-                          key={c.key}
-                          className={cn(
-                            "px-2 py-1 text-right font-mono tabular-nums text-xs",
-                            typeof v !== "number" ? "text-muted-foreground/60 text-2xs" : c.tone ? deltaColor(v) : "text-foreground",
-                          )}
+                {data.rows.map((r, idx) => {
+                  const price = Number(r.price ?? 0);
+                  const change = typeof r.change === "number" ? r.change : null;
+                  const high52 = typeof r.high52w === "number" ? r.high52w : null;
+                  const low52 = typeof r.low52w === "number" ? r.low52w : null;
+
+                  return (
+                    <tr
+                      key={r.symbol}
+                      className="border-b border-border/40 last:border-0 hover:bg-surface-muted/80 transition-colors duration-150"
+                    >
+                      <td className="px-2 py-1 text-2xs font-mono text-muted-foreground/60">{idx + 1}</td>
+                      <th scope="row" className="px-2.5 py-1 text-left font-normal">
+                        <Link
+                          href={`/company/${r.symbol}`}
+                          className="font-mono text-xs font-semibold text-foreground hover:text-accent transition-colors"
                         >
-                          {typeof v === "number" ? formatINR(v, c.digits) : "—"}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
+                          {r.symbol}
+                        </Link>
+                        {r.unresolved ? (
+                          <span className="ml-1 text-muted-foreground" title="A figure still disputed between sources">*</span>
+                        ) : null}
+                        <span className="ml-2 text-2xs font-sans text-muted-foreground truncate">{r.sector}</span>
+                      </th>
+                      <td className="px-2 py-1 text-right font-mono tabular-nums text-xs font-semibold text-foreground">
+                        {price > 0 ? formatINR(price, 2) : "—"}
+                      </td>
+                      <td
+                        className={cn(
+                          "px-2 py-1 text-right font-mono tabular-nums text-xs",
+                          change !== null ? deltaColor(change) : "text-muted-foreground",
+                        )}
+                      >
+                        {change !== null ? `${change >= 0 ? "+" : ""}${change.toFixed(2)}%` : "—"}
+                      </td>
+                      <td className="px-2 py-1">
+                        <Proximity52WGauge price={price} high52w={high52} low52w={low52} />
+                      </td>
+                      {COLUMNS.slice(2).map((c) => {
+                        const v = r[c.key];
+                        return (
+                          <td
+                            key={c.key}
+                            className={cn(
+                              "px-2 py-1 text-right font-mono tabular-nums text-xs",
+                              typeof v !== "number" ? "text-muted-foreground/60 text-2xs" : c.tone ? deltaColor(v) : "text-foreground",
+                            )}
+                          >
+                            {typeof v === "number" ? formatINR(v, c.digits) : "—"}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
 
           <p className="text-3xs font-mono text-muted-foreground pt-1">
-            Official figures from filings & NSE tick multiples. Refreshed weekly; P/E, P/B and yield computed against live CMP.
+            Official figures from filings & NSE tick multiples. 52W Proximity shows position in annual cycle with gold breakout indicators.
             {data.withUnresolved ? ` ${data.withUnresolved} ticker(s) marked * carry figures under dual-source audit.` : ""}
           </p>
         </>
