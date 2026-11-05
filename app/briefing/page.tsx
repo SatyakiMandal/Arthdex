@@ -31,7 +31,7 @@ const KEY_INDICES = ["nifty-50", "nifty-bank", "nifty-it", "nifty-midcap-100", "
 function Block({ title, href, children }: { title: string; href?: string; children: React.ReactNode }) {
   return (
     <section className="break-inside-avoid overflow-hidden rounded-none border border-border bg-surface print:border-neutral-300">
-      <header className="flex items-center justify-between border-b border-border px-4 py-2.5">
+      <header className="flex items-center justify-between border-b border-border/70 px-3 py-1.5 font-mono text-xs uppercase font-bold text-accent tracking-wider">
         <h2 className="text-sm font-semibold tracking-tight">{title}</h2>
         {href ? (
           <Link href={href} className="inline-flex items-center gap-1 text-2xs font-medium text-accent hover:underline print:hidden">
@@ -124,7 +124,7 @@ export default async function BriefingPage() {
             {indices.ok ? (
               <ul className="divide-y divide-border/60">
                 {keyIndices.map((i) => (
-                  <li key={i.id} className="flex items-center justify-between px-4 py-2.5 text-sm">
+                  <li key={i.id} className="cell-glow flex items-center justify-between px-3 py-1.5 font-mono text-xs hover:bg-surface-muted/50 transition-colors">
                     <span>{i.name}</span>
                     <span className="font-mono tabular-nums">
                       {formatINR(i.level, 2)} <span className={cn("ml-2 text-xs", deltaColor(i.change.percent))}>{formatPct(i.change.percent)}</span>
@@ -143,7 +143,7 @@ export default async function BriefingPage() {
             {global.ok ? (
               <ul className="divide-y divide-border/60">
                 {global.data.map((g) => (
-                  <li key={g.id} className="flex items-center justify-between px-4 py-2.5 text-sm">
+                  <li key={g.id} className="cell-glow flex items-center justify-between px-3 py-1.5 font-mono text-xs hover:bg-surface-muted/50 transition-colors">
                     <span>{g.name}</span>
                     <span className="font-mono tabular-nums">
                       {formatINR(g.level, 2)} <span className={cn("ml-2 text-xs", deltaColor(g.changePct))}>{formatPct(g.changePct)}</span>
@@ -166,7 +166,7 @@ export default async function BriefingPage() {
               {res.ok ? (
                 <ul className="divide-y divide-border/60">
                   {res.data.map((m) => (
-                    <li key={m.symbol} className="px-4 py-2.5">
+                    <li key={m.symbol} className="cell-glow px-3 py-1.5 hover:bg-surface-muted/50 transition-colors">
                       <div className="flex items-center justify-between gap-3 text-sm">
                         <Link href={`/company/${m.symbol}`} className="font-mono font-semibold hover:text-accent">
                           {m.symbol}

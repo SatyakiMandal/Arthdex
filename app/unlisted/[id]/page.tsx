@@ -36,7 +36,7 @@ export default async function UnlistedCompanyPage({ params }: PageProps) {
     <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      <main id="main" className="mx-auto w-full max-w-[1920px] px-2.5 py-4 sm:px-4 lg:px-6">
+      <main id="main" className="w-full max-w-[1920px] px-2 py-2 sm:px-3 lg:px-4">
         <Link
           href="/unlisted"
           className="group inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-accent"
@@ -71,14 +71,14 @@ function Profile({
 
   return (
     <>
-      <header className="mt-5 flex flex-wrap items-start justify-between gap-6">
+      <header className="mt-2.5 flex flex-wrap items-start justify-between gap-4 border-b border-border/70 pb-3">
         <div className="min-w-0">
           {c.sector ? (
             <span className="inline-flex rounded-none border border-accent/25 bg-accent/10 px-2.5 py-0.5 text-2xs font-medium text-accent">
               {c.sector}
             </span>
           ) : null}
-          <h1 className="mt-3 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">{c.name}</h1>
+          <h1 className="mt-2 text-balance text-xl sm:text-2xl font-serif font-bold text-foreground">{c.name}</h1>
           <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 font-mono text-2xs text-muted-foreground">
             {c.isin ? <span>ISIN {c.isin}</span> : null}
             {c.cin ? <span>CIN {c.cin}</span> : null}
@@ -87,7 +87,7 @@ function Profile({
 
         <div className="flex flex-col items-end">
           <WatchButton kind="unlisted" id={c.id} name={c.name} className="mb-3" />
-          <div className="font-mono text-4xl font-semibold tabular-nums">{c.price == null ? "n/a" : money(c.price)}</div>
+          <div className="font-mono text-2xl font-bold tabular-nums">{c.price == null ? "n/a" : money(c.price)}</div>
           <div className="mt-1 flex items-center justify-end gap-2">
             {c.change.pct != null ? (
               <span className={cn("font-mono text-sm tabular-nums", rising ? "text-up" : "text-down")}>
@@ -104,12 +104,12 @@ function Profile({
 
       <Lifecycle l={c.lifecycle} />
 
-      <div className="mt-6 grid items-start gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-        <div className="space-y-5">
+      <div className="mt-2.5 grid items-start gap-2.5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <div className="space-y-2.5">
           <PriceHistoryChart series={c.series} />
 
           <section className="overflow-hidden rounded-none border border-border bg-surface">
-            <header className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border px-4 py-3">
+            <header className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border/70 px-3 py-1.5 font-mono text-xs uppercase font-bold text-accent tracking-wider">
               <h2 className="text-sm font-semibold tracking-tight">Price revisions</h2>
               <p className="text-2xs text-muted-foreground">
                 {c.revisions.length} real changes since {c.firstDate}. The source shows {c.dailyPoints.toLocaleString("en-IN")} daily
@@ -118,18 +118,18 @@ function Profile({
             </header>
             <div className="max-h-[26rem] overflow-auto">
               <table className="data-table data-table-sticky w-full text-sm">
-                <thead className="text-2xs text-muted-foreground">
+                <thead className="text-3xs font-mono uppercase tracking-wider text-muted-foreground bg-surface-muted/60">
                   <tr className="border-b border-border">
-                    <th className="px-4 py-2 text-left font-medium">Date</th>
-                    <th className="px-4 py-2 text-right font-medium">Price</th>
-                    <th className="px-4 py-2 text-right font-medium">Change</th>
+                    <th className="px-2.5 py-1 text-left font-medium">Date</th>
+                    <th className="px-2.5 py-1 text-right font-medium">Price</th>
+                    <th className="px-2.5 py-1 text-right font-medium">Change</th>
                   </tr>
                 </thead>
                 <tbody>
                   {c.revisions.map((r) => (
-                    <tr key={r.date} className="border-b border-border/60 last:border-0">
-                      <td className="px-4 py-1.5 font-mono text-xs">{r.date}</td>
-                      <td className="px-4 py-1.5 text-right font-mono tabular-nums">{money(r.price)}</td>
+                    <tr key={r.date} className="border-b border-border/60 last:border-0 cell-glow hover:bg-surface-muted/50 transition-colors">
+                      <td className="px-2.5 py-1 font-mono text-xs">{r.date}</td>
+                      <td className="px-2.5 py-1 text-right font-mono tabular-nums">{money(r.price)}</td>
                       <td
                         className={cn(
                           "px-4 py-1.5 text-right font-mono tabular-nums",
@@ -146,14 +146,14 @@ function Profile({
           </section>
         </div>
 
-        <div className="space-y-5">
+        <div className="space-y-2.5">
           <section className="overflow-hidden rounded-none border border-border bg-surface">
-            <header className="border-b border-border px-4 py-3">
+            <header className="border-b border-border/70 px-3 py-1.5 font-mono text-xs uppercase font-bold text-accent tracking-wider">
               <h2 className="text-sm font-semibold tracking-tight">Key ratios</h2>
             </header>
             <dl className="grid grid-cols-2 gap-px bg-border">
               {facts.map(([label, value]) => (
-                <div key={label} className="bg-surface px-4 py-3 odd:last:col-span-2">
+                <div key={label} className="bg-surface px-3 py-2 odd:last:col-span-2 font-mono text-xs">
                   <dt className="text-2xs text-muted-foreground">{label}</dt>
                   <dd className={cn("mt-1 font-mono text-base font-semibold tabular-nums", value === "N/A" && "text-muted-foreground")}>
                     {value}
@@ -161,7 +161,7 @@ function Profile({
                 </div>
               ))}
               {c.sinceFirstPct != null ? (
-                <div className="bg-surface px-4 py-3 odd:last:col-span-2">
+                <div className="bg-surface px-3 py-2 odd:last:col-span-2 font-mono text-xs">
                   <dt className="text-2xs text-muted-foreground">Since {c.firstDate}</dt>
                   <dd className={cn("mt-1 font-mono text-base font-semibold tabular-nums", c.sinceFirstPct >= 0 ? "text-up" : "text-down")}>
                     {formatPct(c.sinceFirstPct, 0)}

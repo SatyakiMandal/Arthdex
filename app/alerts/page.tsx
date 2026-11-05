@@ -34,19 +34,21 @@ export default async function AlertsPage() {
     <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      <main id="main" className="mx-auto w-full max-w-[1920px] px-2.5 py-6 sm:px-4 lg:px-6">
-        <div className="max-w-2xl">
-          <Eyebrow icon={Bell}>Alerts</Eyebrow>
-          <h1 className="mt-4 text-balance text-4xl sm:text-5xl">
-            Thresholds &amp; important results
-          </h1>
-          <p className="mt-3 text-muted-foreground">
-            Set price alerts on any listed or unlisted company, and track the filings that typically
-            precede a re-rating.
-          </p>
+      <main id="main" className="w-full px-2 pt-1 pb-3 sm:px-3 lg:px-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-2">
+          <div className="flex flex-wrap items-baseline gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-serif font-bold tracking-tight text-foreground flex items-center gap-2">
+              <Bell className="h-4 w-4 text-accent" />
+              <span>Real-Time Alert Thresholds &amp; Disclosures</span>
+            </h1>
+            <span className="text-border">|</span>
+            <span className="text-2xs font-mono text-muted-foreground">
+              Price Triggers, Corporate Actions &amp; Institutional Materiality Monitors
+            </span>
+          </div>
         </div>
 
-        <div className="mt-8 space-y-4">
+        <div className="mt-2.5 space-y-2.5">
           <Suspense fallback={<div className="h-48 animate-pulse rounded-none border border-border bg-surface" />}>
             <MyAlerts />
           </Suspense>

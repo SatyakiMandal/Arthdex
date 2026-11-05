@@ -71,12 +71,12 @@ export function TrackRecord() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <div className="grid gap-3 sm:grid-cols-3">
         {data.horizons.map((h) => {
           const s = data.summary[String(h)];
           return (
-            <div key={h} className="rounded-none border border-border bg-surface px-4 py-3">
+            <div key={h} className="rounded-none border border-border/80 bg-surface px-3 py-2 shadow-xs">
               <p className="text-2xs text-muted-foreground">After {h} trading day{h > 1 ? "s" : ""}</p>
               <p className="mt-1 font-mono text-xl font-semibold">{s.hitRatePct == null ? "—" : `${s.hitRatePct}% hit`}</p>
               <p className="mt-0.5 text-2xs text-muted-foreground">
@@ -90,11 +90,11 @@ export function TrackRecord() {
       <section className="overflow-hidden rounded-none border border-border bg-surface">
         <div className="overflow-x-auto">
           <table className="data-table w-full min-w-[720px] text-sm">
-            <thead className="text-2xs text-muted-foreground">
+            <thead className="text-3xs font-mono uppercase tracking-wider text-muted-foreground bg-surface-muted/60">
               <tr className="border-b border-border">
-                <th className="px-4 py-2 text-left font-medium">Call</th>
-                <th className="px-3 py-2 text-right font-medium">Price</th>
-                <th className="px-3 py-2 text-right font-medium">Risk</th>
+                <th className="px-2.5 py-1.5 text-left font-medium">Call</th>
+                <th className="px-2.5 py-1.5 text-right font-medium">Price</th>
+                <th className="px-2.5 py-1.5 text-right font-medium">Risk</th>
                 {data.horizons.map((h) => (
                   <th key={h} className="px-3 py-2 text-right font-medium">
                     {h}D · vs Nifty

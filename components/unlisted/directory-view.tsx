@@ -50,8 +50,8 @@ export function DirectoryView({ companies, sectors }: { companies: ApiUnlistedLi
   const label = "mb-1.5 block text-2xs font-medium text-muted-foreground";
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-end gap-x-5 gap-y-4 rounded-none border border-border bg-surface p-4">
+    <div className="space-y-2.5">
+      <div className="flex flex-wrap items-end gap-x-4 gap-y-3 rounded-none border border-border bg-surface p-3">
         <div className="min-w-[14rem] flex-1">
           <label htmlFor="unlisted-search" className={label}>
             Company
@@ -73,7 +73,7 @@ export function DirectoryView({ companies, sectors }: { companies: ApiUnlistedLi
                 type="button"
                 aria-label="Clear search"
                 onClick={() => setQuery("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:text-foreground"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-none p-0.5 text-muted-foreground hover:text-foreground"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -128,14 +128,14 @@ export function DirectoryView({ companies, sectors }: { companies: ApiUnlistedLi
           No company matches that search. Clear the sector filter or try a shorter name.
         </p>
       ) : (
-        <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+        <ul className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {rows.slice(0, shown).map((c) => (
             <li key={c.id}>
               <Link
                 href={`/unlisted/${c.id}`}
-                className="group flex h-full items-center gap-3 rounded-none border border-border bg-surface p-4 transition-all duration-300 hover:border-accent/50"
+                className="group flex h-full items-center gap-2.5 rounded-none border border-border bg-surface p-2.5 cell-glow hover:bg-surface-muted/60 transition-colors"
               >
-                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-none border border-accent/20 bg-accent/10 font-mono text-xs font-semibold text-accent">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-none border border-accent/20 bg-accent/10 font-mono text-xs font-semibold text-accent">
                   {initials(c.name) || "?"}
                 </span>
                 <span className="min-w-0 flex-1">

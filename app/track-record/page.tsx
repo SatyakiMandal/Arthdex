@@ -14,15 +14,20 @@ export default function TrackRecordPage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <main id="main" className="mx-auto w-full max-w-[1920px] px-2.5 py-6 sm:px-4 lg:px-6">
-        <div className="max-w-2xl">
-          <Eyebrow icon={ClipboardCheck}>Track record</Eyebrow>
-          <h1 className="mt-4 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">How the calls actually did</h1>
-          <p className="mt-3 text-sm text-muted-foreground">
-            Every call logged from a Technicals tab is scored against what the stock and Nifty 50 then did. Misses stay in the list.
-          </p>
+      <main id="main" className="w-full px-2 pt-1 pb-3 sm:px-3 lg:px-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-2">
+          <div className="flex flex-wrap items-baseline gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-serif font-bold tracking-tight text-foreground flex items-center gap-2">
+              <ClipboardCheck className="h-4 w-4 text-accent" />
+              <span>Algorithmic Track Record &amp; Predictive Performance</span>
+            </h1>
+            <span className="text-border">|</span>
+            <span className="text-2xs font-mono text-muted-foreground">
+              Every Call Logged from the Quant Engine Scored Against Real Exchange Outcomes
+            </span>
+          </div>
         </div>
-        <div className="mt-8">
+        <div className="mt-2.5">
           <TrackRecord />
         </div>
       </main>

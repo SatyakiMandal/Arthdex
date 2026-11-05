@@ -40,13 +40,17 @@ export default async function StatusPage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <main id="main" className="mx-auto w-full max-w-[1920px] px-2.5 py-6 sm:px-4 lg:px-6">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <Eyebrow icon={Gauge}>Data status</Eyebrow>
-            <h1 className="mt-3 text-balance text-3xl sm:text-4xl">
-              Feed freshness
+      <main id="main" className="w-full px-2 pt-1 pb-3 sm:px-3 lg:px-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-2">
+          <div className="flex flex-wrap items-baseline gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-serif font-bold tracking-tight text-foreground flex items-center gap-2">
+              <Gauge className="h-4 w-4 text-accent" />
+              <span>Exchange Feed Telemetry &amp; System Health</span>
             </h1>
+            <span className="text-border">|</span>
+            <span className="text-2xs font-mono text-muted-foreground">
+              Latency, TTL Expirations &amp; Self-Healing Feed Watchdog Audits
+            </span>
           </div>
           <StatusRefresh />
         </div>
@@ -65,12 +69,12 @@ export default async function StatusPage() {
               <span className="font-mono text-2xs">up for {uptime(result.data.uptimeSeconds)}</span>
             </p>
 
-            <div className="mt-6 overflow-hidden rounded-none border border-border bg-surface">
+            <div className="mt-2.5 overflow-hidden rounded-none border border-border bg-surface">
               <ul className="divide-y divide-border/60">
                 {result.data.feeds.map((f) => {
                   const s = STATE[f.state];
                   return (
-                    <li key={f.label} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+                    <li key={f.label} className="cell-glow flex flex-wrap items-center justify-between gap-3 px-3 py-1.5 hover:bg-surface-muted/50 transition-colors font-mono text-xs">
                       <div className="min-w-0">
                         <p className="text-sm font-medium">{f.label}</p>
                         <p className="text-2xs text-muted-foreground">{f.source}</p>

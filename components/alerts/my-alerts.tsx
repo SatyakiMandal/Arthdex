@@ -78,7 +78,7 @@ export function MyAlerts() {
 
   return (
     <section className="overflow-hidden rounded-none border border-border bg-surface">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 px-3 py-2">
         <div className="flex items-center gap-2">
           <span className="grid h-8 w-8 place-items-center rounded-none border border-accent/25 bg-accent/10 text-accent">
             <BellRing className="h-4 w-4" />
@@ -101,7 +101,7 @@ export function MyAlerts() {
         ) : null}
       </header>
 
-      <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1.4fr)_auto_auto_minmax(0,0.7fr)_auto] lg:items-end">
+      <div className="grid gap-3 p-3 lg:grid-cols-[minmax(0,1.4fr)_auto_auto_minmax(0,0.7fr)_auto] lg:items-end">
         <CompanyPicker id="alert-company" value={company} onPick={setCompany} />
         <div>
           <span className={label}>Watch</span>
@@ -127,10 +127,10 @@ export function MyAlerts() {
             onChange={(e) => setThreshold(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && submit()}
             placeholder={effectiveMetric === "price" ? "e.g. 1250" : "e.g. -3"}
-            className="h-10 w-full rounded-none border border-border bg-background px-3 font-mono text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-accent"
+            className="h-8 w-full rounded-none border border-border bg-background px-2.5 font-mono text-xs outline-none transition-colors placeholder:text-muted-foreground focus:border-accent"
           />
         </div>
-        <button type="button" onClick={submit} className="btn-primary h-10 px-5 py-0 active:scale-[0.98]">
+        <button type="button" onClick={submit} className="btn-primary h-8 px-4 py-0 text-xs font-bold font-mono active:scale-[0.98]">
           Add alert
         </button>
       </div>
@@ -151,7 +151,7 @@ export function MyAlerts() {
       ) : (
         <ul className="divide-y divide-border/60 border-t border-border">
           {rules.map((r: AlertRule) => (
-            <li key={r.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+            <li key={r.id} className="cell-glow flex flex-wrap items-center justify-between gap-3 px-3 py-1.5 hover:bg-surface-muted/50 transition-colors font-mono text-xs">
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium">{describeRule(r)}</p>
                 <p className={cn("mt-0.5 text-2xs", r.triggeredAt ? "text-flat" : "text-muted-foreground")}>
