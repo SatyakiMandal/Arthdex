@@ -46,7 +46,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning className={`${sans.variable} ${mono.variable} ${display.variable} ${deva.variable} ${brand.variable}`}>
-      <body>
+      <body suppressHydrationWarning>
         <a
           href="#main"
           className="sr-only z-[70] rounded-none bg-accent px-4 py-2 text-sm font-medium text-accent-foreground focus:not-sr-only focus:fixed focus:left-4 focus:top-4"

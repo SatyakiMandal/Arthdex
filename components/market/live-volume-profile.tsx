@@ -167,21 +167,39 @@ export function LiveVolumeProfile({
   const [isSelecting, setIsSelecting] = useState<boolean>(false);
   const [selectionBox, setSelectionBox] = useState<{ startX: number; currentX: number } | null>(null);
 
-  // Crosshair / Hover state
+  // Crosshair / Hover state (1:1 Real-Time Continuous Cursor Sync)
+  const [crosshairPos, setCrosshairPos] = useState<{ x: number; y: number } | null>(null);
   const [hoverBarIdx, setHoverBarIdx] = useState<number | null>(null);
   const [hoverBinIdx, setHoverBinIdx] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // SVG Chart Dimensions (Dynamic for CVD Sub-Pane & Profile Visibility)
-  const W = 1100;
+  // Dynamic 1:1 Pixel Dimensions (Eliminates vertical squashing of text and circles)
+  const [containerWidth, setContainerWidth] = useState<number>(1100);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const updateSize = () => {
+      if (containerRef.current) {
+        const w = containerRef.current.clientWidth;
+        if (w > 300) setContainerWidth(w);
+      }
+    };
+    updateSize();
+    const ro = new ResizeObserver(updateSize);
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  // SVG Chart Dimensions (Exact 1:1 screen pixel mapping - No text distortion)
+  const W = containerWidth;
   const H = showCvd ? 580 : 480;
   const PROFILE_WIDTH = showVolumeProfile ? 250 : 0;
   const CHART_WIDTH = W - PROFILE_WIDTH - 60;
-  const PADDING_TOP = 25;
+  const PADDING_TOP = 54;
   const PADDING_BOTTOM = 30;
-  const PRICE_USABLE_H = showCvd ? 340 : 425;
-  const CVD_TOP = 395;
-  const CVD_USABLE_H = 130;
+  const CVD_TOP = 405;
+  const CVD_USABLE_H = 135;
+  const PRICE_USABLE_H = showCvd ? 330 : 395;
   const USABLE_H = PRICE_USABLE_H;
 
   // Load Orderflow Data with Live Tick Detection
@@ -584,8 +602,8 @@ export function LiveVolumeProfile({
   }, [profile]);
 
   // Active Bar for HUD (defaults to latest bar)
-  const activeBarIdx = hoverBarIdx !== null && hoverBarIdx < allBars.length ? hoverBarIdx : allBars.length - 1;
-  const activeBar = allBars[activeBarIdx] || bars[Math.max(0, nBars - 1)];
+  const activeBarIdx = hoverBarIdx !== null && hoverBarIdx >= 0 && hoverBarIdx < nBars ? hoverBarIdx : Math.max(0, nBars - 1);
+  const activeBar = bars[activeBarIdx];
 
   // Current Price and Market Structure Status (Real-time live exchange quote prioritized)
   const lastClose = liveQuote?.cmp ?? data?.lastClose ?? activeBar?.c ?? null;
@@ -700,21 +718,26 @@ export function LiveVolumeProfile({
     if (!containerRef.current || nBars === 0) return;
     const rect = containerRef.current.getBoundingClientRect();
     const relX = (e.clientX - rect.left) / rect.width;
+    const relY = (e.clientY - rect.top) / rect.height;
     const svgX = relX * W;
+    const svgY = relY * H;
 
     if (isSelecting && selectionBox) {
       setSelectionBox((prev) => (prev ? { ...prev, currentX: Math.max(15, Math.min(CHART_WIDTH + 15, svgX)) } : null));
       return;
     }
 
-    if (svgX >= 15 && svgX <= CHART_WIDTH + 15) {
-      const barIndex = Math.floor((svgX - 15) / stepX);
-      setHoverBarIdx(Math.max(0, Math.min(nBars - 1, barIndex)) + barOffset);
+    if (svgX >= 15 && svgX <= CHART_WIDTH + 15 && svgY >= PADDING_TOP && svgY <= H - PADDING_BOTTOM) {
+      // 1:1 Instant Zero-Lag Cursor Tracking:
+      setCrosshairPos({ x: svgX, y: svgY });
+
+      // Snapped local candle index for HUD metrics
+      const localIdx = Math.max(0, Math.min(nBars - 1, Math.floor((svgX - 15) / stepX)));
+      setHoverBarIdx(localIdx);
       setHoverBinIdx(null);
     } else if (svgX > CHART_WIDTH + 15 && showVolumeProfile) {
+      setCrosshairPos(null);
       setHoverBarIdx(null);
-      const relY = (e.clientY - rect.top) / rect.height;
-      const svgY = relY * H;
       const priceAtY = yToPrice(svgY);
       if (profile?.bins) {
         const binIndex = profile.bins.findIndex(
@@ -723,6 +746,7 @@ export function LiveVolumeProfile({
         setHoverBinIdx(binIndex !== -1 ? binIndex : null);
       }
     } else {
+      setCrosshairPos(null);
       setHoverBarIdx(null);
       setHoverBinIdx(null);
     }
@@ -753,6 +777,7 @@ export function LiveVolumeProfile({
       setIsSelecting(false);
       setSelectionBox(null);
     }
+    setCrosshairPos(null);
     setHoverBarIdx(null);
     setHoverBinIdx(null);
   };
@@ -1287,8 +1312,9 @@ export function LiveVolumeProfile({
         >
           <svg
             viewBox={`0 0 ${W} ${H}`}
+            width={W}
+            height={H}
             className="w-full h-auto min-h-[440px] max-h-[580px] block"
-            preserveAspectRatio="none"
           >
             <defs>
               <linearGradient id="tv-value-area-grad" x1="0" y1="0" x2="1" y2="0">
@@ -1354,11 +1380,21 @@ export function LiveVolumeProfile({
                       strokeWidth="1"
                       strokeDasharray="3 3"
                     />
+                    <rect
+                      x={sx + 2}
+                      y={PADDING_TOP + 2}
+                      width={42}
+                      height={14}
+                      fill="hsl(var(--surface))"
+                      fillOpacity="0.9"
+                      stroke="hsl(var(--border))"
+                      strokeWidth="0.5"
+                    />
                     <text
-                      x={sx + 4}
+                      x={sx + 5}
                       y={PADDING_TOP + 12}
                       fill="hsl(var(--muted-foreground))"
-                      fontSize="9"
+                      fontSize="8.5"
                       fontFamily="monospace"
                       fontWeight="bold"
                     >
@@ -1995,17 +2031,54 @@ export function LiveVolumeProfile({
                 }
               })}
 
-            {/* Vertical Crosshair Line */}
-            {hoverBarIdx !== null && activeBar && (
-              <line
-                x1={indexToX(hoverBarIdx)}
-                y1={PADDING_TOP}
-                x2={indexToX(hoverBarIdx)}
-                y2={H - PADDING_BOTTOM}
-                stroke="hsl(var(--muted-foreground))"
-                strokeWidth="1"
-                strokeDasharray="2 2"
-              />
+            {/* Real-Time Zero-Lag Synchronized Crosshair (1:1 Cursor Following) */}
+            {crosshairPos && (
+              <g pointerEvents="none">
+                {/* Vertical Crosshair Line (Exact Cursor Alignment) */}
+                <line
+                  x1={crosshairPos.x}
+                  y1={PADDING_TOP}
+                  x2={crosshairPos.x}
+                  y2={H - PADDING_BOTTOM}
+                  stroke="hsl(var(--foreground))"
+                  strokeOpacity="0.75"
+                  strokeWidth="1"
+                  strokeDasharray="2 2"
+                />
+
+                {/* Horizontal Crosshair Line */}
+                <line
+                  x1={15}
+                  y1={crosshairPos.y}
+                  x2={W - 60}
+                  y2={crosshairPos.y}
+                  stroke="hsl(var(--foreground))"
+                  strokeOpacity="0.4"
+                  strokeWidth="1"
+                  strokeDasharray="2 2"
+                />
+
+                {/* Dynamic Cursor Price Tag on Right Axis */}
+                <g transform={`translate(${W - 60}, ${crosshairPos.y - 8})`}>
+                  <rect
+                    x={0}
+                    y={0}
+                    width={58}
+                    height={16}
+                    fill="hsl(var(--foreground))"
+                  />
+                  <text
+                    x={4}
+                    y={11}
+                    fill="hsl(var(--surface))"
+                    fontSize="8.5"
+                    fontFamily="monospace"
+                    fontWeight="bold"
+                  >
+                    {fmtINR(yToPrice(crosshairPos.y), 2)}
+                  </text>
+                </g>
+              </g>
             )}
 
             {/* Horizontal Price Axis on Far Right */}
@@ -2268,45 +2341,43 @@ export function LiveVolumeProfile({
                   strokeWidth="1.6"
                 />
 
-                {/* Live Current CVD Dot */}
+                {/* Live Current CVD Pip (Square to avoid aspect distortion) */}
                 {cvdSeries.length > 0 && (
-                  <circle
-                    cx={indexToX(cvdSeries.length - 1)}
-                    cy={cvdToY(cvdSeries[cvdSeries.length - 1])}
-                    r="3.5"
+                  <rect
+                    x={indexToX(cvdSeries.length - 1) - 2}
+                    y={cvdToY(cvdSeries[cvdSeries.length - 1]) - 2}
+                    width={4}
+                    height={4}
                     fill={
                       cvdSeries[cvdSeries.length - 1] >= 0
                         ? "hsl(var(--up))"
                         : "hsl(var(--down))"
                     }
-                    className="animate-ping"
-                    opacity="0.8"
+                    className="animate-pulse"
                   />
                 )}
 
-                {/* Crosshair Dot on CVD when Bar is Hovered */}
-                {hoverBarIdx !== null && cvdSeries[hoverBarIdx] !== undefined && (
-                  <g>
-                    <circle
-                      cx={indexToX(hoverBarIdx)}
-                      cy={cvdToY(cvdSeries[hoverBarIdx])}
-                      r="4"
-                      fill="hsl(var(--foreground))"
-                      stroke="hsl(var(--background))"
-                      strokeWidth="1"
-                    />
-                    <g transform={`translate(${indexToX(hoverBarIdx) + 6}, ${cvdToY(cvdSeries[hoverBarIdx]) - 5})`}>
-                      <rect x={0} y={-8} width={64} height={14} fill="hsl(var(--surface-raised))" stroke="hsl(var(--border))" strokeWidth="0.8" />
-                      <text x={3} y={2.5} fill="hsl(var(--foreground))" fontSize="7.5" fontFamily="monospace" fontWeight="bold">
-                        {fmtCompact(cvdSeries[hoverBarIdx])}
-                      </text>
-                    </g>
-                  </g>
-                )}
+                {/* Crosshair Dot on CVD handled via 100% True Circular HTML Overlay */}
               </g>
             )}
 
           </svg>
+
+          {/* 100% True Geometric White Circular Marker at Crosshair & CVD Intersection */}
+          {crosshairPos && showCvd && hoverBarIdx !== null && cvdSeries[hoverBarIdx] !== undefined && (
+            <div
+              className="absolute pointer-events-none z-20 -translate-x-1/2 -translate-y-1/2"
+              style={{
+                left: `${(crosshairPos.x / W) * 100}%`,
+                top: `${(cvdToY(cvdSeries[hoverBarIdx]) / H) * 100}%`,
+              }}
+            >
+              <div className="w-2.5 h-2.5 rounded-full bg-white border border-black shadow-[0_0_6px_rgba(255,255,255,0.9)]" />
+              <div className="absolute left-3.5 -top-2 bg-surface-raised/95 border border-border px-1.5 py-0.5 text-3xs font-mono font-bold text-foreground whitespace-nowrap shadow-xs">
+                {fmtCompact(cvdSeries[hoverBarIdx])}
+              </div>
+            </div>
+          )}
 
           {/* Hover Volume Bin Tooltip Popup */}
           {hoverBinIdx !== null && profile?.bins && profile.bins[hoverBinIdx] && (
