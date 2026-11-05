@@ -33,7 +33,7 @@ export function MoversExplained({ gainers, losers }: { gainers: ApiMoverExplaine
 
   return (
     <section className="overflow-hidden rounded-none border border-border bg-surface">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-3 py-2">
         <div>
           <h2 className="text-sm font-semibold tracking-tight">Why they moved</h2>
           <p className="mt-0.5 text-2xs text-muted-foreground">
@@ -45,7 +45,7 @@ export function MoversExplained({ gainers, losers }: { gainers: ApiMoverExplaine
 
       <ul className="divide-y divide-border/60">
         {rows.map((r) => (
-          <li key={r.symbol} className="px-4 py-3">
+          <li key={r.symbol} className="px-3 py-2">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
                 <Link href={`/company/${r.symbol}`} className="font-mono text-sm font-semibold hover:text-accent">
@@ -56,7 +56,7 @@ export function MoversExplained({ gainers, losers }: { gainers: ApiMoverExplaine
                   {formatPct(r.changePct, 2)}
                 </span>
                 {r.labels.map((l) => (
-                  <span key={l} className="rounded bg-accent/10 px-1.5 py-0.5 font-mono text-2xs text-accent">
+                  <span key={l} className="rounded-none bg-accent/10 border border-accent/30 px-1.5 py-0.5 font-mono text-3xs font-semibold text-accent">
                     {l}
                   </span>
                 ))}

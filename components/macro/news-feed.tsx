@@ -76,11 +76,11 @@ export function NewsFeed({
     >
       <ul className="divide-y divide-border/60">
         {items.map((item) => (
-          <li key={item.id} className="px-4 py-3 transition-colors hover:bg-surface-muted">
+          <li key={item.id} className="px-3 py-2 transition-colors hover:bg-surface-muted">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
               <span
                 className={cn(
-                  "inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-2xs uppercase tracking-wide",
+                  "inline-flex items-center gap-1 rounded-none border px-1.5 py-0.5 font-mono text-3xs uppercase tracking-wider",
                   item.kind === "filing"
                     ? "border-accent/40 bg-accent/10 text-accent"
                     : "border-border bg-surface-muted text-muted-foreground",
@@ -103,7 +103,7 @@ export function NewsFeed({
                     <span
                       key={flag}
                       className={cn(
-                        "rounded border px-1.5 py-0.5 font-mono text-2xs uppercase tracking-wide",
+                        "rounded-none border px-1.5 py-0.5 font-mono text-3xs uppercase tracking-wider",
                         meta.className,
                       )}
                     >

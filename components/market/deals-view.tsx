@@ -96,18 +96,18 @@ export function DealsView({ deals }: { deals: ApiDeals }) {
             <table className="data-table data-table-sticky w-full min-w-[820px] text-sm">
               <thead className="text-2xs text-muted-foreground">
                 <tr className="border-b border-border">
-                  <th className="px-4 py-2 text-left font-medium">Company</th>
-                  <th className="px-4 py-2 text-left font-medium">Client</th>
-                  <th className="px-4 py-2 text-left font-medium">Side</th>
-                  <th className="px-4 py-2 text-right font-medium">Quantity</th>
-                  <th className="px-4 py-2 text-right font-medium">Avg price</th>
-                  <th className="px-4 py-2 text-right font-medium">Value</th>
+                  <th className="px-2 py-1 text-left font-bold text-3xs uppercase">Company</th>
+                  <th className="px-2 py-1 text-left font-bold text-3xs uppercase">Client</th>
+                  <th className="px-2 py-1 text-left font-bold text-3xs uppercase">Side</th>
+                  <th className="px-2 py-1 text-right font-bold text-3xs uppercase">Quantity</th>
+                  <th className="px-2 py-1 text-right font-bold text-3xs uppercase">Avg price</th>
+                  <th className="px-2 py-1 text-right font-bold text-3xs uppercase">Value</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((d, i) => (
                   <tr key={`${d.symbol}-${d.client}-${d.side}-${i}`} className="border-b border-border/60 last:border-0">
-                    <td className="px-4 py-2">
+                    <td className="px-2 py-1">
                       {d.symbol ? (
                         <Link href={`/company/${d.symbol}`} className="font-mono text-xs font-semibold hover:text-accent">
                           {d.symbol}
@@ -115,22 +115,22 @@ export function DealsView({ deals }: { deals: ApiDeals }) {
                       ) : null}
                       <div className="max-w-[240px] truncate text-2xs text-muted-foreground">{d.name}</div>
                     </td>
-                    <td className="max-w-[320px] truncate px-4 py-2 text-xs" title={d.client}>
+                    <td className="max-w-[320px] truncate px-2 py-1 text-2xs" title={d.client}>
                       {d.client}
                     </td>
-                    <td className="px-4 py-2">
+                    <td className="px-2 py-1">
                       <span
                         className={cn(
-                          "rounded px-1.5 py-0.5 font-mono text-2xs font-semibold",
+                          "rounded-none border px-1.5 py-0.5 font-mono text-3xs font-bold uppercase tracking-wider",
                           d.side === "BUY" ? "bg-up/10 text-up" : "bg-down/10 text-down",
                         )}
                       >
                         {d.side}
                       </span>
                     </td>
-                    <td className="px-4 py-2 text-right font-mono tabular-nums">{d.quantity == null ? "n/a" : formatINR(d.quantity, 0)}</td>
-                    <td className="px-4 py-2 text-right font-mono tabular-nums">{d.price == null ? "n/a" : `₹${formatINR(d.price, 2)}`}</td>
-                    <td className="px-4 py-2 text-right font-mono tabular-nums">
+                    <td className="px-2 py-1 text-right font-mono text-2xs tabular-nums cell-glow">{d.quantity == null ? "n/a" : formatINR(d.quantity, 0)}</td>
+                    <td className="px-2 py-1 text-right font-mono text-2xs tabular-nums cell-glow">{d.price == null ? "n/a" : `₹${formatINR(d.price, 2)}`}</td>
+                    <td className="px-2 py-1 text-right font-mono text-2xs tabular-nums cell-glow">
                       {d.valueCr == null ? "n/a" : `₹${formatINR(d.valueCr, 2)} Cr`}
                       {kind === "bulk" && d.symbol && netBySymbol.has(d.symbol) && Math.abs(netBySymbol.get(d.symbol)!) < 0.005 ? (
                         <div className="text-2xs font-normal text-muted-foreground">nets to zero today</div>

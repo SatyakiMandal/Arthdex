@@ -131,7 +131,7 @@ export function CalendarView({ calendar }: { calendar: ApiCalendar }) {
                 </h2>
                 <ul className="divide-y divide-border/60">
                   {rows.map((a, i) => (
-                    <li key={`${a.symbol}-${i}`} className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5">
+                    <li key={`${a.symbol}-${i}`} className="flex flex-wrap items-center justify-between gap-3 px-3 py-1.5">
                       <div className="min-w-0">
                         <Link href={`/company/${a.symbol}`} className="font-mono text-xs font-semibold hover:text-accent">
                           {a.symbol}
@@ -139,7 +139,7 @@ export function CalendarView({ calendar }: { calendar: ApiCalendar }) {
                         <span className="ml-2 text-2xs text-muted-foreground">{a.name}</span>
                         <p className="mt-0.5 text-sm">{a.subject}</p>
                       </div>
-                      <span className={cn("rounded px-2 py-0.5 font-mono text-2xs font-semibold uppercase", KIND_TONE[a.kind])}>{a.kind}</span>
+                      <span className={cn("rounded-none border px-1.5 py-0.5 font-mono text-3xs font-bold uppercase tracking-wider", KIND_TONE[a.kind])}>{a.kind}</span>
                     </li>
                   ))}
                 </ul>
@@ -158,13 +158,13 @@ export function CalendarView({ calendar }: { calendar: ApiCalendar }) {
               </h2>
               <ul className="divide-y divide-border/60">
                 {rows.map((m, i) => (
-                  <li key={`${m.symbol}-${i}`} className="px-4 py-2.5">
+                  <li key={`${m.symbol}-${i}`} className="px-3 py-1.5">
                     <div className="flex flex-wrap items-center gap-2">
                       <Link href={`/company/${m.symbol}`} className="font-mono text-xs font-semibold hover:text-accent">
                         {m.symbol}
                       </Link>
                       <span className="text-2xs text-muted-foreground">{m.name}</span>
-                      {m.isResults ? <span className="rounded bg-accent/10 px-1.5 py-0.5 font-mono text-2xs text-accent">Results</span> : null}
+                      {m.isResults ? <span className="rounded-none border border-accent/30 bg-accent/10 px-1.5 py-0.2 font-mono text-3xs font-bold text-accent uppercase">Results</span> : null}
                     </div>
                     <p className="mt-0.5 line-clamp-2 text-2xs text-muted-foreground">{m.purpose}{m.detail ? `: ${m.detail}` : ""}</p>
                   </li>
