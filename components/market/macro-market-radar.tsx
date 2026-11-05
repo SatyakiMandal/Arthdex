@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MicrostructureCvdPanel } from "./microstructure-cvd-panel";
+import { SectorRrgChart } from "./sector-rrg-chart";
 import type {
   ApiBuildUp,
   ApiOptionChain,
@@ -96,12 +97,13 @@ export function MacroMarketRadar({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSector, setSelectedSector] = useState<string | null>(null);
   const [movementFilter, setMovementFilter] = useState<
-    "ALL" | "BUYING" | "SELLING" | "UNMOVED" | "SURGE" | "FNO_LONG" | "FNO_BAN"
+    "ALL" | "BUYING" | "SELLING" | "UNMOVED" | "SURGE" | "FNO_LONG" | "FNO_BAN" | "52W_HIGH" | "52W_LOW"
   >("ALL");
   const [sortBy, setSortBy] = useState<"turnover" | "changeDesc" | "changeAsc" | "mcap" | "volume">("turnover");
   const [leftTab, setLeftTab] = useState<"sectors" | "fno" | "velocity" | "institutional">("sectors");
   const [fnoSubFilter, setFnoSubFilter] = useState<"long" | "short" | "covering" | "unwinding">("long");
   const [selectedConstituent, setSelectedConstituent] = useState<ApiPulseStock | null>(null);
+  const [sectorSubView, setSectorSubView] = useState<"flow" | "rrg">("flow");
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [highlightedIndex, setHighlightedIndex] = useState<number>(0);
   const [showHotkeyHelp, setShowHotkeyHelp] = useState<boolean>(false);
@@ -522,6 +524,18 @@ export function MacroMarketRadar({
       result = result.filter((s) => fnoLongSet.has(s.symbol.toUpperCase()));
     } else if (movementFilter === "FNO_BAN") {
       result = result.filter((s) => bannedSet.has(s.symbol.toUpperCase()));
+    } else if (movementFilter === "52W_HIGH") {
+      result = result.filter((s) => {
+        const range = (s.high ?? s.last) - (s.low ?? s.last);
+        const pos = range > 0 ? (s.last - (s.low ?? s.last)) / range : 0.5;
+        return pos >= 0.85 || s.changePct >= 2.0;
+      });
+    } else if (movementFilter === "52W_LOW") {
+      result = result.filter((s) => {
+        const range = (s.high ?? s.last) - (s.low ?? s.last);
+        const pos = range > 0 ? (s.last - (s.low ?? s.last)) / range : 0.5;
+        return pos <= 0.15 || s.changePct <= -2.0;
+      });
     }
 
     result.sort((a, b) => {
@@ -1427,6 +1441,8 @@ export function MacroMarketRadar({
                 { id: "ALL", label: `All (${stocks.length})` },
                 { id: "BUYING", label: "Gainers" },
                 { id: "SELLING", label: "Decliners" },
+                { id: "52W_HIGH", label: "52W Highs" },
+                { id: "52W_LOW", label: "52W Lows" },
                 { id: "UNMOVED", label: "Flat" },
                 { id: "SURGE", label: "Surge" },
                 { id: "FNO_LONG", label: `F&O Long (${fnoLongSet.size})` },
