@@ -130,20 +130,25 @@ export function LiveVolumeProfile({
   const [showPocLine, setShowPocLine] = useState(true);
   const [showVwap, setShowVwap] = useState(true);
   const [showSessions, setShowSessions] = useState(true);
+  const [showCvd, setShowCvd] = useState(true);
+  const [showAbsorption, setShowAbsorption] = useState(true);
 
   // Crosshair / Hover state
   const [hoverBarIdx, setHoverBarIdx] = useState<number | null>(null);
   const [hoverBinIdx, setHoverBinIdx] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // SVG Chart Dimensions
+  // SVG Chart Dimensions (Dynamic for CVD Sub-Pane)
   const W = 1100;
-  const H = 480;
+  const H = showCvd ? 580 : 480;
   const PROFILE_WIDTH = 250;
   const CHART_WIDTH = W - PROFILE_WIDTH - 60;
   const PADDING_TOP = 25;
   const PADDING_BOTTOM = 30;
-  const USABLE_H = H - PADDING_TOP - PADDING_BOTTOM;
+  const PRICE_USABLE_H = showCvd ? 340 : 425;
+  const CVD_TOP = 395;
+  const CVD_USABLE_H = 130;
+  const USABLE_H = PRICE_USABLE_H;
 
   // Load Orderflow Data with Live Tick Detection
   const refreshLiveProfile = useCallback(
@@ -255,6 +260,10 @@ export function LiveVolumeProfile({
         setTimeframe("1d");
       } else if (e.key === "p" || e.key === "P") {
         setProfileMode((prev) => (prev === "tradingview" ? "delta" : "tradingview"));
+      } else if (e.key === "c" || e.key === "C") {
+        setShowCvd((prev) => !prev);
+      } else if (e.key === "a" || e.key === "A") {
+        setShowAbsorption((prev) => !prev);
       } else if (e.key === "[") {
         const idx = BELLWETHERS.findIndex((b) => b.symbol === symbol);
         const prevIdx = (idx - 1 + BELLWETHERS.length) % BELLWETHERS.length;
@@ -319,6 +328,43 @@ export function LiveVolumeProfile({
     },
     [stepX],
   );
+
+  // CVD (Cumulative Volume Delta) Extents and Path
+  const cvdSeries = useMemo(() => data?.cvd ?? [], [data?.cvd]);
+  const { minCvd, maxCvd, cvdRange } = useMemo(() => {
+    if (cvdSeries.length === 0) return { minCvd: 0, maxCvd: 1, cvdRange: 1 };
+    let mn = Infinity;
+    let mx = -Infinity;
+    for (const val of cvdSeries) {
+      if (val < mn) mn = val;
+      if (val > mx) mx = val;
+    }
+    const pad = (mx - mn) * 0.08 || 100;
+    return { minCvd: mn - pad, maxCvd: mx + pad, cvdRange: mx - mn + 2 * pad || 1 };
+  }, [cvdSeries]);
+
+  const cvdToY = useCallback(
+    (val: number) => {
+      const frac = (maxCvd - val) / cvdRange;
+      return CVD_TOP + frac * CVD_USABLE_H;
+    },
+    [maxCvd, cvdRange, CVD_TOP, CVD_USABLE_H],
+  );
+
+  const zeroCvdY = useMemo(() => {
+    return Math.max(CVD_TOP, Math.min(CVD_TOP + CVD_USABLE_H, cvdToY(0)));
+  }, [cvdToY, CVD_TOP, CVD_USABLE_H]);
+
+  const cvdPath = useMemo(() => {
+    if (cvdSeries.length === 0) return "";
+    return cvdSeries
+      .map((val, i) => {
+        const x = indexToX(i);
+        const y = cvdToY(val);
+        return `${i === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`;
+      })
+      .join(" ");
+  }, [cvdSeries, indexToX, cvdToY]);
 
   // Volume Profile Metrics
   const maxBinVolume = useMemo(() => {
@@ -741,7 +787,27 @@ export function LiveVolumeProfile({
                 onChange={(e) => setShowSessions(e.target.checked)}
                 className="accent-accent rounded-none"
               />
-              <span>Session Boxes</span>
+              <span>Sessions</span>
+            </label>
+
+            <label className="flex items-center gap-1 cursor-pointer text-3xs hover:text-foreground">
+              <input
+                type="checkbox"
+                checked={showCvd}
+                onChange={(e) => setShowCvd(e.target.checked)}
+                className="accent-accent rounded-none"
+              />
+              <span className={cn(showCvd && "text-accent font-bold")}>CVD Sub-Pane</span>
+            </label>
+
+            <label className="flex items-center gap-1 cursor-pointer text-3xs hover:text-foreground">
+              <input
+                type="checkbox"
+                checked={showAbsorption}
+                onChange={(e) => setShowAbsorption(e.target.checked)}
+                className="accent-gold rounded-none"
+              />
+              <span className={cn(showAbsorption && "text-gold font-bold")}>Absorption Signals</span>
             </label>
           </div>
         </div>
@@ -970,6 +1036,80 @@ export function LiveVolumeProfile({
                       isLastBar && tickFlash === "down" && "animate-tick-down",
                     )}
                   />
+
+                  {/* Institutional Absorption & Big Volume Trade Markers */}
+                  {showAbsorption && data?.absorption && (
+                    <>
+                      {data.absorption
+                        .filter((a) => a.at === i)
+                        .map((a, aIdx) => (
+                          <g key={`abs-${aIdx}`}>
+                            {a.type === "bullish" ? (
+                              <g transform={`translate(${xPos}, ${lowY + 9})`}>
+                                <path
+                                  d="M 0 -4 L 4 3 L -4 3 Z"
+                                  fill="hsl(var(--up))"
+                                  stroke="hsl(var(--background))"
+                                  strokeWidth="0.5"
+                                />
+                                <text
+                                  x={0}
+                                  y={10}
+                                  fill="hsl(var(--up))"
+                                  fontSize="6.5"
+                                  fontFamily="monospace"
+                                  fontWeight="bold"
+                                  textAnchor="middle"
+                                >
+                                  ABS
+                                </text>
+                              </g>
+                            ) : (
+                              <g transform={`translate(${xPos}, ${highY - 9})`}>
+                                <path
+                                  d="M 0 4 L 4 -3 L -4 -3 Z"
+                                  fill="hsl(var(--down))"
+                                  stroke="hsl(var(--background))"
+                                  strokeWidth="0.5"
+                                />
+                                <text
+                                  x={0}
+                                  y={-6}
+                                  fill="hsl(var(--down))"
+                                  fontSize="6.5"
+                                  fontFamily="monospace"
+                                  fontWeight="bold"
+                                  textAnchor="middle"
+                                >
+                                  REJ
+                                </text>
+                              </g>
+                            )}
+                          </g>
+                        ))}
+                    </>
+                  )}
+
+                  {showAbsorption && data?.bigTrades && (
+                    <>
+                      {data.bigTrades
+                        .filter((bt) => bt.at === i)
+                        .map((bt, bIdx) => (
+                          <g key={`bt-${bIdx}`} transform={`translate(${xPos}, ${openY})`}>
+                            <rect
+                              x={-3}
+                              y={-3}
+                              width={6}
+                              height={6}
+                              fill="hsl(var(--gold))"
+                              transform="rotate(45)"
+                              stroke="hsl(var(--background))"
+                              strokeWidth="0.5"
+                            />
+                          </g>
+                        ))}
+                    </>
+                  )}
 
                   {/* Active Live Candle Indicator Badge on Latest Bar */}
                   {isLastBar && (
@@ -1398,6 +1538,104 @@ export function LiveVolumeProfile({
                 </g>
               )}
             </g>
+            {/* =================================================================== */}
+            {/* CVD (CUMULATIVE VOLUME DELTA) SUB-PANE                             */}
+            {/* =================================================================== */}
+            {showCvd && cvdSeries.length > 0 && (
+              <g>
+                {/* Sub-pane separator */}
+                <line
+                  x1={15}
+                  y1={CVD_TOP - 15}
+                  x2={CHART_WIDTH + 15}
+                  y2={CVD_TOP - 15}
+                  stroke="hsl(var(--border))"
+                  strokeWidth="1.2"
+                />
+
+                {/* Sub-pane Title */}
+                <text
+                  x={20}
+                  y={CVD_TOP - 3}
+                  fill="hsl(var(--muted-foreground))"
+                  fontSize="8.5"
+                  fontFamily="monospace"
+                  fontWeight="bold"
+                >
+                  CUMULATIVE VOLUME DELTA (CVD) · INTRADAY NET AGGRESSION
+                </text>
+
+                {/* Zero Delta Baseline */}
+                <line
+                  x1={15}
+                  y1={zeroCvdY}
+                  x2={CHART_WIDTH + 15}
+                  y2={zeroCvdY}
+                  stroke="hsl(var(--border))"
+                  strokeWidth="1"
+                  strokeDasharray="2 3"
+                />
+                <text
+                  x={CHART_WIDTH + 10}
+                  y={zeroCvdY - 2}
+                  fill="hsl(var(--muted-foreground))"
+                  fontSize="7.5"
+                  fontFamily="monospace"
+                  textAnchor="end"
+                >
+                  0
+                </text>
+
+                {/* CVD Curve Line */}
+                <path
+                  d={cvdPath}
+                  fill="none"
+                  stroke={
+                    cvdSeries[cvdSeries.length - 1] >= 0
+                      ? "hsl(var(--up))"
+                      : "hsl(var(--down))"
+                  }
+                  strokeWidth="1.6"
+                />
+
+                {/* Live Current CVD Dot */}
+                {cvdSeries.length > 0 && (
+                  <circle
+                    cx={indexToX(cvdSeries.length - 1)}
+                    cy={cvdToY(cvdSeries[cvdSeries.length - 1])}
+                    r="3.5"
+                    fill={
+                      cvdSeries[cvdSeries.length - 1] >= 0
+                        ? "hsl(var(--up))"
+                        : "hsl(var(--down))"
+                    }
+                    className="animate-ping"
+                    opacity="0.8"
+                  />
+                )}
+
+                {/* Crosshair Dot on CVD when Bar is Hovered */}
+                {hoverBarIdx !== null && cvdSeries[hoverBarIdx] !== undefined && (
+                  <g>
+                    <circle
+                      cx={indexToX(hoverBarIdx)}
+                      cy={cvdToY(cvdSeries[hoverBarIdx])}
+                      r="4"
+                      fill="hsl(var(--foreground))"
+                      stroke="hsl(var(--background))"
+                      strokeWidth="1"
+                    />
+                    <g transform={`translate(${indexToX(hoverBarIdx) + 6}, ${cvdToY(cvdSeries[hoverBarIdx]) - 5})`}>
+                      <rect x={0} y={-8} width={64} height={14} fill="hsl(var(--surface-raised))" stroke="hsl(var(--border))" strokeWidth="0.8" />
+                      <text x={3} y={2.5} fill="hsl(var(--foreground))" fontSize="7.5" fontFamily="monospace" fontWeight="bold">
+                        {fmtCompact(cvdSeries[hoverBarIdx])}
+                      </text>
+                    </g>
+                  </g>
+                )}
+              </g>
+            )}
+
           </svg>
 
           {/* Hover Volume Bin Tooltip Popup */}
@@ -1640,6 +1878,18 @@ export function LiveVolumeProfile({
                 <span className="text-muted-foreground">Toggle Profile / Delta Mode</span>
                 <kbd className="border border-border bg-surface-raised px-1.5 py-0.5 font-bold text-foreground">
                   P
+                </kbd>
+              </div>
+              <div className="flex items-center justify-between border-b border-border/40 py-1">
+                <span className="text-muted-foreground">Toggle CVD Sub-Pane</span>
+                <kbd className="border border-border bg-surface-raised px-1.5 py-0.5 font-bold text-foreground">
+                  C
+                </kbd>
+              </div>
+              <div className="flex items-center justify-between border-b border-border/40 py-1">
+                <span className="text-muted-foreground">Toggle Absorption Signals</span>
+                <kbd className="border border-border bg-surface-raised px-1.5 py-0.5 font-bold text-foreground">
+                  A
                 </kbd>
               </div>
               <div className="flex items-center justify-between border-b border-border/40 py-1">
