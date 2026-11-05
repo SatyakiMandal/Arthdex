@@ -612,13 +612,13 @@ export function LiveVolumeProfile({
   const valPrice = profile?.val ?? null;
 
   // Active Auction Bin (bin containing current lastClose)
-  const activePriceBinIdx = useMemo(() => {
-    if (lastClose === null || !profile?.bins || profile.bins.length === 0) return -1;
-    return profile.bins.findIndex((b) => lastClose >= b.lo && lastClose <= b.hi);
-  }, [lastClose, profile?.bins]);
+  const activePriceBinIdx =
+    lastClose !== null && profile?.bins
+      ? profile.bins.findIndex((b) => lastClose >= b.lo && lastClose <= b.hi)
+      : -1;
 
   // Price change relative to authentic live quote or first bar in visible range
-  const priceChangeStats = useMemo(() => {
+  const priceChangeStats = (() => {
     if (
       liveQuote?.change &&
       typeof liveQuote.change.absolute === "number" &&
@@ -637,7 +637,7 @@ export function LiveVolumeProfile({
     const diff = lastClose - firstBar.o;
     const pct = (diff / firstBar.o) * 100;
     return { diff, pct, isPositive: diff >= 0 };
-  }, [liveQuote?.change, bars, lastClose]);
+  })();
 
   const marketStructure = useMemo(() => {
     if (lastClose === null || pocPrice === null || vahPrice === null || valPrice === null) {

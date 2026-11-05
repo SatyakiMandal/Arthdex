@@ -196,8 +196,8 @@ export function FundamentalScreen({
                       key={r.symbol}
                       className="border-b border-border/40 last:border-0 hover:bg-surface-muted/80 transition-colors duration-150"
                     >
-                      <td className="px-2 py-1 text-2xs font-mono text-muted-foreground/60">{idx + 1}</td>
-                      <th scope="row" className="px-2.5 py-1 text-left font-normal">
+                      <td className="px-2 py-1 text-2xs font-mono text-muted-foreground/60 cell-glow">{idx + 1}</td>
+                      <th scope="row" className="px-2.5 py-1 text-left font-normal cell-glow">
                         <Link
                           href={`/company/${r.symbol}`}
                           className="font-mono text-xs font-semibold text-foreground hover:text-accent transition-colors"
@@ -209,12 +209,12 @@ export function FundamentalScreen({
                         ) : null}
                         <span className="ml-2 text-2xs font-sans text-muted-foreground truncate">{r.sector}</span>
                       </th>
-                      <td className="px-2 py-1 text-right font-mono tabular-nums text-xs font-semibold text-foreground">
+                      <td className="px-2 py-1 text-right font-mono tabular-nums text-xs font-semibold text-foreground cell-glow">
                         {price > 0 ? formatINR(price, 2) : "—"}
                       </td>
                       <td
                         className={cn(
-                          "px-2 py-1 text-right font-mono tabular-nums text-xs",
+                          "px-2 py-1 text-right font-mono tabular-nums text-xs cell-glow",
                           change !== null ? deltaColor(change) : "text-muted-foreground",
                         )}
                       >
@@ -229,8 +229,8 @@ export function FundamentalScreen({
                           <td
                             key={c.key}
                             className={cn(
-                              "px-2 py-1 text-right font-mono tabular-nums text-xs",
-                              typeof v !== "number" ? "text-muted-foreground/60 text-2xs" : c.tone ? deltaColor(v) : "text-foreground",
+                              "px-2 py-1 text-right font-mono tabular-nums text-xs cell-glow",
+                              typeof v !== "number" ? "text-muted-foreground/60 text-2xs" : c.tone ? deltaColor(v) : "text-foreground", "cell-glow",
                             )}
                           >
                             {typeof v === "number" ? formatINR(v, c.digits) : "—"}

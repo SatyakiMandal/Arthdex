@@ -76,7 +76,7 @@ export function MacdScreener() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end gap-x-5 gap-y-4 rounded-none border border-border bg-surface p-4">
+      <div className="flex flex-wrap items-end gap-x-3 gap-y-2.5 rounded-none border border-border bg-surface p-2.5 sm:p-3">
         <div>
           <span className={label}>Signal</span>
           <SegmentedControl options={DIRECTIONS} value={direction} onChange={setDirection} layoutGroupId="macd-direction" />
@@ -198,54 +198,54 @@ export function MacdScreener() {
           </p>
         ) : (
           <div className={cn("max-h-[70vh] overflow-auto", loading && "opacity-50")}>
-            <table className="data-table data-table-sticky w-full min-w-[820px] border-collapse text-sm">
+            <table className="data-table data-table-sticky w-full min-w-[820px] border-collapse text-xs font-mono">
               <thead className="text-2xs text-muted-foreground">
                 <tr className="border-b border-border">
-                  <th className="px-3 py-2 text-left font-medium">Scrip</th>
-                  <th className="px-3 py-2 text-left font-medium">Industry</th>
-                  <th className="px-3 py-2 text-right font-medium">Price</th>
-                  <th className="px-3 py-2 text-right font-medium">Day %</th>
-                  <th className="px-3 py-2 text-right font-medium">Crossed</th>
-                  <th className="px-3 py-2 text-right font-medium">MACD</th>
-                  <th className="px-3 py-2 text-right font-medium">Signal</th>
-                  <th className="px-3 py-2 text-right font-medium">Histogram</th>
-                  <th className="px-3 py-2 text-right font-medium">RSI</th>
-                  <th className="px-3 py-2 text-right font-medium" title="Confirmations out of 4: MACD side of zero, price vs 50-bar EMA, ADX of 20+, RSI not stretched">Quality</th>
+                  <th className="px-2.5 py-1 text-left font-medium text-3xs uppercase tracking-wider text-muted-foreground">Scrip</th>
+                  <th className="px-2.5 py-1 text-left font-medium text-3xs uppercase tracking-wider text-muted-foreground">Industry</th>
+                  <th className="px-2 py-1 text-right font-medium text-3xs uppercase tracking-wider text-muted-foreground">Price</th>
+                  <th className="px-2 py-1 text-right font-medium text-3xs uppercase tracking-wider text-muted-foreground">Day %</th>
+                  <th className="px-2 py-1 text-right font-medium text-3xs uppercase tracking-wider text-muted-foreground">Crossed</th>
+                  <th className="px-2 py-1 text-right font-medium text-3xs uppercase tracking-wider text-muted-foreground">MACD</th>
+                  <th className="px-2 py-1 text-right font-medium text-3xs uppercase tracking-wider text-muted-foreground">Signal</th>
+                  <th className="px-2 py-1 text-right font-medium text-3xs uppercase tracking-wider text-muted-foreground">Histogram</th>
+                  <th className="px-2 py-1 text-right font-medium text-3xs uppercase tracking-wider text-muted-foreground">RSI</th>
+                  <th className="px-2 py-1 text-right font-medium text-3xs uppercase tracking-wider text-muted-foreground" title="Confirmations out of 4: MACD side of zero, price vs 50-bar EMA, ADX of 20+, RSI not stretched">Quality</th>
                 </tr>
               </thead>
               <tbody>
                 {data?.results.map((r) => (
                   <tr key={r.symbol} className="border-b border-border/60 last:border-0 hover:bg-surface-muted">
-                    <td className="px-3 py-2">
+                    <td className="px-2.5 py-1 cell-glow">
                       <Link href={`/company/${r.symbol}/technicals`} className="font-mono text-xs font-semibold hover:text-accent">
                         {r.symbol}
                       </Link>
                       <div className="max-w-[200px] truncate text-2xs text-muted-foreground">{r.name}</div>
                     </td>
-                    <td className="px-3 py-2 text-2xs text-muted-foreground">{r.industry}</td>
-                    <td className="px-3 py-2 text-right font-mono tabular-nums">{r.price == null ? "—" : formatINR(r.price)}</td>
-                    <td className={cn("px-3 py-2 text-right font-mono tabular-nums", r.changePct != null && deltaColor(r.changePct))}>
+                    <td className="px-2 py-1 text-2xs text-muted-foreground cell-glow">{r.industry}</td>
+                    <td className="px-2 py-1 text-right font-mono tabular-nums cell-glow text-foreground">{r.price == null ? "—" : formatINR(r.price)}</td>
+                    <td className={cn("px-2 py-1 text-right font-mono tabular-nums cell-glow font-semibold", r.changePct != null && deltaColor(r.changePct))}>
                       {r.changePct == null ? "—" : formatPct(r.changePct)}
                     </td>
-                    <td className="px-3 py-2 text-right font-mono text-2xs tabular-nums">
+                    <td className="px-2 py-1 text-right font-mono text-2xs tabular-nums cell-glow">
                       {r.barsAgo === 0 ? "latest bar" : `${r.barsAgo} ${interval === "1d" ? "days" : "bars"} ago`}
                       <div className="text-muted-foreground">{r.crossedAt.replace("T", " ").slice(interval === "1d" ? 5 : 5, 16)}</div>
                     </td>
-                    <td className="px-3 py-2 text-right font-mono tabular-nums">{r.macd ?? "—"}</td>
-                    <td className="px-3 py-2 text-right font-mono tabular-nums">{r.signal ?? "—"}</td>
-                    <td className="px-3 py-1 text-right">
+                    <td className="px-2 py-1 text-right font-mono tabular-nums cell-glow text-foreground">{r.macd ?? "—"}</td>
+                    <td className="px-2 py-1 text-right font-mono tabular-nums cell-glow text-foreground">{r.signal ?? "—"}</td>
+                    <td className="px-2 py-0.5 text-right cell-glow">
                       <CellBar value={r.hist} max={maxHist} tone={(r.hist ?? 0) >= 0 ? "up" : "down"}>
                         <span className={cn("text-xs", r.hist != null && deltaColor(r.hist))}>{r.hist ?? "—"}</span>
                       </CellBar>
                     </td>
-                    <td className="px-3 py-1 text-right">
+                    <td className="px-2 py-0.5 text-right cell-glow">
                       {r.rsi == null ? "—" : (
                         <CellBar value={r.rsi} max={100} tone={r.rsi > 70 ? "down" : r.rsi < 30 ? "up" : "muted"} markers={[30, 70]}>
                           <span className="text-xs">{r.rsi}</span>
                         </CellBar>
                       )}
                     </td>
-                    <td className="px-3 py-1 text-right">
+                    <td className="px-2 py-0.5 text-right cell-glow">
                       <span role="img" className="inline-flex gap-0.5" title={`${r.score ?? 0} of 4 confirmations`} aria-label={`${r.score ?? 0} of 4 confirmations`}>
                         {[0, 1, 2, 3].map((k) => (
                           <span key={k} className={cn("h-2 w-2 rounded-none", k < (r.score ?? 0) ? "bg-accent" : "bg-muted")} />

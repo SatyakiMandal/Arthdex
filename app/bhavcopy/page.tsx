@@ -182,6 +182,28 @@ export default async function BhavcopyPage({ searchParams }: PageProps) {
               />
             </div>
 
+            {/* Whole-Market Physical Delivery vs Speculative Intraday Turnover Ratio Bar */}
+            {res.data.kpis.weightedDeliveryPct != null ? (
+              <div className="border border-border/80 bg-surface px-3 py-1.5 font-mono text-2xs rounded-none shadow-xs">
+                <div className="flex items-center justify-between text-3xs uppercase tracking-wider text-muted-foreground pb-1">
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-1.5 w-1.5 bg-accent rounded-none" />
+                    <span>Market-Wide Settlement Absorption Gauge</span>
+                  </span>
+                  <span className="font-bold text-foreground">
+                    <strong className="text-accent">{res.data.kpis.weightedDeliveryPct}% Delivery</strong> · {((100 - res.data.kpis.weightedDeliveryPct)).toFixed(1)}% Intraday
+                  </span>
+                </div>
+                <div className="relative h-1.5 bg-muted/60 overflow-hidden" aria-hidden>
+                  <div
+                    className="h-full bg-accent transition-all duration-300"
+                    style={{ width: `${Math.min(100, res.data.kpis.weightedDeliveryPct)}%` }}
+                  />
+                  <div className="absolute top-0 bottom-0 left-[60%] w-0.5 bg-foreground" title="Institutional 60% Delivery Threshold" />
+                </div>
+              </div>
+            ) : null}
+
             {/* Session Narrative Banner */}
             <p className="rounded-none border border-border/80 bg-surface px-3 py-2 text-xs text-muted-foreground font-sans">
               <span className="mr-2 font-mono text-3xs font-bold text-accent uppercase tracking-wider">Session Narrative</span>
@@ -201,7 +223,7 @@ export default async function BhavcopyPage({ searchParams }: PageProps) {
 
             {/* Institutional Delivery & Volume Scanner */}
             {scannerRes.ok && (
-              <section className="rounded-none border border-border/80 bg-card p-4 shadow-xs">
+              <section className="rounded-none border border-border/80 bg-card p-3 shadow-xs">
                 <SectionHead
                   title="Institutional Delivery & Volume Scanner"
                   note="Delivery, volume surges, absorption and distribution"

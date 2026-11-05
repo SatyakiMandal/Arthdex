@@ -10,6 +10,7 @@ import { DataUnavailable, FreshnessBadge, SourceLine } from "@/components/ui/dat
 import { FactorScreens } from "@/components/market/factor-screens";
 import { WindowedMovers } from "@/components/market/windowed-movers";
 import { MoversExplained } from "@/components/market/movers-explained";
+import { MarketWatchToolbar } from "@/components/market/market-watch-toolbar";
 import { ExportCsv } from "@/components/ui/export-csv";
 import { InstitutionalFlows } from "@/components/market/institutional-flows";
 import { SectorTreemap } from "@/components/market/sector-treemap";
@@ -136,65 +137,15 @@ export default async function MarketWatchPage({ searchParams }: PageProps) {
           </div>
         </div>
 
-        {/* Multi-Segment Bloomberg Filter Toolbar */}
-        <div className="mt-2 border border-border bg-surface px-2.5 py-1.5 rounded-none flex flex-wrap items-center justify-between gap-2 text-2xs font-mono">
-          {/* Universe Segment */}
-          <div className="flex flex-wrap items-center gap-1">
-            <span className="text-3xs uppercase tracking-wider text-muted-foreground mr-1">Universe:</span>
-            {UNIVERSES.map((option) => (
-              <a
-                key={option.id}
-                href={href({ universe: option.id })}
-                className={cn(
-                  "px-2 py-0.5 text-2xs font-mono transition-colors rounded-none border",
-                  option.id === universe
-                    ? "border-accent bg-accent/15 text-accent font-bold"
-                    : "border-border/70 bg-surface-muted/50 text-muted-foreground hover:bg-surface-muted hover:text-foreground",
-                )}
-              >
-                {option.label}
-              </a>
-            ))}
-          </div>
-
-          {/* Window & Price Segments */}
-          <div className="flex flex-wrap items-center gap-2.5">
-            <div className="flex items-center gap-1">
-              <span className="text-3xs uppercase tracking-wider text-muted-foreground mr-1">Window:</span>
-              {WINDOWS.map((option) => (
-                <a
-                  key={option.id}
-                  href={href({ window: option.id })}
-                  className={cn(
-                    "px-1.5 py-0.5 text-2xs font-mono transition-colors rounded-none border",
-                    option.id === activeWindow
-                      ? "border-accent bg-accent text-accent-foreground font-bold"
-                      : "border-border/70 bg-surface-muted/50 text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  {option.label}
-                </a>
-              ))}
-            </div>
-
-            <div className="flex items-center gap-1 border-l border-border/70 pl-2.5">
-              <span className="text-3xs uppercase tracking-wider text-muted-foreground mr-1">Price:</span>
-              {PRICE_BANDS.map((option) => (
-                <a
-                  key={option.id}
-                  href={href({ price: option.id })}
-                  className={cn(
-                    "px-1.5 py-0.5 text-2xs font-mono transition-colors rounded-none border",
-                    option.id === band.id
-                      ? "border-accent bg-accent/15 text-accent font-bold"
-                      : "border-border/70 bg-surface-muted/50 text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  {option.label}
-                </a>
-              ))}
-            </div>
-          </div>
+        {/* Multi-Segment Bloomberg Filter Toolbar & Real-Time Breadth */}
+        <div className="mt-2">
+          <MarketWatchToolbar
+            currentUniverse={universe}
+            currentWindow={activeWindow}
+            currentPrice={band.id}
+            advances={breadth?.advances}
+            declines={breadth?.declines}
+          />
         </div>
 
         {/* Top Movers Dual Grid */}

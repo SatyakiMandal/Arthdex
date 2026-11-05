@@ -4,6 +4,39 @@ import { DataCard } from "@/components/ui/data-card";
 import { cn, formatINR } from "@/lib/utils";
 
 /** Renders a figure, or an em dash when the upstream did not report it. */
+function MicroSparkline({
+  values,
+  tone = "accent",
+}: {
+  values: (number | null | undefined)[];
+  tone?: "accent" | "up" | "gold";
+}) {
+  const nums = values.map((v) => (typeof v === "number" && !isNaN(v) ? v : null));
+  const valid = nums.filter((v): v is number => v !== null);
+  if (valid.length < 2) return null;
+  const min = Math.min(...valid);
+  const max = Math.max(...valid);
+  const span = max - min || 1;
+  const w = 46;
+  const h = 12;
+  const pts = nums.map((v, i) => {
+    if (v === null) return null;
+    const x = (i / (nums.length - 1)) * w;
+    const y = h - ((v - min) / span) * (h - 2) - 1;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  const validPts = pts.filter((p): p is string => p !== null);
+  if (validPts.length < 2) return null;
+  const stroke = tone === "up" ? "hsl(var(--up))" : tone === "gold" ? "hsl(var(--gold))" : "hsl(var(--accent))";
+  const lastPt = validPts[validPts.length - 1].split(",");
+  return (
+    <svg width={w} height={h} className="inline-block shrink-0 overflow-visible ml-1.5" aria-hidden>
+      <polyline points={validPts.join(" ")} fill="none" stroke={stroke} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+      <rect x={Number(lastPt[0]) - 1.5} y={Number(lastPt[1]) - 1.5} width="3" height="3" rx="0" ry="0" fill={stroke} />
+    </svg>
+  );
+}
+
 function num(value: number | null | undefined, digits = 0, suffix = ""): string {
   return value === null || value === undefined ? "—" : `${formatINR(value, digits)}${suffix}`;
 }
@@ -83,9 +116,9 @@ export function QuarterlyPnLPanel({ financials }: { financials: ApiFinancials })
   const staleDays = financials.latestQuarterAgeDays ?? 0;
 
   const rows = [
-    { label: "Revenue", get: (i: number) => num(quarters[i].revenue), emphasis: true },
+    { label: "Revenue", get: (i: number) => num(quarters[i].revenue), values: quarters.map((q) => q.revenue), emphasis: true },
     { label: "Operating expenses", get: (i: number) => num(quarters[i].operatingExpenses) },
-    { label: "Operating profit", get: (i: number) => num(quarters[i].operatingProfit), emphasis: true },
+    { label: "Operating profit", get: (i: number) => num(quarters[i].operatingProfit), values: quarters.map((q) => q.operatingProfit), tone: "up" as const, emphasis: true },
     {
       label: "Operating margin",
       get: (i: number) =>
@@ -93,7 +126,7 @@ export function QuarterlyPnLPanel({ financials }: { financials: ApiFinancials })
       accent: true,
     },
     { label: "EBITDA", get: (i: number) => num(quarters[i].ebitda) },
-    { label: "Net profit", get: (i: number) => num(quarters[i].netProfit), emphasis: true },
+    { label: "Net profit", get: (i: number) => num(quarters[i].netProfit), values: quarters.map((q) => q.netProfit), tone: "up" as const, emphasis: true },
     {
       label: "EPS (₹)",
       get: (i: number) => (quarters[i].eps === null ? "—" : quarters[i].eps!.toFixed(2)),
@@ -102,7 +135,7 @@ export function QuarterlyPnLPanel({ financials }: { financials: ApiFinancials })
 
   return (
     <section className="rounded-none border border-border bg-surface">
-      <header className="flex flex-wrap items-baseline justify-between gap-3 border-b border-border px-4 py-3">
+      <header className="flex flex-wrap items-baseline justify-between gap-3 border-b border-border px-3 py-1.5">
         <h3 className="font-sans text-sm font-semibold tracking-normal">Quarterly results</h3>
         <span className="font-mono text-2xs text-muted-foreground">
           ₹ crore · {quarters.length} quarters reported
@@ -116,13 +149,13 @@ export function QuarterlyPnLPanel({ financials }: { financials: ApiFinancials })
         </p>
       ) : null}
 
-      <div className="overflow-x-auto p-2">
-        <table className="w-full min-w-[720px] border-collapse text-sm">
+      <div className="overflow-x-auto p-1">
+        <table className="w-full min-w-[720px] border-collapse text-xs font-mono">
           <thead>
             <tr className="border-b border-border text-2xs text-muted-foreground">
-              <th className="sticky left-0 bg-surface px-3 py-2 text-left font-medium">Metric</th>
+              <th className="sticky left-0 bg-surface px-2.5 py-1 text-left font-medium text-3xs uppercase tracking-wider text-muted-foreground">Metric</th>
               {quarters.map((q) => (
-                <th key={q.periodEnd} className="px-3 py-2 text-right font-medium">
+                <th key={q.periodEnd} className="px-2 py-1 text-right font-medium text-3xs uppercase tracking-wider text-muted-foreground">
                   {q.quarter}
                 </th>
               ))}
@@ -137,17 +170,17 @@ export function QuarterlyPnLPanel({ financials }: { financials: ApiFinancials })
                 <th
                   scope="row"
                   className={cn(
-                    "sticky left-0 bg-surface px-3 py-2 text-left text-xs font-normal",
+                    "sticky left-0 bg-surface px-2.5 py-1 text-left text-xs font-normal cell-glow",
                     row.emphasis ? "font-medium text-foreground" : "text-muted-foreground",
                   )}
                 >
-                  {row.label}
+                  <span className="flex items-center justify-between gap-2"><span>{row.label}</span>{row.values ? <MicroSparkline values={row.values} tone={row.tone} /> : null}</span>
                 </th>
                 {quarters.map((q, i) => (
                   <td
                     key={q.periodEnd}
                     className={cn(
-                      "px-3 py-2 text-right font-mono tabular-nums",
+                      "px-2 py-1 text-right font-mono tabular-nums cell-glow",
                       row.accent && "text-accent",
                       row.emphasis && "font-medium",
                     )}
@@ -175,7 +208,7 @@ export function AnnualPnLPanel({ financials }: { financials: ApiFinancials }) {
 
   return (
     <section className="rounded-none border border-border bg-surface">
-      <header className="flex items-baseline justify-between gap-3 border-b border-border px-4 py-3">
+      <header className="flex items-baseline justify-between gap-3 border-b border-border px-3 py-1.5">
         <h3 className="font-sans text-sm font-semibold tracking-normal">Annual results</h3>
         <span className="font-mono text-2xs text-muted-foreground">
           ₹ crore
@@ -183,15 +216,15 @@ export function AnnualPnLPanel({ financials }: { financials: ApiFinancials }) {
       </header>
       <SourceNote source={financials.sources?.annual} />
 
-      <div className="overflow-x-auto p-2">
-        <table className="w-full min-w-[460px] border-collapse text-sm">
+      <div className="overflow-x-auto p-1">
+        <table className="w-full min-w-[460px] border-collapse text-xs font-mono">
           <thead>
             <tr className="border-b border-border text-2xs text-muted-foreground">
-              <th className="px-3 py-2 text-left font-medium">Year</th>
-              <th className="px-3 py-2 text-right font-medium">Revenue</th>
-              <th className="px-3 py-2 text-right font-medium">Operating profit</th>
-              <th className="px-3 py-2 text-right font-medium">Margin</th>
-              <th className="px-3 py-2 text-right font-medium">Net profit</th>
+              <th className="px-2.5 py-1 text-left font-medium text-3xs uppercase tracking-wider text-muted-foreground">Year</th>
+              <th className="px-2 py-1 text-right font-medium text-3xs uppercase tracking-wider text-muted-foreground">Revenue</th>
+              <th className="px-2 py-1 text-right font-medium text-3xs uppercase tracking-wider text-muted-foreground">Operating profit</th>
+              <th className="px-2 py-1 text-right font-medium text-3xs uppercase tracking-wider text-muted-foreground">Margin</th>
+              <th className="px-2 py-1 text-right font-medium text-3xs uppercase tracking-wider text-muted-foreground">Net profit</th>
             </tr>
           </thead>
           <tbody>
@@ -200,17 +233,17 @@ export function AnnualPnLPanel({ financials }: { financials: ApiFinancials }) {
                 key={year.periodEnd}
                 className="border-b border-border/60 last:border-0 hover:bg-surface-muted"
               >
-                <th scope="row" className="px-3 py-2 text-left font-mono text-xs font-medium">
+                <th scope="row" className="px-2.5 py-1 text-left font-mono text-xs font-medium cell-glow">
                   {year.period}
                 </th>
-                <td className="px-3 py-2 text-right font-mono tabular-nums">{num(year.revenue)}</td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums">
+                <td className="px-2 py-1 text-right font-mono tabular-nums cell-glow">{num(year.revenue)}</td>
+                <td className="px-2 py-1 text-right font-mono tabular-nums cell-glow">
                   {num(year.operatingProfit)}
                 </td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums text-accent">
+                <td className="px-2 py-1 text-right font-mono tabular-nums text-accent font-semibold cell-glow">
                   {year.opmPct === null ? "—" : `${year.opmPct.toFixed(1)}%`}
                 </td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums font-medium">
+                <td className="px-2 py-1 text-right font-mono tabular-nums font-medium cell-glow">
                   {num(year.netProfit)}
                 </td>
               </tr>
@@ -228,7 +261,7 @@ export function BalanceSheetPanel({ financials }: { financials: ApiFinancials })
 
   return (
     <section className="rounded-none border border-border bg-surface">
-      <header className="flex items-baseline justify-between gap-3 border-b border-border px-4 py-3">
+      <header className="flex items-baseline justify-between gap-3 border-b border-border px-3 py-1.5">
         <h3 className="font-sans text-sm font-semibold tracking-normal">Balance sheet</h3>
         <span className="font-mono text-2xs text-muted-foreground">
           ₹ crore
@@ -236,16 +269,16 @@ export function BalanceSheetPanel({ financials }: { financials: ApiFinancials })
       </header>
       <SourceNote source={financials.sources?.balanceSheet} />
 
-      <div className="overflow-x-auto p-2">
-        <table className="w-full min-w-[520px] border-collapse text-sm">
+      <div className="overflow-x-auto p-1">
+        <table className="w-full min-w-[520px] border-collapse text-xs font-mono">
           <thead>
             <tr className="border-b border-border text-2xs text-muted-foreground">
-              <th className="px-3 py-2 text-left font-medium">Period</th>
-              <th className="px-3 py-2 text-right font-medium">Borrowings</th>
-              <th className="px-3 py-2 text-right font-medium">Net worth</th>
-              <th className="px-3 py-2 text-right font-medium">Total assets</th>
-              <th className="px-3 py-2 text-right font-medium">D/E</th>
-              <th className="px-3 py-2 text-right font-medium">Current ratio</th>
+              <th className="px-2.5 py-1 text-left font-medium text-3xs uppercase tracking-wider text-muted-foreground">Period</th>
+              <th className="px-2 py-1 text-right font-medium text-3xs uppercase tracking-wider text-muted-foreground">Borrowings</th>
+              <th className="px-2 py-1 text-right font-medium text-3xs uppercase tracking-wider text-muted-foreground">Net worth</th>
+              <th className="px-2 py-1 text-right font-medium text-3xs uppercase tracking-wider text-muted-foreground">Total assets</th>
+              <th className="px-2 py-1 text-right font-medium text-3xs uppercase tracking-wider text-muted-foreground">D/E</th>
+              <th className="px-2 py-1 text-right font-medium text-3xs uppercase tracking-wider text-muted-foreground">Current ratio</th>
             </tr>
           </thead>
           <tbody>
@@ -254,19 +287,19 @@ export function BalanceSheetPanel({ financials }: { financials: ApiFinancials })
                 key={row.periodEnd}
                 className="border-b border-border/60 last:border-0 hover:bg-surface-muted"
               >
-                <th scope="row" className="px-3 py-2 text-left font-mono text-xs font-medium">
+                <th scope="row" className="px-2.5 py-1 text-left font-mono text-xs font-medium cell-glow">
                   {row.period}
                 </th>
-                <td className="px-3 py-2 text-right font-mono tabular-nums">
+                <td className="px-2 py-1 text-right font-mono tabular-nums cell-glow">
                   {num(row.borrowings)}
                 </td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums">{num(row.netWorth)}</td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums">
+                <td className="px-2 py-1 text-right font-mono tabular-nums cell-glow">{num(row.netWorth)}</td>
+                <td className="px-2 py-1 text-right font-mono tabular-nums cell-glow">
                   {num(row.totalAssets)}
                 </td>
                 <td
                   className={cn(
-                    "px-3 py-2 text-right font-mono tabular-nums",
+                    "px-2 py-1 text-right font-mono tabular-nums cell-glow",
                     row.debtToEquity === null
                       ? "text-muted-foreground"
                       : row.debtToEquity > 1
@@ -278,7 +311,7 @@ export function BalanceSheetPanel({ financials }: { financials: ApiFinancials })
                 >
                   {row.debtToEquity === null ? "—" : `${row.debtToEquity.toFixed(2)}x`}
                 </td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums text-muted-foreground">
+                <td className="px-2 py-1 text-right font-mono tabular-nums text-xs text-muted-foreground cell-glow">
                   {row.currentRatio === null ? "—" : `${row.currentRatio.toFixed(2)}x`}
                 </td>
               </tr>
@@ -321,7 +354,7 @@ export function KeyRatiosPanel({ financials }: { financials: ApiFinancials }) {
 
   return (
     <section className="rounded-none border border-border bg-surface">
-      <header className="flex flex-wrap items-baseline justify-between gap-3 border-b border-border px-4 py-3">
+      <header className="flex flex-wrap items-baseline justify-between gap-3 border-b border-border px-3 py-1.5">
         <h3 className="font-sans text-sm font-semibold tracking-normal">Key ratios</h3>
         <span className="font-mono text-2xs text-muted-foreground">
           {ratios.period}
@@ -330,7 +363,7 @@ export function KeyRatiosPanel({ financials }: { financials: ApiFinancials }) {
 
       <dl className="grid grid-cols-2 gap-px bg-border sm:grid-cols-3">
         {tiles.map((tile) => (
-          <div key={tile.label} className="bg-surface px-4 py-3">
+          <div key={tile.label} className="bg-surface px-3 py-2 cell-glow transition-all duration-150">
             <dt className="text-2xs text-muted-foreground">{tile.label}</dt>
             <dd
               className={cn(

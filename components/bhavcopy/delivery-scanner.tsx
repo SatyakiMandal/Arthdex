@@ -63,13 +63,13 @@ export function DeliveryScanner({
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Signal summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <button
           onClick={() => setActiveTab(activeTab === "ACCUMULATION" ? "ALL" : "ACCUMULATION")}
           className={cn(
-            "rounded-none border p-3.5 text-left transition-all",
+            "rounded-none border p-2 sm:p-2.5 text-left transition-all cell-glow",
             activeTab === "ACCUMULATION"
               ? "border-emerald-500 bg-emerald-500/10 ring-1 ring-emerald-500/40"
               : "border-border/80 bg-card hover:border-emerald-500/40",
@@ -89,7 +89,7 @@ export function DeliveryScanner({
         <button
           onClick={() => setActiveTab(activeTab === "SURGE" ? "ALL" : "SURGE")}
           className={cn(
-            "rounded-none border p-3.5 text-left transition-all",
+            "rounded-none border p-2 sm:p-2.5 text-left transition-all cell-glow",
             activeTab === "SURGE"
               ? "border-cyan-500 bg-cyan-500/10 ring-1 ring-cyan-500/40"
               : "border-border/80 bg-card hover:border-cyan-500/40",
@@ -109,7 +109,7 @@ export function DeliveryScanner({
         <button
           onClick={() => setActiveTab(activeTab === "ABSORPTION" ? "ALL" : "ABSORPTION")}
           className={cn(
-            "rounded-none border p-3.5 text-left transition-all",
+            "rounded-none border p-2 sm:p-2.5 text-left transition-all cell-glow",
             activeTab === "ABSORPTION"
               ? "border-purple-500 bg-purple-500/10 ring-1 ring-purple-500/40"
               : "border-border/80 bg-card hover:border-purple-500/40",
@@ -129,7 +129,7 @@ export function DeliveryScanner({
         <button
           onClick={() => setActiveTab(activeTab === "DISTRIBUTION" ? "ALL" : "DISTRIBUTION")}
           className={cn(
-            "rounded-none border p-3.5 text-left transition-all",
+            "rounded-none border p-2 sm:p-2.5 text-left transition-all cell-glow",
             activeTab === "DISTRIBUTION"
               ? "border-rose-500 bg-rose-500/10 ring-1 ring-rose-500/40"
               : "border-border/80 bg-card hover:border-rose-500/40",
@@ -212,13 +212,13 @@ export function DeliveryScanner({
                       <ArrowUpRight className="h-3 w-3 text-muted-foreground" />
                     </Link>
                   </td>
-                  <td className="px-2 py-1 text-right text-foreground font-semibold cell-glow">
+                  <td className="px-2 py-1 text-right text-foreground font-semibold cell-glow font-mono tabular-nums text-xs">
                     ₹{stock.close.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
                   </td>
                   <td className="px-2 py-1 text-right cell-glow">
                     <span
                       className={cn(
-                        "inline-flex items-center text-xs font-semibold",
+                        "inline-flex items-center text-xs font-semibold font-mono tabular-nums",
                         stock.changePct >= 0 ? "text-emerald-500" : "text-rose-500",
                       )}
                     >
@@ -246,18 +246,18 @@ export function DeliveryScanner({
                           style={{ width: `${Math.min(100, stock.deliveryPct)}%` }}
                         />
                       </div>
-                      <span className="font-semibold text-xs text-foreground">
+                      <span className="font-semibold text-xs text-foreground font-mono tabular-nums">
                         {stock.deliveryPct.toFixed(1)}%
                       </span>
                     </div>
                   </td>
-                  <td className="px-2 py-1 text-right text-muted-foreground cell-glow">
+                  <td className="px-2 py-1 text-right text-muted-foreground cell-glow font-mono tabular-nums text-xs">
                     {stock.deliveryVolume.toLocaleString("en-IN")}
                   </td>
-                  <td className="px-2 py-1 text-right text-muted-foreground cell-glow">
+                  <td className="px-2 py-1 text-right text-muted-foreground cell-glow font-mono tabular-nums text-xs">
                     {stock.totalVolume.toLocaleString("en-IN")}
                   </td>
-                  <td className="px-2 py-1 text-right text-foreground font-medium cell-glow">
+                  <td className="px-2 py-1 text-right text-foreground font-medium cell-glow font-mono tabular-nums text-xs">
                     ₹{stock.turnoverCr.toLocaleString("en-IN", { maximumFractionDigits: 2 })} Cr
                   </td>
                   <td className="px-2 py-1 text-right cell-glow">

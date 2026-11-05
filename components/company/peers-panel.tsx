@@ -87,13 +87,13 @@ export function PeersPanel({ peers, symbol }: { peers: ApiPeers; symbol: string 
         {peers.classification.industry}: {peers.industrySize} listed companies. {largestText(peers, symbol)}
         {said.length ? ` Among them it has ${said.slice(0, -1).join(", ")}${said.length > 1 ? " and " : ""}${said.at(-1)}.` : ""}
       </p>
-      <div className="mt-5 overflow-x-auto">
-        <table className="w-full min-w-[760px] border-collapse text-sm">
+      <div className="mt-2.5 overflow-x-auto border border-border/70">
+        <table className="w-full min-w-[760px] border-collapse text-xs font-mono">
           <thead>
             <tr className="border-b border-border text-left text-xs text-muted-foreground">
-              <th scope="col" className="py-2 pr-4 font-medium">Company</th>
+              <th scope="col" className="px-2.5 py-1 text-left font-medium text-3xs uppercase tracking-wider text-muted-foreground">Company</th>
               {COLUMNS.map((c) => (
-                <th key={c.key} scope="col" className="px-3 py-2 text-right font-medium">{c.label}</th>
+                <th key={c.key} scope="col" className="px-2.5 py-1 text-right font-medium text-3xs uppercase tracking-wider text-muted-foreground">{c.label}</th>
               ))}
             </tr>
           </thead>
@@ -101,8 +101,8 @@ export function PeersPanel({ peers, symbol }: { peers: ApiPeers; symbol: string 
             {peers.peers.map((row) => {
               const self = row.symbol === symbol;
               return (
-                <tr key={row.symbol} className={cn("border-b border-border/70", self && "bg-surface-muted")}>
-                  <th scope="row" className="py-2 pr-4 text-left font-normal">
+                <tr key={row.symbol} className={cn("border-b border-border/60 hover:bg-surface-muted/80 transition-colors", self && "bg-surface-muted")}>
+                  <th scope="row" className="px-2.5 py-1 text-left font-normal cell-glow">
                     <span className="inline-flex items-center gap-2">
                       {self ? <span className="h-3 w-[2px] bg-gold" aria-hidden /> : null}
                       {self ? (
@@ -116,7 +116,7 @@ export function PeersPanel({ peers, symbol }: { peers: ApiPeers; symbol: string 
                     </span>
                   </th>
                   {COLUMNS.map((c) => (
-                    <td key={c.key} className="px-3 py-2 text-right font-mono tabular-nums">
+                    <td key={c.key} className="px-2.5 py-1 text-right font-mono tabular-nums cell-glow">
                       {fmt(row[c.key] as number | null | undefined, c.digits, c.suffix)}
                     </td>
                   ))}
@@ -124,9 +124,9 @@ export function PeersPanel({ peers, symbol }: { peers: ApiPeers; symbol: string 
               );
             })}
             <tr className="text-muted-foreground">
-              <th scope="row" className="py-2 pr-4 text-left text-xs font-medium">Median of peers</th>
+              <th scope="row" className="px-2.5 py-1 text-left text-3xs font-medium uppercase tracking-wider text-muted-foreground">Median of peers</th>
               {COLUMNS.map((c) => (
-                <td key={c.key} className="px-3 py-2 text-right font-mono text-xs tabular-nums">
+                <td key={c.key} className="px-2.5 py-1 text-right font-mono tabular-nums text-xs cell-glow text-muted-foreground">
                   {fmt(peers.medians[c.key as string], c.digits, c.suffix)}
                 </td>
               ))}

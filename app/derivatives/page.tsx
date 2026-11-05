@@ -9,6 +9,7 @@ import { OptionChainView } from "@/components/derivatives/option-chain";
 import { BuildUpView } from "@/components/derivatives/build-up";
 import { FnoBanTracker } from "@/components/derivatives/fno-ban-tracker";
 import { EarningsImpliedMoves } from "@/components/derivatives/earnings-implied-moves";
+import { DerivativesTerminalDesk } from "@/components/derivatives/derivatives-terminal-desk";
 import { KeyboardHud } from "@/components/ui/keyboard-hud";
 import { getBuildUp, getOptionChain, getFnoBan, getEarningsMoves } from "@/lib/api/endpoints";
 import { cn } from "@/lib/utils";
@@ -72,86 +73,17 @@ export default async function DerivativesPage({ searchParams }: PageProps) {
           ]}
         />
 
-        <section aria-labelledby="chain" className="mt-2">
-          <SectionHead id="chain" title={`Option chain${isIndex ? "" : `: ${symbol}`}`} note="NSE, delayed 15 minutes" />
-          <nav aria-label="Underlying" className="mt-2 flex flex-wrap items-center gap-2 font-mono">
-            {INDICES.map((i) => (
-              <Link
-                key={i.id}
-                href={`/derivatives?symbol=${i.id}`}
-                aria-current={symbol === i.id ? "page" : undefined}
-                className={cn(
-                  "rounded-none border px-2.5 py-1 text-2xs font-bold transition-colors",
-                  symbol === i.id ? "border-foreground bg-foreground text-background" : "border-border text-muted-foreground hover:text-foreground hover:bg-surface-muted",
-                )}
-              >
-                {i.label}
-              </Link>
-            ))}
-            {!isIndex ? <span className="rounded-none border border-accent bg-accent/20 px-2.5 py-1 font-mono text-2xs font-bold text-accent">{symbol}</span> : null}
-            <form action="/derivatives" className="ml-auto flex items-center gap-2">
-              <label htmlFor="stock" className="text-3xs uppercase tracking-wider text-muted-foreground font-mono">Search Scrip</label>
-              <input
-                id="stock"
-                name="symbol"
-                placeholder="e.g. RELIANCE [/]"
-                className="w-36 h-7 rounded-none border border-border/80 bg-surface px-2 font-mono text-2xs uppercase placeholder:normal-case focus:outline-none focus:border-accent"
-              />
-            </form>
-          </nav>
-          <div className="mt-3">
-            {chain ? (
-              <>
-                <OptionChainView chain={chain.data} />
-                <SourceLine meta={chain.meta} className="mt-3" />
-              </>
-            ) : (
-              <DataUnavailable title={`No option chain for ${symbol}`} message="Either the symbol has no listed options, or NSE did not answer. Index options are always listed." />
-            )}
-          </div>
-        </section>
-
-        <section aria-labelledby="buildup" className="mt-4">
-          <SectionHead id="buildup" title="F&O build-up" note="Price and open interest, today" />
-          <div className="mt-3">
-            {buildUp ? (
-              <>
-                <BuildUpView data={buildUp.data} />
-                <SourceLine meta={buildUp.meta} className="mt-3" />
-              </>
-            ) : (
-              <DataUnavailable title="Build-up unavailable" message="NSE's open-interest data did not load." />
-            )}
-          </div>
-        </section>
-
-        {fnoBan && fnoBan.ok ? (
-          <section aria-labelledby="fnoban" className="mt-4">
-            <SectionHead
-              id="fnoban"
-              title="F&O Ban List & MWPL Tracker"
-              note="Banned from fresh positions at 95% MWPL"
-            />
-            <div className="mt-3">
-              <FnoBanTracker banData={fnoBan.data} />
-              <SourceLine meta={fnoBan.meta} className="mt-3" />
-            </div>
-          </section>
-        ) : null}
-
-        {earningsMoves && earningsMoves.ok ? (
-          <section aria-labelledby="earningsmoves" className="mt-4">
-            <SectionHead
-              id="earningsmoves"
-              title="Pre-Earnings Implied Move Tracker"
-              note="ATM straddle expected post-results move"
-            />
-            <div className="mt-3">
-              <EarningsImpliedMoves initialData={earningsMoves.data} />
-              <SourceLine meta={earningsMoves.meta} className="mt-3" />
-            </div>
-          </section>
-        ) : null}
+        {/* Bloomberg Real-Time Unified Derivatives Terminal Shell */}
+        <div className="mt-2">
+          <DerivativesTerminalDesk
+            initialSymbol={symbol}
+            initialExpiry={expiry}
+            chainData={chain?.data ?? null}
+            buildUpData={buildUp?.data ?? null}
+            fnoBanData={fnoBan?.ok ? fnoBan.data : null}
+            earningsData={earningsMoves?.ok ? earningsMoves.data : null}
+          />
+        </div>
       </main>
       <SiteFooter />
     </div>

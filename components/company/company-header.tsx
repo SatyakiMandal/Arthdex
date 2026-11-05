@@ -123,6 +123,7 @@ export function CompanyHeader({
   const pct = quote.change.percent;
   const dayTone = pct > 0 ? "up" : pct < 0 ? "down" : "flat";
 
+  const daySpread = quote.dayHigh && quote.dayLow ? quote.dayHigh - quote.dayLow : null;
   const ledger = [
     { label: "Market Cap", value: quote.marketCapCr ? `₹${formatINR(quote.marketCapCr, 0)} Cr` : "—" },
     { label: "P/E", value: valuation?.peRatio ? valuation.peRatio.toFixed(2) : "—" },
@@ -130,7 +131,7 @@ export function CompanyHeader({
     { label: "ROE", value: valuation?.roePct != null ? `${valuation.roePct.toFixed(1)}%` : "—" },
     { label: "Div Yield", value: valuation?.dividendYieldPct != null ? `${valuation.dividendYieldPct.toFixed(2)}%` : "—" },
     { label: "Volume", value: quote.volume ? formatVolume(quote.volume) : "—" },
-    { label: "Open", value: `₹${formatINR(quote.open)}` },
+    { label: "Day Spread", value: daySpread != null ? `₹${formatINR(daySpread, 1)} (${((daySpread / quote.open) * 100).toFixed(1)}%)` : "—" },
     { label: "Prev Close", value: `₹${formatINR(quote.previousClose)}` },
   ];
 
@@ -204,7 +205,7 @@ export function CompanyHeader({
         {/* Multiples Micro-Ledger */}
         <dl className="mt-2.5 grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-8 border-t border-border/50 pt-2">
           {ledger.map((item) => (
-            <div key={item.label} className="border border-border/40 bg-surface/40 px-2 py-1 rounded-none">
+            <div key={item.label} className="border border-border/40 bg-surface/40 px-2 py-1 rounded-none cell-glow transition-all duration-150">
               <dt className="text-3xs uppercase font-mono tracking-wider text-muted-foreground">{item.label}</dt>
               <dd className={cn("mt-0.5 font-mono text-xs font-semibold tabular-nums text-foreground", item.value === "—" && "text-muted-foreground")}>
                 {item.value}
