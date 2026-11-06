@@ -61,6 +61,11 @@ import type {
   ApiBuybackResponse,
   ApiSurveillanceOverview,
   ApiYieldCurveResponse,
+  ApiParticipantOiResponse,
+  ApiStrategyTemplate,
+  ApiStrategyPayoffResponse,
+  ApiStrategyLeg,
+  ApiVolSurfaceResponse,
 } from "./types";
 
 export type { CompanyFilingItem, CompanyFilingsPayload };
@@ -342,3 +347,23 @@ export const getSurveillance = (params?: { measure?: string; band?: string; q?: 
 
 export const getYieldCurve = () =>
   apiGet<ApiYieldCurveResponse>("/api/v1/market/yield-curve", 3600);
+
+export const getParticipantOi = () =>
+  apiGet<ApiParticipantOiResponse>("/api/v1/derivatives/participant-oi", 1800);
+
+export const getStrategyTemplates = (symbol: string = "NIFTY", spot: number = 24500) =>
+  apiGet<ApiStrategyTemplate[]>(`/api/v1/derivatives/strategy/templates?symbol=${encodeURIComponent(symbol)}&spot=${spot}`, 3600);
+
+export const postStrategyPayoff = (payload: {
+  symbol: string;
+  spotPrice: number;
+  lotSize: number;
+  legs: ApiStrategyLeg[];
+  daysToExpiry?: number;
+  riskFreeRate?: number;
+}) =>
+  apiPost<ApiStrategyPayoffResponse>("/api/v1/derivatives/strategy/payoff", payload);
+
+export const getVolatilitySurface = (symbol: string = "NIFTY") =>
+  apiGet<ApiVolSurfaceResponse>(`/api/v1/derivatives/${encodeURIComponent(symbol)}/vol-surface`, 300);
+

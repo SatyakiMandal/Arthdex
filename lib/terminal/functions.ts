@@ -194,6 +194,38 @@ export const TERMINAL_FUNCTIONS: TerminalFunction[] = [
     route: () => "/derivatives",
     aliases: ["BAN", "MWPL", "FNOBAN"],
   },
+  {
+    code: "PART",
+    name: "Participant OI & Positioning",
+    description: "FII, DII, Pro vs Retail long/short derivatives positioning, net contracts & sentiment",
+    category: "Derivatives",
+    contextTypes: ["GLOBAL", "IX", "FUT"],
+    requiresSymbol: false,
+    route: () => "/participant-oi",
+    aliases: ["PARTICIPANT", "INST", "FNO_OI", "FII_OI"],
+  },
+  {
+    code: "OSB",
+    name: "Options Strategy Builder",
+    description: "Multi-leg option strategy payoffs, Black-Scholes Greeks, breakevens & risk/reward",
+    category: "Derivatives",
+    contextTypes: ["IX", "EQ", "OPT"],
+    requiresSymbol: false,
+    defaultSymbol: "NIFTY",
+    route: (sym = "NIFTY") => `/strategy-builder?symbol=${sym.toUpperCase()}`,
+    aliases: ["STRATEGY", "PAYOFF", "CONDOR", "SPREAD", "STRADDLE"],
+  },
+  {
+    code: "OVDV",
+    name: "Volatility Surface & Skew",
+    description: "2D strike vs expiry IV surface, 25-Delta risk reversal, butterfly smile & contango",
+    category: "Derivatives",
+    contextTypes: ["IX", "EQ", "OPT"],
+    requiresSymbol: false,
+    defaultSymbol: "NIFTY",
+    route: (sym = "NIFTY") => `/volatility?symbol=${sym.toUpperCase()}`,
+    aliases: ["VOL", "SURFACE", "SKEW", "SMILE", "SVI"],
+  },
 
   // --- Markets & Surveillance Functions ---
   {

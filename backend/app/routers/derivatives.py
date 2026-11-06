@@ -11,7 +11,7 @@ from ..cache import CACHE
 from ..config import SETTINGS
 from ..providers import nse, nse_options
 from ..schemas import envelope
-from ..services import earnings_moves, fno_ban, options, quote_sources
+from ..services import earnings_moves, fno_ban, fno_participants, options, options_strategy, quote_sources, volatility_surface
 
 router = APIRouter(prefix="/api/v1/derivatives", tags=["derivatives"])
 
@@ -129,3 +129,74 @@ def get_earnings_moves():
         delayed_minutes=SETTINGS.quote_delay_minutes,
         note="Implied move is (Price(ATM CE) + Price(ATM PE)) / Spot, indicating market-expected volatility.",
     )
+
+
+@router.get("/participant-oi")
+def get_participant_oi():
+    """Daily participant-wise open interest and net institutional derivatives positioning (FII, DII, Pro, Client)."""
+    try:
+        data = fno_participants.get_participant_oi_overview()
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Participant OI unavailable: {exc}") from exc
+    return envelope(
+        data,
+        1800,
+        source="NSE daily participant-wise open interest report (fao_participant_oi)",
+        delayed_minutes=0,
+        note="Aggregates long vs short positions in Index Futures, Stock Futures, Index Options and Stock Options.",
+    )
+
+
+@router.get("/strategy/templates")
+def get_strategy_templates(symbol: str = Query("NIFTY"), spot: float = Query(24500.0)):
+    """Pre-calibrated multi-leg option strategy templates (Bull Spread, Straddle, Condor, Butterfly)."""
+    templates = options_strategy.get_standard_strategy_templates(symbol=symbol.upper(), spot=spot)
+    return envelope(
+        templates,
+        3600,
+        source="Arthdex Derivatives Strategy Engine",
+        delayed_minutes=0,
+    )
+
+
+@router.post("/strategy/payoff")
+def calculate_strategy_payoff(payload: dict[str, Any]):
+    """Computes expiry payoff curves, Greeks, and risk metrics for a user-configured multi-leg option strategy."""
+    symbol = payload.get("symbol", "NIFTY")
+    spot_price = float(payload.get("spotPrice", 24500.0))
+    lot_size = int(payload.get("lotSize", 50 if symbol.upper() == "NIFTY" else 15))
+    legs = payload.get("legs", [])
+    days_to_expiry = int(payload.get("daysToExpiry", 7))
+    risk_free_rate = float(payload.get("riskFreeRate", 0.068))
+
+    res = options_strategy.build_options_strategy_payoff(
+        symbol=symbol,
+        spot_price=spot_price,
+        lot_size=lot_size,
+        legs=legs,
+        days_to_expiry=days_to_expiry,
+        risk_free_rate=risk_free_rate,
+    )
+    return envelope(
+        res,
+        0,
+        source="Arthdex Multi-Leg Payoff & Black-Scholes Greeks Engine",
+        delayed_minutes=0,
+    )
+
+
+@router.get("/{symbol}/vol-surface")
+def get_vol_surface(symbol: str):
+    """Implied volatility surface across strikes and expiries, 25-Delta skew, and term structure."""
+    try:
+        data = volatility_surface.get_volatility_surface(symbol=symbol)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Volatility surface unavailable: {exc}") from exc
+    return envelope(
+        data,
+        300,
+        source="NSE traded option chains & SVI smile interpolation",
+        delayed_minutes=SETTINGS.quote_delay_minutes,
+        note="25-Delta Risk Reversal measures downside put skew; Butterfly measures smile curvature.",
+    )
+

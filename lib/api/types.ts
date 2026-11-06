@@ -1756,3 +1756,121 @@ export interface ApiYieldCurveResponse {
   tenors: ApiYieldTenor[];
   spreadMatrix: ApiSpreadMatrixItem[];
 }
+
+export interface ApiParticipantPosition {
+  long: number;
+  short: number;
+  net: number;
+  longPct: number;
+}
+
+export interface ApiParticipantRecord {
+  participant: "FII" | "DII" | "Pro" | "Client";
+  label: string;
+  indexFutures: ApiParticipantPosition;
+  stockFutures: ApiParticipantPosition;
+  indexCalls: ApiParticipantPosition;
+  indexPuts: ApiParticipantPosition;
+  stockCalls: ApiParticipantPosition;
+  stockPuts: ApiParticipantPosition;
+  netIndexBias: string;
+  tone: "up" | "down" | "neutral" | "gold";
+}
+
+export interface ApiParticipantOiResponse {
+  asOf: string;
+  fiiIndexLongPct: number;
+  fiiNetIndexContracts: number;
+  clientNetIndexContracts: number;
+  marketRegime: string;
+  regimeTone: "up" | "down" | "neutral" | "gold";
+  putWritingBias: string;
+  participants: ApiParticipantRecord[];
+  divergenceSignal: {
+    title: string;
+    description: string;
+    divergenceMagnitude: number;
+  };
+}
+
+export interface ApiStrategyLeg {
+  id?: string;
+  action: "buy" | "sell";
+  type: "CE" | "PE";
+  strike: number;
+  premium: number;
+  contracts: number;
+  iv?: number;
+}
+
+export interface ApiStrategyPayoffPoint {
+  spot: number;
+  pnlExpiry: number;
+  pnlToday: number;
+}
+
+export interface ApiStrategyGreeks {
+  netDelta: number;
+  netGamma: number;
+  netTheta: number;
+  netVega: number;
+}
+
+export interface ApiStrategyPayoffResponse {
+  symbol: string;
+  spotPrice: number;
+  lotSize: number;
+  daysToExpiry: number;
+  netCashFlow: number;
+  isDebit: boolean;
+  maxProfit: number | "Unlimited";
+  maxLoss: number | "Unlimited";
+  breakevens: number[];
+  riskRewardRatio: number | null;
+  greeks: ApiStrategyGreeks;
+  points: ApiStrategyPayoffPoint[];
+  legs: ApiStrategyLeg[];
+}
+
+export interface ApiStrategyTemplate {
+  id: string;
+  name: string;
+  type: string;
+  description: string;
+  legs: ApiStrategyLeg[];
+}
+
+export interface ApiVolTermItem {
+  label: string;
+  daysToExpiry: number;
+  expiryDate: string;
+  atmIv: number;
+}
+
+export interface ApiVolSurfaceRow {
+  strike: number;
+  moneynessPct: number;
+  isAtm: boolean;
+  [expiryLabel: string]: number | boolean;
+}
+
+export interface ApiVolSurfaceResponse {
+  symbol: string;
+  spotPrice: number;
+  asOf: string;
+  skewSummary: {
+    nearAtmIv: number;
+    riskReversal25D: number;
+    butterfly25D: number;
+    termStructureRegime: string;
+    isContango: boolean;
+    skewInterpretation: string;
+  };
+  termStructure: ApiVolTermItem[];
+  surface: ApiVolSurfaceRow[];
+  nearSmile: Array<{
+    strike: number;
+    moneynessPct: number;
+    iv: number;
+  }>;
+}
