@@ -1690,3 +1690,69 @@ export interface ApiSurveillanceOverview {
   };
   securities: ApiSurveillanceSecurity[];
 }
+
+
+// -- Sovereign Yield Curve & Fixed Income (GC IN / GSEC) ----------------------
+
+export interface ApiYieldTenor {
+  tenor: string;
+  label: string;
+  years: number;
+  category: "T-Bill" | "G-Sec";
+  paper: string;
+  benchmark: boolean;
+  yieldPct: number;
+  modelYieldPct: number;
+  change1wBps: number;
+  change1mBps: number;
+  change1yBps: number;
+  history: {
+    current: number;
+    oneWeekAgo: number;
+    oneMonthAgo: number;
+    oneYearAgo: number;
+  };
+}
+
+export interface ApiSpreadMatrixItem {
+  assetClass: string;
+  issuer: string;
+  indicativeYield: number;
+  spreadOverGsecBps: number;
+  creditRating: string;
+}
+
+export interface ApiYieldCurveResponse {
+  asOf: string;
+  benchmark10y: number;
+  benchmarkPaper: string;
+  curveShape: "Normal Upward Sloping" | "Flat" | "Inverted";
+  spreads: {
+    spread2s10sBps: number;
+    spread5s10sBps: number;
+    spread10s30sBps: number;
+    spread3m10yBps: number;
+    termPremiumRepoBps: number;
+    inverted2s10s: boolean;
+    inverted3m10y: boolean;
+  };
+  rbiCorridor: {
+    repoRate: number;
+    sdfRate: number;
+    msfRate: number;
+    bankRate: number;
+    reverseRepoRate: number;
+    crrPct: number;
+    slrPct: number;
+    stance: string;
+    lastChanged: string;
+  };
+  nelsonSiegelFit: {
+    beta0: number;
+    beta1: number;
+    beta2: number;
+    lambda: number;
+  };
+  tenors: ApiYieldTenor[];
+  spreadMatrix: ApiSpreadMatrixItem[];
+}

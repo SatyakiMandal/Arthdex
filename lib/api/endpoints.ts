@@ -60,6 +60,7 @@ import type {
   ApiIpoLockinResponse,
   ApiBuybackResponse,
   ApiSurveillanceOverview,
+  ApiYieldCurveResponse,
 } from "./types";
 
 export type { CompanyFilingItem, CompanyFilingsPayload };
@@ -337,3 +338,7 @@ export const getSurveillance = (params?: { measure?: string; band?: string; q?: 
   const qs = qp.toString();
   return apiGet<ApiSurveillanceOverview>(`/api/v1/market/surveillance${qs ? `?${qs}` : ""}`, 3600);
 };
+
+
+export const getYieldCurve = () =>
+  apiGet<ApiYieldCurveResponse>("/api/v1/market/yield-curve", 3600);
