@@ -1,7 +1,7 @@
 import unittest
 
 try:
-    from corporate_network import (
+    from app.services.corporate_network import (
         get_corporate_hierarchy,
         get_supply_chain_network,
         get_network_summary,
@@ -9,7 +9,7 @@ try:
         SUPPLY_CHAIN_NETWORKS,
     )
 except ImportError:
-    from backend.corporate_network import (
+    from backend.app.services.corporate_network import (
         get_corporate_hierarchy,
         get_supply_chain_network,
         get_network_summary,
