@@ -68,6 +68,8 @@ import type {
   ApiVolSurfaceResponse,
   ApiMacroDashboardResponse,
   ApiForexMonitorResponse,
+  ApiFundScreenerResponse,
+  ApiFundOverlapResponse,
 } from "./types";
 
 export type { CompanyFilingItem, CompanyFilingsPayload };
@@ -374,5 +376,17 @@ export const getMacroDashboard = () =>
 
 export const getForexMonitor = () =>
   apiGet<ApiForexMonitorResponse>("/api/v1/macro/forex", 120);
+
+export const getFundsScreener = (category?: string, amc?: string) => {
+  const qp = new URLSearchParams();
+  if (category && category !== "all") qp.set("category", category);
+  if (amc && amc !== "all") qp.set("amc", amc);
+  const qs = qp.toString();
+  return apiGet<ApiFundScreenerResponse>(`/api/v1/funds/screener${qs ? `?${qs}` : ""}`, 3600);
+};
+
+export const getFundOverlap = (fundA: string = "122639", fundB: string = "118989") =>
+  apiGet<ApiFundOverlapResponse>(`/api/v1/funds/overlap?fund_a=${encodeURIComponent(fundA)}&fund_b=${encodeURIComponent(fundB)}`, 3600);
+
 
 

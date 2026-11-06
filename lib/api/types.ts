@@ -1957,3 +1957,52 @@ export interface ApiForexMonitorResponse {
     source: string;
   };
 }
+
+export interface ApiFundHolding {
+  symbol: string;
+  name: string;
+  weight: number;
+}
+
+export interface ApiFundScheme {
+  schemeCode: string;
+  schemeName: string;
+  amc: string;
+  category: string;
+  subCategory: string;
+  nav: number;
+  change1dPct: number;
+  returns1y: number;
+  returns3y: number;
+  returns5y: number;
+  aumCr: number;
+  expenseRatio: number;
+  sharpeRatio: number;
+  sortinoRatio: number;
+  turnoverRatio: number;
+  topHoldings: ApiFundHolding[];
+}
+
+export interface ApiFundScreenerResponse {
+  asOf: string;
+  totalSchemes: number;
+  categories: string[];
+  amcs: string[];
+  funds: ApiFundScheme[];
+}
+
+export interface ApiCommonHolding {
+  symbol: string;
+  name: string;
+  weightInA: number;
+  weightInB: number;
+  overlapPct: number;
+}
+
+export interface ApiFundOverlapResponse {
+  fundA: { code: string; name: string; category: string };
+  fundB: { code: string; name: string; category: string };
+  totalOverlapPct: number;
+  commonHoldingsCount: number;
+  holdings: ApiCommonHolding[];
+}

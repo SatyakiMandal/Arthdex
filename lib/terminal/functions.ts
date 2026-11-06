@@ -333,6 +333,26 @@ export const TERMINAL_FUNCTIONS: TerminalFunction[] = [
 
   // --- Screening & Research Functions ---
   {
+    code: "MF",
+    name: "Mutual Fund Master & Screener",
+    description: "AMFI mutual fund scheme master, CAGRs (1Y, 3Y, 5Y), TER, AUM, Sharpe & Sortino ratios",
+    category: "Research",
+    contextTypes: ["GLOBAL"],
+    requiresSymbol: false,
+    route: () => "/funds",
+    aliases: ["MFS", "FUNDS", "MUTUALFUNDS", "AMFI", "NAV"],
+  },
+  {
+    code: "OVLP",
+    name: "Fund Portfolio Overlap Analyzer",
+    description: "Pairwise mutual fund stock holding overlap percentage and common constituent solver",
+    category: "Research",
+    contextTypes: ["GLOBAL"],
+    requiresSymbol: false,
+    route: () => "/funds?tab=overlap",
+    aliases: ["OVERLAP", "DUPLICATION"],
+  },
+  {
     code: "EQS",
     name: "Fundamental Multi-Factor Screener",
     description: "Vetted fundamental screen with live price multiples and formula engine",
