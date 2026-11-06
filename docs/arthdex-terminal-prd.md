@@ -882,7 +882,10 @@ flowchart LR
 - **Phase 5 (Mutual Funds & Overlap Engine - M17)**: Mutual Fund Screener with TER, AUM, Sharpe, category filters (`MF`, `MFS` &rarr; `/funds`), Portfolio Overlap Engine pairwise matrix & common holdings (`OVLP` &rarr; `/funds?tab=overlap`). **[COMPLETED & LIVE]**
 - **Phase 6 (Paper Trading Simulator & Cost Desk - M27)**: Virtual execution blotter with ₹10,00,000 cash account, simulated order fills against live prices, and authentic Indian statutory cost desk: STT, GST, SEBI turnover fees, Stamp Duty, and Exchange charges (`PAPR`, `EMSX` &rarr; `/paper-trading`). **[COMPLETED & LIVE]**
 - **Phase 7 (Terminal Academy & Command Directory - M28)**: Complete Bloomberg syntax tutor, live AST command parser sandbox, 42+ command directory with quick launcher (`[CMD]`), 6 institutional trading masterclasses, and keyboard shortcuts guide (`HELP`, `LEARN` &rarr; `/help`). **[COMPLETED & LIVE]**
-- **Phase 8 (Quant Risk Lab & Stress Testing - M22)**: Historical crash stress testing (2008 GFC, 2020 Covid, 2024 Election shock), multi-factor risk attribution (Size, Value, Momentum, Quality, Low-Vol), and walk-forward backtesting (`STRS`, `MARS`, `FCTR`, `BTST`). **[NEXT]**
+- **Phase 8 (Interconnected Corporate Web & Supply Chain - M19.11, M7, M20)**: Multi-tier supplier, customer, and contractor network graph, component clustering, sole-source risk flags, and conglomerate holding hierarchies (`SPLC`, `HOLD`, `REL` &rarr; `/network` & `/company/[symbol]/network`). **[COMPLETED & LIVE]**
+- **Phase 9 (14-Language Regional Voice Interactive Terminal - M30)**: Bidirectional Voice Box modal across 14 languages (Hindi, Bengali, Tamil, Gujarati, etc.), Vedic number formatting (Lakhs/Crores), and typed zero-shift dictionaries (`VOICE`, `LANG`). **[NEXT]**
+- **Phase 10 (AI Research Copilot with Multi-Tier Toggle & Compliance - M24)**: Grounded RAG with exact filing citations, feature toggle, BYOK key encryption, SEBI non-advisory disclosures, and provenance tagging (`ASK`). **[UPCOMING]**
+- **Phase 11 (Quant Risk Lab & Stress Testing - M22)**: Historical crash stress testing (2008 GFC, 2020 Covid, 2024 Election shock), multi-factor risk attribution (Size, Value, Momentum, Quality, Low-Vol), and walk-forward backtesting (`STRS`, `MARS`, `FCTR`, `BTST`). **[UPCOMING]**
 - **Phase 9 (Sector & Operating KPI Intelligence - M19)**: Monthly sector operational data (Auto SIAM/VAHAN dispatches, Banking credit growth, CEA power demand, DGCA air traffic) and Supply Chain customer-supplier graph (`SKPI`, `SPLC`). **[UPCOMING]**
 - **Phase 10 (Multi-Panel Terminal Workspace & Cloud Sync - M1, M29)**: Bloomberg Launchpad-style multi-pane tiling workspace, custom layout presets, and cloud sync across user devices. **[UPCOMING]**
 
@@ -924,7 +927,15 @@ flowchart LR
 | `CACS` | `CACS` | Corporate Actions, Dividends & Splits Calendar | **Live** (`/calendar`) |
 | `COMP` | `COMP` | Peer Comparison & Relative Valuation Benchmarking | **Live** (`/compare`) |
 | `ALRT` | `ALRT` | Price Level & Corporate Filing Triggers | **Live** (`/alerts`) |
-| `STRS` / `MARS` | `STRS`, `MARS` | Quant Risk Lab & Historical Stress Testing | **Phase 8** |
-| `SKPI` | `SKPI` | Sector Operating KPIs (Auto, Bank, Power, Telecom) | **Phase 9** |
-| `SPLC` | `SPLC` | Supply Chain & Customer-Supplier Mapping Graph | **Phase 9** |
-| `W` | `W` | Bloomberg Multi-Panel Tiling Workspace Shell | **Phase 10** |
+| `SPLC` | `SPLC` | Supply Chain & Customer-Supplier Network | **Live** (`/network?mode=splc` & `/company/[symbol]/network`) |
+| `HOLD` / `REL` | `HOLD`, `REL` | Conglomerate Hierarchy & Subsidiaries Tree | **Live** (`/network?mode=hold` & `/company/[symbol]/network`) |
+| `VOICE` / `LANG` | `VOICE`, `LANG` | 14-Language Regional Voice Interactive Desk | **Phase 9** |
+| `ASK` | `ASK` | AI Research Copilot with Toggle & Citations | **Phase 10** |
+| `STRS` / `MARS` | `STRS`, `MARS` | Quant Risk Lab & Historical Stress Testing | **Phase 11** |
+| `SKPI` | `SKPI` | Sector Operating KPIs (Auto, Bank, Power, Telecom) | **Phase 12** |
+| `VAL` / `DCF` | `VAL`, `DCF` | Interactive DCF & Reverse DCF Fair Value Desk | **Phase 13** |
+| `SME` | `SME` | Dedicated SME Exchange Board (NSE Emerge) | **Phase 14** |
+| `TEAR` / `NOTE` | `TEAR`, `NOTE` | Institutional Tear-Sheet & Compliance Notes | **Phase 15** |
+| `XLS` / `API` | `XLS`, `API` | Excel / Sheets Formulas & Public OpenAPI | **Phase 16** |
+| `W` | `W` | Bloomberg Multi-Panel Tiling Workspace Shell | **Phase 17** |
+| `EMSX` | `EMSX` | Live Broker Execution Gateway & Order Routing | **Phase 18** |

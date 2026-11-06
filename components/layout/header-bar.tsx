@@ -27,7 +27,7 @@ import {
   X,
   ShieldAlert,
   LineChart,
-  type LucideIcon, Sigma, FileBarChart, Briefcase, Sparkles, Compass, Radio, BookOpen } from "lucide-react";
+  type LucideIcon, Sigma, FileBarChart, Briefcase, Sparkles, Compass, Radio, BookOpen, Network } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { UniversalSearch } from "@/components/search/universal-search";
@@ -65,6 +65,7 @@ const GROUPS: Group[] = [
       { label: "Unlisted companies", href: "/unlisted", icon: Building2, hint: "Dealer prices for private equity" },
       { label: "Watchlist", href: "/watchlist", icon: Star, hint: "Your companies at a glance" },
       { label: "Portfolio & tax desk", href: "/portfolio", icon: Briefcase, hint: "Holdings, XIRR and ₹1.25L tax harvester" },
+      { label: "Corporate network & SPLC", href: "/network", icon: Network, hint: "Multi-tier supply chain, customer off-take & group holdings" },
     ],
   },
   {

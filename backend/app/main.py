@@ -23,6 +23,7 @@ from .routers import (
     bhavcopy,
     catalysts,
     company,
+    corporate_network,
     decisions,
     derivatives,
     desk,
@@ -119,6 +120,7 @@ app.include_router(forecast.router)
 app.include_router(macro.router)
 app.include_router(funds.router)
 app.include_router(paper_trading.router)
+app.include_router(corporate_network.router)
 
 
 def _analyzer_startup() -> None:

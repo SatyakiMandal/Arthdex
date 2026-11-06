@@ -2067,3 +2067,86 @@ export interface ApiPaperOrderResult {
   charges?: ApiRegulatoryCharges;
   account?: ApiPaperAccountResponse;
 }
+
+// -- Corporate Network & Supply Chain (SPLC, HOLD, REL) ----------------------
+
+export interface ApiHoldingEntity {
+  symbol: string | null;
+  name: string;
+  listing_status: string;
+  ownership_pct: number;
+  relation_type: string;
+  revenue_contrib_cr: number;
+  ebitda_contrib_pct: number;
+  business_segment: string;
+  provenance: string;
+}
+
+export interface ApiCorporateHierarchy {
+  group_name: string;
+  parent_symbol: string;
+  parent_name: string;
+  total_group_turnover_cr: number;
+  holding_entities: ApiHoldingEntity[];
+}
+
+export interface ApiSupplyChainSupplier {
+  symbol: string | null;
+  name: string;
+  tier: string;
+  cluster: string;
+  component: string;
+  dependency_pct: number;
+  cogs_share_pct: number;
+  is_sole_source: boolean;
+  contract_type: string;
+  origin: string;
+  location: string;
+  provenance: string;
+}
+
+export interface ApiSupplyChainCustomer {
+  name: string;
+  category: string;
+  channel_type: string;
+  volume_share_pct: number;
+  regions: string;
+  key_products: string;
+  provenance: string;
+}
+
+export interface ApiSupplyChainContractor {
+  name: string;
+  service_category: string;
+  scope: string;
+  spend_cr: number;
+  is_related_party: boolean;
+}
+
+export interface ApiSupplyChainNetwork {
+  symbol: string;
+  name: string;
+  primary_sector: string;
+  annual_cogs_cr: number;
+  suppliers: ApiSupplyChainSupplier[];
+  customers: ApiSupplyChainCustomer[];
+  independent_contractors: ApiSupplyChainContractor[];
+}
+
+export interface ApiNetworkSummary {
+  symbol: string;
+  name: string;
+  primary_sector: string;
+  group_name: string;
+  total_suppliers_tracked: number;
+  sole_source_bottlenecks: number;
+  high_dependency_suppliers: number;
+  total_customer_segments: number;
+  total_independent_contractors: number;
+  total_holding_subsidiaries: number;
+  product_clusters: string[];
+  provenance_summary: {
+    audited_filing_nodes: number;
+    modelled_estimated_nodes: number;
+  };
+}

@@ -68,6 +68,7 @@ export function CompanyTabs({
     { label: "Research dossier", href: `/company/${symbol}/research` },
     { label: "Quant engine", href: `/company/${symbol}/quant` },
     { label: "Macro and news", href: `/company/${symbol}/macro` },
+    { label: "Corporate network", href: `/company/${symbol}/network` },
   ];
 
   return (

@@ -73,6 +73,9 @@ import type {
   ApiPaperAccountResponse,
   ApiRegulatoryCharges,
   ApiPaperOrderResult,
+  ApiCorporateHierarchy,
+  ApiSupplyChainNetwork,
+  ApiNetworkSummary,
 } from "./types";
 
 export type { CompanyFilingItem, CompanyFilingsPayload };
@@ -409,6 +412,18 @@ export const postPlacePaperOrder = (payload: {
   product: "CNC" | "MIS";
 }) =>
   apiPost<ApiPaperOrderResult>("/api/v1/paper/order", payload);
+
+
+// -- Corporate Network & Supply Chain (SPLC, HOLD, REL) ----------------------
+
+export const getCorporateHierarchy = (symbol: string = "M&M") =>
+  apiGet<ApiCorporateHierarchy>(`/api/v1/network/hierarchy?symbol=${encodeURIComponent(symbol)}`, 3600);
+
+export const getSupplyChainNetwork = (symbol: string = "M&M") =>
+  apiGet<ApiSupplyChainNetwork>(`/api/v1/network/supply-chain?symbol=${encodeURIComponent(symbol)}`, 3600);
+
+export const getNetworkSummary = (symbol: string = "M&M") =>
+  apiGet<ApiNetworkSummary>(`/api/v1/network/summary?symbol=${encodeURIComponent(symbol)}`, 3600);
 
 
 

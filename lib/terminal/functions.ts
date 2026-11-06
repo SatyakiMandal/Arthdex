@@ -546,6 +546,26 @@ export const TERMINAL_FUNCTIONS: TerminalFunction[] = [
     route: () => "/help",
     aliases: ["LEARN", "MANUAL", "COMMANDS", "GUIDE", "TUTORIAL", "DIR", "DOCS"],
   },
+  {
+    code: "SPLC",
+    name: "Supply Chain & Customer Network",
+    description: "Multi-tier suppliers, component clusters, customer channels and sole-source bottlenecks",
+    category: "Company",
+    contextTypes: ["EQ", "GLOBAL"],
+    requiresSymbol: false,
+    route: (sym?: string) => (sym ? `/company/${sym}/network?mode=splc` : "/network?mode=splc"),
+    aliases: ["SUPPLY", "SUPPLIERS", "NETWORK", "ECOSYSTEM"],
+  },
+  {
+    code: "HOLD",
+    name: "Conglomerate Hierarchy & Holdings",
+    description: "Parent corporate structure, listed associates, wholly owned subsidiaries and JVs",
+    category: "Company",
+    contextTypes: ["EQ", "GLOBAL"],
+    requiresSymbol: false,
+    route: (sym?: string) => (sym ? `/company/${sym}/network?mode=hold` : "/network?mode=hold"),
+    aliases: ["TREE", "SUBSIDIARIES", "GROUP", "REL"],
+  },
 ];
 
 /**
