@@ -2006,3 +2006,64 @@ export interface ApiFundOverlapResponse {
   commonHoldingsCount: number;
   holdings: ApiCommonHolding[];
 }
+
+export interface ApiRegulatoryCharges {
+  tradeValue: number;
+  brokerage: number;
+  stt: number;
+  exchangeTurnover: number;
+  stampDuty: number;
+  sebiCharges: number;
+  gst: number;
+  totalCharges: number;
+  netCashFlow: number;
+  breakevenBps: number;
+}
+
+export interface ApiPaperPosition {
+  symbol: string;
+  name: string;
+  quantity: number;
+  product: "CNC" | "MIS";
+  averagePrice: number;
+  cmp: number;
+  investedValue: number;
+  currentValue: number;
+  unrealizedPnl: number;
+  unrealizedPnlPct: number;
+  dayChangePct: number;
+}
+
+export interface ApiPaperOrder {
+  orderId: string;
+  symbol: string;
+  action: "BUY" | "SELL";
+  product: "CNC" | "MIS";
+  quantity: number;
+  price: number;
+  tradeValue: number;
+  totalCharges: number;
+  status: "FILLED" | "REJECTED" | "CANCELLED";
+  timestamp: string;
+}
+
+export interface ApiPaperAccountResponse {
+  asOf: string;
+  cashBalance: number;
+  marginUsed: number;
+  portfolioValue: number;
+  unrealizedPnl: number;
+  realizedPnl: number;
+  overallPnl: number;
+  initialCapital: number;
+  positions: ApiPaperPosition[];
+  orders: ApiPaperOrder[];
+}
+
+export interface ApiPaperOrderResult {
+  success: boolean;
+  error?: string;
+  order?: ApiPaperOrder;
+  charges?: ApiRegulatoryCharges;
+  account?: ApiPaperAccountResponse;
+}

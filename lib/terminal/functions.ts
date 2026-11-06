@@ -425,6 +425,16 @@ export const TERMINAL_FUNCTIONS: TerminalFunction[] = [
     aliases: ["PORTFOLIO", "TAX", "XIRR", "HOLDINGS"],
   },
   {
+    code: "PAPR",
+    name: "Paper Trading Simulator & EMSX",
+    description: "Virtual ₹10L cash account, realistic Indian STT/GST regulatory charges & order execution",
+    category: "Portfolio",
+    contextTypes: ["PORT", "GLOBAL", "EQ"],
+    requiresSymbol: false,
+    route: () => "/paper-trading",
+    aliases: ["EMSX", "PAPER", "SIMULATOR", "EXEC", "TRADE"],
+  },
+  {
     code: "WL",
     name: "Watchlist Desk",
     description: "Multi-symbol institutional watchlist with real-time price updates",

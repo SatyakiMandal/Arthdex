@@ -70,6 +70,9 @@ import type {
   ApiForexMonitorResponse,
   ApiFundScreenerResponse,
   ApiFundOverlapResponse,
+  ApiPaperAccountResponse,
+  ApiRegulatoryCharges,
+  ApiPaperOrderResult,
 } from "./types";
 
 export type { CompanyFilingItem, CompanyFilingsPayload };
@@ -387,6 +390,26 @@ export const getFundsScreener = (category?: string, amc?: string) => {
 
 export const getFundOverlap = (fundA: string = "122639", fundB: string = "118989") =>
   apiGet<ApiFundOverlapResponse>(`/api/v1/funds/overlap?fund_a=${encodeURIComponent(fundA)}&fund_b=${encodeURIComponent(fundB)}`, 3600);
+
+export const getPaperAccount = () =>
+  apiGet<ApiPaperAccountResponse>("/api/v1/paper/account", 0);
+
+export const postCalculatePaperCharges = (payload: {
+  tradeValue: number;
+  action: "BUY" | "SELL";
+  product: "CNC" | "MIS";
+}) =>
+  apiPost<ApiRegulatoryCharges>("/api/v1/paper/calculate-charges", payload);
+
+export const postPlacePaperOrder = (payload: {
+  symbol: string;
+  action: "BUY" | "SELL";
+  quantity: number;
+  price: number;
+  product: "CNC" | "MIS";
+}) =>
+  apiPost<ApiPaperOrderResult>("/api/v1/paper/order", payload);
+
 
 
 
