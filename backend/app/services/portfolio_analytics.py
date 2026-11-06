@@ -10,15 +10,14 @@ Implements:
 
 from __future__ import annotations
 
+import math
 from datetime import date, datetime
 from typing import Any
-import math
 
 from ..cache import CACHE
 from ..config import SETTINGS
-from ..providers import fundamentals, yahoo
+from ..providers import yahoo
 from ..services import quote_sources
-
 
 # Correlated peer swap map for tax-loss harvesting rebalancing (preserving sector exposure)
 PEER_SWAP_SUGGESTIONS: dict[str, list[str]] = {

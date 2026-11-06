@@ -9,7 +9,8 @@ and the two prices are compared so a broken or stale source shows up at once.
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 # Both are fetched within seconds of each other; a larger gap means one is stale or wrong
 PRICE_TOLERANCE = 0.005

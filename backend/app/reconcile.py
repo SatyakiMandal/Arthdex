@@ -25,9 +25,10 @@ import os
 import sys
 import time
 import urllib.request
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date
-from typing import Any, Callable
+from typing import Any
 
 DEFAULT_SYMBOLS = [
     "RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK", "ITC",

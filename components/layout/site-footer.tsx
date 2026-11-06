@@ -96,6 +96,9 @@ export function SiteFooter() {
             <Link href="/status" className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground">
               <Gauge className="h-3 w-3" /> Data status
             </Link>
+            <Link href="/disclaimer" className="inline-flex items-center gap-1 text-flat hover:underline">
+              <AlertTriangle className="h-3 w-3" /> SEBI Disclaimer
+            </Link>
           </p>
         </div>
       </div>
@@ -111,10 +114,15 @@ export function SiteFooter() {
             <span className="mt-1 block text-2xs text-muted-foreground">artha: wealth, and meaning</span>
           </p>
         </div>
-        <p className="flex flex-wrap justify-between gap-2 py-5 text-2xs text-muted-foreground">
-          <span>Arthdex. Indian market analytics.</span>
-          <span>NSE and Yahoo Finance data, delayed. Not investment advice.</span>
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-4 py-5 text-2xs text-muted-foreground">
+          <span>Arthdex · Indian market analytics · NSE &amp; Yahoo Finance data, delayed. Not investment advice.</span>
+          <nav aria-label="Legal & Policies" className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            <Link href="/privacy" className="transition-colors hover:text-foreground">Privacy Policy</Link>
+            <Link href="/terms" className="transition-colors hover:text-foreground">Terms of Service</Link>
+            <Link href="/disclaimer" className="transition-colors hover:text-foreground">Regulatory Disclaimer</Link>
+            <Link href="/copyright" className="transition-colors hover:text-foreground">DMCA &amp; Copyright</Link>
+          </nav>
+        </div>
       </div>
     </footer>
   );

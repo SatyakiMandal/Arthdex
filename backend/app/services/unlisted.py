@@ -30,9 +30,10 @@ from html import unescape
 from pathlib import Path
 from typing import Any
 
-from ..cache import CACHE
 from ceia.fetcher import Fetcher
 from ceia.unlisted import _SERIES_POINT_RE
+
+from ..cache import CACHE
 
 ORIGIN = "https://unlistedzone.com"
 DIRECTORY_URL = f"{ORIGIN}/shares"
@@ -43,7 +44,7 @@ DIRECTORY_TTL = 6 * 3600
 
 SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]{2,200}$")
 
-_TAG_RE = re.compile(r"<[^>]+>|<!--.*?-->", re.S)
+_TAG_RE = re.compile(r"<[^>]+>|<!--.*?-->", re.DOTALL)
 _CARD_SPLIT_RE = re.compile(r'<div class="scard">')
 _NAME_RE = re.compile(r'class="nm">([^<]+)<')
 _SECTOR_RE = re.compile(r'class="sec">([^<]*)<')
@@ -53,7 +54,7 @@ _LOGO_RE = re.compile(r'<img src="(https://unlistedzone\.com/logos/[^"]+)"')
 _LAST_PAGE_RE = re.compile(r'"lastPage":(\d+)')
 
 _NAME_NOISE_RE = re.compile(
-    r"\s*\b(unlisted shares?(?:\s*\(equity\))?|share price|buy\s*(?:/|and)?\s*sell(?:\s*online)?)\b\s*$", re.I
+    r"\s*\b(unlisted shares?(?:\s*\(equity\))?|share price|buy\s*(?:/|and)?\s*sell(?:\s*online)?)\b\s*$", re.IGNORECASE
 )
 
 _fetcher: Fetcher | None = None
@@ -173,7 +174,7 @@ def build_company(slug: str) -> dict[str, Any]:
     logo = _LOGO_RE.search(html)
     description = re.search(r'<meta name="description" content="([^"]*)"', html)
 
-    change_raw = re.search(r'class="pchange">(.*?)</div>', html, re.S)
+    change_raw = re.search(r'class="pchange">(.*?)</div>', html, re.DOTALL)
     change_pct = None
     change_window = None
     if change_raw:

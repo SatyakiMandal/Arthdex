@@ -7,20 +7,7 @@ change without notice. Every call is defensive and the caller is expected to
 degrade gracefully rather than assume a shape.
 """
 
-from __future__ import annotations
-
-import html
-import threading
-import time
-import urllib.parse
-from datetime import datetime, timedelta, timezone
-from typing import Any
-
-from curl_cffi import requests as curl_requests
-
-from ..config import SETTINGS
-
-_SESSION_LOCK = threading.Lock()
+from __future__ import annotationsimport htmlimport threadingimport timeimport urllib.parsefrom datetime import datetime, timedelta, timezonefrom typing import Anyfrom curl_cffi import requests as curl_requestsfrom ..config import SETTINGS_SESSION_LOCK = threading.Lock()
 _local = threading.local()
 _session_epoch: int = 0
 _last_reprime: float = 0.0

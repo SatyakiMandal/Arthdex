@@ -105,7 +105,7 @@ def build(snapshots: dict[str, dict[str, Any]], scheduled: list[dict[str, Any]],
 
     comparable = [r for r in reported if r["revenueGrowth"] is not None and r["profitGrowth"] is not None]
     pairs = [(snapshots[r["symbol"]]["latestQuarter"], snapshots[r["symbol"]]["yearAgoQuarter"]) for r in comparable]
-    agg = lambda key: (  # noqa: E731
+    agg = lambda key: (
         round((sum(q[key] for q, _ in pairs) / sum(y[key] for _, y in pairs) - 1) * 100, 1)
         if pairs and sum(y[key] for _, y in pairs) > 0 else None
     )

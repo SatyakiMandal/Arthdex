@@ -6,7 +6,6 @@ import math
 import warnings
 from typing import Any
 
-import numpy as np
 import pandas as pd
 import yfinance as yf
 
@@ -248,7 +247,7 @@ def build(symbol: str, interval: str, df: pd.DataFrame) -> dict[str, Any]:
         "interval": interval,
         "intervalLabel": INTERVAL_LABELS[interval],
         "intraday": intraday,
-        "barsAvailable": int(len(df)),
+        "barsAvailable": len(df),
         "lastClose": _f(last),
         "asOf": stamp(df.index[-1]),
         "bars": bars,

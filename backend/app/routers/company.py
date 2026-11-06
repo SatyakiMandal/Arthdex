@@ -11,7 +11,14 @@ from ..cache import CACHE
 from ..config import SETTINGS
 from ..providers import fundamentals, nse, nse_xbrl, screener, yahoo
 from ..schemas import envelope
-from ..services import financial_sources, quote_sources, risk_layer, shareholding, technicals, yahoo_company
+from ..services import (
+    financial_sources,
+    quote_sources,
+    risk_layer,
+    shareholding,
+    technicals,
+    yahoo_company,
+)
 
 router = APIRouter(prefix="/api/v1/company", tags=["company"])
 

@@ -25,10 +25,13 @@ import {
   Star,
   Sunrise,
   X,
+  ShieldAlert,
+  LineChart,
   type LucideIcon, Sigma, FileBarChart, Briefcase, Sparkles, Compass, Radio } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { UniversalSearch } from "@/components/search/universal-search";
+import { TerminalCommandBar } from "@/components/terminal/terminal-command-bar";
 import { HeaderActions } from "./header-actions";
 import { cn } from "@/lib/utils";
 
@@ -48,6 +51,8 @@ const GROUPS: Group[] = [
       { label: "Earnings & catalysts", href: "/results", icon: FileBarChart, hint: "Scorecard, calendar, implied moves & rebalances" },
       { label: "Bhavcopy & Delivery", href: "/bhavcopy", icon: Layers, hint: "End-of-day delivery and accumulation" },
       { label: "Commodities", href: "/commodities", icon: Coins, hint: "Metals, energy and the rupee" },
+      { label: "Surveillance & bands", href: "/surveillance", icon: ShieldAlert, hint: "SEBI ASM, GSM & Price Bands" },
+      { label: "Sovereign yield curve", href: "/yield-curve", icon: LineChart, hint: "G-Sec par curve, T-Bills & RBI corridor" },
     ],
   },
   {
@@ -201,7 +206,8 @@ export function HeaderBar() {
         </nav>
 
         <div className="ml-auto flex shrink-0 items-center gap-1.5 pl-2 sm:gap-2 sm:pl-4">
-          <UniversalSearch className="hidden md:block" />
+          <TerminalCommandBar className="hidden sm:block w-48 md:w-64 lg:w-80" />
+          <UniversalSearch className="hidden xl:block" />
           <HeaderActions />
           <ThemeToggle />
           <button

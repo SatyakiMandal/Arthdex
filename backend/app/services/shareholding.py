@@ -40,7 +40,7 @@ def _pct(text: str) -> float | None:
     return float(m.group()) if m else None
 
 
-def _int(text: str | int | float | None) -> int | None:
+def _int(text: str | float | None) -> int | None:
     if text is None:
         return None
     if isinstance(text, (int, float)):

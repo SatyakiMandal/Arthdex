@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 
 from ..cache import CACHE
 from ..config import SETTINGS
-from ..providers import nse, yahoo
+from ..providers import nse
 from ..providers import universe as universe_provider
 from ..schemas import envelope
 from ..services import news as news_service
@@ -104,7 +104,7 @@ def get_deals():
 def _build_calendar() -> dict[str, Any]:
     today = date.today()
     end = today + timedelta(days=30)
-    fmt = lambda d: d.strftime("%d-%m-%Y")  # noqa: E731
+    fmt = lambda d: d.strftime("%d-%m-%Y")
 
     meetings: list[dict[str, Any]] = []
     errors: list[str] = []
@@ -118,7 +118,7 @@ def _build_calendar() -> dict[str, Any]:
                     "date": _ddmmyyyy(r.get("date")),
                     "purpose": purpose,
                     "detail": (r.get("bm_desc") or "")[:300],
-                    "isResults": bool(re.search(r"result", purpose + " " + (r.get("bm_desc") or ""), re.I)),
+                    "isResults": bool(re.search(r"result", purpose + " " + (r.get("bm_desc") or ""), re.IGNORECASE)),
                 }
             )
     except Exception as exc:
@@ -269,7 +269,7 @@ def _symbol_filings(symbol: str) -> list[dict[str, Any]]:
                 continue
             subject = r.get("desc")
             detail = r.get("attchmntText")
-            if re.search(_ROUTINE_FILINGS, subject or "", re.I):
+            if re.search(_ROUTINE_FILINGS, subject or "", re.IGNORECASE):
                 continue  # compliance housekeeping, not a reason for a price move
             out.append(
                 {

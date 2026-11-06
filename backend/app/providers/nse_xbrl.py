@@ -20,11 +20,11 @@ Values are in rupees and are returned in crore.
 
 from __future__ import annotations
 
+import urllib.parse
+import xml.etree.ElementTree as ET
 from datetime import date, datetime
 from typing import Any
-import urllib.parse
 from urllib.parse import urlparse
-import xml.etree.ElementTree as ET
 
 from ..cache import CACHE
 from .nse import _get_session, nse_get
@@ -187,9 +187,7 @@ def parse(xml: bytes | str) -> dict[str, Any]:
         for cid, (start, stop) in contexts.items():
             if stop != end:
                 continue
-            if min_days is None and start is None:
-                out.append(cid)
-            elif min_days is not None and start is not None and min_days <= (stop - start).days <= max_days:
+            if min_days is None and start is None or min_days is not None and start is not None and min_days <= (stop - start).days <= max_days:
                 out.append(cid)
         return out
 

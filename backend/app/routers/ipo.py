@@ -7,8 +7,8 @@ from fastapi import APIRouter, HTTPException, Query
 from ..cache import CACHE
 from ..config import SETTINGS
 from ..schemas import envelope
-from ..services.insights import ipo_insights
 from ..services import ipo as ipo_service
+from ..services.insights import ipo_insights
 
 router = APIRouter(prefix="/api/v1/ipo", tags=["ipo"])
 

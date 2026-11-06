@@ -236,8 +236,15 @@ export function ScenarioForecastCockpit({
 
   // Initial load or symbol/settings change
   useEffect(() => {
-    void fetchData(symbol, portfolioCapital, riskPct, false);
-    setCountdown(autoRefreshSecs);
+    let active = true;
+    void Promise.resolve().then(() => {
+      if (!active) return;
+      void fetchData(symbol, portfolioCapital, riskPct, false);
+      setCountdown(autoRefreshSecs);
+    });
+    return () => {
+      active = false;
+    };
   }, [symbol, portfolioCapital, riskPct, fetchData, autoRefreshSecs]);
 
   // Live Auto-Refresh Countdown Loop
@@ -269,7 +276,9 @@ export function ScenarioForecastCockpit({
       activeHorizon.models.forEach((m) => {
         initial[m.name] = true;
       });
-      setEnabledModels((prev) => (Object.keys(prev).length === 0 ? initial : prev));
+      queueMicrotask(() => {
+        setEnabledModels((prev) => (Object.keys(prev).length === 0 ? initial : prev));
+      });
     }
   }, [activeHorizon?.models]);
 

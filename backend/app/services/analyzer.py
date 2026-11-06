@@ -25,6 +25,7 @@ import uuid
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
+
 from app.services.analyzer_detail import detail_listed
 
 log = logging.getLogger("arthdex.analyzer")
@@ -277,11 +278,12 @@ def _unlisted_context(meta: dict[str, Any], d: Path) -> Path | None:
     inputs it cannot fetch itself (NSE index P/E and P/B) are prepared here. Anything that
     cannot be found is simply left out, and the engine skips the models that need it.
     """
+    from ceia.unlisted_research import sector_index
+
     from ..cache import CACHE
     from ..config import SETTINGS
     from ..providers import nse
     from . import unlisted as unlisted_service
-    from ceia.unlisted_research import sector_index
 
     slug = None
     if meta.get("url"):

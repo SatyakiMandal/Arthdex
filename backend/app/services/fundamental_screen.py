@@ -13,17 +13,7 @@ Filters are a small whitelisted language, `pe < 20 AND roe > 18 AND de < 0.5`,
 parsed rather than evaluated: a field, a comparison and a number, joined by AND.
 """
 
-from __future__ import annotations
-
-import logging
-import re
-import time
-from datetime import date, timedelta
-from typing import Any, Callable
-
-from ..store import STORE, Store
-
-LOG = logging.getLogger("uvicorn.error")
+from __future__ import annotationsimport loggingimport reimport timefrom collections.abc import Callablefrom datetime import date, timedeltafrom typing import Anyfrom ..store import STORE, StoreLOG = logging.getLogger("uvicorn.error")
 SERIES = "snapshot:fundamentals"
 STALE_AFTER_DAYS = 7
 PER_RUN = 120

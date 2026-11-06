@@ -8,9 +8,9 @@ unofficial — both facts are surfaced to the client rather than hidden.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import math
 import threading
+from datetime import datetime, timezone
 from typing import Any
 
 import pandas as pd

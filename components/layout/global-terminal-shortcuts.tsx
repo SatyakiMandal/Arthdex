@@ -17,6 +17,8 @@ import {
   Sunrise,
   X,
   Keyboard,
+  ShieldAlert,
+  LineChart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -41,6 +43,8 @@ const SHORTCUTS: ShortcutItem[] = [
   { chord: "G B", fallbackKey: "Shift+B", label: "Daily Bhavcopy", href: "/bhavcopy", icon: Sunrise, desc: "Official NSE security-wise delivery radar" },
   { chord: "G W", fallbackKey: "Shift+W", label: "Watchlist Desk", href: "/watchlist", icon: Star, desc: "Listed & unlisted tracking portfolio" },
   { chord: "G I", fallbackKey: "Shift+I", label: "IPO Primary Desk", href: "/ipo", icon: Rocket, desc: "Mainboard & SME issues with subscription" },
+  { chord: "G U", fallbackKey: "Shift+U", label: "Surveillance Desk", href: "/surveillance", icon: ShieldAlert, desc: "SEBI ASM, GSM & Price Bands" },
+  { chord: "G Y", fallbackKey: "Shift+Y", label: "Sovereign Yield Curve", href: "/yield-curve", icon: LineChart, desc: "G-Sec par curve, T-Bills & RBI corridor" },
   { chord: "G C", fallbackKey: "Shift+C", label: "Terminal Contrast", action: "contrast", icon: Moon, desc: "Toggle pitch-black charcoal theme" },
 ];
 

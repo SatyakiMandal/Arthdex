@@ -1,16 +1,6 @@
 """Universe screener endpoints: factor screens and multi-window movers."""
 
-from __future__ import annotations
-
-from fastapi import APIRouter, HTTPException, Query
-
-from ..cache import CACHE
-from ..config import SETTINGS
-from ..providers import constituents
-from ..schemas import envelope
-from ..services import screener, technicals
-
-router = APIRouter(prefix="/api/v1/screener", tags=["screener"])
+from __future__ import annotationsfrom fastapi import APIRouter, HTTPException, Queryfrom ..cache import CACHEfrom ..config import SETTINGSfrom ..providers import constituentsfrom ..schemas import envelopefrom ..services import screener, technicalsrouter = APIRouter(prefix="/api/v1/screener", tags=["screener"])
 
 # The batch download is the expensive call, so the derived screens share one
 # cached universe rather than each triggering their own.
@@ -126,8 +116,7 @@ def macd_crossover(
 
 def _fundamental_inputs(symbol: str) -> tuple[dict, dict, list]:
     """A company's vetted financials and valuation, as its page shows them, and screener.in's longer quarterly series."""
-    from ..providers import screener as screener_provider
-    from . import company
+    from ..providers import screener as screener_provider    from . import company
 
     try:
         alt = screener_provider.fetch_company(symbol).get("quarterly") or []
@@ -145,8 +134,7 @@ def get_fundamental_screen(
     limit: int = Query(50, ge=1, le=200),
 ):
     """Screen the Nifty 500 on vetted fundamentals, with price-based multiples from live prices."""
-    from ..providers import nse as nse_provider
-    from ..services import fundamental_screen as fs
+    from ..providers import nse as nse_provider    from ..services import fundamental_screen as fs
 
     formula = fs.PRESETS[preset][1] if preset in fs.PRESETS else q
     snapshots = fs.load()

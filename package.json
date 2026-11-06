@@ -10,7 +10,9 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "feeds:check": "cd backend && .venv/Scripts/python -m app.watchdog",
-    "data:reconcile": "cd backend && .venv/Scripts/python -m app.reconcile"
+    "data:reconcile": "cd backend && .venv/Scripts/python -m app.reconcile",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -26,14 +28,18 @@
     "tailwind-merge": "2.6.0"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
     "@types/node": "22.13.1",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "autoprefixer": "10.4.20",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.4.4",
+    "jsdom": "^31.0.0",
     "postcss": "8.5.1",
     "tailwindcss": "3.4.17",
-    "typescript": "5.7.3"
+    "typescript": "5.7.3",
+    "vitest": "^5.1.0"
   }
 }

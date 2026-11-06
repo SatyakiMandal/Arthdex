@@ -19,11 +19,11 @@ operating fields are left empty rather than approximated.
 from __future__ import annotations
 
 import calendar
+import re
+import urllib.parse
 from collections import Counter
 from datetime import date
-import re
 from typing import Any
-import urllib.parse
 
 import requests
 from bs4 import BeautifulSoup

@@ -3,6 +3,8 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { RefreshControl } from "@/components/layout/refresh-control";
+import { CookieConsent } from "@/components/layout/cookie-consent";
+import { StructuredData } from "@/components/seo/structured-data";
 
 // Fonts are bundled (app/fonts, built from the Google Fonts sources, SIL OFL) rather than
 // downloaded at build time: a transient fetch failure once broke a production build.
@@ -25,14 +27,22 @@ export const metadata: Metadata = {
     "Indian market intelligence computed from source: NSE prices, company fundamentals, quant risk models, unlisted valuations and IPO analytics.",
   applicationName: "Arthdex",
   keywords: ["NSE", "Indian stock market", "stock screener", "IPO", "unlisted shares", "quant", "fundamentals", "Nifty"],
+  alternates: {
+    canonical: "./",
+  },
   openGraph: {
     type: "website",
     siteName: "Arthdex",
     locale: "en_IN",
     title: "Arthdex · Quantitative Market Intelligence",
     description: "Indian market analytics computed from source, covering listed, unlisted and IPO companies.",
+    url: SITE,
   },
-  twitter: { card: "summary_large_image" },
+  twitter: {
+    card: "summary_large_image",
+    title: "Arthdex · Quantitative Market Intelligence",
+    description: "Indian market analytics computed from source, covering listed, unlisted and IPO companies.",
+  },
   robots: { index: true, follow: true },
 };
 
@@ -46,6 +56,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning className={`${sans.variable} ${mono.variable} ${display.variable} ${deva.variable} ${brand.variable}`}>
+      <head>
+        <StructuredData />
+      </head>
       <body suppressHydrationWarning>
         <a
           href="#main"
@@ -55,6 +68,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </a>
         <Providers>{children}</Providers>
         <RefreshControl />
+        <CookieConsent />
       </body>
     </html>
   );

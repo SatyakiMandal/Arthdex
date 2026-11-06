@@ -39,10 +39,8 @@ def get_orderflow(
                     res["lastClose"] = cmp_val
                     if res.get("bars") and len(res["bars"]) > 0:
                         res["bars"][-1]["c"] = cmp_val
-                        if cmp_val > res["bars"][-1]["h"]:
-                            res["bars"][-1]["h"] = cmp_val
-                        if cmp_val < res["bars"][-1]["l"]:
-                            res["bars"][-1]["l"] = cmp_val
+                        res["bars"][-1]["h"] = max(res["bars"][-1]["h"], cmp_val)
+                        res["bars"][-1]["l"] = min(res["bars"][-1]["l"], cmp_val)
                     res["liveQuote"] = {
                         "cmp": cmp_val,
                         "change": (live_q.get("change") or {}).get("absolute"),

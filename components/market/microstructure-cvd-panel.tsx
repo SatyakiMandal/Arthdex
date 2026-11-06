@@ -26,26 +26,28 @@ export function MicrostructureCvdPanel({ symbol }: MicrostructureCvdPanelProps) 
 
   useEffect(() => {
     let isCancelled = false;
-    setLoading(true);
-    setError(null);
 
-    fetch(`/api/orderflow?symbol=${encodeURIComponent(symbol)}&interval=5m`)
-      .then((res) => {
+    async function load() {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch(`/api/orderflow?symbol=${encodeURIComponent(symbol)}&interval=5m`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then((json) => {
+        const json = await res.json();
         if (!isCancelled) {
           setData(json);
           setLoading(false);
         }
-      })
-      .catch((err) => {
+      } catch (err: unknown) {
         if (!isCancelled) {
-          setError(err.message || "Failed to load orderflow");
+          const message = err instanceof Error ? err.message : "Failed to load orderflow";
+          setError(message);
           setLoading(false);
         }
-      });
+      }
+    }
+
+    void load();
 
     return () => {
       isCancelled = true;

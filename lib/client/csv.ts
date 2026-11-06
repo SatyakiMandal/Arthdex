@@ -1,19 +1,43 @@
 "use client";
 
+/** Cell data type supported in CSV tables */
 export type CsvCell = string | number | null | undefined;
 
-function escape(cell: CsvCell): string {
+/**
+ * Escapes a single CSV cell value:
+ * - Null or undefined converts to empty string
+ * - Defends against CSV Formula Injection (DDE injection) if text begins with =, +, -, @, \t, or \r
+ * - Wraps in double quotes and escapes internal quotes if comma, newline, carriage return, or double quote is present
+ */
+export function escapeCsvCell(cell: CsvCell): string {
   if (cell === null || cell === undefined) return "";
   let text = String(cell);
-  // Third-party text (client names, headlines) can start with = + - or @, which a spreadsheet would run as a formula
-  if (typeof cell === "string" && /^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+  // Defend against spreadsheet formula injection attacks
+  if (typeof cell === "string" && /^[=+\-@\t\r]/.test(text)) {
+    text = `'${text}`;
+  }
   return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
-/** Download rows as a UTF-8 CSV. The BOM makes Excel read the rupee sign and Indian names correctly. */
+/**
+ * Serializes rows into a UTF-8 CSV string with CRLF row breaks.
+ */
+export function serializeCsv(header: string[], rows: CsvCell[][]): string {
+  return [header, ...rows].map((r) => r.map(escapeCsvCell).join(",")).join("\r\n");
+}
+
+/**
+ * Downloads tabular data as a UTF-8 CSV file in the browser.
+ * Includes UTF-8 Byte Order Mark (BOM) `\uFEFF` so Microsoft Excel renders
+ * Indian Rupee symbols (₹) and non-ASCII company names correctly.
+ *
+ * @param filename File name (appends .csv if omitted)
+ * @param header Array of column headers
+ * @param rows 2D array of rows
+ */
 export function downloadCsv(filename: string, header: string[], rows: CsvCell[][]): void {
-  const body = [header, ...rows].map((r) => r.map(escape).join(",")).join("\r\n");
-  const blob = new Blob(["﻿", body], { type: "text/csv;charset=utf-8" });
+  const body = serializeCsv(header, rows);
+  const blob = new Blob(["\uFEFF", body], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

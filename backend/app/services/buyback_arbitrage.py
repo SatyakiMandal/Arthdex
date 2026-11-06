@@ -14,7 +14,6 @@ from typing import Any
 
 from ..cache import CACHE
 from ..config import SETTINGS
-from ..providers import yahoo
 from ..services import quote_sources
 
 # Curated ongoing and active tender-offer buybacks

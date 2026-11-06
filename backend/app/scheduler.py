@@ -16,9 +16,10 @@ import logging
 import os
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, time as dtime, timedelta, timezone
-from typing import Callable
+from datetime import datetime, timedelta, timezone
+from datetime import time as dtime
 
 from .store import STORE, Store
 
@@ -101,7 +102,7 @@ def tick(store: Store = STORE, now: datetime | None = None) -> list[str]:
     """Run every job that is due. Returns the names run."""
     now = now or datetime.now(timezone.utc)
     ran = []
-    for job in list(JOBS):
+    for job in JOBS:
         if _backing_off(store, job.name, now):
             continue
         if due(job, now, _last_finished(store, job.name)):

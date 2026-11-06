@@ -139,14 +139,18 @@ export function LiveVolumeProfile({
   const volTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Sync state if initialSymbol prop changes from parent
+  const prevInitialSymbolRef = useRef(initialSymbol);
   useEffect(() => {
-    if (initialSymbol && initialSymbol !== symbol) {
-      setSymbol(initialSymbol);
+    if (initialSymbol && initialSymbol !== prevInitialSymbolRef.current) {
+      prevInitialSymbolRef.current = initialSymbol;
       prevLastCloseRef.current = null;
       prevTotalVolRef.current = null;
       prevCmpRef.current = null;
       prevLiveVolRef.current = null;
-      setLiveQuote(null);
+      queueMicrotask(() => {
+        setSymbol(initialSymbol);
+        setLiveQuote(null);
+      });
     }
   }, [initialSymbol]);
 
@@ -266,13 +270,20 @@ export function LiveVolumeProfile({
 
   // Initial load or symbol/interval changes
   useEffect(() => {
-    void refreshLiveProfile(symbol, timeframe, false);
+    let active = true;
+    void Promise.resolve().then(() => {
+      if (!active) return;
+      void refreshLiveProfile(symbol, timeframe, false);
+    });
+    return () => {
+      active = false;
+    };
   }, [symbol, timeframe, refreshLiveProfile]);
 
   // Live Auto-Refresh Countdown Timer
   useEffect(() => {
     if (autoRefreshSecs === 0) return;
-    setCountdown(autoRefreshSecs);
+    queueMicrotask(() => setCountdown(autoRefreshSecs));
 
     const intervalTimer = setInterval(() => {
       setCountdown((prev) => {

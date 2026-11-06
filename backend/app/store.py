@@ -18,10 +18,11 @@ import json
 import os
 import sqlite3
 import threading
+from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import date, datetime, timezone
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 SQLITE_PATH = Path(__file__).resolve().parent.parent / "app_data" / "arthdex.db"
 

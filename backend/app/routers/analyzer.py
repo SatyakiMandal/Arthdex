@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel, Field
 
-from ..cache import CACHE
 from ..providers import universe as universe_provider
 from ..services import analyzer as svc
 from ..services import unlisted as unlisted_service

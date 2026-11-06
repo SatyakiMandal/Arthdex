@@ -9,9 +9,9 @@ consistency instead (services/options.py).
 
 from __future__ import annotations
 
+import urllib.parse
 from datetime import datetime
 from typing import Any
-import urllib.parse
 
 from .nse import _num, nse_get
 

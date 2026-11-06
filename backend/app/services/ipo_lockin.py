@@ -15,9 +15,7 @@ from typing import Any
 
 from ..cache import CACHE
 from ..config import SETTINGS
-from ..providers import yahoo
-from ..services import ipo as ipo_service, quote_sources
-
+from ..services import quote_sources
 
 # Curated verified anchor and pre-IPO lockin dataset for recent major listings
 KNOWN_LOCKIN_SCHEDULES: list[dict[str, Any]] = [

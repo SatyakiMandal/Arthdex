@@ -15,7 +15,6 @@ from typing import Any
 
 from ..cache import CACHE
 from ..config import SETTINGS
-from ..providers import yahoo
 from ..services import quote_sources
 
 INDEX_AUM_ESTIMATES_CR: dict[str, float] = {

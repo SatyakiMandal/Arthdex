@@ -11,14 +11,15 @@ from __future__ import annotations
 
 import math
 from typing import Any
+
 import numpy as np
 import pandas as pd
-from scipy import stats
 
 from ..providers import yahoo
-from ..services import quote_sources, technicals, indicators as ind
+from ..services import indicators as ind
 from ..services import options as options_service
 from ..services import orderflow as orderflow_service
+from ..services import quote_sources, technicals
 
 # Trading horizons: (Code, Label, Trading Days, Fraction of Year)
 HORIZONS: list[tuple[str, str, int, float]] = [
@@ -413,7 +414,7 @@ def algo_liquidity_matrix(
         "prob_bear": 25.0,
         "prob_base": 45.0,
         "prob_bull": 30.0,
-        "rationale": f"Resting stop-pool sweep boundaries (BSL expansion / SSL liquidity runs).",
+        "rationale": "Resting stop-pool sweep boundaries (BSL expansion / SSL liquidity runs).",
     }
 
 
@@ -543,12 +544,10 @@ def generate_trade_execution_plan(
     per_share_risk = max(1.0, weighted_entry - structural_sl)
 
     total_quantity = int(math.floor(max_risk_inr / per_share_risk))
-    if total_quantity < 1:
-        total_quantity = 1
+    total_quantity = max(total_quantity, 1)
 
     tranche_1_qty = int(math.floor(total_quantity * 0.40))
-    if tranche_1_qty < 1:
-        tranche_1_qty = 1
+    tranche_1_qty = max(tranche_1_qty, 1)
     tranche_2_qty = max(0, total_quantity - tranche_1_qty)
 
     required_capital = (tranche_1_qty * entry_1) + (tranche_2_qty * entry_2)

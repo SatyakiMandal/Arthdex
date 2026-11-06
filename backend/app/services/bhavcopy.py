@@ -160,7 +160,7 @@ def analyse(d: date) -> dict[str, Any] | None:
     return {
         "date": d.isoformat(),
         "kpis": {
-            "securities": int(len(df)),
+            "securities": len(df),
             "advances": adv,
             "declines": dec,
             "unchanged": unch,

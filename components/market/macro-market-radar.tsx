@@ -115,7 +115,10 @@ export function MacroMarketRadar({
   const [showHotkeyHelp, setShowHotkeyHelp] = useState<boolean>(false);
 
   const stocks = useMemo(() => pulse.stocks ?? [], [pulse.stocks]);
-  const marketBreadth = pulse.market ?? { advances: 0, declines: 0, unchanged: 0, total: 0 };
+  const marketBreadth = useMemo(
+    () => pulse.market ?? { advances: 0, declines: 0, unchanged: 0, total: 0 },
+    [pulse.market],
+  );
 
   // Set of banned symbols for instantaneous O(1) lookup
   const bannedSet = useMemo(() => {

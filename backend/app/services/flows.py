@@ -17,7 +17,7 @@ from __future__ import annotations
 from datetime import date, timedelta
 from typing import Any
 
-from ..providers import nse, nsdl
+from ..providers import nsdl, nse
 from ..store import STORE, Store
 
 NSE_SERIES, NSDL_SERIES = "flows:nse", "flows:nsdl"

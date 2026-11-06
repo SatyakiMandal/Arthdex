@@ -8,17 +8,36 @@ route degrades to a clear error rather than inventing a value.
 
 from __future__ import annotations
 
-from contextlib import asynccontextmanager
 import hmac
 import os
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from .config import SETTINGS
-from .routers import analyzer, bhavcopy, catalysts, company, decisions, derivatives, desk, forecast, health, ipo, market, news, orderflow, portfolio, quant, screener, search, unlisted
+from .routers import (
+    analyzer,
+    bhavcopy,
+    catalysts,
+    company,
+    decisions,
+    derivatives,
+    desk,
+    forecast,
+    health,
+    ipo,
+    market,
+    news,
+    orderflow,
+    portfolio,
+    quant,
+    screener,
+    search,
+    unlisted,
+)
 from .services import analyzer as analyzer_service
 from .services import unlisted as unlisted_service
 

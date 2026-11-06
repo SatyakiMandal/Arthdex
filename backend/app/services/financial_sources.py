@@ -25,8 +25,9 @@ in `disagreements`, which the reconciliation turns into a watchdog incident.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import date
-from typing import Any, Callable
+from typing import Any
 
 # How far one period may stray from the two sources' usual relationship before it is
 # treated as an error in one of them, rather than a difference in definition.
