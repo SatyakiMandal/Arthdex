@@ -866,14 +866,25 @@ flowchart LR
   M0["Phase 0: Terminal Command Shell (M1)"] --> M1["Phase 1: Surveillance & Microstructure (M13.6)"]
   M1 --> M2["Phase 2: Sovereign Yield Curve & Fixed Income (M14)"]
   M2 --> M3["Phase 3: F&O Participant OI & Strategy Builder (M12)"]
-  M3 --> M4["Phase 4: Real-time Streaming & Broker Sync (M2, M27)"]
+  M3 --> M4["Phase 4: India Macro & Currency Matrix (M15, M18)"]
+  M4 --> M5["Phase 5: Mutual Funds & Portfolio Overlap (M17)"]
+  M5 --> M6["Phase 6: Paper Trading & Indian Cost Desk (M27)"]
+  M6 --> M7["Phase 7: Terminal Academy & Command Help Desk (M28)"]
+  M7 --> M8["Phase 8: Quant Risk & Stress-Testing Lab (M22)"]
+  M8 --> M9["Phase 9: Sector Operating KPIs & Supply Chain (M19)"]
 ```
 
-- **Phase 0 (Foundation)**: Bloomberg Command Bar (`/`, `Alt+K`), Function Registry (`lib/terminal/functions.ts`), Function dispatching across all 36 routes.
-- **Phase 1 (Surveillance & Compliance)**: ASM/GSM monitoring, T2T settlement categorisation, price band triggers (`SURV`).
-- **Phase 2 (Fixed Income & Macro)**: India Sovereign Yield Curve (`GC IN`), G-Sec benchmark yields, T-Bills, RBI policy corridor (`RBIP`).
-- **Phase 3 (Derivatives Intelligence)**: FII/DII/Prop participant-wise F&O OI analytics (`PART`), Options Strategy Builder (`OSB`).
-- **Phase 4 (Live Streaming & Accounts)**: Multi-channel alerts, user cloud sync, broker OAuth integrations.
+- **Phase 0 (Foundation - M1)**: Bloomberg Command Bar (`/`, `Alt+K`, `F1`, `?`), Function Registry (`lib/terminal/functions.ts`), Function dispatching across all routes. **[COMPLETED & LIVE]**
+- **Phase 1 (Surveillance & Compliance - M13.6)**: ASM/GSM monitoring (Stages I-IV), T2T settlement categorisation, circuit filter bands (2%, 5%, 10%, 20%) (`SURV` &rarr; `/surveillance`). **[COMPLETED & LIVE]**
+- **Phase 2 (Fixed Income & Macro - M14)**: India Sovereign Yield Curve (`GC IN`), G-Sec benchmark yields (91D to 30Y) with Nelson-Siegel / Svensson fitted parameters, US 10Y spread, RBI policy corridor (`RBIP` &rarr; `/yield-curve`). **[COMPLETED & LIVE]**
+- **Phase 3 (Derivatives Intelligence - M12)**: FII/DII/Client/Prop participant-wise F&O OI analytics (`PART` &rarr; `/participant-oi`), Options Strategy Builder with multi-leg payoff diagrams (`OSB` &rarr; `/strategy-builder`), Implied Volatility Surface & Smile matrix (`OVDV` &rarr; `/volatility`). **[COMPLETED & LIVE]**
+- **Phase 4 (Macroeconomics & FX - M15, M18)**: India Macroeconomic Calendar (CPI, GDP, IIP, Fiscal Deficit) with Consensus vs Actual (`ECO` &rarr; `/macro`), INR Cross-Currency Matrix (USDINR, EURINR, GBPINR, JPYINR, REER, Forward Premiums) (`FXM` &rarr; `/fx`). **[COMPLETED & LIVE]**
+- **Phase 5 (Mutual Funds & Overlap Engine - M17)**: Mutual Fund Screener with TER, AUM, Sharpe, category filters (`MF`, `MFS` &rarr; `/funds`), Portfolio Overlap Engine pairwise matrix & common holdings (`OVLP` &rarr; `/funds?tab=overlap`). **[COMPLETED & LIVE]**
+- **Phase 6 (Paper Trading Simulator & Cost Desk - M27)**: Virtual execution blotter with ₹10,00,000 cash account, simulated order fills against live prices, and authentic Indian statutory cost desk: STT, GST, SEBI turnover fees, Stamp Duty, and Exchange charges (`PAPR`, `EMSX` &rarr; `/paper-trading`). **[COMPLETED & LIVE]**
+- **Phase 7 (Terminal Academy & Command Directory - M28)**: Complete Bloomberg syntax tutor, live AST command parser sandbox, 42+ command directory with quick launcher (`[CMD]`), 6 institutional trading masterclasses, and keyboard shortcuts guide (`HELP`, `LEARN` &rarr; `/help`). **[COMPLETED & LIVE]**
+- **Phase 8 (Quant Risk Lab & Stress Testing - M22)**: Historical crash stress testing (2008 GFC, 2020 Covid, 2024 Election shock), multi-factor risk attribution (Size, Value, Momentum, Quality, Low-Vol), and walk-forward backtesting (`STRS`, `MARS`, `FCTR`, `BTST`). **[NEXT]**
+- **Phase 9 (Sector & Operating KPI Intelligence - M19)**: Monthly sector operational data (Auto SIAM/VAHAN dispatches, Banking credit growth, CEA power demand, DGCA air traffic) and Supply Chain customer-supplier graph (`SKPI`, `SPLC`). **[UPCOMING]**
+- **Phase 10 (Multi-Panel Terminal Workspace & Cloud Sync - M1, M29)**: Bloomberg Launchpad-style multi-pane tiling workspace, custom layout presets, and cloud sync across user devices. **[UPCOMING]**
 
 ---
 
@@ -881,21 +892,39 @@ flowchart LR
 
 | Bloomberg Function | Arthdex Command | Target Route / Functionality | Status |
 |---|---|---|---|
-| `<GO>` / Command | `/` or `Alt+K` | Terminal Omnipresent Command Line | **Phase 0** |
-| `DES` | `<SYM> DES` | Company Description & Overview | Live (`/company/[symbol]`) |
-| `FA` | `<SYM> FA` | Financial Analysis & Statements | Live (`/company/[symbol]/statements`) |
-| `GP` | `<SYM> GP` | Graph Price & Technical Chart | Live (`/company/[symbol]/technicals`) |
-| `OMON` | `NIFTY OMON` | Option Chain & Implied Greeks | Live (`/derivatives`) |
-| `SURV` | `SURV` | ASM/GSM & Price Band Surveillance | **Phase 1** |
-| `GC IN` | `GC IN` | India Sovereign Yield Curve | **Phase 2** |
-| `PART` | `PART` | Participant-wise F&O Open Interest | **Phase 3** |
-| `OSB` | `OSB` | Options Strategy Builder | **Phase 3** |
-| `MOST` | `MOST` | Market Movers & Breadth | Live (`/market-watch`) |
-| `BHAV` | `BHAV` | Daily Bhavcopy & Delivery | Live (`/bhavcopy`) |
-| `PORT` | `PORT` | Portfolio & Section 112A Tax | Live (`/portfolio`) |
-| `EQS` | `EQS` | Fundamental Multi-Factor Screener | Live (`/screener`) |
-| `DEAL` | `DEAL` | Institutional Bulk & Block Deals | Live (`/orderflow?tab=deals`) |
-| `ANLZ` | `ANLZ` | Corporate Event Impact Analyzer | Live (`/analyzer`) |
-| `CMKT` | `CMKT` | Commodities Desk | Live (`/commodities`) |
-| `NEWS` | `NEWS` | Exchange Filings & Regulatory News | Live (`/news`) |
-| `STAT` | `STAT` | System & Exchange Feed Status | Live (`/status`) |
+| `<GO>` / Command | `/`, `Alt+K`, `F1`, `?` | Terminal Omnipresent Command Line & Directory | **Live** (All routes) |
+| `HELP` / `LEARN` | `HELP`, `LEARN`, `DIR` | Terminal Academy, Syntax Tutor & Command Encyclopedia | **Live** (`/help`) |
+| `DES` | `<SYM> DES` | Company Description & Institutional Overview | **Live** (`/company/[symbol]`) |
+| `FA` | `<SYM> FA` | Financial Analysis & Standardized Statements | **Live** (`/company/[symbol]/statements`) |
+| `GP` | `<SYM> GP` | Graph Price & Technical Candlestick Workbench | **Live** (`/company/[symbol]/technicals`) |
+| `OMON` | `NIFTY OMON` | Option Chain, Greeks, Max Pain & PCR | **Live** (`/derivatives`) |
+| `PART` | `PART` | FII / DII / Prop / Client Participant-wise F&O OI | **Live** (`/participant-oi`) |
+| `OSB` | `OSB` | Multi-Leg Options Strategy Payoff Builder | **Live** (`/strategy-builder`) |
+| `OVDV` | `OVDV` | Implied Volatility Surface & Volatility Smile Matrix | **Live** (`/volatility`) |
+| `SURV` | `SURV` | SEBI ASM / GSM & Price Band Surveillance Desk | **Live** (`/surveillance`) |
+| `GC IN` / `GSEC` | `GC IN`, `GSEC` | India Sovereign Yield Curve & Nelson-Siegel Desk | **Live** (`/yield-curve`) |
+| `RBIP` | `RBIP` | RBI Policy Rate Corridor & Auction Calendar | **Live** (`/yield-curve`) |
+| `ECO` | `ECO` | India Macroeconomic Calendar & Economic Indicators | **Live** (`/macro`) |
+| `FXM` | `FXM` | INR Cross-Currency Matrix, REER & Forward Premiums | **Live** (`/fx`) |
+| `MF` / `MFS` | `MF`, `MFS` | Mutual Fund & ETF Screener (Equity/Debt/Hybrid) | **Live** (`/funds`) |
+| `OVLP` | `OVLP` | Mutual Fund Portfolio Overlap Matrix & Common Holdings | **Live** (`/funds?tab=overlap`) |
+| `PAPR` / `EMSX` | `PAPR`, `EMSX` | Paper Trading Execution Simulator & Cost Desk | **Live** (`/paper-trading`) |
+| `MOST` / `MKT` | `MOST`, `MKT` | Market Movers, 52W High/Low & Sector Heatmap | **Live** (`/market-watch`) |
+| `BHAV` | `BHAV` | Daily Bhavcopy, Turnover & Delivery Analysis | **Live** (`/bhavcopy`) |
+| `PORT` | `PORT` | Portfolio Management, Sharpe/Sortino & Sec 112A Tax | **Live** (`/portfolio`) |
+| `EQS` | `EQS` | Fundamental Multi-Factor Screener | **Live** (`/screener`) |
+| `DEAL` | `DEAL` | Institutional Bulk & Block Deals Monitor | **Live** (`/orderflow?tab=deals`) |
+| `ANLZ` | `ANLZ` | Corporate Event Impact Analyzer | **Live** (`/analyzer`) |
+| `CMKT` | `CMKT` | MCX & Global Commodities Desk | **Live** (`/commodities`) |
+| `NEWS` | `NEWS` | Exchange Filings & Regulatory News Feed | **Live** (`/news`) |
+| `STAT` | `STAT` | Exchange Feed Health & Mathematical Methodology | **Live** (`/status`) |
+| `IPO` | `IPO` | Mainboard & Anchor Book Tracker | **Live** (`/ipo`) |
+| `UNL` | `UNL` | Unlisted & Pre-IPO Equity Intelligence | **Live** (`/unlisted`) |
+| `RES` | `RES` | Quarterly Earnings Season Tracker | **Live** (`/results`) |
+| `CACS` | `CACS` | Corporate Actions, Dividends & Splits Calendar | **Live** (`/calendar`) |
+| `COMP` | `COMP` | Peer Comparison & Relative Valuation Benchmarking | **Live** (`/compare`) |
+| `ALRT` | `ALRT` | Price Level & Corporate Filing Triggers | **Live** (`/alerts`) |
+| `STRS` / `MARS` | `STRS`, `MARS` | Quant Risk Lab & Historical Stress Testing | **Phase 8** |
+| `SKPI` | `SKPI` | Sector Operating KPIs (Auto, Bank, Power, Telecom) | **Phase 9** |
+| `SPLC` | `SPLC` | Supply Chain & Customer-Supplier Mapping Graph | **Phase 9** |
+| `W` | `W` | Bloomberg Multi-Panel Tiling Workspace Shell | **Phase 10** |

@@ -125,6 +125,45 @@ The unlisted service reuses `ceia.fetcher.Fetcher` (honest user agent, robots.tx
 
 Insider-trading (PIT) disclosures are not offered: the NSE endpoint returned no rows for any date range tried.
 
+### Fixed Income, Rates & Yield Curve (ackend/fixed_income.py)
+| Function / Route | Params | Source / TTL | Description & Returns |
+|---|---|---|---|
+| get_sovereign_yield_curve() | None | CCIL / RBI, 300 s | Complete Indian Sovereign Yield Curve (91D, 182D, 364D T-Bills; 2Y, 3Y, 5Y, 10Y, 14Y, 30Y G-Secs) with fitted Nelson-Siegel / Svensson model parameters (beta_0, beta_1, beta_2, lambda), US 10Y sovereign spread, curve slope (10Y - 2Y, 30Y - 10Y), and historical 1M/1Y shift overlays |
+| get_gsec_benchmarks() | None | RBI / CCIL, 300 s | Benchmark 10Y G-Sec (7.18% GS 2033 / current), RBI Policy Rate corridor (Policy Repo 6.50%, SDF 6.25%, MSF 6.75%, Bank Rate 6.75%), upcoming RBI indicative primary auction calendar, and sovereign liquidity status |
+
+### Surveillance & Microstructure (ackend/surveillance.py)
+| Function / Route | Params | Source / TTL | Description & Returns |
+|---|---|---|---|
+| get_sebi_surveillance_data() | ction_type=all|asm|gsm|t2t | SEBI / NSE / BSE circulars, 300 s | Securities under SEBI surveillance frameworks: Long-Term ASM (Stages I-IV), Short-Term ASM (Stages I-II), GSM (Stages I-IV with additional surveillance deposit requirements), Trade-for-Trade (T2T) settlement bucket, applicable price band filters (2%, 5%, 10%, 20%), and regulatory entry reason codes |
+| get_circuit_band_movers() | and=all|2|5|10|20 | Exchange Bhavcopy & real-time quotes, 120 s | Securities hitting upper or lower circuit limits or trading within 1.5% of daily price bands, volume multipliers, and delivery participation |
+
+### Derivatives Intelligence & Analytics (ackend/derivatives_intelligence.py)
+| Function / Route | Params | Source / TTL | Description & Returns |
+|---|---|---|---|
+| get_participant_oi() | date? | NSE participant-wise open interest report, 300 s | Institutional positioning breakdown across FII, DII, Proprietary traders, and Clients. Returns contract counts and Net Open Interest in Index Futures, Index Options (Calls & Puts), Stock Futures, and Stock Options, plus Bull/Bear Long-Short ratios and historical 10-day trend |
+| get_volatility_surface(symbol) | symbol (e.g. NIFTY, BANKNIFTY) | NSE option chain, 60 s | 3D Implied Volatility (IV) surface matrix across strike moneyness (80% to 120% of spot) and standard expiries (Current Weekly, Next Weekly, Monthly, Next Month). Computes implied volatility skew, smile curvature, and ATM volatility term structure |
+| calculate_strategy_payoff(legs, spot_price) | Body {legs: [{type, strike, expiry, action, lots, premium}], spotPrice} | Deterministic quant calculator | Multi-leg Options Strategy Builder payoff curve across a +-15% price grid. Computes Upper & Lower Breakeven points, Maximum Profit, Maximum Risk / Loss, Risk-Reward ratio, Net Debit/Credit, and aggregated position Greeks (Delta, Gamma, Theta, Vega) |
+
+### Macroeconomics & Currencies (ackend/macro_economics.py)
+| Function / Route | Params | Source / TTL | Description & Returns |
+|---|---|---|---|
+| get_macro_economic_calendar() | limit? | MOSPI, RBI, Ministry of Commerce, 600 s | High-impact Indian economic events calendar: CPI Inflation, Real GDP Growth, Index of Industrial Production (IIP), Core Sector Growth, Fiscal Deficit, Trade Balance, and RBI MPC decisions. Includes Actual, Market Consensus, and Prior figures with surprise delta |
+| get_macro_indicators() | None | MOSPI / RBI historical series, 3600 s | Historical macroeconomic time series for correlation and regression analysis with equity indices |
+| get_inr_currency_matrix() | None | RBI Reference Rates & FX market, 120 s | INR Cross-Currency rates (USDINR, EURINR, GBPINR, JPYINR), 1D/1W/1M changes, RBI Foreign Exchange Reserves level, Real Effective Exchange Rate (REER) 40-currency index, and annualized Forward Premiums (1M, 3M, 6M, 1Y) |
+
+### Mutual Funds & Overlap Engine (ackend/funds.py)
+| Function / Route | Params | Source / TTL | Description & Returns |
+|---|---|---|---|
+| get_mutual_funds_screener(category) | category=all|equity|debt|hybrid|elss|index | AMFI / Fund factsheets, 600 s | Comprehensive Indian mutual fund screener with scheme NAV, 1Y, 3Y, 5Y CAGR returns, Total Expense Ratio (TER), Assets Under Management (AUM Rs Cr), Sharpe Ratio, Sortino Ratio, Benchmark Alpha, Portfolio Beta, and fund manager tenure |
+| calculate_portfolio_overlap(scheme_ids) | scheme_ids (comma-separated IDs) | AMFI holding disclosures, 600 s | Pairwise portfolio overlap matrix calculated using the minimum holding weight formula: Overlap(A,B) = sum min(w_{i,A}, w_{i,B}). Returns overlap percentages, top common stocks with individual weights, and unique stock holdings per fund |
+
+### Paper Trading & Indian Statutory Cost Desk (ackend/paper_trading.py)
+| Function / Route | Params | Source / TTL | Description & Returns |
+|---|---|---|---|
+| get_paper_account() | ccount_id? | In-memory / session store | Virtual institutional cash account (default Rs 10,00,000 capital), available margin, margin utilized, open positions, realized and unrealized P&L |
+| submit_paper_order(order) | Body {symbol, side, orderType, quantity, price, assetClass} | Execution simulator | Validates capital margin against live prices, simulates limit/market order fills, updates positions and records order audit trail |
+| calculate_statutory_costs(trade_value, side, asset_class) | 	radeValue, side, ssetClass | Indian statutory tax calculator | Exact breakdown of Indian transaction costs: Securities Transaction Tax (STT - 0.1% equity delivery, 0.025% intraday sell, 0.125% options exercise), Goods & Services Tax (GST - 18% on brokerage + turnover fees + SEBI fees), SEBI Turnover Charges (Rs 10 per crore), Stamp Duty (0.015% buy delivery, 0.003% intraday buy, 0.003% options buy), and NSE Exchange Turnover Charges (0.00325%) |
+
 ### Analyzer (not enveloped)
 | Route | Description |
 |---|---|

@@ -117,6 +117,41 @@ See [event-impact-analyzer.md](event-impact-analyzer.md). Both are `force-dynami
 | Quant Engine | `/quant` | `getQuant` | Return forecasts with conformal intervals, volatility ensemble, VaR + Merton, Markov regime, microstructure card (Kyle's λ and VPIN shown as unavailable) |
 | Macro & News | `/macro` | `getSensitivity`, `getNews(symbol)` | OLS beta/alpha/R² against benchmarks with fit labels (Strong ≥ 0.6, Partial ≥ 0.3, Weak otherwise) and a company-filtered news feed |
 
+### Terminal Command Bar (components/terminal/terminal-command-bar.tsx)
+Mounted on all pages in the secondary subheader. Provides an omnipresent Bloomberg Terminal input ribbon with:
+- Global shortcuts: /, Alt+K, F1, ?.
+- Live command parsing (lib/terminal/functions.ts): parses [<SECURITY>] <FUNCTION> <GO>.
+- Categorized quick command drawer ([CMD] button) with category filter tabs (ALL, Company, Derivatives, Markets, Macro & Rates, Portfolio, Research, System).
+- Quick execution and direct link to /help.
+
+### /surveillance
+SEBI surveillance desk (components/surveillance/sebi-surveillance-desk.tsx): Long-Term ASM (Stages I-IV), Short-Term ASM (Stages I-II), GSM (Stages I-IV), Trade-for-Trade (T2T) settlement bucket, circuit filter price bands (2%, 5%, 10%, 20%), and regulatory entry reason codes.
+
+### /yield-curve
+Indian Sovereign Yield Curve desk (components/fixed-income/sovereign-yield-desk.tsx): 91D to 30Y yields, Nelson-Siegel / Svensson fitted parameters, US 10Y sovereign spread, curve slope, RBI Policy corridor (Repo, SDF, MSF, Bank Rate), and primary auction schedule.
+
+### /participant-oi
+Participant-wise F&O Open Interest (components/derivatives/participant-oi-desk.tsx): Institutional positioning across FII, DII, Pro, and Client segments in Index Futures, Index Options, Stock Futures, Stock Options, Long/Short ratios, and historical positioning trends.
+
+### /strategy-builder
+Multi-Leg Options Strategy Payoff Builder (components/derivatives/options-strategy-builder.tsx): Interactive multi-leg payoff diagram, breakeven analysis, max profit/loss, net premium, risk-reward ratios, and combined Greeks.
+
+### /volatility
+Implied Volatility Surface & Smile (components/derivatives/volatility-surface-desk.tsx): 3D IV surface grid across moneyness and weekly/monthly expiries, IV skew, smile curvature, and ATM term structure.
+
+### /macro and /fx
+- /macro (components/macro/macro-economic-calendar.tsx): Economic release calendar (CPI, GDP, IIP, Fiscal Deficit) with Consensus vs Actual and surprise delta.
+- /fx (components/macro/inr-currency-matrix.tsx): INR Cross-Currency rates (USDINR, EURINR, GBPINR, JPYINR), 1M-1Y forward premiums, REER index, and RBI foreign exchange reserves.
+
+### /funds
+Mutual Funds & Overlap Desk (components/funds/mutual-fund-desk.tsx): Screener across Equity/Debt/Hybrid/ELSS with AUM, TER, Sharpe, Sortino, Alpha; and Portfolio Overlap Engine calculating pairwise common holdings and intersection percentages.
+
+### /paper-trading
+Virtual Paper Trading Simulator (components/paper/paper-trading-desk.tsx): Rs 10,00,000 cash account, simulated order fills against live prices, order blotter, and full Indian statutory cost calculation (STT, GST, SEBI fee, Stamp Duty, Exchange turnover charges).
+
+### /help
+Terminal Academy & Help Desk (components/terminal/terminal-help-desk.tsx): Bloomberg Terminal syntax masterclass, interactive live AST command sandbox, categorized 42+ command directory with [EXECUTE] buttons, 6 institutional trading masterclasses, and keyboard shortcut matrix.
+
 ### Brand
 The logo is the trademark supplied by the project's professor (`components/brand/logo.tsx`): the open-book A mark from `public/brand/arthdex-mark.png`, with the name "ArThDex" (Source Serif 4 bold, navy and teal) and the line LEARN | ANALYZE | INVEST | GROW beside it. The artwork is navy on white, so `arthdex-mark-light.png` carries the same mark with its navy parts lightened for the dark theme, swapped by the `dark:` class. The tagline shows from the 2xl breakpoint in the header and always in the footer. `app/icon.png` and `app/apple-icon.png` are the navy app tile from the brand board. Brand colours: navy #0B2D5B, teal #00A896, gold #F4B942, light #E8EEF4. The files are crops of a raster brand board, so a vector original should replace them when the professor can supply one.
 
