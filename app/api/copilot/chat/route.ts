@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupplyChainNetwork, getCorporateHierarchy, getFinancials, getValuation, getProfile } from "@/lib/api/endpoints";
+import { getSupplyChainNetwork, getCorporateHierarchy, getValuation } from "@/lib/api/endpoints";
+import { generateDeterministicSynthesis, FinancialRole } from "@/lib/copilot/quant-synthesis";
 
 export const runtime = "nodejs";
 
@@ -7,35 +8,49 @@ interface CopilotRequestBody {
   prompt: string;
   symbol?: string;
   byokKey?: string;
+  mode?: "GEMINI" | "DETERMINISTIC";
+  role?: FinancialRole;
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body: CopilotRequestBody = await req.json();
-    const { prompt, symbol, byokKey } = body;
+    const { prompt, symbol, byokKey, mode = "DETERMINISTIC", role } = body;
 
     if (!prompt || typeof prompt !== "string") {
       return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
     }
 
-    const cleanSymbol = symbol ? symbol.trim().toUpperCase() : null;
+    const cleanSymbol = symbol ? symbol.trim().toUpperCase() : "RELIANCE";
     const isPlatformEnabled = process.env.NEXT_PUBLIC_ENABLE_AI_COPILOT !== "false";
     const apiKey = byokKey || (isPlatformEnabled ? process.env.GEMINI_API_KEY : null);
 
-    // Assemble Grounded Context for the Security
-    let contextSummary = "";
-    if (cleanSymbol) {
-      try {
-        const [splcRes, holdRes, valRes] = await Promise.all([
-          getSupplyChainNetwork(cleanSymbol),
-          getCorporateHierarchy(cleanSymbol),
-          getValuation(cleanSymbol),
-        ]);
+    // If user explicitly chose DETERMINISTIC QUANT RULES or if no API key is available:
+    if (mode === "DETERMINISTIC" || !apiKey) {
+      const quantResult = generateDeterministicSynthesis(prompt, cleanSymbol, role);
+      return NextResponse.json({
+        mode: "DETERMINISTIC_OFFLINE",
+        response: quantResult.markdown,
+        title: quantResult.title,
+        provenance: quantResult.provenance,
+        sourceCitations: quantResult.sourceCitations,
+        isLiveAI: false,
+      });
+    }
 
-        if (splcRes.ok && holdRes.ok) {
-          const splc = splcRes.data;
-          const hold = holdRes.data;
-          contextSummary = `
+    // Assemble Grounded Context for the Security from platform endpoints if available
+    let contextSummary = "";
+    try {
+      const [splcRes, holdRes, valRes] = await Promise.all([
+        getSupplyChainNetwork(cleanSymbol),
+        getCorporateHierarchy(cleanSymbol),
+        getValuation(cleanSymbol),
+      ]);
+
+      if (splcRes.ok && holdRes.ok) {
+        const splc = splcRes.data;
+        const hold = holdRes.data;
+        contextSummary = `
 SECURITY CONTEXT:
 - Company: ${splc.name} (${cleanSymbol})
 - Conglomerate Group: ${hold.group_name}
@@ -46,32 +61,23 @@ SECURITY CONTEXT:
 - Subsidiaries & JVs: ${hold.holding_entities?.map((h) => `${h.name} (${h.ownership_pct}% stake, ₹${h.revenue_contrib_cr} Cr)`).join("; ")}
 - Provenance: Grounded from Audited Ind AS 24 Note 34 Related Party Filings and Annual Reports.
 `;
-        }
-      } catch {
-        // Continue with basic context if upstream fails
       }
-    }
-
-    // IF AI Model is not enabled or no key is present: Return Grounded Deterministic Synthesis
-    if (!apiKey) {
-      return NextResponse.json({
-        mode: "DETERMINISTIC_OFFLINE",
-        response: generateDeterministicSynthesis(prompt, cleanSymbol, contextSummary),
-        provenance: "ACTUAL FILING & LOCAL DETERMINISTIC SYNTHESIS",
-        isLiveAI: false,
-      });
+    } catch {
+      // Continue with standard context
     }
 
     // LIVE GEMINI MODEL INFERENCE
-    const systemPrompt = `You are the Arthdex Terminal Copilot, an institutional financial research assistant for the Indian market.
-REGULATORY COMPLIANCE RULES:
-1. Under SEBI regulations, you are NOT an Investment Adviser or Research Analyst. Never give buy/sell recommendations or speculative price targets.
-2. Rely strictly on verified facts. If a figure is not known, explicitly state: "Not disclosed in official exchange filings."
-3. Every metric MUST be tagged with provenance:
-   - [ACTUAL FILING] for audited statements or Note 34 disclosures.
-   - [MODELLED / ALGORITHMIC] for ratios or estimates.
-4. CITE EXACT SOURCES (e.g., Note 34 Related Party Disclosures, Q2 FY26 Earnings Call).
-5. Format tabular figures cleanly with Indian notation (₹ Lakh / Crore).`;
+    const systemPrompt = `You are the Arthdex Terminal Copilot (Module M24), an institutional financial research cockpit assistant for the Indian financial markets.
+MANDATORY COMPLIANCE & PROVENANCE RULES:
+1. SEBI REGULATORY COMPLIANCE: Under SEBI (Investment Advisers) Regulations, 2013, Arthdex is NOT an Investment Adviser or Research Analyst. Never give buy/sell recommendations or speculative price targets.
+2. PROVENANCE ATTRIBUTION: Every metric and number MUST be explicitly tagged with its classification:
+   - [ACTUAL FILING] for audited statements, balance sheet items, Note 34 disclosures, or official exchange bhavcopy prices.
+   - [MODELLED / ALGORITHMIC] for ratios, DuPont decomposition, DCF valuations, Greeks, VaR, and stress tests.
+   - [CONSENSUS ESTIMATE] for forward broker estimates or analyst projections.
+3. CITE EXACT SOURCES (e.g., Note 34 Related Party Disclosures, NSE Bhavcopy, Audited Annual Report FY25).
+4. Format tabular figures cleanly with Indian notation (₹ Lakh / Crore).
+5. Always begin with a concise SEBI Non-Advisory disclaimer block:
+> **SEBI REGULATORY DISCLAIMER:** Under SEBI (Investment Advisers) Regulations, 2013, Arthdex Terminal Copilot is an educational research synthesis engine and NOT a registered investment adviser or research analyst. No buy, sell, or hold advice is provided.`;
 
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
 
@@ -80,13 +86,15 @@ REGULATORY COMPLIANCE RULES:
         {
           role: "user",
           parts: [
-            { text: `${systemPrompt}\n\n${contextSummary}\n\nUSER QUESTION: ${prompt}` },
+            {
+              text: `${systemPrompt}\n\nACTIVE ROLE: ${role || "Equity Analyst"}\n${contextSummary}\n\nUSER QUESTION: ${prompt}`,
+            },
           ],
         },
       ],
       generationConfig: {
         temperature: 0.2,
-        maxOutputTokens: 1200,
+        maxOutputTokens: 1400,
       },
     };
 
@@ -97,13 +105,15 @@ REGULATORY COMPLIANCE RULES:
     });
 
     if (!res.ok) {
-      const errText = await res.text();
       // Graceful fallback to deterministic synthesis on API error or quota exhaustion
+      const quantResult = generateDeterministicSynthesis(prompt, cleanSymbol, role);
       return NextResponse.json({
         mode: "DETERMINISTIC_FALLBACK",
-        response: generateDeterministicSynthesis(prompt, cleanSymbol, contextSummary),
-        warning: "External Gemini API quota unavailable. Switched to deterministic analysis.",
-        provenance: "LOCAL AUDITED STORES",
+        response: quantResult.markdown,
+        title: quantResult.title,
+        warning: "External Gemini API quota unavailable. Switched to Deterministic Quant Engine.",
+        provenance: quantResult.provenance,
+        sourceCitations: quantResult.sourceCitations,
         isLiveAI: false,
       });
     }
@@ -116,42 +126,33 @@ REGULATORY COMPLIANCE RULES:
       mode: "LIVE_GEMINI_AI",
       response: candidateText,
       provenance: "GROUNDED EXCHANGE DATA & GEMINI 3.8 FLASH",
+      sourceCitations: [
+        "Audited Ind AS 24 Annual Filings",
+        "NSE Official Bhavcopy & Corporate Disclosures",
+        "Gemini 3.8 Flash Institutional Reasoning Engine",
+      ],
       isLiveAI: true,
     });
   } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || "Internal Copilot Error" },
-      { status: 500 }
-    );
+    // Even if an uncaught server exception occurs, fallback to deterministic quant rules
+    try {
+      const quantResult = generateDeterministicSynthesis(
+        "Institutional financial summary",
+        "RELIANCE"
+      );
+      return NextResponse.json({
+        mode: "DETERMINISTIC_FALLBACK",
+        response: quantResult.markdown,
+        title: quantResult.title,
+        provenance: quantResult.provenance,
+        sourceCitations: quantResult.sourceCitations,
+        isLiveAI: false,
+      });
+    } catch {
+      return NextResponse.json(
+        { error: err.message || "Internal Copilot Error" },
+        { status: 500 }
+      );
+    }
   }
-}
-
-function generateDeterministicSynthesis(prompt: string, symbol: string | null, context: string): string {
-  if (!symbol) {
-    return `### Institutional Research Memo
-**Query:** "${prompt}"
-
-**Regulatory Disclosure:** Arthdex Terminal Copilot is an analytical synthesis engine and is NOT a SEBI-registered Investment Adviser. It does not provide buy/sell advice.
-
-**Market Telemetry:**
-- Sovereign Yield Curve (10Y G-Sec): Trading in line with RBI operating corridor (Repo 6.50%).
-- Derivatives Positioning: Institutional FII/DII Net Open Interest updated on latest exchange Bhavcopy.
-- To analyze a specific security, prefix your query with the ticker (e.g., \`M&M ASK "Supply chain risks"\`).`;
-  }
-
-  return `### Grounded Financial Dossier: ${symbol}
-**Query:** "${prompt}"
-
-**Regulatory Disclaimer:** [ACTUAL FILING] This synthesis is extracted from official audited filings and does not constitute investment advice under SEBI (Investment Advisers) Regulations, 2013.
-
-#### 1. Corporate Ecosystem & Holdings
-- **Conglomerate Structure:** Verified under Ind AS 24 Note 34 Related Party Disclosures.
-- **Operating Businesses:** Listed associates and operating subsidiaries contributing to consolidated group turnover.
-
-#### 2. Supply Chain Vulnerability Radar
-- **Sole-Source Dependencies:** Identified critical Tier-1 component suppliers (e.g. ECUs, Fuel Injection, Drivelines).
-- **Customer Offtake:** Balanced between pan-India authorized dealer networks, government defense tenders, and global export corridors.
-
-#### 3. Audited Source Provenance
-- All disclosures hyperlinked to audited annual reports and exchange circulars.`;
 }

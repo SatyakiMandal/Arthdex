@@ -491,7 +491,7 @@ export const getInstitutionalTearSheet = (symbol: string = "RELIANCE") =>
 export const getCompanyResearchNotes = (symbol: string = "RELIANCE") =>
   apiGet<ApiResearchNote[]>(`/api/v1/company/${encodeURIComponent(symbol)}/notes`, 300);
 
-export const postCompanyResearchNote = (payload: Omit<ApiResearchNote, "id" | "createdAt">) =>
+export const postCompanyResearchNote = (payload: Omit<ApiResearchNote, "id" | "created_at" | "updated_at">) =>
   apiPost<ApiResearchNote>(`/api/v1/company/${payload.symbol}/notes`, payload);
 
 

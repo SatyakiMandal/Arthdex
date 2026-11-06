@@ -14,6 +14,7 @@ import {
   Layers,
   FileCheck,
   Percent,
+  ShieldAlert,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +25,22 @@ export function SectorKpiDesk() {
 
   return (
     <div className="w-full space-y-4 font-mono text-xs">
+      {/* Statutory & Regulatory Compliance Banner */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border border-border/80 bg-surface-muted/40 p-2.5 rounded-none text-2xs">
+        <div className="flex items-center gap-2">
+          <ShieldAlert className="h-4 w-4 text-accent shrink-0" />
+          <span className="font-bold uppercase tracking-wider text-foreground">
+            STATUTORY &amp; REGULATORY NOTICE: SECTOR OPERATING KPIS RADAR (M19)
+          </span>
+        </div>
+        <div className="flex items-center gap-3 text-muted-foreground text-3xs">
+          <span>SIAM • VAHAN • RBI DBIE • CEA • DGCA • TRAI OFFICIAL BULLETINS</span>
+          <span className="border border-up/40 bg-up/10 text-up px-1.5 py-0.5 font-bold uppercase">
+            [ACTUAL FILING]
+          </span>
+        </div>
+      </div>
+
       {/* Sector Navigation Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-surface-muted/20">
         <div className="flex flex-wrap">

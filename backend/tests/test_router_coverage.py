@@ -102,6 +102,79 @@ class RouterCoverageTests(unittest.TestCase):
         self.assertIn("data", body)
         self.assertIn("total", body["data"])
 
+    def test_corporate_network_endpoints(self) -> None:
+        """M28 Corporate Network & SPLC endpoints return 200 and schema data."""
+        for endpoint in ["/api/v1/network/hierarchy?symbol=M&M", "/api/v1/network/supply-chain?symbol=M&M", "/api/v1/network/summary?symbol=M&M"]:
+            res = self.client.get(endpoint)
+            self.assertEqual(res.status_code, 200, f"Failed for {endpoint}")
+            data = res.json()
+            self.assertIn("data", data)
+            self.assertIn("meta", data)
+
+    def test_quant_risk_lab_endpoints(self) -> None:
+        """M22 Quant Risk Lab endpoints return 200 and valid stress scenarios."""
+        res = self.client.get("/api/risk-lab/crisis-scenarios")
+        self.assertEqual(res.status_code, 200)
+        self.assertIsInstance(res.json()["data"], list)
+        self.assertTrue(len(res.json()["data"]) > 0)
+
+        stress_payload = {
+            "portfolio": [{"symbol": "RELIANCE", "weight": 0.5}, {"symbol": "TCS", "weight": 0.5}],
+            "scenario_id": "covid_shock_2020",
+        }
+        res_post = self.client.post("/api/risk-lab/stress-test", json=stress_payload)
+        self.assertEqual(res_post.status_code, 200)
+        self.assertIn("portfolio_stress_summary", res_post.json()["data"])
+        self.assertIn("portfolio_drawdown_pct", res_post.json()["data"]["portfolio_stress_summary"])
+
+    def test_sector_kpi_endpoints(self) -> None:
+        """M19 Sector Operating KPI endpoints return 200 for summary and single sector."""
+        res = self.client.get("/api/sectors/kpis")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("sectors", res.json()["data"])
+
+        res_auto = self.client.get("/api/sectors/kpis/auto")
+        self.assertEqual(res_auto.status_code, 200)
+        self.assertEqual(res_auto.json()["data"]["sector_code"], "auto")
+
+    def test_sme_markets_endpoints(self) -> None:
+        """M20 Dedicated SME Board endpoints return 200 for overview, IPOs, migrations, and screener."""
+        for path in ["/api/sme/overview", "/api/sme/ipos", "/api/sme/migrations", "/api/sme/screener"]:
+            res = self.client.get(path)
+            self.assertEqual(res.status_code, 200, f"Failed for {path}")
+            self.assertIn("data", res.json())
+
+    def test_tear_sheet_endpoints(self) -> None:
+        """M25 Institutional Tear Sheet endpoints return 200."""
+        res = self.client.get("/api/company/RELIANCE/tear-sheet")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("header", res.json()["data"])
+
+        res_notes = self.client.get("/api/company/RELIANCE/notes")
+        self.assertEqual(res_notes.status_code, 200)
+
+    def test_valuation_lab_endpoints(self) -> None:
+        """M6 Valuation Lab DCF, Reverse DCF, and Sensitivity endpoints return 200."""
+        for path in [
+            "/api/valuation/RELIANCE/dcf",
+            "/api/valuation/RELIANCE/reverse-dcf",
+            "/api/valuation/RELIANCE/sensitivity",
+        ]:
+            res = self.client.get(path)
+            self.assertEqual(res.status_code, 200, f"Failed for {path}")
+            self.assertIn("data", res.json())
+
+    def test_derivatives_and_screener_endpoints(self) -> None:
+        """Derivatives and Screener endpoints return 200."""
+        res = self.client.get("/api/v1/derivatives/participant-oi")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("data", res.json())
+
+        res_screener = self.client.get("/api/v1/screener/indices")
+        self.assertEqual(res_screener.status_code, 200)
+        self.assertIn("indices", res_screener.json())
+
+
 
 if __name__ == "__main__":
     unittest.main()

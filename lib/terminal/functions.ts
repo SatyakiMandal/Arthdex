@@ -137,7 +137,7 @@ export const TERMINAL_FUNCTIONS: TerminalFunction[] = [
     requiresSymbol: true,
     defaultSymbol: "RELIANCE",
     route: (sym = "RELIANCE") => `/company/${sym.toUpperCase()}/quant`,
-    aliases: ["QUANT", "RISK", "VAR", "REGIME"],
+    aliases: ["QUANT", "QNT", "REGIME", "CONFORMAL"],
   },
   {
     code: "HIST",
@@ -400,7 +400,7 @@ export const TERMINAL_FUNCTIONS: TerminalFunction[] = [
     contextTypes: ["GLOBAL"],
     requiresSymbol: false,
     route: () => "/ipo",
-    aliases: ["PRIMARY", "EMERGE", "ISSUES"],
+    aliases: ["PRIMARY", "MAINBOARD", "ISSUES"],
   },
   {
     code: "UNL",
@@ -432,7 +432,7 @@ export const TERMINAL_FUNCTIONS: TerminalFunction[] = [
     contextTypes: ["PORT", "GLOBAL", "EQ"],
     requiresSymbol: false,
     route: () => "/paper-trading",
-    aliases: ["EMSX", "PAPER", "SIMULATOR", "EXEC", "TRADE"],
+    aliases: ["PAPER", "SIMULATOR", "VIRTUAL", "DEMO"],
   },
   {
     code: "WL",
@@ -701,9 +701,9 @@ export function parseTerminalCommand(rawInput: string): ParsedCommand {
   // 1. Single Token command: e.g. "MOST", "BHAV", "PORT", "SURV", "HELP"
   if (tokens.length === 1) {
     const singleCode = tokens[0];
-    const directMatch = TERMINAL_FUNCTIONS.find(
-      (f) => f.code === singleCode || f.aliases.includes(singleCode)
-    );
+    const directMatch =
+      TERMINAL_FUNCTIONS.find((f) => f.code === singleCode) ||
+      TERMINAL_FUNCTIONS.find((f) => f.aliases.includes(singleCode));
 
     if (directMatch) {
       return {
@@ -734,9 +734,9 @@ export function parseTerminalCommand(rawInput: string): ParsedCommand {
   let possibleCode: string = "";
 
   // Check if first token is a known function
-  const firstAsFunc = TERMINAL_FUNCTIONS.find(
-    (f) => f.code === tokens[0] || f.aliases.includes(tokens[0])
-  );
+  const firstAsFunc =
+    TERMINAL_FUNCTIONS.find((f) => f.code === tokens[0]) ||
+    TERMINAL_FUNCTIONS.find((f) => f.aliases.includes(tokens[0]));
 
   if (firstAsFunc && !firstAsFunc.requiresSymbol) {
     // e.g. "GC IN", "OMON NIFTY"
@@ -748,9 +748,9 @@ export function parseTerminalCommand(rawInput: string): ParsedCommand {
     possibleCode = tokens[1];
   }
 
-  const funcMatch = TERMINAL_FUNCTIONS.find(
-    (f) => f.code === possibleCode || f.aliases.includes(possibleCode)
-  );
+  const funcMatch =
+    TERMINAL_FUNCTIONS.find((f) => f.code === possibleCode) ||
+    TERMINAL_FUNCTIONS.find((f) => f.aliases.includes(possibleCode));
 
   if (funcMatch) {
     return {

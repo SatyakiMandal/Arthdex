@@ -7,12 +7,14 @@ import { Terminal, CornerDownLeft, Sparkles, X, History, BookOpen, HelpCircle, M
 import { VoiceBoxModal } from "@/components/voice/voice-box-modal";
 import { TerminalCopilotDrawer } from "@/components/copilot/terminal-copilot-drawer";
 import { parseTerminalCommand, searchFunctions, TERMINAL_FUNCTIONS, TerminalFunction, SecurityType } from "@/lib/terminal/functions";
+import { useLocale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 const HISTORY_KEY = "arthdex_terminal_cmd_history";
 
 export function TerminalCommandBar({ className }: { className?: string }) {
   const router = useRouter();
+  const { dict } = useLocale();
   const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
@@ -21,6 +23,7 @@ export function TerminalCommandBar({ className }: { className?: string }) {
   const [history, setHistory] = useState<string[]>([]);
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [copilotOpen, setCopilotOpen] = useState(false);
+  const [copilotSymbol, setCopilotSymbol] = useState("RELIANCE");
   const [copilotInitialPrompt, setCopilotInitialPrompt] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -96,6 +99,15 @@ export function TerminalCommandBar({ className }: { className?: string }) {
 
     if (upper === "VOICE" || upper === "SPEECH") {
       setVoiceOpen(true);
+      setIsOpen(false);
+      setInput("");
+      return;
+    }
+    const askMatch = trimmed.match(/^([A-Za-z0-9_&]+)\s+(?:ASK|COPILOT|AI)(?:\s+(.*))?$/i);
+    if (askMatch) {
+      setCopilotSymbol(askMatch[1].toUpperCase());
+      setCopilotInitialPrompt(askMatch[2] ? askMatch[2].replace(/^["']|["']$/g, "").trim() : "");
+      setCopilotOpen(true);
       setIsOpen(false);
       setInput("");
       return;
@@ -211,7 +223,7 @@ export function TerminalCommandBar({ className }: { className?: string }) {
             setHistoryIndex(-1);
           }}
           onKeyDown={handleKeyDown}
-          placeholder={isOpen ? "TCS FA · NIFTY OMON · SURV · GC · MOST · BHAV · PORT..." : "PRESS / OR ` FOR COMMAND LINE"}
+          placeholder={isOpen ? "TCS FA · NIFTY OMON · SURV · GC · MOST · BHAV · PORT..." : (dict?.commands?.searchPlaceholder || "PRESS / OR ` FOR COMMAND LINE")}
           spellCheck={false}
           autoComplete="off"
           className="w-full bg-transparent font-mono text-xs text-foreground placeholder:text-muted-foreground/70 outline-none uppercase tracking-wider"
@@ -402,10 +414,11 @@ export function TerminalCommandBar({ className }: { className?: string }) {
         onExecute={(cmd) => executeCommand(cmd)}
       />
 
-      {/* AI Research Copilot Drawer (M24) */}
+      {/* AI Research Copilot Floating Bloomberg Window (M24) */}
       <TerminalCopilotDrawer
         isOpen={copilotOpen}
         onClose={() => setCopilotOpen(false)}
+        defaultSymbol={copilotSymbol}
         initialPrompt={copilotInitialPrompt}
       />
     </div>

@@ -13,6 +13,7 @@ import {
   ExternalLink,
   Percent,
   Search,
+  ShieldAlert,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +23,22 @@ export function SmeMarketsDesk() {
 
   return (
     <div className="w-full space-y-4 font-mono text-xs">
+      {/* SEBI Compliance Banner */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border border-border/80 bg-surface-muted/40 p-2.5 rounded-none text-2xs">
+        <div className="flex items-center gap-2">
+          <ShieldAlert className="h-4 w-4 text-accent shrink-0" />
+          <span className="font-bold uppercase tracking-wider text-foreground">
+            SEBI REGULATORY NOTICE: DEDICATED SME EXCHANGE BOARD (M20)
+          </span>
+        </div>
+        <div className="flex items-center gap-3 text-muted-foreground text-3xs">
+          <span>SEBI ICDR CHAPTER IX • MIN ₹1.0L LOT MANDATE • 100% UNDERWRITING</span>
+          <span className="border border-up/40 bg-up/10 text-up px-1.5 py-0.5 font-bold uppercase">
+            [ACTUAL FILING]
+          </span>
+        </div>
+      </div>
+
       {/* Top Overview KPI Ribbons */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-2.5">
         <div className="p-3 border border-border bg-surface">

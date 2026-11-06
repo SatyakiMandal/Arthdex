@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Building2, CornerDownRight, Loader2, Search, TrendingUp, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLocale } from "@/lib/i18n";
 
 interface SearchHit {
   id: string;
@@ -71,8 +72,9 @@ function matchPages(q: string): SearchHit[] {
  * Search across every equity listed on NSE (~2,600 companies) and the unlisted / pre-IPO directory.
  * Includes direct sub-tab jump parsing (e.g. "RELIANCE tech" -> /company/RELIANCE/technicals).
  */
-export function UniversalSearch({ className }: { className?: string }) {
+export function UniversalSearch({ className, placeholder }: { className?: string; placeholder?: string }) {
   const router = useRouter();
+  const { dict } = useLocale();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [results, setResults] = useState<SearchHit[]>([]);
@@ -241,7 +243,7 @@ export function UniversalSearch({ className }: { className?: string }) {
           }}
           onFocus={() => setOpen(true)}
           onKeyDown={onInputKeyDown}
-          placeholder="Search companies or tools…"
+          placeholder={placeholder || dict?.commands?.searchPlaceholder || "Search companies or tools…"}
           aria-label="Search companies or tools"
           role="combobox"
           aria-expanded={showPanel}

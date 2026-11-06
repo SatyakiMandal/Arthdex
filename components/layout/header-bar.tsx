@@ -1,98 +1,52 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Activity,
   ArrowLeftRight,
   Bell,
+  BookOpen,
+  Briefcase,
   Building2,
-  CalendarDays,
   CandlestickChart,
   ChevronDown,
-  ClipboardCheck,
   Coins,
+  FileBarChart,
   FlaskConical,
   Gauge,
   Layers,
+  LineChart,
   Menu,
+  Network,
   Newspaper,
+  Radio,
   Rocket,
   ScanSearch,
-  ScrollText,
+  ShieldAlert,
+  Sigma,
+  Sparkles,
   Star,
   Sunrise,
   X,
-  ShieldAlert,
-  LineChart,
-  type LucideIcon, Sigma, FileBarChart, Briefcase, Sparkles, Compass, Radio, BookOpen, Network } from "lucide-react";
+  type LucideIcon,
+} from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { LanguageToggle } from "@/components/ui/language-toggle";
 import { UniversalSearch } from "@/components/search/universal-search";
 import { TerminalCommandBar } from "@/components/terminal/terminal-command-bar";
 import { HeaderActions } from "./header-actions";
+import { useLocale, getLocalizedNavGroups, NavGroup } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-
-type Item = { label: string; href: string; icon: LucideIcon; hint: string };
-type Group = { label: string; blurb: string; items: Item[] };
-
-/** Destinations grouped by the job a visitor came to do, so sixteen pages read as three choices. */
-const GROUPS: Group[] = [
-  {
-    label: "Markets",
-    blurb: "What the market is doing now",
-    items: [
-      { label: "Live market cockpit", href: "/live", icon: Radio, hint: "God's-eye live trading radar & pulse" },
-      { label: "Market watch", href: "/market-watch", icon: CandlestickChart, hint: "Indices, movers, breadth and sector RRG" },
-      { label: "Derivatives & F&O", href: "/derivatives", icon: Sigma, hint: "Option chains, open interest, build-up & ban" },
-      { label: "Order flow & deals", href: "/orderflow", icon: Activity, hint: "Footprint, CVD, GEX and institutional block deals" },
-      { label: "Earnings & catalysts", href: "/results", icon: FileBarChart, hint: "Scorecard, calendar, implied moves & rebalances" },
-      { label: "Bhavcopy & Delivery", href: "/bhavcopy", icon: Layers, hint: "End-of-day delivery and accumulation" },
-      { label: "Commodities", href: "/commodities", icon: Coins, hint: "Metals, energy and the rupee" },
-      { label: "Surveillance & bands", href: "/surveillance", icon: ShieldAlert, hint: "SEBI ASM, GSM & Price Bands" },
-      { label: "Sovereign yield curve", href: "/yield-curve", icon: LineChart, hint: "G-Sec par curve, T-Bills & RBI corridor" },
-      { label: "Sector Operating KPIs", href: "/sectors", icon: Activity, hint: "SIAM auto, RBI credit, CEA power & DGCA" },
-      { label: "SME Exchange Board", href: "/sme", icon: Rocket, hint: "NSE Emerge & BSE SME active board" },
-    ],
-  },
-  {
-    label: "Companies",
-    blurb: "Listed, unlisted and about to list",
-    items: [
-      { label: "Briefing & Intelligence", href: "/briefing", icon: Sunrise, hint: "Today in one page: morning memo, news & triggers" },
-      { label: "Exchange filings", href: "/news", icon: Newspaper, hint: "Corporate announcements & press releases" },
-      { label: "IPO & Primary desk", href: "/ipo", icon: Rocket, hint: "Open, upcoming, SME & listed issues" },
-      { label: "Unlisted companies", href: "/unlisted", icon: Building2, hint: "Dealer prices for private equity" },
-      { label: "Watchlist", href: "/watchlist", icon: Star, hint: "Your companies at a glance" },
-      { label: "Portfolio & tax desk", href: "/portfolio", icon: Briefcase, hint: "Holdings, XIRR and ₹1.25L tax harvester" },
-      { label: "Corporate network & SPLC", href: "/network", icon: Network, hint: "Multi-tier supply chain, customer off-take & group holdings" },
-    ],
-  },
-  {
-    label: "Research",
-    blurb: "Models, screens and the record",
-    items: [
-      { label: "Stock screener", href: "/screener", icon: ScanSearch, hint: "Factor, momentum, MACD & fundamental screens" },
-      { label: "Compare companies", href: "/compare", icon: ArrowLeftRight, hint: "Head-to-head multi-scrip ledger" },
-      { label: "Event analyzer", href: "/analyzer", icon: FlaskConical, hint: "What one event did to a stock" },
-      { label: "Alerts", href: "/alerts", icon: Bell, hint: "Price levels and new filings" },
-      { label: "Platform transparency", href: "/status", icon: Gauge, hint: "Feed freshness, mathematical methodology & audit" },
-      { label: "Terminal Academy", href: "/help", icon: BookOpen, hint: "Command syntax, directory & trading tutorials" },
-      { label: "Quant Risk Lab (STRS)", href: "/risk-lab", icon: ShieldAlert, hint: "Crisis stress testing & factor attribution" },
-      { label: "Terminal Launchpad (W)", href: "/workspace", icon: Layers, hint: "4-window tiled workstation with color sync" },
-      { label: "Excel & Public API", href: "/api-docs", icon: Sparkles, hint: "Live spreadsheet formula & REST API" },
-    ],
-  },
-];
 
 const isActive = (pathname: string, href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
 const UNDERLINE = { type: "spring", stiffness: 500, damping: 40 } as const;
 
-function GroupMenu({ group, pathname, open, onOpen, onClose }: { group: Group; pathname: string; open: boolean; onOpen: () => void; onClose: () => void }) {
+function GroupMenu({ group, pathname, open, onOpen, onClose }: { group: NavGroup; pathname: string; open: boolean; onOpen: () => void; onClose: () => void }) {
   const active = group.items.some((i) => isActive(pathname, i.href));
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   // Hover intent: open after a short pause and close after a longer one, so passing the cursor over does nothing
@@ -169,6 +123,8 @@ function GroupMenu({ group, pathname, open, onOpen, onClose }: { group: Group; p
 }
 
 export function HeaderBar() {
+  const { locale, dict, meta } = useLocale();
+  const groups = useMemo(() => getLocalizedNavGroups(locale, dict), [locale, dict]);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const pathname = usePathname();
@@ -201,22 +157,34 @@ export function HeaderBar() {
         </Link>
 
         <nav ref={navRef} aria-label="Primary" className="relative ml-4 hidden items-stretch lg:flex">
-          {GROUPS.map((g) => (
+          {groups.map((g) => (
             <GroupMenu
-              key={g.label}
+              key={g.key}
               group={g}
               pathname={pathname}
-              open={openGroup === g.label}
-              onOpen={() => setOpenGroup(g.label)}
-              onClose={() => setOpenGroup((v) => (v === g.label ? null : v))}
+              open={openGroup === g.key}
+              onOpen={() => setOpenGroup(g.key)}
+              onClose={() => setOpenGroup((v) => (v === g.key ? null : v))}
             />
           ))}
         </nav>
 
         <div className="ml-auto flex shrink-0 items-center gap-1.5 pl-2 sm:gap-2 sm:pl-4">
           <TerminalCommandBar className="hidden sm:block w-48 md:w-64 lg:w-80" />
-          <UniversalSearch className="hidden xl:block" />
+          <UniversalSearch className="hidden xl:block" placeholder={dict.commands.searchPlaceholder} />
           <HeaderActions />
+
+          {/* Regional Numbering Scale Indicator (M30) */}
+          <div
+            className="hidden md:inline-flex items-center gap-1.5 h-9 px-2 border border-border bg-surface-muted/60 font-mono text-2xs select-none transition-colors"
+            title={`Active Numbering System: 1 ${meta.lakhScale} (100K) / 1 ${meta.croreScale} (10M)`}
+          >
+            <span className="text-accent font-bold">₹</span>
+            <span className="font-sans font-semibold text-foreground text-xs">{meta.lakhScale}</span>
+            <span className="text-muted-foreground/60">/</span>
+            <span className="font-sans font-semibold text-foreground text-xs">{meta.croreScale}</span>
+          </div>
+
           <LanguageToggle />
           <ThemeToggle />
           <button
@@ -241,9 +209,9 @@ export function HeaderBar() {
             className="max-h-[calc(100dvh-5rem)] overflow-y-auto border-t border-border lg:hidden"
           >
             <div className="p-3">
-              <UniversalSearch className="mb-3" />
-              {GROUPS.map((g) => (
-                <div key={g.label} className="mb-3">
+              <UniversalSearch className="mb-3" placeholder={dict.commands.searchPlaceholder} />
+              {groups.map((g) => (
+                <div key={g.key} className="mb-3">
                   <p className="px-2 pb-1 text-2xs font-medium text-muted-foreground">{g.label}</p>
                   <div className="grid grid-cols-2 gap-0.5">
                     {g.items.map((item) => {
@@ -273,3 +241,4 @@ export function HeaderBar() {
     </div>
   );
 }
+

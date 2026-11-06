@@ -246,6 +246,22 @@ export function CorporateGraphView({
 
   return (
     <div className="space-y-2.5 font-mono">
+      {/* SEBI Compliance Banner */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border border-border/80 bg-surface-muted/40 p-2.5 rounded-none text-2xs">
+        <div className="flex items-center gap-2">
+          <ShieldAlert className="h-4 w-4 text-accent shrink-0" />
+          <span className="font-bold uppercase tracking-wider text-foreground">
+            SEBI REGULATORY NOTICE: CORPORATE NETWORK &amp; MULTI-TIER SPLC (M28)
+          </span>
+        </div>
+        <div className="flex items-center gap-3 text-muted-foreground text-3xs">
+          <span>RELATED PARTY DISCLOSURES (NOTE 34) • MCA HOLDINGS • ZERO HALLUCINATION</span>
+          <span className="border border-up/40 bg-up/10 text-up px-1.5 py-0.5 font-bold uppercase">
+            [ACTUAL FILING]
+          </span>
+        </div>
+      </div>
+
       {/* Top Header & Search Toolbar */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2 p-2 border border-border bg-surface shadow-sm">
         <div className="flex items-center gap-2 flex-wrap">

@@ -2414,61 +2414,134 @@ export interface ApiSmeOverview {
 // Phase 15: Institutional Tear-Sheet & Notes (M25)
 // ==========================================
 
-export interface ApiTearSheetData {
+export interface ApiTearSheetHeader {
   symbol: string;
   name: string;
   isin: string;
+  cin?: string;
+  exchange: string;
   sector: string;
-  industry: string;
-  marketCapCr: number;
-  enterpriseValueCr: number;
-  currentPrice: number;
-  high52w: number;
-  low52w: number;
-  peRatio: number;
-  pbRatio: number;
-  evEbitdaRatio: number;
-  dividendYieldPct: number;
-  tenYearCagr: {
-    sales10Y: number;
-    sales5Y: number;
-    sales3Y: number;
-    pat10Y: number;
-    pat5Y: number;
-    pat3Y: number;
+  sub_industry: string;
+  website: string;
+  headquarters: string;
+  established_year: number;
+  key_executives: Array<{ designation: string; name: string }>;
+  business_summary: string;
+}
+
+export interface ApiTearSheetTradingStats {
+  current_price: number;
+  change: number;
+  change_pct: number;
+  day_high: number;
+  day_low: number;
+  week_52_high: number;
+  week_52_low: number;
+  market_cap_cr: number;
+  enterprise_value_cr: number;
+  shares_outstanding_cr: number;
+  free_float_pct: number;
+  adtv_30d_cr: number;
+  beta_3y: number;
+  returns: Record<string, number>;
+}
+
+export interface ApiTearSheetFinancialYear {
+  fiscal_year: string;
+  revenue_cr: number;
+  revenue_growth_pct?: number | null;
+  ebitda_cr: number;
+  ebitda_margin_pct: number;
+  pat_cr: number;
+  pat_margin_pct: number;
+  eps: number;
+  roce_pct: number;
+  roe_pct: number;
+  debt_to_equity: number;
+  interest_coverage: number;
+  fcf_cr: number;
+}
+
+export interface ApiTearSheetPeer {
+  symbol: string;
+  name: string;
+  market_cap_cr: number;
+  pe_ttm: number;
+  pe_fwd: number;
+  ev_ebitda: number;
+  price_to_book: number;
+  dividend_yield_pct: number;
+  roce_pct: number;
+  sales_cagr_3y_pct: number;
+}
+
+export interface ApiTearSheetShareholdingQuarter {
+  quarter: string;
+  promoter_holding_pct: number;
+  fii_holding_pct: number;
+  dii_holding_pct: number;
+  public_holding_pct: number;
+  other_holding_pct: number;
+  promoter_pledged_pct: number;
+}
+
+export interface ApiTearSheetConsensus {
+  total_coverage: number;
+  ratings_breakdown: {
+    buy: number;
+    outperform?: number;
+    hold: number;
+    underperform?: number;
+    sell: number;
   };
-  consensusSummary: {
-    buyCount: number;
-    holdCount: number;
-    sellCount: number;
-    meanTargetInr: number;
-    upsidePct: number;
+  consensus_rating: string;
+  target_price: {
+    median: number;
+    high: number;
+    low: number;
+    implied_upside_pct: number;
   };
-  shareholding: {
-    promoterPct: number;
-    pledgedPct: number;
-    fiiPct: number;
-    diiPct: number;
-    publicPct: number;
+  forecasts?: Record<string, { revenue_cr: number; ebitda_cr: number; pat_cr: number; eps: number; provenance: string }>;
+}
+
+export interface ApiTearSheetData {
+  header: ApiTearSheetHeader;
+  trading_stats: ApiTearSheetTradingStats;
+  financials_10y: ApiTearSheetFinancialYear[];
+  peers: ApiTearSheetPeer[];
+  shareholding_trend: ApiTearSheetShareholdingQuarter[];
+  promoter_pledge_status: {
+    pledge_pct_of_promoter: number;
+    risk_tier: string;
+    sebi_disclosure: string;
   };
-  keyRatios: {
-    rocePct: number;
-    roePct: number;
-    debtToEquity: number;
-    interestCoverage: number;
-    operatingCashFlowToPat: number;
-  };
-  filingProvenance: string;
+  analyst_consensus: ApiTearSheetConsensus;
+  provenance: string;
+  latest_research_notes?: Array<{
+    id: string;
+    title: string;
+    author: string;
+    firm: string;
+    recommendation: string;
+    target_price: number;
+    horizon: string;
+    created_at: string;
+  }>;
 }
 
 export interface ApiResearchNote {
   id: string;
   symbol: string;
-  createdAt: string;
-  author: string;
   title: string;
-  thesis: string;
+  author: string;
+  firm: string;
+  recommendation: "BUY" | "ACCUMULATE" | "HOLD" | "REDUCE" | "SELL";
+  target_price: number;
+  horizon: string;
+  key_catalysts: string[];
+  key_risks: string[];
   tags: string[];
-  sentiment: "BULLISH" | "BEARISH" | "NEUTRAL";
-  targetPriceInr?: number;
+  content: string;
+  created_at: string;
+  updated_at: string;
 }
