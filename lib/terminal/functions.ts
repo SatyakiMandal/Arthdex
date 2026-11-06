@@ -536,6 +536,16 @@ export const TERMINAL_FUNCTIONS: TerminalFunction[] = [
     route: () => "/status",
     aliases: ["STATUS", "HEALTH", "FEEDS"],
   },
+  {
+    code: "HELP",
+    name: "Terminal Academy & Command Directory",
+    description: "Complete command encyclopedia, Bloomberg syntax tutor, keyboard shortcuts and workflows",
+    category: "System",
+    contextTypes: ["GLOBAL"],
+    requiresSymbol: false,
+    route: () => "/help",
+    aliases: ["LEARN", "MANUAL", "COMMANDS", "GUIDE", "TUTORIAL", "DIR", "DOCS"],
+  },
 ];
 
 /**

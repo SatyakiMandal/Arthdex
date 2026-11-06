@@ -27,7 +27,7 @@ import {
   X,
   ShieldAlert,
   LineChart,
-  type LucideIcon, Sigma, FileBarChart, Briefcase, Sparkles, Compass, Radio } from "lucide-react";
+  type LucideIcon, Sigma, FileBarChart, Briefcase, Sparkles, Compass, Radio, BookOpen } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { UniversalSearch } from "@/components/search/universal-search";
@@ -76,6 +76,7 @@ const GROUPS: Group[] = [
       { label: "Event analyzer", href: "/analyzer", icon: FlaskConical, hint: "What one event did to a stock" },
       { label: "Alerts", href: "/alerts", icon: Bell, hint: "Price levels and new filings" },
       { label: "Platform transparency", href: "/status", icon: Gauge, hint: "Feed freshness, mathematical methodology & audit" },
+      { label: "Terminal Academy", href: "/help", icon: BookOpen, hint: "Command syntax, directory & trading tutorials" },
     ],
   },
 ];

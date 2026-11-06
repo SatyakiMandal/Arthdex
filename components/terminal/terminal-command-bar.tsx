@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Terminal, CornerDownLeft, Sparkles, X, History } from "lucide-react";
-import { parseTerminalCommand, searchFunctions, TerminalFunction, SecurityType } from "@/lib/terminal/functions";
+import Link from "next/link";
+import { Terminal, CornerDownLeft, Sparkles, X, History, BookOpen, HelpCircle } from "lucide-react";
+import { parseTerminalCommand, searchFunctions, TERMINAL_FUNCTIONS, TerminalFunction, SecurityType } from "@/lib/terminal/functions";
 import { cn } from "@/lib/utils";
 
 const HISTORY_KEY = "arthdex_terminal_cmd_history";
@@ -13,6 +14,7 @@ export function TerminalCommandBar({ className }: { className?: string }) {
   const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [historyIndex, setHistoryIndex] = useState<number>(-1);
   const [history, setHistory] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -39,7 +41,7 @@ export function TerminalCommandBar({ className }: { className?: string }) {
       const target = e.target as HTMLElement;
       const isInput = target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
 
-      if ((e.key === "/" || e.key === "`" || (e.altKey && e.key.toLowerCase() === "k")) && !isInput) {
+      if ((e.key === "/" || e.key === "`" || e.key === "F1" || (e.key === "?" && !isInput) || (e.altKey && e.key.toLowerCase() === "k")) && !isInput) {
         e.preventDefault();
         setIsOpen(true);
         setTimeout(() => inputRef.current?.focus(), 50);
@@ -66,7 +68,12 @@ export function TerminalCommandBar({ className }: { className?: string }) {
   }, [input]);
 
   const parsed = parseTerminalCommand(input);
-  const suggestions = searchFunctions(input.split(/\s+/).pop() || "");
+  const rawQuery = input.split(/\s+/).pop() || "";
+  const suggestions = rawQuery.trim()
+    ? searchFunctions(rawQuery)
+    : selectedCategory === "ALL"
+    ? TERMINAL_FUNCTIONS.slice(0, 16)
+    : TERMINAL_FUNCTIONS.filter((f) => f.category === selectedCategory);
 
   const executeCommand = (cmdText: string) => {
     const cmd = parseTerminalCommand(cmdText);
@@ -211,6 +218,17 @@ export function TerminalCommandBar({ className }: { className?: string }) {
           <span>GO</span>
           <CornerDownLeft className="h-2.5 w-2.5" />
         </button>
+
+        {/* Command Directory / Help Quick Toggle */}
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          title="Command Directory & Academy (F1 / ?)"
+          className="flex items-center gap-0.5 h-5 px-1 font-mono text-3xs font-bold uppercase tracking-wider border border-border/80 bg-surface-muted/60 hover:bg-surface-muted hover:border-accent hover:text-accent text-muted-foreground rounded-none transition-colors shrink-0"
+        >
+          <HelpCircle className="h-2.5 w-2.5" />
+          <span className="hidden md:inline">CMD</span>
+        </button>
       </div>
 
       {/* Autocomplete & Quick Reference Popover */}
@@ -232,10 +250,34 @@ export function TerminalCommandBar({ className }: { className?: string }) {
             </div>
           )}
 
-          {/* Quick Suggestions Grid */}
+          {/* Category Filter Tabs & Quick Suggestions Grid */}
           <div>
-            <div className="text-3xs uppercase tracking-wider font-semibold text-muted-foreground mb-1">
-              {input.trim() ? "Matching Terminal Functions" : "Frequently Used Institutional Functions"}
+            <div className="flex items-center justify-between gap-1 border-b border-border/60 pb-1 mb-1.5">
+              <div className="flex items-center gap-1 overflow-x-auto text-3xs">
+                {(["ALL", "Company", "Derivatives", "Markets", "Macro & Rates", "Portfolio", "Research", "System"] as const).map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setSelectedCategory(cat)}
+                    className={cn(
+                      "px-1 py-0.2 border transition-colors whitespace-nowrap rounded-none",
+                      selectedCategory === cat
+                        ? "bg-accent text-accent-foreground border-accent font-bold"
+                        : "bg-surface-muted/40 text-muted-foreground border-border/40 hover:text-foreground"
+                    )}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+              <Link
+                href="/help"
+                onClick={() => setIsOpen(false)}
+                className="hidden sm:flex items-center gap-1 text-3xs font-bold text-accent hover:underline shrink-0 pl-1"
+              >
+                <span>ACADEMY (HELP)</span>
+                <BookOpen className="h-2.5 w-2.5" />
+              </Link>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 max-h-56 overflow-y-auto pr-1">
               {suggestions.map((fn) => (
@@ -281,6 +323,21 @@ export function TerminalCommandBar({ className }: { className?: string }) {
               ))}
             </div>
           )}
+
+          {/* Quick Academy Link */}
+          <div className="border-t border-border/60 pt-1.5 flex items-center justify-between text-3xs text-muted-foreground">
+            <Link
+              href="/help"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-1.5 text-accent hover:underline font-bold uppercase"
+            >
+              <BookOpen className="h-3 w-3" />
+              <span>TERMINAL TUTORIAL &amp; HOW-TO GUIDE (HELP &lt;GO&gt;) →</span>
+            </Link>
+            <span className="hidden sm:inline-block font-mono text-muted-foreground/70">
+              PRESS F1 OR ? TO TOGGLE
+            </span>
+          </div>
         </div>
       )}
     </div>
