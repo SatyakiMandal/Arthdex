@@ -8,7 +8,7 @@ from ..cache import CACHE
 from ..config import SETTINGS
 from ..providers import constituents, nse, yahoo
 from ..schemas import envelope
-from ..services import bhavcopy, commodities, sector_rotation
+from ..services import bhavcopy, commodities, sector_rotation, surveillance
 
 router = APIRouter(prefix="/api/v1/market", tags=["market"])
 
@@ -257,3 +257,50 @@ def get_sector_rotation():
         delayed_minutes=15,
         note="JdK RS-Ratio (trend) vs RS-Momentum (acceleration) centered at 100 with 4-session trails.",
     )
+
+
+@router.get("/surveillance")
+def get_surveillance(
+    measure: str = Query("all", description="Filter by measure: all, asm_lt, asm_st, gsm, t2t"),
+    band: str = Query("all", description="Filter by circuit band: all, 2, 5, 10, 20"),
+    q: str = Query("", description="Symbol or company name search query"),
+):
+    """SEBI & NSE surveillance lists (ASM Long/Short Term, GSM, T2T) and circuit price bands."""
+    try:
+        overview = surveillance.get_surveillance_overview()
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Surveillance data unavailable: {exc}") from exc
+
+    securities = overview.get("securities", [])
+
+    # Apply measure filter
+    if measure != "all":
+        m_norm = measure.upper().replace("_", "-")
+        securities = [s for s in securities if s["measure"] == m_norm]
+
+    # Apply circuit band filter
+    if band != "all":
+        try:
+            b_val = float(band)
+            securities = [s for s in securities if s.get("priceBandPct") == b_val]
+        except ValueError:
+            pass
+
+    # Apply search filter
+    if q.strip():
+        query = q.strip().upper()
+        securities = [s for s in securities if query in s["symbol"].upper() or query in s.get("name", "").upper()]
+
+    payload = {
+        **overview,
+        "filteredCount": len(securities),
+        "securities": securities,
+    }
+    return envelope(
+        payload,
+        3600,
+        source="SEBI & NSE Surveillance Archives (ASM, GSM, T2T and Price Bands)",
+        delayed_minutes=0,
+        note="100% margin applies to ASM-LT and T2T. GSM Stage II-IV carries 50%–200% Buyer Additional Surveillance Deposit.",
+    )
+

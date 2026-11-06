@@ -1647,3 +1647,46 @@ export interface ApiBuybackResponse {
   buybacks: ApiBuybackItem[];
   rules: Record<string, string>;
 }
+
+
+// -- SEBI / NSE Surveillance & Price Bands (SURV) -----------------------------
+
+export interface ApiSurveillanceSecurity {
+  symbol: string;
+  name: string;
+  series: string;
+  measure: "ASM-LT" | "ASM-ST" | "GSM" | "T2T";
+  stage: string;
+  entryDate: string;
+  priceBandPct: number;
+  marginRequiredPct: number;
+  asdRatePct: number;
+  tradingWindow: string;
+  reason: string;
+}
+
+export interface ApiSurveillanceOverview {
+  asOf: string;
+  totalSecurities: number;
+  filteredCount?: number;
+  counts: {
+    asmLongTerm: number;
+    asmShortTerm: number;
+    gsm: number;
+    t2t: number;
+    severePenalties: number;
+  };
+  circuitDistribution: {
+    band2Pct: number;
+    band5Pct: number;
+    band10Pct: number;
+    band20Pct: number;
+  };
+  rulesSummary: {
+    asmLongTerm: string;
+    asmShortTerm: string;
+    gsm: string;
+    t2t: string;
+  };
+  securities: ApiSurveillanceSecurity[];
+}

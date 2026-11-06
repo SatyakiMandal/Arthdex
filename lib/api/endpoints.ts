@@ -59,6 +59,7 @@ import type {
   ApiIndexRebalance,
   ApiIpoLockinResponse,
   ApiBuybackResponse,
+  ApiSurveillanceOverview,
 } from "./types";
 
 export type { CompanyFilingItem, CompanyFilingsPayload };
@@ -326,3 +327,13 @@ export const getIpoLockins = () =>
 
 export const getBuybacks = () =>
   apiGet<ApiBuybackResponse>("/api/v1/catalysts/buybacks", 3600);
+
+
+export const getSurveillance = (params?: { measure?: string; band?: string; q?: string }) => {
+  const qp = new URLSearchParams();
+  if (params?.measure && params.measure !== "all") qp.set("measure", params.measure);
+  if (params?.band && params.band !== "all") qp.set("band", params.band);
+  if (params?.q) qp.set("q", params.q);
+  const qs = qp.toString();
+  return apiGet<ApiSurveillanceOverview>(`/api/v1/market/surveillance${qs ? `?${qs}` : ""}`, 3600);
+};
