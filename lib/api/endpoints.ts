@@ -66,6 +66,8 @@ import type {
   ApiStrategyPayoffResponse,
   ApiStrategyLeg,
   ApiVolSurfaceResponse,
+  ApiMacroDashboardResponse,
+  ApiForexMonitorResponse,
 } from "./types";
 
 export type { CompanyFilingItem, CompanyFilingsPayload };
@@ -366,4 +368,11 @@ export const postStrategyPayoff = (payload: {
 
 export const getVolatilitySurface = (symbol: string = "NIFTY") =>
   apiGet<ApiVolSurfaceResponse>(`/api/v1/derivatives/${encodeURIComponent(symbol)}/vol-surface`, 300);
+
+export const getMacroDashboard = () =>
+  apiGet<ApiMacroDashboardResponse>("/api/v1/macro/dashboard", 3600);
+
+export const getForexMonitor = () =>
+  apiGet<ApiForexMonitorResponse>("/api/v1/macro/forex", 120);
+
 

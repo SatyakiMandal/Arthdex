@@ -1874,3 +1874,86 @@ export interface ApiVolSurfaceResponse {
     iv: number;
   }>;
 }
+
+export interface ApiMacroIndicator {
+  value: number;
+  unit: string;
+  previous: number;
+  period: string;
+  source: string;
+  status: string;
+  tone: "up" | "down" | "neutral" | "gold";
+  rbiTarget?: string;
+  nominalGdp?: number;
+  growthYoY?: number;
+  fcaBillion?: number;
+  goldBillion?: number;
+  sdrBillion?: number;
+}
+
+export interface ApiInflationCategory {
+  category: string;
+  current: number;
+  previous: number;
+  changeYoY: string;
+  weight: number;
+}
+
+export interface ApiActivityIndicator {
+  indicator: string;
+  value: string;
+  source: string;
+  trend: "up" | "down" | "neutral";
+  detail: string;
+}
+
+export interface ApiMacroCalendarEvent {
+  event: string;
+  date: string;
+  impact: "HIGH" | "MEDIUM" | "LOW";
+  consensus: string;
+  previous: string;
+}
+
+export interface ApiMacroDashboardResponse {
+  asOf: string;
+  headline: {
+    cpiInflation: ApiMacroIndicator;
+    gdpGrowth: ApiMacroIndicator;
+    gstCollections: ApiMacroIndicator;
+    forexReserves: ApiMacroIndicator;
+  };
+  inflationBreakdown: ApiInflationCategory[];
+  activityIndicators: ApiActivityIndicator[];
+  calendar: ApiMacroCalendarEvent[];
+}
+
+export interface ApiForexPair {
+  pair: string;
+  rate: number;
+  change: number;
+  changePct: number;
+  high: number;
+  low: number;
+  trend: "up" | "down" | "neutral";
+  fbilRef: number;
+}
+
+export interface ApiForwardPremium {
+  tenor: string;
+  points: number;
+  annualizedPct: number;
+}
+
+export interface ApiForexMonitorResponse {
+  asOf: string;
+  baseCurrency: string;
+  pairs: ApiForexPair[];
+  forwardPremia: ApiForwardPremium[];
+  reerIndices: {
+    reer40Basket: number;
+    neer40Basket: number;
+    valuation: string;
+    source: string;
+  };
+}

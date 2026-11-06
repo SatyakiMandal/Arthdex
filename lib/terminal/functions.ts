@@ -310,6 +310,26 @@ export const TERMINAL_FUNCTIONS: TerminalFunction[] = [
     route: () => "/yield-curve",
     aliases: ["YIELD", "GSEC", "CURVE", "RATES", "BONDS"],
   },
+  {
+    code: "ECO",
+    name: "India Macro & Economics",
+    description: "CPI, WPI, GDP, IIP, GST collections, E-Way bills, forex reserves & macro calendar",
+    category: "Macro & Rates",
+    contextTypes: ["MACRO", "GLOBAL"],
+    requiresSymbol: false,
+    route: () => "/macro",
+    aliases: ["ECON", "MACRO", "INFLATION", "GDP", "CPI"],
+  },
+  {
+    code: "FXM",
+    name: "Foreign Exchange & INR Monitor",
+    description: "INR spot cross-rates (USD, EUR, GBP, JPY), forward premia, FBIL references & REER",
+    category: "Macro & Rates",
+    contextTypes: ["MACRO", "GLOBAL"],
+    requiresSymbol: false,
+    route: () => "/fx",
+    aliases: ["FOREX", "CURRENCY", "INR", "USDINR", "REER"],
+  },
 
   // --- Screening & Research Functions ---
   {

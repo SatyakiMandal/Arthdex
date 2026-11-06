@@ -29,6 +29,7 @@ from .routers import (
     forecast,
     health,
     ipo,
+    macro,
     market,
     news,
     orderflow,
@@ -113,6 +114,7 @@ app.include_router(derivatives.router)
 app.include_router(catalysts.router)
 app.include_router(portfolio.router)
 app.include_router(forecast.router)
+app.include_router(macro.router)
 
 
 def _analyzer_startup() -> None:
