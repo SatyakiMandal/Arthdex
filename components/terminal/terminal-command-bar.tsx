@@ -3,7 +3,9 @@
 import { useState, useEffect, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Terminal, CornerDownLeft, Sparkles, X, History, BookOpen, HelpCircle } from "lucide-react";
+import { Terminal, CornerDownLeft, Sparkles, X, History, BookOpen, HelpCircle, Mic } from "lucide-react";
+import { VoiceBoxModal } from "@/components/voice/voice-box-modal";
+import { TerminalCopilotDrawer } from "@/components/copilot/terminal-copilot-drawer";
 import { parseTerminalCommand, searchFunctions, TERMINAL_FUNCTIONS, TerminalFunction, SecurityType } from "@/lib/terminal/functions";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +19,9 @@ export function TerminalCommandBar({ className }: { className?: string }) {
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [historyIndex, setHistoryIndex] = useState<number>(-1);
   const [history, setHistory] = useState<string[]>([]);
+  const [voiceOpen, setVoiceOpen] = useState(false);
+  const [copilotOpen, setCopilotOpen] = useState(false);
+  const [copilotInitialPrompt, setCopilotInitialPrompt] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -41,6 +46,16 @@ export function TerminalCommandBar({ className }: { className?: string }) {
       const target = e.target as HTMLElement;
       const isInput = target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
 
+      if (e.altKey && e.key.toLowerCase() === "v") {
+        e.preventDefault();
+        setVoiceOpen((v) => !v);
+        return;
+      }
+      if (e.altKey && e.key.toLowerCase() === "a") {
+        e.preventDefault();
+        setCopilotOpen((c) => !c);
+        return;
+      }
       if ((e.key === "/" || e.key === "`" || e.key === "F1" || (e.key === "?" && !isInput) || (e.altKey && e.key.toLowerCase() === "k")) && !isInput) {
         e.preventDefault();
         setIsOpen(true);
@@ -76,6 +91,23 @@ export function TerminalCommandBar({ className }: { className?: string }) {
     : TERMINAL_FUNCTIONS.filter((f) => f.category === selectedCategory);
 
   const executeCommand = (cmdText: string) => {
+    const trimmed = cmdText.trim();
+    const upper = trimmed.toUpperCase();
+
+    if (upper === "VOICE" || upper === "SPEECH") {
+      setVoiceOpen(true);
+      setIsOpen(false);
+      setInput("");
+      return;
+    }
+    if (upper === "ASK" || upper === "AI" || upper === "COPILOT" || upper.startsWith("ASK ")) {
+      const q = upper.startsWith("ASK ") ? trimmed.slice(4).trim() : "";
+      setCopilotInitialPrompt(q);
+      setCopilotOpen(true);
+      setIsOpen(false);
+      setInput("");
+      return;
+    }
     const cmd = parseTerminalCommand(cmdText);
     if (!cmd.targetUrl) return;
 
@@ -219,6 +251,28 @@ export function TerminalCommandBar({ className }: { className?: string }) {
           <CornerDownLeft className="h-2.5 w-2.5" />
         </button>
 
+        {/* Regional Voice Box (M30) */}
+        <button
+          type="button"
+          onClick={() => setVoiceOpen(true)}
+          title="Regional 14-Language Voice Box (Alt+V)"
+          className="flex items-center gap-0.5 h-5 px-1 font-mono text-3xs font-bold uppercase tracking-wider border border-border/80 bg-surface-muted/60 hover:bg-surface-muted hover:border-cyan-500 hover:text-cyan-400 text-muted-foreground rounded-none transition-colors shrink-0"
+        >
+          <Mic className="h-2.5 w-2.5 text-cyan-400" />
+          <span className="hidden lg:inline">VOICE</span>
+        </button>
+
+        {/* AI Research Copilot (M24) */}
+        <button
+          type="button"
+          onClick={() => setCopilotOpen(true)}
+          title="AI Research Copilot (Alt+A)"
+          className="flex items-center gap-0.5 h-5 px-1 font-mono text-3xs font-bold uppercase tracking-wider border border-border/80 bg-surface-muted/60 hover:bg-surface-muted hover:border-accent hover:text-accent text-muted-foreground rounded-none transition-colors shrink-0"
+        >
+          <Sparkles className="h-2.5 w-2.5 text-accent" />
+          <span className="hidden lg:inline">ASK</span>
+        </button>
+
         {/* Command Directory / Help Quick Toggle */}
         <button
           type="button"
@@ -340,6 +394,20 @@ export function TerminalCommandBar({ className }: { className?: string }) {
           </div>
         </div>
       )}
+
+      {/* Voice Box Modal (M30) */}
+      <VoiceBoxModal
+        isOpen={voiceOpen}
+        onClose={() => setVoiceOpen(false)}
+        onExecute={(cmd) => executeCommand(cmd)}
+      />
+
+      {/* AI Research Copilot Drawer (M24) */}
+      <TerminalCopilotDrawer
+        isOpen={copilotOpen}
+        onClose={() => setCopilotOpen(false)}
+        initialPrompt={copilotInitialPrompt}
+      />
     </div>
   );
 }

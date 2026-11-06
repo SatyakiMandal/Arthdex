@@ -76,6 +76,20 @@ import type {
   ApiCorporateHierarchy,
   ApiSupplyChainNetwork,
   ApiNetworkSummary,
+  ApiCrisisScenario,
+  ApiStressTestResult,
+  ApiFactorExposure,
+  ApiBacktestResult,
+  ApiSectorKpiOverview,
+  ApiDcfInputs,
+  ApiDcfValuationResult,
+  ApiReverseDcfResult,
+  ApiSmeOverview,
+  ApiSmeIpoItem,
+  ApiSmeMigrationCandidate,
+  ApiSmeScrip,
+  ApiTearSheetData,
+  ApiResearchNote,
 } from "./types";
 
 export type { CompanyFilingItem, CompanyFilingsPayload };
@@ -424,6 +438,62 @@ export const getSupplyChainNetwork = (symbol: string = "M&M") =>
 
 export const getNetworkSummary = (symbol: string = "M&M") =>
   apiGet<ApiNetworkSummary>(`/api/v1/network/summary?symbol=${encodeURIComponent(symbol)}`, 3600);
+
+// -- Quant Risk Lab (STRS, MARS, FCTR, BTST) --------------------------------
+export const getCrisisScenarios = () =>
+  apiGet<ApiCrisisScenario[]>("/api/v1/risk-lab/crisis-scenarios", 3600);
+
+export const postStressTestPortfolio = (payload: { scenarioId: string; capitalCr: number; holdings: { symbol: string; weightPct: number }[] }) =>
+  apiPost<ApiStressTestResult>("/api/v1/risk-lab/stress-test", payload);
+
+export const getFactorExposures = (symbols?: string[]) => {
+  const qs = symbols && symbols.length ? `?symbols=${encodeURIComponent(symbols.join(","))}` : "";
+  return apiGet<ApiFactorExposure[]>(`/api/v1/risk-lab/factor-exposures${qs}`, 3600);
+};
+
+export const postBacktestStrategy = (payload: { strategy: string; period: string; initialCapitalInr: number }) =>
+  apiPost<ApiBacktestResult>("/api/v1/risk-lab/backtest", payload);
+
+// -- Sector Operating KPIs (SKPI) -------------------------------------------
+export const getSectorKpiOverview = () =>
+  apiGet<ApiSectorKpiOverview>("/api/v1/sectors/kpis", 3600);
+
+export const getSectorKpiDetails = <T = unknown>(sectorCode: string) =>
+  apiGet<T>(`/api/v1/sectors/kpis/${encodeURIComponent(sectorCode)}`, 3600);
+
+// -- Valuation Lab (VAL, DCF) ------------------------------------------------
+export const getCompanyDcf = (symbol: string = "RELIANCE") =>
+  apiGet<ApiDcfValuationResult>(`/api/v1/valuation/${encodeURIComponent(symbol)}/dcf`, 3600);
+
+export const postCalculateDcf = (payload: ApiDcfInputs) =>
+  apiPost<ApiDcfValuationResult>("/api/v1/valuation/dcf/calculate", payload);
+
+export const getCompanyReverseDcf = (symbol: string = "RELIANCE") =>
+  apiGet<ApiReverseDcfResult>(`/api/v1/valuation/${encodeURIComponent(symbol)}/reverse-dcf`, 3600);
+
+// -- Dedicated SME Board (SME) -----------------------------------------------
+export const getSmeOverview = () =>
+  apiGet<ApiSmeOverview>("/api/v1/sme/overview", 1800);
+
+export const getSmeIpos = () =>
+  apiGet<ApiSmeIpoItem[]>("/api/v1/sme/ipos", 1800);
+
+export const getSmeMigrations = () =>
+  apiGet<ApiSmeMigrationCandidate[]>("/api/v1/sme/migrations", 3600);
+
+export const getSmeScreener = () =>
+  apiGet<ApiSmeScrip[]>("/api/v1/sme/screener", 1800);
+
+// -- Institutional Tear-Sheet & Notes (TEAR, NOTE) ---------------------------
+export const getInstitutionalTearSheet = (symbol: string = "RELIANCE") =>
+  apiGet<ApiTearSheetData>(`/api/v1/company/${encodeURIComponent(symbol)}/tear-sheet`, 3600);
+
+export const getCompanyResearchNotes = (symbol: string = "RELIANCE") =>
+  apiGet<ApiResearchNote[]>(`/api/v1/company/${encodeURIComponent(symbol)}/notes`, 300);
+
+export const postCompanyResearchNote = (payload: Omit<ApiResearchNote, "id" | "createdAt">) =>
+  apiPost<ApiResearchNote>(`/api/v1/company/${payload.symbol}/notes`, payload);
+
 
 
 

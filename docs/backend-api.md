@@ -180,6 +180,33 @@ Insider-trading (PIT) disclosures are not offered: the NSE endpoint returned no 
 | `POST /analyzer/runs/clear-unsuccessful` | Deletes user-started failed/cancelled runs |
 | `POST /analyzer/snapshots/{symbol}` | Start or reuse the no-news research snapshot |
 
+### Bloomberg Terminal Expansion Endpoints (Phases 8–18)
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /api/v1/network/hierarchy?symbol={sym}` | Corporate conglomerate holding hierarchy, listed associates, subsidiaries & JVs |
+| `GET /api/v1/network/supply-chain?symbol={sym}` | Multi-tier suppliers, customers, contractors, sole-source risk flags |
+| `GET /api/v1/network/summary?symbol={sym}` | Aggregate corporate network telemetry and provenance metrics |
+| `GET /api/v1/risk-lab/crisis-scenarios` | Historical crash parameters (2008 GFC, 2013 Taper, 2020 COVID, 2024 Election) |
+| `POST /api/v1/risk-lab/stress-test` | Portfolio stress test against historical and hypothetical macro shocks |
+| `GET /api/v1/risk-lab/factor-exposures` | Fama-French + Momentum + Low Volatility 5-factor regression for Indian equities |
+| `POST /api/v1/risk-lab/backtest` | Walk-forward rule backtester deducting Indian statutory charges (STT, GST, Stamp Duty) |
+| `GET /api/v1/sectors/kpis` | Cross-sector operating overview (SIAM auto, RBI banking, CEA power, DGCA aviation, TRAI telecom) |
+| `GET /api/v1/sectors/kpis/{sector_code}` | Detailed sector operational ledger with 12-month historical time series |
+| `GET /api/v1/valuation/{symbol}/dcf` | 2-Stage & 3-Stage FCFF model with dynamic CAPM WACC (10Y G-Sec Rf = 7.18%) |
+| `POST /api/v1/valuation/dcf/calculate` | Dynamic recalculation of intrinsic value under custom WACC & growth parameters |
+| `GET /api/v1/valuation/{symbol}/reverse-dcf` | Market-implied 5-year FCF growth rate priced into CMP |
+| `GET /api/v1/valuation/{symbol}/sensitivity` | 5x5 sensitivity matrix grid of fair value across WACC and terminal growth |
+| `GET /api/v1/sme/overview` | NSE Emerge & BSE SME board metrics, sector breakdown and active issues |
+| `GET /api/v1/sme/ipos` | SME IPO pipeline with SEBI ₹1.0L–₹1.5L minimum lot compliance & subscription multiples |
+| `GET /api/v1/sme/migrations` | Mainboard migration radar: companies meeting 3Y listing, ₹10 Cr capital, ₹25 Cr net worth criteria |
+| `GET /api/v1/sme/screener` | Multi-factor SME stock screener with bid-ask spread and liquidity filters |
+| `GET /api/v1/company/{symbol}/tear-sheet` | 2-Page institutional factsheet / tear-sheet with 10Y CAGR ledger and consensus targets |
+| `GET /api/v1/company/{symbol}/notes` | In-terminal research notes retrieval |
+| `POST /api/v1/company/{symbol}/notes` | Save analyst research thesis, price target, and sentiment tag |
+| `GET /api/v1/xls/quote` | High-throughput live quote formula endpoint for Excel `=WEBSERVICE()` & Google Sheets `=IMPORTDATA()` |
+| `GET /api/v1/xls/hist` | Historical daily OHLCV candles in streaming CSV format |
+
 Run validation: `kind` listed or unlisted; `company` 2 to 120 chars; `ticker` matches `^[A-Za-z0-9&.\-^]+$`; `url` must match `^https://unlistedzone\.com/shares/…`; end not in the future; window 45 to 800 days; listed needs a ticker; 429 when 8 or more runs are queued/running.
 
 `backend/README.md`'s endpoint table predates technicals, shareholding, statistics, statements, analysts, history, compare, commodities, Bhavcopy, the MACD screener, cache refresh and the extra analyzer routes. This document is the more complete list.

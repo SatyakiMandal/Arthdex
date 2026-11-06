@@ -38,9 +38,14 @@ from .routers import (
     paper_trading,
     portfolio,
     quant,
+    quant_risk_lab,
     screener,
     search,
+    sector_kpi,
+    sme_markets,
+    tear_sheet,
     unlisted,
+    valuation_lab,
 )
 from .services import analyzer as analyzer_service
 from .services import unlisted as unlisted_service
@@ -121,6 +126,11 @@ app.include_router(macro.router)
 app.include_router(funds.router)
 app.include_router(paper_trading.router)
 app.include_router(corporate_network.router)
+app.include_router(valuation_lab.router)
+app.include_router(sme_markets.router)
+app.include_router(tear_sheet.router)
+app.include_router(quant_risk_lab.router)
+app.include_router(sector_kpi.router)
 
 
 def _analyzer_startup() -> None:

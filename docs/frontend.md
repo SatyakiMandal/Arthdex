@@ -149,8 +149,38 @@ Mutual Funds & Overlap Desk (components/funds/mutual-fund-desk.tsx): Screener ac
 ### /paper-trading
 Virtual Paper Trading Simulator (components/paper/paper-trading-desk.tsx): Rs 10,00,000 cash account, simulated order fills against live prices, order blotter, and full Indian statutory cost calculation (STT, GST, SEBI fee, Stamp Duty, Exchange turnover charges).
 
-### /help
-Terminal Academy & Help Desk (components/terminal/terminal-help-desk.tsx): Bloomberg Terminal syntax masterclass, interactive live AST command sandbox, categorized 42+ command directory with [EXECUTE] buttons, 6 institutional trading masterclasses, and keyboard shortcut matrix.
+### /network
+Corporate Network & Supply Chain (`components/network/corporate-graph-view.tsx`): Interactive hand-rolled SVG network graph, multi-tier supplier & customer links, sole-source bottleneck tags, and conglomerate holding hierarchies (`SPLC`, `HOLD`, `REL`).
+
+### /risk-lab
+Quant Risk Lab & Crisis Stress-Testing (`components/quant/quant-risk-lab.tsx`): Historical crash simulation (2008 GFC, 2013 Taper, 2020 COVID, 2024 Election shock), 5-factor regression suite, parametric/historical VaR, and cost-deducted backtesting (`STRS`, `MARS`, `FCTR`, `BTST`).
+
+### /sectors
+Sector Operating KPIs Dashboard (`components/sectors/sector-kpi-desk.tsx`): Real-time industry telemetry: SIAM auto wholesale & VAHAN retail, RBI sectoral credit deployment, CEA power demand, DGCA aviation loads, and TRAI telecom net additions (`SKPI`).
+
+### /company/[symbol]/valuation
+Valuation Lab & Interactive DCF (`components/valuation/dcf-workbench.tsx`): 2-stage & 3-stage FCFF modeler, dynamic CAPM WACC calculator with 10Y G-Sec ($R_f = 7.18\%$), reverse DCF market-implied growth solver, and 5x5 sensitivity matrix (`VAL`, `DCF`).
+
+### /sme
+Dedicated SME Exchange Board (`components/markets/sme-markets-desk.tsx`): NSE Emerge & BSE SME active boards, IPO pipeline with SEBI ₹1.0L–₹1.5L minimum lot thresholds, subscription multiples, and Mainboard migration radar (`SME`).
+
+### /company/[symbol]/tear
+Institutional Tear-Sheet & Factsheet (`components/reports/tear-sheet-view.tsx`): 2-Page vector printable factsheet, 10Y CAGR performance ledger, peer comparative valuation multiples, shareholding patterns, and persistent in-terminal research notes drawer (`TEAR`, `NOTE`).
+
+### /api-docs
+Excel Formula Connector & Public API Gateway (`components/api-docs/api-docs-view.tsx`): In-cell formula reference for Microsoft Excel (`=WEBSERVICE()`), Google Sheets (`=IMPORTDATA()`), Python Pandas scripts, and REST endpoint catalog (`XLS`, `API`).
+
+### /workspace
+Multi-Panel Terminal Launchpad Shell (`components/terminal/terminal-workspace-grid.tsx`): 4-window tiled Bloomberg-style workstation layout with cross-panel color channel sync (Yellow, Cyan, Emerald, Magenta) and workspace presets (`W`, `WORKSPACE`).
+
+### Regional Voice Terminal (M30)
+14-Language Regional Voice Box modal (`components/voice/voice-box-modal.tsx`): Speech-to-text recognition, multilingual financial intent parser for 14 Indian languages, audio feedback synthesis, and quick toggle via `Alt+V` or `VOICE <GO>`.
+
+### AI Research Copilot (M24)
+Terminal AI Copilot right-rail drawer (`components/copilot/terminal-copilot-drawer.tsx`): Grounded financial research synthesis powered by Gemini 3.8 Flash, platform toggle `NEXT_PUBLIC_ENABLE_AI_COPILOT`, BYOK encrypted local key storage, and SEBI compliance provenance banners (`Alt+A` or `ASK <GO>`).
+
+### EMSX Live Broker Execution Gateway (M27)
+Multi-broker order execution router (`components/portfolio/paper-trading-desk.tsx` tab `emsx`): OAuth connect for Zerodha Kite, Upstox Pro, Angel One, and Groww, with pre-trade SEBI margin checks and 1-click basket dispatch.
 
 ### Brand
 The logo is the trademark supplied by the project's professor (`components/brand/logo.tsx`): the open-book A mark from `public/brand/arthdex-mark.png`, with the name "ArThDex" (Source Serif 4 bold, navy and teal) and the line LEARN | ANALYZE | INVEST | GROW beside it. The artwork is navy on white, so `arthdex-mark-light.png` carries the same mark with its navy parts lightened for the dark theme, swapped by the `dark:` class. The tagline shows from the 2xl breakpoint in the header and always in the footer. `app/icon.png` and `app/apple-icon.png` are the navy app tile from the brand board. Brand colours: navy #0B2D5B, teal #00A896, gold #F4B942, light #E8EEF4. The files are crops of a raster brand board, so a vector original should replace them when the professor can supply one.

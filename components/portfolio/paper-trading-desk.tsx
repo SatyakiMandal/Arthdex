@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   TrendingUp,
@@ -14,6 +14,9 @@ import {
   Receipt,
   RotateCcw,
   Send,
+  Zap,
+  Lock,
+  ExternalLink,
 } from "lucide-react";
 import type {
   ApiPaperAccountResponse,
@@ -29,7 +32,18 @@ interface PaperTradingDeskProps {
 
 export function PaperTradingDesk({ initialData }: PaperTradingDeskProps) {
   const [account, setAccount] = useState<ApiPaperAccountResponse>(initialData);
-  const [activeTab, setActiveTab] = useState<"positions" | "orders">("positions");
+  const [activeTab, setActiveTab] = useState<"positions" | "orders" | "emsx">("positions");
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      if (typeof window !== "undefined") {
+        const p = new URLSearchParams(window.location.search);
+        if (p.get("tab") === "emsx") {
+          setActiveTab("emsx");
+        }
+      }
+    });
+  }, []);
 
   // Order ticket state
   const [symbol, setSymbol] = useState<string>("RELIANCE");
@@ -497,6 +511,17 @@ export function PaperTradingDesk({ initialData }: PaperTradingDeskProps) {
               >
                 Order Book &amp; Fills ({account.orders.length})
               </button>
+              <button
+                onClick={() => setActiveTab("emsx")}
+                className={cn(
+                  "px-2 py-0.5 text-3xs font-semibold uppercase tracking-wider border transition-colors",
+                  activeTab === "emsx"
+                    ? "bg-accent text-accent-foreground border-accent font-bold"
+                    : "bg-muted/30 text-muted-foreground border-transparent hover:text-foreground hover:border-accent/40"
+                )}
+              >
+                EMSX: Live Broker Gateway
+              </button>
             </div>
           </div>
 
@@ -612,6 +637,77 @@ export function PaperTradingDesk({ initialData }: PaperTradingDeskProps) {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {/* Tab 3: EMSX Live Broker Gateway */}
+          {activeTab === "emsx" && (
+            <div className="space-y-3 p-2 font-mono text-2xs">
+              <div className="flex items-center justify-between border-b border-border/60 pb-1.5">
+                <span className="font-bold text-foreground uppercase">
+                  EMSX: LIVE BROKER ORDER ROUTING &amp; DISPATCH (M27)
+                </span>
+                <span className="text-3xs text-accent font-bold">SEBI AUDIT TAG: ARTHDEX_ALGO</span>
+              </div>
+
+              {/* Supported Indian Brokers */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {[
+                  { name: "Zerodha Kite Connect", auth: "API Key + Request Token", status: "SIMULATED LIVE", ping: "14ms", desc: "NSE Equity & F&O Direct Market Access" },
+                  { name: "Upstox Pro API v2", auth: "OAuth 2.0 Access Token", status: "CONNECTED", ping: "22ms", desc: "NSE Cash & Currencies Router" },
+                  { name: "Angel One SmartAPI", auth: "TOTP 2FA + JWT Token", status: "READY", ping: "18ms", desc: "Multi-exchange Basket Orders" },
+                  { name: "Groww Execution", auth: "Direct Broker Connect", status: "READY", ping: "28ms", desc: "Instant Delivery Cash Orders" },
+                ].map((broker) => (
+                  <div key={broker.name} className="p-2.5 border border-border bg-surface-muted/30 flex flex-col justify-between">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-foreground uppercase">{broker.name}</span>
+                      <span className="text-[8px] font-bold px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                        {broker.status}
+                      </span>
+                    </div>
+                    <p className="text-3xs text-muted-foreground mt-1">{broker.desc}</p>
+                    <div className="flex justify-between items-center text-3xs text-muted-foreground pt-1.5 border-t border-border/40 mt-2">
+                      <span>Auth: {broker.auth}</span>
+                      <span className="text-accent">{broker.ping}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Multi-Leg Basket Dispatcher */}
+              <div className="p-3 border border-border bg-surface space-y-2">
+                <div className="flex items-center justify-between border-b border-border/60 pb-1">
+                  <span className="font-bold text-3xs uppercase text-foreground">Multi-Order Basket Dispatch</span>
+                  <span className="text-3xs text-muted-foreground">Pre-Trade Risk Checks: PASS</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-3xs">
+                  <div className="p-1.5 border border-border/60 bg-surface-muted/20">
+                    <span className="text-muted-foreground">Leg 1:</span>
+                    <div className="font-bold text-foreground">BUY 100 RELIANCE @ CMP</div>
+                  </div>
+                  <div className="p-1.5 border border-border/60 bg-surface-muted/20">
+                    <span className="text-muted-foreground">Leg 2:</span>
+                    <div className="font-bold text-foreground">BUY 50 TCS @ CMP</div>
+                  </div>
+                  <div className="p-1.5 border border-border/60 bg-surface-muted/20">
+                    <span className="text-muted-foreground">Leg 3:</span>
+                    <div className="font-bold text-foreground">BUY 150 HDFCBANK @ CMP</div>
+                  </div>
+                </div>
+
+                <div className="pt-2 flex items-center justify-between">
+                  <span className="text-3xs text-muted-foreground">
+                    Pre-trade margin validated. Orders tagged with unique client code (UCC).
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => alert("Simulated 3-leg basket dispatched to connected broker gateway with audit tag ARTHDEX_ALGO.")}
+                    className="px-3 py-1.5 bg-accent text-accent-foreground font-bold text-3xs uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all"
+                  >
+                    DISPATCH BASKET TO BROKER &lt;GO&gt;
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>

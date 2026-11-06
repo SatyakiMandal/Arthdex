@@ -30,6 +30,7 @@ import {
   type LucideIcon, Sigma, FileBarChart, Briefcase, Sparkles, Compass, Radio, BookOpen, Network } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { LanguageToggle } from "@/components/ui/language-toggle";
 import { UniversalSearch } from "@/components/search/universal-search";
 import { TerminalCommandBar } from "@/components/terminal/terminal-command-bar";
 import { HeaderActions } from "./header-actions";
@@ -53,6 +54,8 @@ const GROUPS: Group[] = [
       { label: "Commodities", href: "/commodities", icon: Coins, hint: "Metals, energy and the rupee" },
       { label: "Surveillance & bands", href: "/surveillance", icon: ShieldAlert, hint: "SEBI ASM, GSM & Price Bands" },
       { label: "Sovereign yield curve", href: "/yield-curve", icon: LineChart, hint: "G-Sec par curve, T-Bills & RBI corridor" },
+      { label: "Sector Operating KPIs", href: "/sectors", icon: Activity, hint: "SIAM auto, RBI credit, CEA power & DGCA" },
+      { label: "SME Exchange Board", href: "/sme", icon: Rocket, hint: "NSE Emerge & BSE SME active board" },
     ],
   },
   {
@@ -78,6 +81,9 @@ const GROUPS: Group[] = [
       { label: "Alerts", href: "/alerts", icon: Bell, hint: "Price levels and new filings" },
       { label: "Platform transparency", href: "/status", icon: Gauge, hint: "Feed freshness, mathematical methodology & audit" },
       { label: "Terminal Academy", href: "/help", icon: BookOpen, hint: "Command syntax, directory & trading tutorials" },
+      { label: "Quant Risk Lab (STRS)", href: "/risk-lab", icon: ShieldAlert, hint: "Crisis stress testing & factor attribution" },
+      { label: "Terminal Launchpad (W)", href: "/workspace", icon: Layers, hint: "4-window tiled workstation with color sync" },
+      { label: "Excel & Public API", href: "/api-docs", icon: Sparkles, hint: "Live spreadsheet formula & REST API" },
     ],
   },
 ];
@@ -211,6 +217,7 @@ export function HeaderBar() {
           <TerminalCommandBar className="hidden sm:block w-48 md:w-64 lg:w-80" />
           <UniversalSearch className="hidden xl:block" />
           <HeaderActions />
+          <LanguageToggle />
           <ThemeToggle />
           <button
             type="button"

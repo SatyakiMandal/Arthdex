@@ -2150,3 +2150,325 @@ export interface ApiNetworkSummary {
     modelled_estimated_nodes: number;
   };
 }
+
+// ==========================================
+// Phase 11: Quant Risk Lab & Crisis Stress Testing (M22)
+// ==========================================
+
+export interface ApiCrisisScenario {
+  id: string;
+  name: string;
+  period: string;
+  description: string;
+  niftyDrawdownPct: number;
+  volatilityPeakPct: number;
+  macroDriver: string;
+  provenance: string;
+}
+
+export interface ApiStressTestImpact {
+  symbol: string;
+  weightPct: number;
+  beta: number;
+  expectedDrawdownPct: number;
+  var95Pct: number;
+  var99Pct: number;
+  lossCr: number;
+}
+
+export interface ApiStressTestResult {
+  scenarioId: string;
+  scenarioName: string;
+  portfolioCapitalCr: number;
+  projectedPortfolioDrawdownPct: number;
+  projectedLossCr: number;
+  portfolioVar95_1D: number;
+  portfolioVar99_1D: number;
+  assetImpacts: ApiStressTestImpact[];
+  stressSummary: string;
+  statutoryProvenance: string;
+}
+
+export interface ApiFactorExposure {
+  symbol: string;
+  name: string;
+  marketBeta: number;
+  sizeExposureSMB: number;
+  valueExposureHML: number;
+  momentumExposureWML: number;
+  qualityExposureRMW: number;
+  lowVolExposureBAB: number;
+  rSquared: number;
+  annualizedAlphaPct: number;
+}
+
+export interface ApiBacktestTrade {
+  entryDate: string;
+  exitDate: string;
+  symbol: string;
+  type: "BUY" | "SELL";
+  entryPrice: number;
+  exitPrice: number;
+  grossReturnPct: number;
+  netReturnPct: number;
+  statutoryDeductionsInr: number;
+}
+
+export interface ApiBacktestResult {
+  strategyName: string;
+  period: string;
+  initialCapitalInr: number;
+  finalCapitalInr: number;
+  cagrPct: number;
+  benchmarkCagrPct: number;
+  sharpeRatio: number;
+  sortinoRatio: number;
+  maxDrawdownPct: number;
+  winRatePct: number;
+  profitFactor: number;
+  totalTrades: number;
+  totalTaxesAndChargesInr: number;
+  equityCurve: { date: string; strategy: number; benchmark: number }[];
+  trades: ApiBacktestTrade[];
+}
+
+// ==========================================
+// Phase 12: Sector Operating KPIs Dashboard (M19)
+// ==========================================
+
+export interface ApiAutoKpiOEM {
+  oem: string;
+  segment: "PV" | "CV" | "2W" | "3W" | "Tractor";
+  wholesaleUnits: number;
+  yoyGrowthPct: number;
+  vahanRegistrations: number;
+  evSharePct: number;
+  orderBookWeeks: number;
+}
+
+export interface ApiBankingCreditDeployment {
+  sector: string;
+  outstandingCr: number;
+  yoyGrowthPct: number;
+  shareOfTotalPct: number;
+}
+
+export interface ApiPowerKpiData {
+  asOfDate: string;
+  allIndiaPeakDemandGw: number;
+  thermalPlfPct: number;
+  renewableGenerationPct: number;
+  hydroGenerationPct: number;
+  iexDamPriceInrPerKwh: number;
+  coalStockDays: number;
+}
+
+export interface ApiAviationCarrierKpi {
+  carrier: string;
+  paxCarriedLakh: number;
+  marketSharePct: number;
+  passengerLoadFactorPct: number;
+  onTimePerformancePct: number;
+}
+
+export interface ApiTelecomOperatorKpi {
+  operator: string;
+  totalSubsMn: number;
+  activeVlrPct: number;
+  monthlyNetAdds000s: number;
+  marketSharePct: number;
+  arpuInr: number;
+}
+
+export interface ApiSectorKpiOverview {
+  sectors: {
+    code: string;
+    name: string;
+    regulatorSource: string;
+    frequency: string;
+    headlineMetric: string;
+    headlineValue: string;
+    yoyTrendPct: number;
+    provenance: string;
+  }[];
+}
+
+// ==========================================
+// Phase 13: Valuation Lab — DCF & Reverse DCF (M6)
+// ==========================================
+
+export interface ApiDcfInputs {
+  symbol: string;
+  currentPrice: number;
+  marketCapCr: number;
+  sharesOutstandingCr: number;
+  baseFcffCr: number;
+  projectedGrowthYears1_5Pct: number;
+  projectedGrowthYears6_10Pct: number;
+  terminalGrowthRatePct: number;
+  riskFreeRatePct: number;
+  equityRiskPremiumPct: number;
+  beta: number;
+  costOfDebtPreTaxPct: number;
+  marginalTaxRatePct: number;
+  debtToEquityRatio: number;
+  totalDebtCr: number;
+  cashAndInvestmentsCr: number;
+}
+
+export interface ApiDcfValuationResult {
+  inputs: ApiDcfInputs;
+  calculatedCostOfEquityPct: number;
+  calculatedCostOfDebtPostTaxPct: number;
+  waccPct: number;
+  projectedCashFlowsCr: { year: number; fcffCr: number; pvFcffCr: number }[];
+  pvExplicitCashFlowsCr: number;
+  terminalValueCr: number;
+  pvTerminalValueCr: number;
+  enterpriseValueCr: number;
+  equityValueCr: number;
+  fairValuePerShareInr: number;
+  marginOfSafetyPct: number;
+  recommendation: "STRONG_BUY" | "ACCUMULATE" | "FAIR_VALUE" | "TRIM" | "EXIT";
+  sensitivityMatrix: {
+    waccRates: number[];
+    terminalGrowthRates: number[];
+    grid: number[][]; // [waccIndex][growthIndex] -> fair value
+  };
+  provenance: string;
+}
+
+export interface ApiReverseDcfResult {
+  symbol: string;
+  currentPrice: number;
+  impliedGrowthRatePct: number;
+  historical5YCagrPct: number;
+  growthGapPct: number;
+  interpretation: string;
+  provenance: string;
+}
+
+// ==========================================
+// Phase 14: Dedicated SME Exchange Board (M20)
+// ==========================================
+
+export interface ApiSmeScrip {
+  symbol: string;
+  name: string;
+  exchange: "NSE_EMERGE" | "BSE_SME";
+  sector: string;
+  ltp: number;
+  changePct: number;
+  lotSize: number;
+  minTicketInr: number;
+  marketCapCr: number;
+  peRatio: number;
+  rocePct: number;
+  listingDate: string;
+  eligibleForMainboard: boolean;
+}
+
+export interface ApiSmeIpoItem {
+  symbol: string;
+  companyName: string;
+  exchange: "NSE_EMERGE" | "BSE_SME";
+  issueSizeCr: number;
+  priceBand: string;
+  lotSize: number;
+  minApplicationInr: number;
+  openDate: string;
+  closeDate: string;
+  subscriptionQib: number;
+  subscriptionNii: number;
+  subscriptionRetail: number;
+  subscriptionTotal: number;
+  gmpEstimateInr: number;
+  status: "UPCOMING" | "OPEN" | "CLOSED" | "LISTED";
+}
+
+export interface ApiSmeMigrationCandidate {
+  symbol: string;
+  name: string;
+  smeExchange: "NSE_EMERGE" | "BSE_SME";
+  listingDate: string;
+  yearsListed: number;
+  paidUpCapitalCr: number;
+  netWorthCr: number;
+  patLastTwoYearsCr: number[];
+  migrationStatus: "ELIGIBLE" | "APPLICATION_SUBMITTED" | "APPROVED" | "IN_PROGRESS";
+  targetBoard: "NSE_MAIN" | "BSE_MAIN";
+}
+
+export interface ApiSmeOverview {
+  totalEmergeListed: number;
+  totalBseSmeListed: number;
+  totalSmeMarketCapCr: number;
+  activeIposCount: number;
+  migratedToMainboardCount: number;
+  topSmeGainers: ApiSmeScrip[];
+  activeIpos: ApiSmeIpoItem[];
+  migrationCandidates: ApiSmeMigrationCandidate[];
+}
+
+// ==========================================
+// Phase 15: Institutional Tear-Sheet & Notes (M25)
+// ==========================================
+
+export interface ApiTearSheetData {
+  symbol: string;
+  name: string;
+  isin: string;
+  sector: string;
+  industry: string;
+  marketCapCr: number;
+  enterpriseValueCr: number;
+  currentPrice: number;
+  high52w: number;
+  low52w: number;
+  peRatio: number;
+  pbRatio: number;
+  evEbitdaRatio: number;
+  dividendYieldPct: number;
+  tenYearCagr: {
+    sales10Y: number;
+    sales5Y: number;
+    sales3Y: number;
+    pat10Y: number;
+    pat5Y: number;
+    pat3Y: number;
+  };
+  consensusSummary: {
+    buyCount: number;
+    holdCount: number;
+    sellCount: number;
+    meanTargetInr: number;
+    upsidePct: number;
+  };
+  shareholding: {
+    promoterPct: number;
+    pledgedPct: number;
+    fiiPct: number;
+    diiPct: number;
+    publicPct: number;
+  };
+  keyRatios: {
+    rocePct: number;
+    roePct: number;
+    debtToEquity: number;
+    interestCoverage: number;
+    operatingCashFlowToPat: number;
+  };
+  filingProvenance: string;
+}
+
+export interface ApiResearchNote {
+  id: string;
+  symbol: string;
+  createdAt: string;
+  author: string;
+  title: string;
+  thesis: string;
+  tags: string[];
+  sentiment: "BULLISH" | "BEARISH" | "NEUTRAL";
+  targetPriceInr?: number;
+}
