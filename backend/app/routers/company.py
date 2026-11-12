@@ -305,6 +305,17 @@ def _live_valuation(symbol: str, exchange: str, cached: dict) -> dict:
         price = quote.get("cmp") if quote else None
     except Exception:
         price = None
+    try:
+        ratios = get_financials(symbol, exchange)["data"]["ratios"]
+    except Exception:
+        ratios = {}
+    if ratios.get("roePct") is not None:
+        data["roePct"] = ratios["roePct"]
+    # EPS from the vetted filed quarters (or latest full year), the same basis as
+    # screener.in's P/E; Yahoo's trailingEps can trail the filings by a year
+    if isinstance(ratios.get("eps"), (int, float)) and ratios["eps"] > 0:
+        data["eps"] = ratios["eps"]
+        data["epsBasis"] = ratios.get("basis")
     if price:
         eps, book, paid = data.get("eps"), data.get("bookValue"), data.get("dividendsTtm")
         if eps and eps > 0:
@@ -313,12 +324,6 @@ def _live_valuation(symbol: str, exchange: str, cached: dict) -> dict:
             data["pbRatio"] = round(price / book, 2)
         if paid is not None:
             data["dividendYieldPct"] = round(paid / price * 100, 2)
-    try:
-        ratios = get_financials(symbol, exchange)["data"]["ratios"]
-        if ratios.get("roePct") is not None:
-            data["roePct"] = ratios["roePct"]
-    except Exception:
-        pass
     return data
 
 
@@ -411,6 +416,8 @@ def get_statistics(symbol: str):
                 highlights["revenue"] = ratios["revenueCr"]
             if ratios.get("netProfitCr") is not None:
                 highlights["netIncome"] = ratios["netProfitCr"]
+            if isinstance(ratios.get("eps"), (int, float)) and ratios["eps"] > 0:
+                highlights["eps"] = ratios["eps"]
             data["highlights"] = highlights
             res = {**res, "data": data}
     except Exception:

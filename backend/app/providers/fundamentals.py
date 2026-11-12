@@ -282,6 +282,9 @@ def compute_ratios(
     net_profit_basis = _sum("netProfit")
     operating_basis = _sum("operatingProfit")
     revenue_basis = _sum("revenue")
+    # Per-share earnings over the same window, so P/E rests on the filed quarters.
+    # Yahoo's trailingEps can lag them by a year (HDFCBANK: 45.75 against 52.02 filed).
+    eps_basis = _sum("eps")
     basis_label = "TTM"
     basis_period = "last four reported quarters"
 
@@ -293,6 +296,7 @@ def compute_ratios(
         net_profit_basis = latest_fy.get("netProfit")
         operating_basis = latest_fy.get("operatingProfit")
         revenue_basis = latest_fy.get("revenue")
+        eps_basis = latest_fy.get("eps")
         basis_label = latest_fy.get("period", "FY")
         basis_period = f"full year to {latest_fy.get('periodEnd')}"
 
@@ -325,6 +329,7 @@ def compute_ratios(
         "basis": basis_period,
         "revenueCr": round(ttm_revenue, 2) if ttm_revenue is not None else None,
         "netProfitCr": round(ttm_net_profit, 2) if ttm_net_profit is not None else None,
+        "eps": round(eps_basis, 2) if isinstance(eps_basis, (int, float)) else None,
         "roePct": roe_pct,
         "rocePct": roce_pct,
         "currentRatio": latest_bs.get("currentRatio") if latest_bs else None,
