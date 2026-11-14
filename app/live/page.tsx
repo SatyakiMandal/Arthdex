@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { DataUnavailable } from "@/components/ui/data-provenance";
 import { getBuildUp, getFlows, getFnoBan, getIndices, getOptionChain, getPulse } from "@/lib/api/endpoints";
 import type { ApiBuildUp, ApiFlows, ApiFnoBan, ApiIndex, ApiOptionChain, ApiPulse } from "@/lib/api/types";
 import { LiveMarketCockpit } from "@/components/market/live-market-cockpit";
@@ -9,23 +10,11 @@ import { LiveMarketCockpit } from "@/components/market/live-market-cockpit";
 export const metadata: Metadata = {
   title: "Live Market Cockpit · Arthdex",
   description:
-    "God's-eye view of the Indian market in action: real-time advance/decline breadth, sector capital flow treemap, what is being bought vs sold, what is not moving, volume, and prices. 100% genuine live market data.",
-};
-
-const FALLBACK_PULSE: ApiPulse = {
-  index: "nifty500",
-  label: "Nifty 500",
-  advances: 406,
-  declines: 88,
-  unchanged: 1,
-  market: { advances: 2713, declines: 875, unchanged: 115, total: 3703 },
-  stocks: [],
-  sectors: [],
-  asOf: new Date().toISOString(),
+    "God's-eye view of the Indian market in action: real-time advance/decline breadth, sector capital flow treemap, what is being bought vs sold, what is not moving, volume, and prices. Delayed exchange data.",
 };
 
 export default async function LiveMarketPage() {
-  let initialPulse: ApiPulse = FALLBACK_PULSE;
+  let initialPulse: ApiPulse | null = null;
   let initialIndices: ApiIndex[] = [];
   let initialBuildUp: ApiBuildUp | null = null;
   let initialFnoBan: ApiFnoBan | null = null;
@@ -85,15 +74,21 @@ export default async function LiveMarketPage() {
         </div>
 
         <div className="mt-2.5">
-          <LiveMarketCockpit
-            initialPulse={initialPulse}
-            initialIndices={initialIndices}
-            initialBuildUp={initialBuildUp}
-            initialFnoBan={initialFnoBan}
-            initialFlows={initialFlows}
-            initialOptionChain={initialOptionChain}
-            initialIndex="nifty500"
-          />
+{initialPulse ? (
+                      <LiveMarketCockpit
+              initialPulse={initialPulse}
+              initialIndices={initialIndices}
+              initialBuildUp={initialBuildUp}
+              initialFnoBan={initialFnoBan}
+              initialFlows={initialFlows}
+              initialOptionChain={initialOptionChain}
+              initialIndex="nifty500"
+            />
+          ) : (
+            <div className="py-12">
+              <DataUnavailable title="Live market data unavailable" message="The market breadth feed did not respond. Reload in a moment." />
+            </div>
+          )}
         </div>
       </main>
       <SiteFooter />

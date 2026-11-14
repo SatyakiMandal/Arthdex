@@ -21,34 +21,21 @@ NEEDS: dict[str, tuple[str, str]] = {
         "Macro dashboard",
         "MOSPI releases for CPI, IIP and GDP, the Office of the Economic Adviser for WPI, GSTN collections and RBI DBIE series.",
     ),
-    "forex-monitor": (
-        "Forex monitor",
-        "FBIL reference rates and forward premia. Spot cross rates alone are available from Yahoo Finance and could seed a smaller desk.",
-    ),
     "yield-curve": (
         "Sovereign yield curve",
         "CCIL or FBIL par yields by tenor and RBI's policy-rate announcements.",
     ),
     "funds": (
-        "Mutual fund screener and overlap",
-        "AMFI's daily NAV file for the scheme list and returns, and each AMC's monthly portfolio disclosure for holdings overlap.",
+        "Mutual fund portfolio overlap",
+        "each AMC's monthly portfolio disclosure. The screener itself runs on AMFI's NAV files.",
     ),
     "index-rebalance": (
         "Index rebalance forecast",
         "six-month average free-float market capitalisation and turnover for every candidate, which NSE Indices does not publish.",
     ),
-    "ipo-lockins": (
-        "IPO lock-in calendar",
-        "anchor allotment and pre-IPO share counts from each prospectus and the exchange's lock-in notices. "
-        "Expiry dates alone can be derived from listing dates already in the IPO pipeline.",
-    ),
     "buybacks": (
         "Buyback desk",
         "open tender offers from SEBI or exchange corporate-action filings, with record dates and offer sizes.",
-    ),
-    "vol-surface": (
-        "Volatility surface",
-        "implied volatility by strike and expiry from the live option chain. The chain is already connected; the surface must be fitted to it rather than drawn from fixed parameters.",
     ),
 }
 

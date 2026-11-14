@@ -69,7 +69,6 @@ import type {
   ApiMacroDashboardResponse,
   ApiForexMonitorResponse,
   ApiFundScreenerResponse,
-  ApiFundOverlapResponse,
   ApiPaperAccountResponse,
   ApiRegulatoryCharges,
   ApiPaperOrderResult,
@@ -317,7 +316,7 @@ export const getFnoBan = () =>
   apiGet<ApiFnoBan>("/api/v1/derivatives/fno-ban", 300);
 
 export const getEarningsMoves = () =>
-  apiGet<ApiEarningsMovesResponse>("/api/v1/derivatives/earnings-moves", 900);
+  apiGet<ApiEarningsMovesResponse>("/api/v1/derivatives/earnings-moves?v=2", 900);
 
 export const getBhavScanner = (date?: string) => {
   const qs = date ? `?date=${encodeURIComponent(date)}` : "";
@@ -350,14 +349,16 @@ export const postPortfolioAnalyze = (holdings: Array<{
 }>) =>
   apiPost<ApiPortfolioAnalysis>("/api/v1/portfolio/analyze", { holdings });
 
+// ?v=2 on these routes: Next keeps serving a stored 200 when a route starts answering 404, so the
+// address changed when the desks behind them were rebuilt or switched off.
 export const getIndexRebalance = () =>
-  apiGet<ApiIndexRebalance>("/api/v1/catalysts/index-rebalance", 3600);
+  apiGet<ApiIndexRebalance>("/api/v1/catalysts/index-rebalance?v=2", 3600);
 
 export const getIpoLockins = () =>
-  apiGet<ApiIpoLockinResponse>("/api/v1/catalysts/ipo-lockins", 3600);
+  apiGet<ApiIpoLockinResponse>("/api/v1/catalysts/ipo-lockins?v=2", 3600);
 
 export const getBuybacks = () =>
-  apiGet<ApiBuybackResponse>("/api/v1/catalysts/buybacks", 3600);
+  apiGet<ApiBuybackResponse>("/api/v1/catalysts/buybacks?v=2", 3600);
 
 
 export const getSurveillance = (params?: { measure?: string; band?: string; q?: string }) => {
@@ -371,10 +372,10 @@ export const getSurveillance = (params?: { measure?: string; band?: string; q?: 
 
 
 export const getYieldCurve = () =>
-  apiGet<ApiYieldCurveResponse>("/api/v1/market/yield-curve", 3600);
+  apiGet<ApiYieldCurveResponse>("/api/v1/market/yield-curve?v=2", 3600);
 
 export const getParticipantOi = () =>
-  apiGet<ApiParticipantOiResponse>("/api/v1/derivatives/participant-oi", 1800);
+  apiGet<ApiParticipantOiResponse>("/api/v1/derivatives/participant-oi?v=2", 1800);
 
 export const getStrategyTemplates = (symbol: string = "NIFTY", spot: number = 24500) =>
   apiGet<ApiStrategyTemplate[]>(`/api/v1/derivatives/strategy/templates?symbol=${encodeURIComponent(symbol)}&spot=${spot}`, 3600);
@@ -393,21 +394,19 @@ export const getVolatilitySurface = (symbol: string = "NIFTY") =>
   apiGet<ApiVolSurfaceResponse>(`/api/v1/derivatives/${encodeURIComponent(symbol)}/vol-surface`, 300);
 
 export const getMacroDashboard = () =>
-  apiGet<ApiMacroDashboardResponse>("/api/v1/macro/dashboard", 3600);
+  apiGet<ApiMacroDashboardResponse>("/api/v1/macro/dashboard?v=2", 3600);
 
 export const getForexMonitor = () =>
-  apiGet<ApiForexMonitorResponse>("/api/v1/macro/forex", 120);
+  apiGet<ApiForexMonitorResponse>("/api/v1/macro/forex?v=2", 120);
 
-export const getFundsScreener = (category?: string, amc?: string) => {
+export const getFundsScreener = (filters: Record<string, string | undefined> = {}) => {
   const qp = new URLSearchParams();
-  if (category && category !== "all") qp.set("category", category);
-  if (amc && amc !== "all") qp.set("amc", amc);
+  for (const [key, value] of Object.entries(filters)) {
+    if (value) qp.set(key, value);
+  }
   const qs = qp.toString();
-  return apiGet<ApiFundScreenerResponse>(`/api/v1/funds/screener${qs ? `?${qs}` : ""}`, 3600);
+  return apiGet<ApiFundScreenerResponse>(`/api/v1/funds/screener${qs ? `?${qs}` : ""}`, REVALIDATE.fundamentals);
 };
-
-export const getFundOverlap = (fundA: string = "122639", fundB: string = "118989") =>
-  apiGet<ApiFundOverlapResponse>(`/api/v1/funds/overlap?fund_a=${encodeURIComponent(fundA)}&fund_b=${encodeURIComponent(fundB)}`, 3600);
 
 export const getPaperAccount = () =>
   apiGet<ApiPaperAccountResponse>("/api/v1/paper/account", 0);
@@ -455,7 +454,7 @@ export const postBacktest = (payload: { symbol: string; fast_period: number; slo
 
 // -- Sector Operating KPIs (SKPI) -------------------------------------------
 export const getSectorKpiOverview = () =>
-  apiGet<ApiSectorKpiOverview>("/api/v1/sectors/kpis", 3600);
+  apiGet<ApiSectorKpiOverview>("/api/v1/sectors/kpis?v=2", 3600);
 
 export const getSectorKpiDetails = <T = unknown>(sectorCode: string) =>
   apiGet<T>(`/api/v1/sectors/kpis/${encodeURIComponent(sectorCode)}`, 3600);

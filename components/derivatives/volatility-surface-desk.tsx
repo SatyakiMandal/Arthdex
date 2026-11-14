@@ -84,7 +84,7 @@ export function VolatilitySurfaceDesk({ initialData }: VolatilitySurfaceDeskProp
           </h1>
           <span className="hidden sm:inline-flex items-center gap-1 text-3xs text-muted-foreground border-l border-border pl-2">
             <Activity className="h-3 w-3 text-cyan-400" />
-            Parametric SVI Smile Model
+            From NSE option chains
           </span>
         </div>
 
@@ -129,11 +129,11 @@ export function VolatilitySurfaceDesk({ initialData }: VolatilitySurfaceDeskProp
           <div className="text-3xs uppercase tracking-wider text-muted-foreground">25Δ Risk Reversal (RR₂₅)</div>
           <div className="mt-1 flex items-baseline gap-1.5">
             <span className="text-lg font-bold text-rose-400 tabular-nums">
-              +{skewSummary.riskReversal25D.toFixed(2)}%
+              {skewSummary.riskReversal25D === null ? "—" : `${skewSummary.riskReversal25D > 0 ? "+" : ""}${skewSummary.riskReversal25D.toFixed(2)}`}
             </span>
             <span className="text-3xs text-muted-foreground">IV Put − IV Call</span>
           </div>
-          <div className="text-3xs text-rose-400/80 mt-0.5">Heavy downside put bid</div>
+          <div className="text-3xs text-muted-foreground mt-0.5">Volatility points; positive means puts are dearer</div>
         </div>
 
         {/* Metric 3: 25-Delta Butterfly (Smile Curvature) */}
@@ -141,11 +141,11 @@ export function VolatilitySurfaceDesk({ initialData }: VolatilitySurfaceDeskProp
           <div className="text-3xs uppercase tracking-wider text-muted-foreground">25Δ Butterfly (BF₂₅)</div>
           <div className="mt-1 flex items-baseline gap-1.5">
             <span className="text-lg font-bold text-cyan-400 tabular-nums">
-              +{skewSummary.butterfly25D.toFixed(2)}%
+              {skewSummary.butterfly25D === null ? "—" : `${skewSummary.butterfly25D > 0 ? "+" : ""}${skewSummary.butterfly25D.toFixed(2)}`}
             </span>
             <span className="text-3xs text-muted-foreground">Smile Kurtosis</span>
           </div>
-          <div className="text-3xs text-muted-foreground mt-0.5">Fat tail risk pricing</div>
+          <div className="text-3xs text-muted-foreground mt-0.5">Wings above the at-the-money level</div>
         </div>
 
         {/* Metric 4: Term Structure Regime */}
@@ -368,20 +368,23 @@ export function VolatilitySurfaceDesk({ initialData }: VolatilitySurfaceDeskProp
                     {row.moneynessPct}%
                   </td>
                   {termStructure.map((t) => {
-                    const val = Number(row[t.label] || 0);
+                    const raw = row[t.label];
+                    const val = typeof raw === "number" ? raw : null;
                     return (
                       <td
                         key={t.label}
                         className={cn(
                           "py-1 px-2 text-right tabular-nums",
-                          val > 20
+                          val === null
+                            ? "text-muted-foreground"
+                            : val > 20
                             ? "text-rose-400 font-semibold"
                             : val > 15
                             ? "text-amber-300"
                             : "text-cyan-400"
                         )}
                       >
-                        {val.toFixed(2)}%
+                        {val === null ? "—" : `${val.toFixed(2)}%`}
                       </td>
                     );
                   })}

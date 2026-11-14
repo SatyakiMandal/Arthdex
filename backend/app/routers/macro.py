@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException
 
+from ..cache import CACHE
+from ..config import SETTINGS
 from ..schemas import envelope
+from ..services import fx_live
 from .. import not_connected
 from ..services import macro_economics
 
@@ -30,16 +33,15 @@ def get_macro_dashboard():
 
 @router.get("/forex")
 def get_forex_monitor():
-    """Foreign exchange cross-rates against INR, forward premia, and RBI REER/NEER indices."""
-    not_connected.refuse("forex-monitor")
+    """Rupee spot cross rates with day, one-month and one-year changes."""
     try:
-        data = macro_economics.get_forex_monitor()
+        data, age = CACHE.get_or_fetch("macro:forex:v2", 300, fx_live.fetch)
     except Exception as exc:
-        raise HTTPException(status_code=503, detail=f"Forex monitor unavailable: {exc}") from exc
+        raise HTTPException(status_code=503, detail=f"Forex rates unavailable: {exc}") from exc
     return envelope(
         data,
-        120,
-        source="FBIL reference rates & RBI forex bulletin",
-        delayed_minutes=0,
-        note="FBIL reference rates published daily at 13:30 IST; forward premia computed from OTC interbank quotes.",
+        age,
+        source="Yahoo Finance currency quotes",
+        delayed_minutes=SETTINGS.quote_delay_minutes,
+        note="Market spot quotes, not FBIL reference rates. Forward premia and REER are not available.",
     )

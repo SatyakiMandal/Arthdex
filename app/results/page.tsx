@@ -14,11 +14,10 @@ import {
   getIpoLockins,
   getBuybacks,
 } from "@/lib/api/endpoints";
-import type { ApiReportedResult } from "@/lib/api/types";
+import type { ApiBuybackResponse, ApiIndexRebalance, ApiIpoLockinResponse, ApiReportedResult } from "@/lib/api/types";
 import { IndexRebalanceTable } from "@/components/catalysts/index-rebalance-table";
 import { IpoLockinCalendar } from "@/components/catalysts/ipo-lockin-calendar";
 import { BuybackArbitrageDesk } from "@/components/catalysts/buyback-arbitrage-desk";
-import { FALLBACK_BUYBACKS, FALLBACK_IPOLOCKIN, FALLBACK_REBALANCE } from "@/components/catalysts/defaults";
 import { cn, deltaColor, formatINR, formatPct } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -49,9 +48,12 @@ interface PageProps {
 export default async function ResultsPage({ searchParams }: PageProps) {
   const { sort = "netProfit", tab = "scorecard" } = await searchParams;
 
-  let rebalanceData = FALLBACK_REBALANCE;
-  let lockinData = FALLBACK_IPOLOCKIN;
-  let buybackData = FALLBACK_BUYBACKS;
+  // Each catalyst section shows its route's data or the reason there is none; nothing is stored here
+  type Section<T> = { data: T | null; reason: string };
+  const unanswered = "The data service did not respond.";
+  let rebalance: Section<ApiIndexRebalance> = { data: null, reason: unanswered };
+  let lockins: Section<ApiIpoLockinResponse> = { data: null, reason: unanswered };
+  let buybacks: Section<ApiBuybackResponse> = { data: null, reason: unanswered };
 
   const [res, calendarRes, movesRes] = await Promise.all([
     tab === "scorecard" ? getResultsSeason().catch(() => null) : Promise.resolve(null),
@@ -66,11 +68,11 @@ export default async function ResultsPage({ searchParams }: PageProps) {
         getIpoLockins().catch(() => null),
         getBuybacks().catch(() => null),
       ]);
-      if (rebalanceRes?.ok && rebalanceRes.data) rebalanceData = rebalanceRes.data;
-      if (lockinRes?.ok && lockinRes.data) lockinData = lockinRes.data;
-      if (buybackRes?.ok && buybackRes.data) buybackData = buybackRes.data;
+      if (rebalanceRes) rebalance = rebalanceRes.ok ? { data: rebalanceRes.data, reason: "" } : { data: null, reason: rebalanceRes.message };
+      if (lockinRes) lockins = lockinRes.ok ? { data: lockinRes.data, reason: "" } : { data: null, reason: lockinRes.message };
+      if (buybackRes) buybacks = buybackRes.ok ? { data: buybackRes.data, reason: "" } : { data: null, reason: buybackRes.message };
     } catch {
-      // Graceful fallback to cached catalyst data
+      // reported per section below
     }
   }
 
@@ -360,16 +362,16 @@ export default async function ResultsPage({ searchParams }: PageProps) {
                 title="Index Rebalance Forecast"
                 note="Semi-annual rebalance forecasting for Nifty 50, Bank Nifty, and Nifty Next 50. Anticipates passive ETF flows."
               />
-              <IndexRebalanceTable initialData={rebalanceData} />
+              {rebalance.data ? <IndexRebalanceTable initialData={rebalance.data} /> : <DataUnavailable title="Index rebalance forecast not available" message={rebalance.reason} />}
             </section>
 
             {/* Section 2: IPO Lock-in Expiry Calendar */}
             <section className="space-y-2">
               <SectionHead
                 title="IPO Anchor & Promoter Lock-in Expiries"
-                note="Anchor 30-day, Anchor 90-day, and 1-year Pre-IPO quotas with volume-relative Supply Impact Ratios."
+                note="Expiry dates for anchor and pre-IPO lock-ins of recent listings, counted from the listing date."
               />
-              <IpoLockinCalendar initialData={lockinData} />
+              {lockins.data ? <IpoLockinCalendar initialData={lockins.data} /> : <DataUnavailable title="Lock-in calendar not available" message={lockins.reason} />}
             </section>
 
             {/* Section 3: Tender Offer Buyback Arbitrage Desk */}
@@ -378,7 +380,7 @@ export default async function ResultsPage({ searchParams }: PageProps) {
                 title="Buyback Arbitrage & Small Shareholder Quota"
                 note="SEBI 15% retail reserved tender quota under ₹2,00,000 threshold with acceptance ratio payoff curves."
               />
-              <BuybackArbitrageDesk initialData={buybackData} />
+              {buybacks.data ? <BuybackArbitrageDesk initialData={buybacks.data} /> : <DataUnavailable title="Buyback desk not available" message={buybacks.reason} />}
             </section>
           </div>
         )}

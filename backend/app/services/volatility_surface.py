@@ -1,161 +1,175 @@
 """
-Implied Volatility Surface, Smile, and Skew Analytics Service (Bloomberg OVDV equivalent).
+Implied volatility surface read from NSE's option chains.
 
-Models and computes the 2D volatility surface (Strikes x Expiries) for Indian equity indices
-(NIFTY 50, BANK NIFTY, FINNIFTY) and major F&O stocks.
+NSE publishes an implied volatility for every traded option. This module takes the next
+few expiries of a symbol, reads each strike's volatility from its out-of-the-money option
+(the liquid side) and arranges them by strike and expiry. Nothing is modelled: a strike
+with no quoted volatility is blank, and the skew measures are interpolated between quoted
+strikes.
 
-Key Metrics & Features:
-- 25-Delta Risk Reversal (RR25): Skew measurement = IV(25D Put) - IV(25D Call)
-- 25-Delta Butterfly (BF25): Smile curvature = (IV(25D Put) + IV(25D Call))/2 - IV(ATM)
-- Term Structure: Near vs Far month IV progression (Contango vs Backwardation)
-- Parametric SVI / Quadratic smile interpolation calibrated to authentic NSE options
-- Full moneyness grid [0.85 to 1.15] across 4 liquid expiries
+``build`` takes fetched chains as arguments and is tested offline.
 """
 
 from __future__ import annotations
 
 import math
-from datetime import date, datetime, timedelta
-from typing import Any
+from datetime import date, datetime
+from typing import Any, Callable
 
 from ..cache import CACHE
-from ..providers import nse_options
+
+MAX_EXPIRIES = 4
+MONEYNESS_BAND = 0.10   # strikes within 10% of spot
+MAX_ROWS = 25
+Z_25_DELTA = 0.674      # |d1| at a 25-delta option, ignoring rates and the drift term
 
 
-def calculate_svi_iv(moneyness: float, atm_iv: float, skew_slope: float, curvature: float) -> float:
-    """
-    Parametric smile formula based on log-moneyness:
-    moneyness k = ln(K / S)
-    iv(k) = atm_iv + skew_slope * k + curvature * k^2
-    """
-    iv = atm_iv + skew_slope * moneyness + curvature * (moneyness ** 2)
-    return max(0.05, round(iv, 4))
+class VolSurfaceUnavailable(Exception):
+    """No expiry of the symbol has a usable option chain."""
 
 
-def build_volatility_surface(symbol: str = "NIFTY") -> dict[str, Any]:
-    """Generates the full volatility surface and smile skew analytics for the given symbol."""
-    sym = symbol.upper()
+def _otm_iv(row: dict[str, Any], spot: float) -> float | None:
+    first, second = ("ce", "pe") if row["strike"] >= spot else ("pe", "ce")
+    iv = (row.get(first) or {}).get("iv") or (row.get(second) or {}).get("iv")
+    return float(iv) if isinstance(iv, (int, float)) and iv > 0 else None
 
-    # Default parameters based on underlying type
-    if sym == "BANKNIFTY":
-        spot = 52200.0
-        strike_step = 100
-        base_atm_iv = 0.165
-        skew_bias = -0.18  # Strong downside put skew
-        curve_factor = 0.42
-    elif sym == "FINNIFTY":
-        spot = 23800.0
-        strike_step = 50
-        base_atm_iv = 0.148
-        skew_bias = -0.16
-        curve_factor = 0.38
-    else:  # NIFTY or standard large cap
-        spot = 24500.0
-        strike_step = 50
-        base_atm_iv = 0.138
-        skew_bias = -0.15
-        curve_factor = 0.35
 
-    # 4 distinct expiries: Current Weekly, Next Weekly, Monthly, Next Monthly
-    today = date.today()
-    expiries_meta = [
-        {"name": "Current Wk", "days": 5, "tte": 5 / 365.0, "term_iv_bump": 0.0},
-        {"name": "Next Wk", "days": 12, "tte": 12 / 365.0, "term_iv_bump": 0.004},
-        {"name": "Monthly", "days": 26, "tte": 26 / 365.0, "term_iv_bump": 0.009},
-        {"name": "Next Mo", "days": 54, "tte": 54 / 365.0, "term_iv_bump": 0.015},
+def atm_iv(rows: list[dict[str, Any]], spot: float) -> tuple[float, float] | None:
+    """(strike, IV) at the strike nearest spot: the mean of the call's and the put's where both are quoted."""
+    quoted = [r for r in rows if (r.get("ce") or {}).get("iv") or (r.get("pe") or {}).get("iv")]
+    if not quoted:
+        return None
+    row = min(quoted, key=lambda r: abs(r["strike"] - spot))
+    ivs = [leg["iv"] for leg in (row.get("ce"), row.get("pe")) if leg and leg.get("iv")]
+    return row["strike"], sum(ivs) / len(ivs)
+
+
+def iv_at(points: list[tuple[float, float]], strike: float) -> float | None:
+    """Linear interpolation between the two quoted strikes around `strike`; None outside them."""
+    below = [p for p in points if p[0] <= strike]
+    above = [p for p in points if p[0] >= strike]
+    if not below or not above:
+        return None
+    (k0, v0), (k1, v1) = below[-1], above[0]
+    return v0 if k1 == k0 else v0 + (v1 - v0) * (strike - k0) / (k1 - k0)
+
+
+def _label(expiry: date, today: date) -> str:
+    return f"{expiry.strftime('%d %b')} ({(expiry - today).days}d)"
+
+
+def build(symbol: str, chains: list[dict[str, Any]], today: date | None = None) -> dict[str, Any]:
+    """``chains`` are nse_options.chain payloads, nearest expiry first."""
+    today = today or date.today()
+    usable = []
+    for chain in chains:
+        spot = chain.get("underlying")
+        rows = chain.get("rows") or []
+        expiry = date.fromisoformat(chain["expiry"])
+        days = (expiry - today).days
+        centre = atm_iv(rows, spot) if spot else None
+        if not centre or days < 0:
+            continue
+        usable.append({"expiry": expiry, "days": days, "spot": float(spot), "rows": rows, "atm": centre, "label": _label(expiry, today),
+                       "timestamp": chain.get("timestamp")})
+    if not usable:
+        raise VolSurfaceUnavailable(f"No option chain with quoted implied volatility for {symbol.upper()}")
+
+    near = usable[0]
+    spot = near["spot"]
+    term = [
+        {"label": u["label"], "daysToExpiry": u["days"], "expiryDate": u["expiry"].isoformat(), "atmIv": round(u["atm"][1], 2)}
+        for u in usable
     ]
 
-    # Term structure analysis
-    term_structure = []
-    for exp in expiries_meta:
-        expiry_date = today + timedelta(days=exp["days"])
-        atm_iv = base_atm_iv + exp["term_iv_bump"]
-        term_structure.append({
-            "label": exp["name"],
-            "daysToExpiry": exp["days"],
-            "expiryDate": expiry_date.strftime("%d-%b-%Y"),
-            "atmIv": round(atm_iv * 100, 2),
-        })
+    # strike grid from the near expiry, thinned evenly if the chain is dense
+    near_points = [(r["strike"], _otm_iv(r, spot)) for r in near["rows"]]
+    near_points = [(k, v) for k, v in near_points if v is not None and abs(k / spot - 1.0) <= MONEYNESS_BAND]
+    if not near_points:
+        raise VolSurfaceUnavailable(f"No strikes near the money carry a volatility for {symbol.upper()}")
+    step = max(1, math.ceil(len(near_points) / MAX_ROWS))
+    atm_strike = near["atm"][0]
+    grid = sorted({k for i, (k, _) in enumerate(near_points) if i % step == 0} | {atm_strike})
 
-    # Contango vs Backwardation check
-    is_contango = term_structure[-1]["atmIv"] > term_structure[0]["atmIv"]
-    term_regime = "Normal Contango (Standard Term Structure)" if is_contango else "Inverted Backwardation (High Event Risk / Elevated Short-Term Panic)"
+    by_expiry = [{r["strike"]: _otm_iv(r, u["spot"]) for r in u["rows"]} for u in usable]
+    surface = []
+    for strike in grid:
+        row: dict[str, Any] = {"strike": strike, "moneynessPct": round((strike / spot - 1.0) * 100.0, 1), "isAtm": strike == atm_strike}
+        for u, ivs in zip(usable, by_expiry):
+            iv = ivs.get(strike)
+            row[u["label"]] = round(iv, 2) if iv is not None else None
+        surface.append(row)
+    near_smile = [{"strike": k, "moneynessPct": round((k / spot - 1.0) * 100.0, 1), "iv": round(v, 2)} for k, v in near_points]
 
-    # Strike grid across 88% to 112% moneyness
-    min_k = round((spot * 0.90) / strike_step) * strike_step
-    max_k = round((spot * 1.10) / strike_step) * strike_step
+    # 25-delta strikes sit about 0.674 standard deviations either side of spot
+    sigma, t = near["atm"][1] / 100.0, max(near["days"], 1) / 365.0
+    width = Z_25_DELTA * sigma * math.sqrt(t)
+    put_strike, call_strike = spot * math.exp(-width), spot * math.exp(width)
+    all_points = [(r["strike"], _otm_iv(r, spot)) for r in near["rows"]]
+    all_points = [(k, v) for k, v in all_points if v is not None]
+    put_iv, call_iv = iv_at(all_points, put_strike), iv_at(all_points, call_strike)
+    risk_reversal = round(put_iv - call_iv, 2) if put_iv is not None and call_iv is not None else None
+    butterfly = round((put_iv + call_iv) / 2.0 - near["atm"][1], 2) if risk_reversal is not None else None
 
-    strikes: list[int] = []
-    k_curr = min_k
-    while k_curr <= max_k:
-        strikes.append(int(k_curr))
-        k_curr += strike_step * 2  # Step by 100 for Nifty, 200 for BankNifty to keep table concise
-
-    surface_matrix: list[dict[str, Any]] = []
-    smile_points_near: list[dict[str, Any]] = []
-
-    # Calculate 25-Delta metrics on near expiry
-    # At 25-Delta Put, k is approx -0.6 * sigma * sqrt(T)
-    # At 25-Delta Call, k is approx +0.6 * sigma * sqrt(T)
-    near_atm_iv = base_atm_iv
-    near_sqrt_t = math.sqrt(expiries_meta[0]["tte"])
-    k_25d_put = -0.674 * near_atm_iv * near_sqrt_t
-    k_25d_call = 0.674 * near_atm_iv * near_sqrt_t
-
-    iv_25d_put = calculate_svi_iv(k_25d_put, near_atm_iv, skew_bias, curve_factor)
-    iv_25d_call = calculate_svi_iv(k_25d_call, near_atm_iv, skew_bias, curve_factor)
-
-    risk_reversal_25d = round((iv_25d_put - iv_25d_call) * 100, 2)  # In vol percentage points
-    butterfly_25d = round((((iv_25d_put + iv_25d_call) / 2.0) - near_atm_iv) * 100, 2)
-
-    for k in strikes:
-        moneyness = math.log(k / spot)
-        moneyness_pct = round((k / spot - 1.0) * 100, 1)
-
-        row: dict[str, Any] = {
-            "strike": k,
-            "moneynessPct": moneyness_pct,
-            "isAtm": abs(k - spot) < strike_step,
-        }
-
-        for exp in expiries_meta:
-            exp_atm_iv = base_atm_iv + exp["term_iv_bump"]
-            iv = calculate_svi_iv(moneyness, exp_atm_iv, skew_bias, curve_factor)
-            row[exp["name"]] = round(iv * 100, 2)
-
-        surface_matrix.append(row)
-        smile_points_near.append({
-            "strike": k,
-            "moneynessPct": moneyness_pct,
-            "iv": row[expiries_meta[0]["name"]],
-        })
+    upward = len(term) > 1 and term[-1]["atmIv"] > term[0]["atmIv"]
+    if len(term) < 2:
+        regime = "Only one expiry has quoted volatility"
+    else:
+        regime = (
+            f"Rising with maturity: {term[0]['atmIv']}% near, {term[-1]['atmIv']}% far"
+            if upward
+            else f"Falling with maturity: {term[0]['atmIv']}% near, {term[-1]['atmIv']}% far"
+        )
+    if risk_reversal is None:
+        skew_text = "The chain has no quoted volatility at the 25-delta strikes, so skew is not computed."
+    else:
+        side = "puts" if risk_reversal > 0 else "calls"
+        skew_text = (
+            f"Out-of-the-money {side} are priced {abs(risk_reversal):.2f} volatility points above the other side "
+            f"(strikes near {put_strike:,.0f} and {call_strike:,.0f}, about 25 delta)."
+        )
 
     return {
-        "symbol": sym,
-        "spotPrice": spot,
-        "asOf": datetime.now().isoformat(),
+        "symbol": symbol.upper(),
+        "spotPrice": round(spot, 2),
+        "asOf": near["timestamp"] or datetime.now().isoformat(timespec="seconds"),
         "skewSummary": {
-            "nearAtmIv": round(near_atm_iv * 100, 2),
-            "riskReversal25D": risk_reversal_25d,
-            "butterfly25D": butterfly_25d,
-            "termStructureRegime": term_regime,
-            "isContango": is_contango,
-            "skewInterpretation": (
-                f"Elevated Put Skew (+{risk_reversal_25d:.2f}%): Downside OTM puts trade at significant premium to calls, reflecting strong institutional portfolio hedging against tail risk."
-            ),
+            "nearAtmIv": round(near["atm"][1], 2),
+            "riskReversal25D": risk_reversal,
+            "butterfly25D": butterfly,
+            "termStructureRegime": regime,
+            "isContango": upward,
+            "skewInterpretation": skew_text,
         },
-        "termStructure": term_structure,
-        "surface": surface_matrix,
-        "nearSmile": smile_points_near,
+        "termStructure": term,
+        "surface": surface,
+        "nearSmile": near_smile,
+        "method": (
+            "Implied volatilities as published by NSE for each option. Each strike uses its out-of-the-money option. "
+            "25-delta strikes are approximated at 0.674 standard deviations from spot and interpolated between quoted strikes."
+        ),
     }
 
 
-def get_volatility_surface(symbol: str = "NIFTY") -> dict[str, Any]:
-    """Retrieves cached or computed volatility surface analytics."""
+def fetch(symbol: str, expiries_fn: Callable[[str], list[str]] | None = None, chain_fn: Callable[[str, str], dict] | None = None) -> dict[str, Any]:
+    from ..providers import nse_options
+
+    expiries_fn = expiries_fn or nse_options.expiries
+    chain_fn = chain_fn or nse_options.chain
     sym = symbol.upper()
+    today = date.today()
+    upcoming = [e for e in expiries_fn(sym) if e >= today.isoformat()][:MAX_EXPIRIES]
+    if not upcoming:
+        raise VolSurfaceUnavailable(f"{sym} has no listed option expiries")
+    chains = []
+    for expiry in upcoming:
+        try:
+            chains.append(chain_fn(sym, expiry))
+        except Exception:
+            continue  # a missing expiry leaves a shorter surface
+    return build(sym, chains, today)
 
-    def _fetch() -> dict[str, Any]:
-        return build_volatility_surface(sym)
 
-    data, _ = CACHE.get_or_fetch(f"derivatives:vol-surface:{sym}", 300, _fetch)
-    return data
+def get_volatility_surface(symbol: str = "NIFTY") -> dict[str, Any]:
+    sym = symbol.upper()
+    return CACHE.get_or_fetch(f"derivatives:vol-surface:v2:{sym}", 300, lambda: fetch(sym))[0]

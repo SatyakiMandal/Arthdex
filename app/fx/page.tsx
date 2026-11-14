@@ -7,8 +7,8 @@ import { FxMonitorDesk } from "@/components/market/fx-monitor-desk";
 import { getForexMonitor } from "@/lib/api/endpoints";
 
 export const metadata: Metadata = {
-  title: "Foreign Exchange Cross-Rates & INR Monitor (FXM) · Arthdex Terminal",
-  description: "Live INR spot cross-rates (USD, EUR, GBP, JPY, AED, CNY), official FBIL reference rates, forward premia term structure, and RBI 40-currency REER/NEER indices.",
+  title: "Rupee cross rates · Arthdex",
+  description: "Rupee spot rates against the dollar, euro, pound, yen, dirham, yuan and Singapore dollar, with day, one-month and one-year changes.",
 };
 
 export const revalidate = 120;
@@ -31,7 +31,7 @@ export default async function FxPage() {
         ) : (
           <div className="py-12">
             <DataUnavailable
-              title="Forex Telemetry Offline"
+              title="Forex rates unavailable"
               message={res.message || "Interbank foreign exchange feeds temporarily unavailable"}
             />
           </div>

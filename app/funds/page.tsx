@@ -1,61 +1,49 @@
 import type { Metadata } from "next";
-import { SiteHeader } from "@/components/layout/site-header";
+
 import { SiteFooter } from "@/components/layout/site-footer";
-import { KeyboardHud } from "@/components/ui/keyboard-hud";
+import { SiteHeader } from "@/components/layout/site-header";
+import { FundScreenerDesk, type FundFilters } from "@/components/funds/fund-screener-desk";
 import { DataUnavailable, SourceLine } from "@/components/ui/data-provenance";
-import { FundScreenerDesk } from "@/components/funds/fund-screener-desk";
-import { getFundsScreener, getFundOverlap } from "@/lib/api/endpoints";
+import { getFundsScreener } from "@/lib/api/endpoints";
 
 export const metadata: Metadata = {
-  title: "Mutual Funds Master Screener & Overlap (MF / MFS) · Arthdex Terminal",
-  description: "AMFI Indian mutual fund master screener, CAGRs (1Y, 3Y, 5Y), TER, AUM, Sharpe & Sortino ratios, and pairwise portfolio holding overlap engine.",
+  title: "Mutual fund screener · Arthdex",
+  description: "Every active mutual fund scheme with its latest NAV and one, three and five-year returns, from AMFI's NAV files.",
 };
 
-export const revalidate = 3600;
+const one = (value: string | string[] | undefined, fallback = "") => (Array.isArray(value) ? value[0] : value) ?? fallback;
+const SORTS = ["schemeName", "return1yPct", "cagr3yPct", "cagr5yPct"];
+const CHOICE = ["Direct", "Regular", "Growth", "IDCW", "all"];
 
-interface FundsPageProps {
-  searchParams: Promise<{
-    tab?: string;
-    category?: string;
-    amc?: string;
-  }>;
-}
-
-export default async function FundsPage({ searchParams }: FundsPageProps) {
-  const { tab = "screener", category, amc } = await searchParams;
-
-  const [screenerRes, overlapRes] = await Promise.all([
-    getFundsScreener(category, amc),
-    getFundOverlap("122639", "118989"),
-  ]);
+export default async function FundsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const sp = await searchParams;
+  const filters: FundFilters = {
+    category: one(sp.category).slice(0, 80),
+    sub_category: one(sp.sub_category).slice(0, 120),
+    plan: CHOICE.includes(one(sp.plan)) ? one(sp.plan) : "Direct",
+    option: CHOICE.includes(one(sp.option)) ? one(sp.option) : "Growth",
+    q: one(sp.q).slice(0, 80),
+    sort: SORTS.includes(one(sp.sort)) ? one(sp.sort) : "schemeName",
+  };
+  const res = await getFundsScreener({ ...filters });
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <SiteHeader />
-
-      <main className="flex-1 w-full max-w-[1920px] mx-auto px-2 pt-1 pb-4 sm:px-3 lg:px-4">
-        {screenerRes.ok && overlapRes.ok ? (
+      <main id="main" className="mx-auto w-full max-w-[1920px] flex-1 px-2 pb-4 pt-2 sm:px-3 lg:px-4">
+        {res.ok ? (
           <>
-            <FundScreenerDesk
-              initialData={screenerRes.data}
-              initialOverlap={overlapRes.data}
-              initialTab={tab === "overlap" ? "overlap" : "screener"}
-            />
+            <FundScreenerDesk data={res.data} filters={filters} />
             <div className="mt-3 px-2">
-              <SourceLine meta={screenerRes.meta} />
+              <SourceLine meta={res.meta} />
             </div>
           </>
         ) : (
           <div className="py-12">
-            <DataUnavailable
-              title="Mutual Funds Telemetry Offline"
-              message={(!screenerRes.ok ? screenerRes.message : !overlapRes.ok ? overlapRes.message : null) || "AMFI scheme master database temporarily unavailable"}
-            />
+            <DataUnavailable title="Fund data unavailable" message={res.message} />
           </div>
         )}
       </main>
-
-      <KeyboardHud />
       <SiteFooter />
     </div>
   );

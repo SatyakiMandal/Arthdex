@@ -24,6 +24,22 @@ which stored sample numbers are shown.
 | F-83 | Participant open interest (`/participant-oi`) | A stored table described as NSE's report. | Parsed from NSE's daily `fao_participant_oi` file; no stored copy. |
 | F-84 | Earnings implied moves | Compared the implied move with a "historical average" that was a constant, and returned field names the page did not read, so the desk showed nothing. | The comparison is removed (the label describes the implied move's size only) and the fields match the page. |
 
+## Feeds connected on 2026-11-15
+
+| ID | Desk | Source | Not covered |
+|---|---|---|---|
+| F-96 | Forex monitor (`/fx`) | Yahoo Finance currency series: spot, day, one-month and one-year change | FBIL reference rates, forward premia, REER |
+| F-97 | Volatility surface (`/volatility`) | Implied volatility per option as NSE publishes it in the chain, next four expiries; skew interpolated between quoted strikes | Nothing is fitted or extrapolated; unquoted strikes are blank |
+| F-98 | Mutual fund screener (`/funds`) | AMFI `NAVAll.txt` and NAV history report: about 8,700 active schemes, NAV-to-NAV returns for growth options | AUM, expense ratio, risk ratios, holdings (so no overlap tool) |
+| F-99 | IPO lock-in calendar (`/results`) | Listing dates from the IPO pipeline plus SEBI's fixed lock-in periods | Share counts; dates are counted from listing, not allotment |
+
+F-100: the results page and the live cockpit each carried a stored table that was shown when
+their route failed (`components/catalysts/defaults.ts`, `FALLBACK_PULSE`). Both are removed.
+
+F-101: Next keeps serving a stored 200 response when a route starts answering 404, so a
+switched-off desk could go on showing its old table. The addresses of every rebuilt or
+switched-off route now carry `?v=2`, which bypasses the stored copies.
+
 ## Switched off until a source is connected
 
 These routes return 404 with the source they need. The static tables remain in the service
@@ -32,11 +48,10 @@ files but are not served.
 | ID | Desk | Needs |
 |---|---|---|
 | F-85 | Sector operating KPIs (`/sectors`) | SIAM, VAHAN, RBI sectoral credit, CEA, DGCA, TRAI releases |
-| F-86 | Macro dashboard (`/macro`) and forex monitor (`/fx`) | MOSPI, OEA, GSTN, RBI DBIE; FBIL reference rates |
+| F-86 | Macro dashboard (`/macro`) | MOSPI, OEA, GSTN, RBI DBIE |
 | F-87 | Sovereign yield curve (`/yield-curve`) | CCIL or FBIL par yields |
-| F-88 | Mutual fund screener and overlap (`/funds`) | AMFI NAV file; AMC portfolio disclosures |
-| F-89 | Index rebalance forecast, IPO lock-in calendar, buyback desk (`/results`) | See `not_connected.py` |
-| F-90 | Volatility surface (`/volatility`) | A fit to the live option chain instead of fixed parameters |
+| F-88 | Mutual fund portfolio overlap | AMC monthly portfolio disclosures |
+| F-89 | Index rebalance forecast and buyback desk (`/results`) | See `not_connected.py` |
 
 ## Smaller fixes
 
@@ -57,7 +72,6 @@ files but are not served.
 - **Surveillance** assumes a 5% price band for every trade-to-trade security.
 - **SME company names** are blank: the NSE equity master used for names covers the main board only.
 - **Earnings moves**: the historical post-result average is not computed yet.
-- **Static tables** in `sector_kpi.py`, `macro_economics.py`, `fixed_income.py`, `funds.py`,
-  `index_rebalance.py`, `ipo_lockin.py`, `buyback_arbitrage.py` and `volatility_surface.py`
-  should be deleted once each desk has a real source.
+- **Static tables** in `sector_kpi.py`, `macro_economics.py`, `fixed_income.py`,
+  `index_rebalance.py` and `buyback_arbitrage.py` should be deleted once each desk has a real source.
 - `PROJECT_PROGRESS.md` and `docs/prd-remaining-work.md` still describe phases 9 to 18 as complete.

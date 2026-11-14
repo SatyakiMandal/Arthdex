@@ -36,19 +36,57 @@ class TestDerivativesIntelligence(unittest.TestCase):
         self.assertIn("netDelta", res["greeks"])
         self.assertTrue(len(res["points"]) > 50)
 
-    def test_volatility_surface(self):
-        """Volatility surface computes 25D Risk Reversal, Term Structure, and Strike matrix."""
-        data = volatility_surface.build_volatility_surface("NIFTY")
-        self.assertEqual(data["symbol"], "NIFTY")
-        self.assertIn("skewSummary", data)
-        self.assertIn("termStructure", data)
-        self.assertIn("surface", data)
+    def _chain(self, expiry, spot, skew):
+        """A chain whose put-side volatility rises by `skew` points per 100 below spot."""
+        rows = []
+        for strike in range(int(spot) - 1000, int(spot) + 1001, 50):
+            iv = 12.0 + max(0.0, (spot - strike) / 100.0) * skew + max(0.0, (strike - spot) / 100.0) * 0.1
+            leg = {"iv": round(iv, 4)}
+            rows.append({"strike": float(strike), "ce": leg if strike >= spot else None, "pe": leg if strike <= spot else None})
+        return {"symbol": "TEST", "expiry": expiry, "underlying": spot, "timestamp": "13-Nov-2026 15:30:00", "rows": rows}
 
-        skew = data["skewSummary"]
-        # Downside put skew should be positive in RR25 (IV Put 25D > IV Call 25D)
-        self.assertTrue(skew["riskReversal25D"] > 0)
-        self.assertEqual(len(data["termStructure"]), 4)
-        self.assertTrue(len(data["surface"]) > 5)
+    def test_volatility_surface_is_read_from_the_chains(self):
+        from datetime import date
+
+        today = date(2026, 11, 14)
+        chains = [self._chain("2026-11-17", 25000.0, 0.5), self._chain("2026-12-29", 25000.0, 0.5)]
+        data = volatility_surface.build("test", chains, today)
+        self.assertEqual((data["symbol"], data["spotPrice"]), ("TEST", 25000.0))
+        self.assertEqual([t["daysToExpiry"] for t in data["termStructure"]], [3, 45])
+        self.assertEqual(data["skewSummary"]["nearAtmIv"], 12.0)
+        atm = next(r for r in data["surface"] if r["isAtm"])
+        self.assertEqual(atm["strike"], 25000.0)
+        self.assertEqual(atm[data["termStructure"][0]["label"]], 12.0)
+        below = next(r for r in data["surface"] if r["strike"] == 24000.0)
+        self.assertEqual(below[data["termStructure"][0]["label"]], 17.0)  # 12 + 10 x 0.5, straight from the chain
+        self.assertGreater(data["skewSummary"]["riskReversal25D"], 0)  # puts dearer than calls in this chain
+        self.assertLessEqual(len(data["surface"]), volatility_surface.MAX_ROWS + 1)
+
+    def test_strike_missing_in_a_far_expiry_is_blank(self):
+        from datetime import date
+
+        near = self._chain("2026-11-17", 25000.0, 0.5)
+        far = self._chain("2026-12-29", 25000.0, 0.5)
+        far["rows"] = [r for r in far["rows"] if r["strike"] != 24000.0]
+        data = volatility_surface.build("TEST", [near, far], date(2026, 11, 14))
+        row = next(r for r in data["surface"] if r["strike"] == 24000.0)
+        self.assertIsNone(row[data["termStructure"][1]["label"]])
+
+    def test_no_quoted_volatility_means_unavailable(self):
+        from datetime import date
+
+        empty = {"symbol": "X", "expiry": "2026-11-17", "underlying": 100.0, "rows": [{"strike": 100.0, "ce": {"iv": None}, "pe": None}]}
+        with self.assertRaises(volatility_surface.VolSurfaceUnavailable):
+            volatility_surface.build("X", [empty], date(2026, 11, 14))
+        with self.assertRaises(volatility_surface.VolSurfaceUnavailable):
+            volatility_surface.build("X", [], date(2026, 11, 14))
+
+    def test_interpolation_stays_between_quoted_strikes(self):
+        points = [(100.0, 20.0), (110.0, 30.0)]
+        self.assertEqual(volatility_surface.iv_at(points, 105.0), 25.0)
+        self.assertEqual(volatility_surface.iv_at(points, 100.0), 20.0)
+        self.assertIsNone(volatility_surface.iv_at(points, 95.0))
+        self.assertIsNone(volatility_surface.iv_at(points, 120.0))
 
 
 if __name__ == "__main__":

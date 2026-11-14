@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -188,17 +189,20 @@ def calculate_strategy_payoff(payload: dict[str, Any]):
 
 @router.get("/{symbol}/vol-surface")
 def get_vol_surface(symbol: str):
-    """Implied volatility surface across strikes and expiries, 25-Delta skew, and term structure."""
-    not_connected.refuse("vol-surface")
+    """Implied volatility by strike and expiry from NSE's option chains, with skew and term structure."""
+    sym = symbol.upper()
+    if not re.fullmatch(r"[A-Z0-9&_-]{1,20}", sym):
+        raise HTTPException(status_code=400, detail="Invalid symbol")
     try:
-        data = volatility_surface.get_volatility_surface(symbol=symbol)
+        data = volatility_surface.get_volatility_surface(symbol=sym)
+    except volatility_surface.VolSurfaceUnavailable as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=503, detail=f"Volatility surface unavailable: {exc}") from exc
     return envelope(
         data,
-        300,
-        source="NSE traded option chains & SVI smile interpolation",
+        0,
+        source="NSE option chains (implied volatility as published)",
         delayed_minutes=SETTINGS.quote_delay_minutes,
-        note="25-Delta Risk Reversal measures downside put skew; Butterfly measures smile curvature.",
+        note=data.get("method"),
     )
-

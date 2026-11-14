@@ -127,7 +127,7 @@ export function IpoLockinCalendar({
                   </td>
 
                   <td className="px-2 py-1.5 text-right text-foreground font-semibold cell-glow">
-                    {e.sharesUnlocking.toLocaleString("en-IN")}
+                    {e.sharesUnlocking === null ? "—" : e.sharesUnlocking.toLocaleString("en-IN")}
                   </td>
 
                   <td className="px-2 py-1.5 text-right text-foreground font-bold cell-glow">

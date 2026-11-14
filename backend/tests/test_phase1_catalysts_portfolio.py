@@ -81,19 +81,28 @@ class IndexRebalanceTests(unittest.TestCase):
 
 
 class IpoLockinTests(unittest.TestCase):
-    @patch("app.services.quote_sources.fetch")
-    def test_lockin_tranches_and_supply_ratio(self, mock_fetch):
-        mock_fetch.return_value = {"cmp": 450.0}
-        data = ipo_lockin.build_lockin_calendar(as_of=date(2025, 2, 1))
-        self.assertTrue(data["totalEventsTracked"] > 0)
-        e0 = data["events"][0]
-        self.assertIn("lockinCategory", e0)
-        self.assertIn("sharesUnlocking", e0)
-        self.assertIn("supplyImpactRatio", e0)
-        self.assertIn("riskLevel", e0)
+    def test_lockin_dates_follow_from_listing_dates(self):
+        pipeline = {"issues": [
+            {"symbol": "NEWCO", "name": "New Co Ltd", "segment": "mainboard", "listingDate": "2026-10-15", "cmp": 120.0},
+            {"symbol": "OLDCO", "name": "Old Co Ltd", "segment": "sme", "listingDate": "2025-01-10"},
+            {"symbol": "SOON", "name": "Not Yet Listed", "segment": "sme", "listingDate": "2026-12-01"},
+            {"symbol": "NODATE", "name": "No Date", "segment": "sme", "listingDate": None},
+        ]}
+        data = ipo_lockin.build(pipeline, as_of=date(2026, 11, 15))
+        by_tranche = {e["lockinCategory"]: e for e in data["events"] if e["symbol"] == "NEWCO"}
+        self.assertEqual(by_tranche["Anchor investors: first half"]["unlockDate"], "2026-11-14")
+        self.assertEqual(by_tranche["Anchor investors: first half"]["status"], "EXPIRED")
+        self.assertEqual(by_tranche["Anchor investors: remainder"]["unlockDate"], "2027-01-13")
+        self.assertEqual(by_tranche["Anchor investors: remainder"]["daysRemaining"], 59)
+        self.assertEqual(by_tranche["Pre-IPO shareholders (non-promoter)"]["unlockDate"], "2027-04-13")
+        self.assertEqual({e["symbol"] for e in data["events"]}, {"NEWCO"})  # old, unlisted and undated issues drop out
+        for e in data["events"]:
+            self.assertIsNone(e["sharesUnlocking"])
+            self.assertIsNone(e["supplyImpactRatio"])
+        self.assertEqual(data["upcomingCount"], 2)
+        self.assertIn("allotment", data["rules"]["basis"])
+        self.assertFalse(hasattr(ipo_lockin, "KNOWN_LOCKIN_SCHEDULES"))
 
-
-class BuybackArbitrageTests(unittest.TestCase):
     @patch("app.services.quote_sources.fetch")
     def test_retail_arbitrage_scenarios(self, mock_fetch):
         mock_fetch.return_value = {"cmp": 4000.0}

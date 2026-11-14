@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from ..cache import CACHE
 from ..config import SETTINGS
 from ..schemas import envelope
+from ..services import ipo as ipo_service
 from .. import not_connected
 from ..services import buyback_arbitrage, index_rebalance, ipo_lockin
 
@@ -28,15 +29,18 @@ def get_index_rebalance():
 
 @router.get("/ipo-lockins")
 def get_ipo_lockins():
-    """Anchor and Pre-IPO lock-in expiry schedule with supply impact volume ratios."""
-    not_connected.refuse("ipo-lockins")
-    key = "catalysts:ipo_lockins"
-    data, age = CACHE.get_or_fetch(
-        key,
-        SETTINGS.fundamentals_ttl,
-        ipo_lockin.build_lockin_calendar,
+    """Lock-in expiry dates for recent listings, derived from SEBI's fixed periods and listing dates."""
+    try:
+        pipeline, age = CACHE.get_or_fetch("ipo:pipeline", SETTINGS.ipo_ttl, ipo_service.build_pipeline)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"IPO pipeline unavailable: {exc}") from exc
+    return envelope(
+        ipo_lockin.build(pipeline),
+        age,
+        source="NSE IPO listings; SEBI ICDR lock-in periods",
+        delayed_minutes=0,
+        note="Dates are counted from the listing date and may be a few days after the true expiry, which runs from allotment. Share counts are not shown.",
     )
-    return envelope(data, age, source="SEBI ICDR Regulations", delayed_minutes=0)
 
 
 @router.get("/buybacks")

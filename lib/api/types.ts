@@ -1590,12 +1590,14 @@ export interface ApiIpoLockinEvent {
   unlockDate: string;
   daysRemaining: number;
   status: "EXPIRED" | "IMMINENT" | "UPCOMING_SOON" | "FUTURE";
-  sharesUnlocking: number;
+  segment?: string | null;
+  /** Null: share counts come from each prospectus and are not connected. */
+  sharesUnlocking: number | null;
   unlockValueCr: number | null;
   cmp: number | null;
-  avgDailyVolume: number;
+  avgDailyVolume: number | null;
   supplyImpactRatio: number | null;
-  riskLevel: string;
+  riskLevel: string | null;
 }
 
 export interface ApiIpoLockinResponse {
@@ -1851,7 +1853,8 @@ export interface ApiVolSurfaceRow {
   strike: number;
   moneynessPct: number;
   isAtm: boolean;
-  [expiryLabel: string]: number | boolean;
+  /** One column per expiry label; null where the chain quotes no volatility at that strike. */
+  [expiryLabel: string]: number | boolean | null;
 }
 
 export interface ApiVolSurfaceResponse {
@@ -1860,8 +1863,8 @@ export interface ApiVolSurfaceResponse {
   asOf: string;
   skewSummary: {
     nearAtmIv: number;
-    riskReversal25D: number;
-    butterfly25D: number;
+    riskReversal25D: number | null;
+    butterfly25D: number | null;
     termStructureRegime: string;
     isContango: boolean;
     skewInterpretation: string;
@@ -1930,81 +1933,54 @@ export interface ApiMacroDashboardResponse {
 
 export interface ApiForexPair {
   pair: string;
+  /** Rupees per unit (per 100 for the yen). */
   rate: number;
-  change: number;
-  changePct: number;
-  high: number;
-  low: number;
+  change: number | null;
+  changePct: number | null;
+  high: number | null;
+  low: number | null;
   trend: "up" | "down" | "neutral";
-  fbilRef: number;
+  change1mPct: number | null;
+  change1yPct: number | null;
+  asOf: string;
 }
 
-export interface ApiForwardPremium {
-  tenor: string;
-  points: number;
-  annualizedPct: number;
-}
-
+/** Spot cross rates from market quotes. `unavailable` lists what has no feed (FBIL, forwards, REER). */
 export interface ApiForexMonitorResponse {
   asOf: string;
   baseCurrency: string;
   pairs: ApiForexPair[];
-  forwardPremia: ApiForwardPremium[];
-  reerIndices: {
-    reer40Basket: number;
-    neer40Basket: number;
-    valuation: string;
-    source: string;
-  };
+  missingPairs: string[];
+  unavailable: Record<string, string>;
 }
 
-export interface ApiFundHolding {
-  symbol: string;
-  name: string;
-  weight: number;
-}
-
+/** One scheme from AMFI's NAV file. Returns are null for IDCW options and where no past NAV exists. */
 export interface ApiFundScheme {
   schemeCode: string;
   schemeName: string;
   amc: string;
+  structure: string;
   category: string;
   subCategory: string;
+  plan: "Direct" | "Regular";
+  option: "Growth" | "IDCW";
   nav: number;
-  change1dPct: number;
-  returns1y: number;
-  returns3y: number;
-  returns5y: number;
-  aumCr: number;
-  expenseRatio: number;
-  sharpeRatio: number;
-  sortinoRatio: number;
-  turnoverRatio: number;
-  topHoldings: ApiFundHolding[];
+  navDate: string;
+  return1yPct: number | null;
+  cagr3yPct: number | null;
+  cagr5yPct: number | null;
 }
 
 export interface ApiFundScreenerResponse {
   asOf: string;
   totalSchemes: number;
-  categories: string[];
+  matched: number;
+  schemes: ApiFundScheme[];
+  /** Category to its scheme types, as AMFI groups them. */
+  categories: Record<string, string[]>;
   amcs: string[];
-  funds: ApiFundScheme[];
-}
-
-export interface ApiCommonHolding {
-  symbol: string;
-  name: string;
-  weightInA: number;
-  weightInB: number;
-  overlapPct: number;
-}
-
-export interface ApiFundOverlapResponse {
-  fundA: { code: string; name: string; category: string };
-  fundB: { code: string; name: string; category: string };
-  totalOverlapPct: number;
-  commonHoldingsCount: number;
-  holdings: ApiCommonHolding[];
+  returnsMissingFor: string[];
+  unavailable: Record<string, string>;
 }
 
 export interface ApiRegulatoryCharges {
