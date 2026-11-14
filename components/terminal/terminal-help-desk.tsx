@@ -491,7 +491,7 @@ export function TerminalHelpDesk() {
               <div className="space-y-1 font-mono text-3xs">
                 <div className="flex items-center gap-2 p-1 bg-muted/20 border border-border/40">
                   <span className="text-amber-400 font-bold">1. ECO &lt;GO&gt;</span>
-                  <span className="text-muted-foreground">→ Review headline CPI (5.49%), GDP (6.7%) &amp; GST collections</span>
+                  <span className="text-muted-foreground">→ Review headline CPI, GDP &amp; GST collections</span>
                 </div>
                 <div className="flex items-center gap-2 p-1 bg-muted/20 border border-border/40">
                   <span className="text-amber-400 font-bold">2. GC &lt;GO&gt;</span>

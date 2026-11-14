@@ -273,6 +273,36 @@ class TestValuationLabEndpoints(unittest.TestCase):
             return
         cls.client = TestClient(app)
 
+    def setUp(self):
+        # the routes read live company figures; the tests supply fixed ones
+        def fixed(symbol):
+            return {
+                "symbol": symbol.upper(), "name": "Test Company", "current_price": 500.0,
+                "shares_outstanding_cr": 10.0, "cash_and_equivalents_cr": 100.0, "total_debt_cr": 50.0,
+                "base_fcff_cr": 300.0, "beta": 1.0, "debt_to_equity": 0.1, "stage1_growth_rate": 0.12,
+                "terminal_growth_rate": 0.05, "pretax_cost_of_debt": 0.085,
+            }
+
+        from unittest.mock import patch
+        from app.cache import CACHE
+        from app.services import valuation_lab as _svc
+
+        for key in list(CACHE.stats()):
+            if key.startswith("valuation:"):
+                CACHE.expire(key)
+        patcher = patch.object(_svc, "get_company_dcf_defaults", side_effect=fixed)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_dcf_is_refused_when_inputs_do_not_support_it(self):
+        from unittest.mock import patch
+        from app.services import valuation_lab as _svc
+
+        with patch.object(_svc, "get_company_dcf_defaults", side_effect=_svc.DcfInputsUnavailable("lender")):
+            res = self.client.get("/api/valuation/ZZBANK/dcf")
+        self.assertEqual(res.status_code, 422)
+        self.assertIn("lender", res.json()["detail"])
+
     def test_get_dcf_endpoint(self):
         res = self.client.get("/api/valuation/RELIANCE/dcf")
         self.assertEqual(res.status_code, 200)
@@ -282,7 +312,6 @@ class TestValuationLabEndpoints(unittest.TestCase):
         self.assertIn("dcf", data)
         self.assertEqual(data["dcf"]["symbol"], "RELIANCE")
         self.assertGreater(data["dcf"]["fair_value_per_share"], 0)
-        self.assertEqual(body["meta"]["delayedMinutes"], 0)
 
     def test_post_dcf_calculate_endpoint(self):
         payload = {

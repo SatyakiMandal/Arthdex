@@ -730,156 +730,56 @@ SUPPLY_CHAIN_NETWORKS: Dict[str, Dict[str, Any]] = {
 }
 
 
+class NetworkNotOnFile(Exception):
+    """Neither a group structure nor a supply chain has been compiled for the symbol."""
+
+
+def has_network(symbol: str) -> bool:
+    sym = (symbol or "").upper().strip()
+    return sym in CONGLOMERATE_HIERARCHIES or sym in SUPPLY_CHAIN_NETWORKS
+
+
+def _require(symbol: str) -> str:
+    sym = (symbol or "").upper().strip()
+    if not has_network(sym):
+        raise NetworkNotOnFile(
+            f"No group structure or supply chain has been compiled for {sym or 'this symbol'}. "
+            "These are entered by hand from annual reports and cover only a few companies so far."
+        )
+    return sym
+
+
 def get_corporate_hierarchy(symbol: str) -> Dict[str, Any]:
     """
-    Returns the conglomerate corporate structure tree for a given symbol (HOLD).
-    Falls back to a standard corporate structure for symbols not pre-indexed.
+    Group structure for a symbol (HOLD). Only companies compiled from annual reports are
+    served. A company with a supply chain on file but no group structure gets an empty
+    list; nothing is generated for a company that is not on file.
     """
-    sym = (symbol or "M&M").upper().strip()
+    sym = _require(symbol)
     if sym in CONGLOMERATE_HIERARCHIES:
         return CONGLOMERATE_HIERARCHIES[sym]
-
-    # Deterministic fallback for any other Indian equity
     return {
-        "group_name": f"{sym} Group",
+        "group_name": "Not on file",
         "parent_symbol": sym,
-        "parent_name": f"{sym} Corporation Ltd",
-        "total_group_turnover_cr": 24500.0,
-        "holding_entities": [
-            {
-                "symbol": None,
-                "name": f"{sym} International Operations Holding Ltd",
-                "listing_status": "INTERNATIONAL_SUBSIDIARY",
-                "ownership_pct": 100.0,
-                "relation_type": "SUBSIDIARY_UNLISTED",
-                "revenue_contrib_cr": 4200.0,
-                "ebitda_contrib_pct": 18.5,
-                "business_segment": "Global Export Operations, Offshore Trading & IP Holding",
-                "provenance": "MODELLED / ESTIMATED",
-            },
-            {
-                "symbol": None,
-                "name": f"{sym} Digital Solutions & Logistics Ltd",
-                "listing_status": "UNLISTED_SUBSIDIARY",
-                "ownership_pct": 74.0,
-                "relation_type": "SUBSIDIARY_UNLISTED",
-                "revenue_contrib_cr": 1850.0,
-                "ebitda_contrib_pct": 8.2,
-                "business_segment": "Enterprise In-house IT, Shared Services & Supply Chain",
-                "provenance": "MODELLED / ESTIMATED",
-            },
-            {
-                "symbol": None,
-                "name": f"{sym} Green Energy & Infrastructure SPV",
-                "listing_status": "SPECIAL_PURPOSE_VEHICLE",
-                "ownership_pct": 51.0,
-                "relation_type": "JOINT_VENTURE",
-                "revenue_contrib_cr": 680.0,
-                "ebitda_contrib_pct": 4.1,
-                "business_segment": "Captive Solar Power, Waste Heat Recovery & Decarbonization",
-                "provenance": "MODELLED / ESTIMATED",
-            },
-        ],
+        "parent_name": SUPPLY_CHAIN_NETWORKS[sym].get("name", sym),
+        "total_group_turnover_cr": None,
+        "holding_entities": [],
     }
 
 
 def get_supply_chain_network(symbol: str) -> Dict[str, Any]:
-    """
-    Returns the multi-tier supply chain and customer network for a given symbol (SPLC).
-    Falls back to an authentic sector-derived supply chain if not in pre-indexed dictionary.
-    """
-    sym = (symbol or "M&M").upper().strip()
+    """Supply chain and customer network for a symbol (SPLC); same rule as the hierarchy."""
+    sym = _require(symbol)
     if sym in SUPPLY_CHAIN_NETWORKS:
         return SUPPLY_CHAIN_NETWORKS[sym]
-
-    # Universal deterministic fallback for Indian equities
     return {
         "symbol": sym,
-        "name": f"{sym} Ltd",
-        "primary_sector": "Manufacturing & Industrial Services",
-        "annual_cogs_cr": 14200.0,
-        "suppliers": [
-            {
-                "symbol": "TATASTEEL",
-                "name": "Tata Steel Ltd / JSW Steel",
-                "tier": "TIER_1",
-                "cluster": "Raw Materials",
-                "component": "Structural Steel Sections, Cold-Rolled Sheets & Galvanized Wire",
-                "dependency_pct": 4.5,
-                "cogs_share_pct": 8.2,
-                "is_sole_source": False,
-                "contract_type": "Framework Agreement",
-                "origin": "DOMESTIC_INDIA",
-                "location": "Jamshedpur / Vijayanagar",
-                "provenance": "MODELLED / ESTIMATED",
-            },
-            {
-                "symbol": "ABB",
-                "name": "ABB India Ltd / Siemens",
-                "tier": "TIER_1",
-                "cluster": "Electricals & Automation",
-                "component": "Switchgear, Industrial Inverters, Programmable Logic Controllers (PLCs)",
-                "dependency_pct": 6.8,
-                "cogs_share_pct": 4.2,
-                "is_sole_source": False,
-                "contract_type": "OEM Platform Contract",
-                "origin": "DOMESTIC_INDIA",
-                "location": "Bengaluru / Nashik",
-                "provenance": "MODELLED / ESTIMATED",
-            },
-            {
-                "symbol": "INFY",
-                "name": "Infosys Ltd / TCS",
-                "tier": "TIER_1",
-                "cluster": "Technology & IT Systems",
-                "component": "Enterprise ERP Hosting, Cloud Integration, Cybersecurity Systems",
-                "dependency_pct": 1.2,
-                "cogs_share_pct": 2.1,
-                "is_sole_source": True,
-                "contract_type": "Managed Services Agreement",
-                "origin": "DOMESTIC_INDIA",
-                "location": "Bengaluru / Pune",
-                "provenance": "MODELLED / ESTIMATED",
-            },
-        ],
-        "customers": [
-            {
-                "name": "Institutional Industrial & Commercial Clients",
-                "category": "Enterprise B2B",
-                "channel_type": "DIRECT_CONTRACTS",
-                "volume_share_pct": 62.0,
-                "regions": "Pan-India Tier-1 Industrial Hubs",
-                "key_products": "Turnkey Industrial Products, Engineering Solutions & Spares",
-                "provenance": "MODELLED / ESTIMATED",
-            },
-            {
-                "name": "State Infrastructure & Public Sector Undertakings",
-                "category": "Government EPC",
-                "channel_type": "GOVERNMENT_TENDER",
-                "volume_share_pct": 24.5,
-                "regions": "Central & State Ministries",
-                "key_products": "Infrastructure Project Supplies, Engineering Packages",
-                "provenance": "MODELLED / ESTIMATED",
-            },
-            {
-                "name": "Overseas Distribution & OEM Channel Partners",
-                "category": "Global Export",
-                "channel_type": "EXPORT_DISTRIBUTORS",
-                "volume_share_pct": 13.5,
-                "regions": "Middle East, Southeast Asia, Africa",
-                "key_products": "Fabricated Equipment, Engineered Assemblies",
-                "provenance": "MODELLED / ESTIMATED",
-            },
-        ],
-        "independent_contractors": [
-            {
-                "name": "Regional Logistics & Warehousing Partners",
-                "service_category": "Logistics & Inbound Transit",
-                "scope": "Raw material transportation, container drayage, port clearing",
-                "spend_cr": 280.0,
-                "is_related_party": False,
-            },
-        ],
+        "name": CONGLOMERATE_HIERARCHIES[sym].get("parent_name", sym),
+        "primary_sector": "Not on file",
+        "annual_cogs_cr": None,
+        "suppliers": [],
+        "customers": [],
+        "independent_contractors": [],
     }
 
 
@@ -920,18 +820,18 @@ def get_network_summary(symbol: str) -> Dict[str, Any]:
 
 
 def get_hierarchy_cached(symbol: str) -> dict[str, Any]:
-    sym = (symbol or "M&M").upper().strip()
-    cache_key = f"network:hierarchy:{sym}"
+    sym = _require(symbol)
+    cache_key = f"network:v2:hierarchy:{sym}"
     return CACHE.get_or_fetch(cache_key, 3600, lambda: get_corporate_hierarchy(sym))[0]
 
 
 def get_supply_chain_cached(symbol: str) -> dict[str, Any]:
-    sym = (symbol or "M&M").upper().strip()
-    cache_key = f"network:supply_chain:{sym}"
+    sym = _require(symbol)
+    cache_key = f"network:v2:supply_chain:{sym}"
     return CACHE.get_or_fetch(cache_key, 3600, lambda: get_supply_chain_network(sym))[0]
 
 
 def get_summary_cached(symbol: str) -> dict[str, Any]:
-    sym = (symbol or "M&M").upper().strip()
-    cache_key = f"network:summary:{sym}"
+    sym = _require(symbol)
+    cache_key = f"network:v2:summary:{sym}"
     return CACHE.get_or_fetch(cache_key, 3600, lambda: get_network_summary(sym))[0]

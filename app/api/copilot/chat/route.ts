@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupplyChainNetwork, getCorporateHierarchy, getValuation } from "@/lib/api/endpoints";
-import { generateDeterministicSynthesis, FinancialRole } from "@/lib/copilot/quant-synthesis";
+
+import { getInstitutionalTearSheet } from "@/lib/api/endpoints";
+import { isCrossSiteRequest, isValidSymbol, rateLimit } from "@/lib/api/request-guards";
+import { buildBrief, groundingFor } from "@/lib/copilot/brief";
+import type { FinancialRole } from "@/lib/copilot/quant-synthesis";
 
 export const runtime = "nodejs";
 
@@ -12,147 +15,114 @@ interface CopilotRequestBody {
   role?: FinancialRole;
 }
 
+const MAX_PROMPT_CHARS = 4000;
+const ROLE_LABELS: Record<FinancialRole, string> = {
+  equity_analyst: "Equity Analyst",
+  derivatives_trader: "Derivatives Trader",
+  risk_officer: "Risk Officer",
+  macro_splc: "Macro and Supply Chain Analyst",
+};
+
+const SYSTEM_PROMPT = `You are the Arthdex research assistant for Indian listed companies.
+Rules:
+1. Arthdex is not a SEBI-registered investment adviser or research analyst. Never give buy, sell or hold advice or your own price targets.
+2. Use only the figures in COMPANY DATA below. Do not state any number that is not in it. If the question needs data that is not there, say that it is not available and name what would be needed.
+3. Label each figure by kind: [EXCHANGE DATA] for prices and market cap, [ACTUAL FILING] for financial statements and shareholding, [CONSENSUS ESTIMATE] for analyst figures, [CALCULATED] for anything you derive, showing the arithmetic.
+4. Use Indian notation (₹, lakh, crore). Prices are delayed.
+5. Begin with one line: "Information only, not investment advice."`;
+
+function unavailable(symbol: string, status: number) {
+  const reason =
+    status === 404
+      ? `${symbol} is not covered by the data sources, so there are no figures to report.`
+      : "The data service did not respond, so there are no figures to report. Try again shortly.";
+  return NextResponse.json({
+    mode: "UNAVAILABLE",
+    title: `${symbol}: no data`,
+    response: reason,
+    provenance: "NO DATA",
+    sourceCitations: [],
+    isLiveAI: false,
+  });
+}
+
 export async function POST(req: NextRequest) {
+  // The route can spend the platform's model quota, so it answers this site only and at a bounded rate.
+  if (isCrossSiteRequest(req)) {
+    return NextResponse.json({ error: "Cross-origin request forbidden" }, { status: 403 });
+  }
+  const wait = rateLimit("copilot", req, 15, 60_000);
+  if (wait) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429, headers: { "Retry-After": String(wait) } });
+  }
+
+  let body: CopilotRequestBody;
   try {
-    const body: CopilotRequestBody = await req.json();
-    const { prompt, symbol, byokKey, mode = "DETERMINISTIC", role } = body;
+    body = ((await req.json()) ?? {}) as CopilotRequestBody;
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
+  const { prompt, byokKey, mode = "DETERMINISTIC" } = body;
 
-    if (!prompt || typeof prompt !== "string") {
-      return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
-    }
+  if (!prompt || typeof prompt !== "string" || !prompt.trim()) {
+    return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
+  }
+  if (prompt.length > MAX_PROMPT_CHARS) {
+    return NextResponse.json({ error: `Prompt is limited to ${MAX_PROMPT_CHARS} characters` }, { status: 413 });
+  }
+  const symbol = typeof body.symbol === "string" ? body.symbol.trim().toUpperCase() : "";
+  if (!isValidSymbol(symbol)) {
+    return NextResponse.json({ error: "Enter a ticker symbol to ask about a company" }, { status: 400 });
+  }
+  if (byokKey !== undefined && byokKey !== null && byokKey !== "" && !(typeof byokKey === "string" && /^[A-Za-z0-9_-]{20,200}$/.test(byokKey))) {
+    return NextResponse.json({ error: "API key is not in a recognised format" }, { status: 400 });
+  }
+  const role = body.role && body.role in ROLE_LABELS ? body.role : undefined;
 
-    const cleanSymbol = symbol ? symbol.trim().toUpperCase() : "RELIANCE";
-    const isPlatformEnabled = process.env.NEXT_PUBLIC_ENABLE_AI_COPILOT !== "false";
-    const apiKey = byokKey || (isPlatformEnabled ? process.env.GEMINI_API_KEY : null);
+  // Every answer, offline or from the model, is built on the company's own figures
+  const sheet = await getInstitutionalTearSheet(symbol);
+  if (!sheet.ok) return unavailable(symbol, sheet.status);
+  const brief = buildBrief(prompt, sheet.data);
+  const offline = (modeLabel: string, warning?: string) =>
+    NextResponse.json({ mode: modeLabel, response: brief.markdown, title: brief.title, provenance: brief.provenance, sourceCitations: brief.sourceCitations, warning, isLiveAI: false });
 
-    // If user explicitly chose DETERMINISTIC QUANT RULES or if no API key is available:
-    if (mode === "DETERMINISTIC" || !apiKey) {
-      const quantResult = generateDeterministicSynthesis(prompt, cleanSymbol, role);
-      return NextResponse.json({
-        mode: "DETERMINISTIC_OFFLINE",
-        response: quantResult.markdown,
-        title: quantResult.title,
-        provenance: quantResult.provenance,
-        sourceCitations: quantResult.sourceCitations,
-        isLiveAI: false,
-      });
-    }
+  const isPlatformEnabled = process.env.NEXT_PUBLIC_ENABLE_AI_COPILOT !== "false";
+  const apiKey = byokKey || (isPlatformEnabled ? process.env.GEMINI_API_KEY : null);
+  if (mode === "DETERMINISTIC" || !apiKey) return offline("DETERMINISTIC_OFFLINE");
 
-    // Assemble Grounded Context for the Security from platform endpoints if available
-    let contextSummary = "";
-    try {
-      const [splcRes, holdRes, valRes] = await Promise.all([
-        getSupplyChainNetwork(cleanSymbol),
-        getCorporateHierarchy(cleanSymbol),
-        getValuation(cleanSymbol),
-      ]);
-
-      if (splcRes.ok && holdRes.ok) {
-        const splc = splcRes.data;
-        const hold = holdRes.data;
-        contextSummary = `
-SECURITY CONTEXT:
-- Company: ${splc.name} (${cleanSymbol})
-- Conglomerate Group: ${hold.group_name}
-- Sector: ${splc.primary_sector}
-- Annual COGS: ₹${splc.annual_cogs_cr?.toLocaleString("en-IN") || "—"} Cr
-- Major Suppliers: ${splc.suppliers?.map((s) => `${s.name} (${s.component}, Sole-Source: ${s.is_sole_source})`).join("; ")}
-- Major Customers: ${splc.customers?.map((c) => `${c.name} (${c.volume_share_pct}%)`).join("; ")}
-- Subsidiaries & JVs: ${hold.holding_entities?.map((h) => `${h.name} (${h.ownership_pct}% stake, ₹${h.revenue_contrib_cr} Cr)`).join("; ")}
-- Provenance: Grounded from Audited Ind AS 24 Note 34 Related Party Filings and Annual Reports.
-`;
-      }
-    } catch {
-      // Continue with standard context
-    }
-
-    // LIVE GEMINI MODEL INFERENCE
-    const systemPrompt = `You are the Arthdex Terminal Copilot (Module M24), an institutional financial research cockpit assistant for the Indian financial markets.
-MANDATORY COMPLIANCE & PROVENANCE RULES:
-1. SEBI REGULATORY COMPLIANCE: Under SEBI (Investment Advisers) Regulations, 2013, Arthdex is NOT an Investment Adviser or Research Analyst. Never give buy/sell recommendations or speculative price targets.
-2. PROVENANCE ATTRIBUTION: Every metric and number MUST be explicitly tagged with its classification:
-   - [ACTUAL FILING] for audited statements, balance sheet items, Note 34 disclosures, or official exchange bhavcopy prices.
-   - [MODELLED / ALGORITHMIC] for ratios, DuPont decomposition, DCF valuations, Greeks, VaR, and stress tests.
-   - [CONSENSUS ESTIMATE] for forward broker estimates or analyst projections.
-3. CITE EXACT SOURCES (e.g., Note 34 Related Party Disclosures, NSE Bhavcopy, Audited Annual Report FY25).
-4. Format tabular figures cleanly with Indian notation (₹ Lakh / Crore).
-5. Always begin with a concise SEBI Non-Advisory disclaimer block:
-> **SEBI REGULATORY DISCLAIMER:** Under SEBI (Investment Advisers) Regulations, 2013, Arthdex Terminal Copilot is an educational research synthesis engine and NOT a registered investment adviser or research analyst. No buy, sell, or hold advice is provided.`;
-
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
-
-    const geminiPayload = {
-      contents: [
-        {
-          role: "user",
-          parts: [
-            {
-              text: `${systemPrompt}\n\nACTIVE ROLE: ${role || "Equity Analyst"}\n${contextSummary}\n\nUSER QUESTION: ${prompt}`,
-            },
-          ],
-        },
-      ],
-      generationConfig: {
-        temperature: 0.2,
-        maxOutputTokens: 1400,
-      },
-    };
-
-    const res = await fetch(geminiUrl, {
+  try {
+    // The key travels in a header, never in the URL, so it cannot land in access or proxy logs.
+    const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(geminiPayload),
+      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+      body: JSON.stringify({
+        // Instructions and data go in systemInstruction; the user's text stays in its own turn
+        // so it cannot pose as an instruction.
+        systemInstruction: {
+          parts: [{ text: `${SYSTEM_PROMPT}\n\nPERSPECTIVE: ${role ? ROLE_LABELS[role] : "Equity Analyst"}\n\nCOMPANY DATA (JSON):\n${groundingFor(sheet.data)}` }],
+        },
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.2, maxOutputTokens: 1400 },
+      }),
+      signal: AbortSignal.timeout(30_000),
     });
-
-    if (!res.ok) {
-      // Graceful fallback to deterministic synthesis on API error or quota exhaustion
-      const quantResult = generateDeterministicSynthesis(prompt, cleanSymbol, role);
-      return NextResponse.json({
-        mode: "DETERMINISTIC_FALLBACK",
-        response: quantResult.markdown,
-        title: quantResult.title,
-        warning: "External Gemini API quota unavailable. Switched to Deterministic Quant Engine.",
-        provenance: quantResult.provenance,
-        sourceCitations: quantResult.sourceCitations,
-        isLiveAI: false,
-      });
-    }
+    if (!res.ok) return offline("DETERMINISTIC_FALLBACK", "The AI model is unavailable right now, so this is the offline summary of the figures on file.");
 
     const data = await res.json();
-    const candidateText =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text || "Unable to synthesize response.";
-
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (typeof text !== "string" || !text.trim()) {
+      return offline("DETERMINISTIC_FALLBACK", "The AI model returned no answer, so this is the offline summary of the figures on file.");
+    }
     return NextResponse.json({
       mode: "LIVE_GEMINI_AI",
-      response: candidateText,
-      provenance: "GROUNDED EXCHANGE DATA & GEMINI 3.8 FLASH",
-      sourceCitations: [
-        "Audited Ind AS 24 Annual Filings",
-        "NSE Official Bhavcopy & Corporate Disclosures",
-        "Gemini 3.8 Flash Institutional Reasoning Engine",
-      ],
+      response: text,
+      title: `${symbol}: AI analysis`,
+      provenance: "AI-WRITTEN FROM ARTHDEX FIGURES; CHECK NUMBERS AGAINST THE COMPANY PAGE",
+      sourceCitations: [...brief.sourceCitations, "Gemini (text generation only)"],
       isLiveAI: true,
     });
-  } catch (err: any) {
-    // Even if an uncaught server exception occurs, fallback to deterministic quant rules
-    try {
-      const quantResult = generateDeterministicSynthesis(
-        "Institutional financial summary",
-        "RELIANCE"
-      );
-      return NextResponse.json({
-        mode: "DETERMINISTIC_FALLBACK",
-        response: quantResult.markdown,
-        title: quantResult.title,
-        provenance: quantResult.provenance,
-        sourceCitations: quantResult.sourceCitations,
-        isLiveAI: false,
-      });
-    } catch {
-      return NextResponse.json(
-        { error: err.message || "Internal Copilot Error" },
-        { status: 500 }
-      );
-    }
+  } catch (err) {
+    console.error("copilot:", err instanceof Error ? err.message : err);
+    return offline("DETERMINISTIC_FALLBACK", "The AI model could not be reached, so this is the offline summary of the figures on file.");
   }
 }

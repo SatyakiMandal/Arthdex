@@ -27,6 +27,9 @@ TAG_ACTUAL = "[ACTUAL FILING]"
 TAG_MODELLED = "[MODELLED / ALGORITHMIC]"
 TAG_CONSENSUS = "[CONSENSUS ESTIMATE]"
 
+from . import valuation_inputs  # noqa: E402
+from .valuation_inputs import DcfInputsUnavailable  # noqa: E402,F401
+
 
 def unlever_beta(levered_beta: float, debt_to_equity: float, tax_rate: float = DEFAULT_CORPORATE_TAX_RATE) -> float:
     """
@@ -607,137 +610,10 @@ def compute_sensitivity_matrix(
     }
 
 
-# --- Curated Indian Benchmark Defaults for Marquee Symbols ---
-MARQUEE_INDIAN_COMPANIES: dict[str, dict[str, Any]] = {
-    "RELIANCE": {
-        "name": "Reliance Industries Limited",
-        "current_price": 2985.50,
-        "shares_outstanding_cr": 676.5,
-        "cash_and_equivalents_cr": 182400.0,
-        "total_debt_cr": 324500.0,
-        "base_fcff_cr": 72500.0,
-        "beta": 1.05,
-        "debt_to_equity": 0.35,
-        "stage1_growth_rate": 0.135,
-        "terminal_growth_rate": 0.050,
-        "pretax_cost_of_debt": 0.082,
-    },
-    "TCS": {
-        "name": "Tata Consultancy Services Limited",
-        "current_price": 4120.00,
-        "shares_outstanding_cr": 361.8,
-        "cash_and_equivalents_cr": 15800.0,
-        "total_debt_cr": 0.0,
-        "base_fcff_cr": 44800.0,
-        "beta": 0.82,
-        "debt_to_equity": 0.0,
-        "stage1_growth_rate": 0.095,
-        "terminal_growth_rate": 0.050,
-        "pretax_cost_of_debt": 0.075,
-    },
-    "INFY": {
-        "name": "Infosys Limited",
-        "current_price": 1865.00,
-        "shares_outstanding_cr": 415.2,
-        "cash_and_equivalents_cr": 14200.0,
-        "total_debt_cr": 0.0,
-        "base_fcff_cr": 23400.0,
-        "beta": 0.95,
-        "debt_to_equity": 0.0,
-        "stage1_growth_rate": 0.105,
-        "terminal_growth_rate": 0.050,
-        "pretax_cost_of_debt": 0.075,
-    },
-    "HDFCBANK": {
-        "name": "HDFC Bank Limited",
-        "current_price": 1680.00,
-        "shares_outstanding_cr": 761.5,
-        "cash_and_equivalents_cr": 230000.0,
-        "total_debt_cr": 0.0,  # Financial institution handled on equity DCF
-        "base_fcff_cr": 64000.0,
-        "beta": 0.98,
-        "debt_to_equity": 0.15,
-        "stage1_growth_rate": 0.140,
-        "terminal_growth_rate": 0.055,
-        "pretax_cost_of_debt": 0.078,
-    },
-    "TATAMOTORS": {
-        "name": "Tata Motors Limited",
-        "current_price": 965.00,
-        "shares_outstanding_cr": 367.2,
-        "cash_and_equivalents_cr": 38500.0,
-        "total_debt_cr": 54200.0,
-        "base_fcff_cr": 26800.0,
-        "beta": 1.25,
-        "debt_to_equity": 0.40,
-        "stage1_growth_rate": 0.145,
-        "terminal_growth_rate": 0.050,
-        "pretax_cost_of_debt": 0.088,
-    },
-    "BHARTIARTL": {
-        "name": "Bharti Airtel Limited",
-        "current_price": 1580.00,
-        "shares_outstanding_cr": 571.4,
-        "cash_and_equivalents_cr": 16200.0,
-        "total_debt_cr": 142000.0,
-        "base_fcff_cr": 38500.0,
-        "beta": 0.78,
-        "debt_to_equity": 0.85,
-        "stage1_growth_rate": 0.150,
-        "terminal_growth_rate": 0.050,
-        "pretax_cost_of_debt": 0.084,
-    },
-    "ITC": {
-        "name": "ITC Limited",
-        "current_price": 490.00,
-        "shares_outstanding_cr": 1248.0,
-        "cash_and_equivalents_cr": 12800.0,
-        "total_debt_cr": 0.0,
-        "base_fcff_cr": 19200.0,
-        "beta": 0.65,
-        "debt_to_equity": 0.0,
-        "stage1_growth_rate": 0.090,
-        "terminal_growth_rate": 0.050,
-        "pretax_cost_of_debt": 0.075,
-    },
-}
-
-
 def get_company_dcf_defaults(symbol: str) -> dict[str, Any]:
     """
-    Returns verified filings-based DCF baseline for known Indian symbols,
-    or generates an algorithmic, structurally sound profile for any symbol.
+    Starting DCF inputs for a company, read from its live quote, reported cash flow and
+    balance sheet (see valuation_inputs). Raises DcfInputsUnavailable when the company's
+    figures do not support the model; nothing is generated in their place.
     """
-    sym = symbol.upper()
-    if sym in MARQUEE_INDIAN_COMPANIES:
-        data = dict(MARQUEE_INDIAN_COMPANIES[sym])
-        data["symbol"] = sym
-        data["provenance"] = TAG_ACTUAL
-        return data
-
-    # Algorithmic fallback using hash of symbol for deterministic realism
-    sym_hash = sum(ord(c) for c in sym)
-    price = 250.0 + (sym_hash % 1500)
-    shares = 10.0 + (sym_hash % 80)
-    mcap = price * shares
-    debt_ratio = (sym_hash % 35) / 100.0
-    debt = mcap * debt_ratio
-    cash = mcap * 0.08
-    fcf = mcap * 0.055
-    beta = 0.80 + ((sym_hash % 50) / 100.0)
-
-    return {
-        "symbol": sym,
-        "name": f"{sym} India Limited",
-        "current_price": round(price, 2),
-        "shares_outstanding_cr": round(shares, 2),
-        "cash_and_equivalents_cr": round(cash, 2),
-        "total_debt_cr": round(debt, 2),
-        "base_fcff_cr": round(fcf, 2),
-        "beta": round(beta, 2),
-        "debt_to_equity": round(debt_ratio, 2),
-        "stage1_growth_rate": 0.12,
-        "terminal_growth_rate": DEFAULT_TERMINAL_GROWTH_RATE,
-        "pretax_cost_of_debt": DEFAULT_PRETAX_COST_OF_DEBT,
-        "provenance": TAG_MODELLED,
-    }
+    return valuation_inputs.build(symbol)

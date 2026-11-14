@@ -8,22 +8,23 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { symbol } = await params;
-  const sym = (symbol || "RELIANCE").toUpperCase();
+  const sym = decodeURIComponent(symbol).toUpperCase();
   return {
-    title: `${sym} Institutional Tear-Sheet & Factsheet (TEAR) · Arthdex`,
-    description: `Audited 2-page institutional research factsheet, 10Y CAGR ledger, shareholding pattern and consensus multiples for ${sym}.`,
+    title: `${sym} tear sheet · Arthdex`,
+    description: `Two-page factsheet for ${sym}: price, annual financials and growth, peers, shareholding and analyst estimates.`,
   };
 }
 
 export default async function TearPage({ params }: PageProps) {
   const { symbol } = await params;
-  const sym = (symbol || "RELIANCE").toUpperCase();
+  const sym = decodeURIComponent(symbol).toUpperCase();
   const res = await getInstitutionalTearSheet(sym);
   const initialData = res.ok && res.data ? res.data : null;
+  const error = res.ok ? null : res.status === 404 ? `${sym} is not covered by the data sources.` : "The data service did not respond. Try again shortly.";
 
   return (
     <div className="mx-auto w-full max-w-[1920px] p-2 sm:p-4 space-y-4">
-      <TearSheetView symbol={sym} initialData={initialData} />
+      <TearSheetView symbol={sym} initialData={initialData} error={error} />
     </div>
   );
 }

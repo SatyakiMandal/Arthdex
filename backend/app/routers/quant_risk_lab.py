@@ -1,145 +1,168 @@
-"""
-Quant Risk Lab, Crisis Stress-Testing & Backtesting Router (STRS, MARS, FCTR, BTST).
-"""
+"""Risk lab routes: crisis replay, index-move stress test, benchmark regressions and a backtest."""
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Union
+import re
+from datetime import date
+from typing import List, Optional
+
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
+from ..cache import CACHE
+from ..config import SETTINGS
+from ..providers import yahoo
 from ..schemas import envelope
-from ..services import quant_risk_lab
+from ..services import risk_lab, sensitivity
 
-router = APIRouter(prefix="/api/risk-lab", tags=["risk-lab"])
+_routes = APIRouter(tags=["risk-lab"])
+
+_SYMBOL_RE = re.compile(r"[A-Z0-9&_-]{1,20}")
+HISTORY_TTL = 6 * 3600
+HISTORY_YEARS = 20  # reaches the 2008 window
+MAX_HOLDINGS = 15
+PRICE_SOURCE = "Yahoo Finance daily closes"
 
 
-class PositionItem(BaseModel):
-    symbol: str = Field(..., description="NSE equity or index symbol (e.g. RELIANCE, HDFCBANK)")
-    weight: Optional[float] = Field(None, description="Portfolio weight between 0.0 and 1.0")
-    value_inr: Optional[float] = Field(None, description="Holding value in Indian Rupees")
+def _history(symbol: str) -> risk_lab.Series:
+    """Daily closes as (date, close), cached. An unknown symbol gives an empty series."""
+    sym = symbol.upper()
+    yahoo_symbol = "^NSEI" if sym == risk_lab.INDEX_SYMBOL else sym
+
+    def fetch():
+        frame = yahoo.fetch_daily_history(yahoo_symbol, HISTORY_YEARS, "NSE")
+        return [(ts.date(), float(close)) for ts, close in frame["Close"].items() if close == close and close > 0]
+
+    return CACHE.get_or_fetch(f"risklab:history:{sym}", HISTORY_TTL, fetch)[0]
+
+
+def _index() -> risk_lab.Series:
+    try:
+        series = _history(risk_lab.INDEX_SYMBOL)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Index history unavailable: {exc}") from exc
+    if not series:
+        raise HTTPException(status_code=503, detail="Index history unavailable")
+    return series
+
+
+def _histories(symbols: list[str]) -> dict[str, risk_lab.Series]:
+    out: dict[str, risk_lab.Series] = {}
+    for sym in symbols:
+        try:
+            out[sym] = _history(sym)
+        except Exception:
+            out[sym] = []  # reported per holding as unavailable
+    return out
+
+
+class Holding(BaseModel):
+    symbol: str = Field(..., min_length=1, max_length=20, pattern=r"^[A-Za-z0-9&_-]+$")
+    value_inr: float = Field(..., gt=0, le=1e13, allow_inf_nan=False)
 
 
 class StressTestRequest(BaseModel):
-    portfolio: Optional[Union[List[Dict[str, Any]], Dict[str, float]]] = Field(
-        default_factory=lambda: [
-            {"symbol": "RELIANCE", "weight": 0.35, "value_inr": 350000.0},
-            {"symbol": "HDFCBANK", "weight": 0.35, "value_inr": 350000.0},
-            {"symbol": "TCS", "weight": 0.30, "value_inr": 300000.0},
-        ],
-        description="Portfolio positions list or {symbol: weight} dictionary",
-    )
-    scenario_id: str = Field("covid_shock_2020", description="Crisis scenario key (e.g. gfc_2008, taper_tantrum_2013, covid_shock_2020, election_shock_2024, custom)")
-    custom_shocks: Optional[Dict[str, float]] = Field(
-        None,
-        description="Custom macro shocks: rates_bps, crude_pct, inr_pct",
-    )
+    portfolio: List[Holding] = Field(..., min_length=1, max_length=MAX_HOLDINGS)
+    scenario_id: Optional[str] = Field(None, max_length=40, description="One of the ids from /scenarios")
+    index_move_pct: Optional[float] = Field(None, ge=-90, le=90, allow_inf_nan=False, description="A chosen Nifty 50 move, used when scenario_id is not given")
 
 
 class BacktestRequest(BaseModel):
-    strategy: str = Field("sma_crossover", description="Strategy type (sma_crossover, momentum_breakout, etc.)")
-    symbol: str = Field("NIFTY50", description="NSE symbol to backtest")
-    parameters: Optional[Dict[str, Any]] = Field(
-        default_factory=lambda: {"fast_period": 20, "slow_period": 50},
-        description="Strategy hyperparameters",
-    )
-    start_date: str = Field("2020-01-01", description="Start date YYYY-MM-DD")
-    end_date: str = Field("2024-10-31", description="End date YYYY-MM-DD")
-    initial_capital: float = Field(1000000.0, description="Starting capital in INR (default Rs 10 Lakh)")
-    in_sample_pct: float = Field(0.70, description="Train / In-sample window fraction (0.5 to 0.9)")
-    slippage_bps: float = Field(5.0, description="Execution slippage in basis points")
-    brokerage_per_order_inr: float = Field(20.0, description="Flat brokerage per order in INR")
+    symbol: str = Field("NIFTY50", min_length=1, max_length=20, pattern=r"^[A-Za-z0-9&_-]+$")
+    fast_period: int = Field(20, ge=2, le=250)
+    slow_period: int = Field(50, ge=3, le=500)
+    years: int = Field(5, ge=2, le=HISTORY_YEARS)
+    initial_capital: float = Field(1_000_000.0, gt=0, le=1e12, allow_inf_nan=False)
+    in_sample_pct: float = Field(0.70, ge=0.5, le=0.9)
+    slippage_bps: float = Field(5.0, ge=0, le=1000, allow_inf_nan=False)
+    brokerage_per_order_inr: float = Field(20.0, ge=0, le=1e6, allow_inf_nan=False)
 
 
-@router.get("/crisis-scenarios")
-def get_crisis_scenarios():
-    """Returns official historical crisis and hypothetical stress scenarios (STRS)."""
-    try:
-        scenarios = quant_risk_lab.get_crisis_scenarios()
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Failed to load crisis scenarios: {exc}") from exc
-    return envelope(
-        scenarios,
-        3600,
-        source="NSE Index Services, RBI DBIE & Historical Crash Database",
-        delayed_minutes=0,
-        note="Historical crashes and hypothetical macro stress scenarios with factor drawdowns.",
-    )
+@_routes.get("/scenarios")
+@_routes.get("/crisis-scenarios")
+def get_scenarios():
+    """Crisis windows with the Nifty 50's change over each, computed from its price history."""
+    index = _index()
+    rows = []
+    for s in risk_lab.SCENARIOS:
+        change = risk_lab.window_change_pct(index, date.fromisoformat(s["start"]), date.fromisoformat(s["end"]))
+        rows.append({**s, "index_change_pct": round(change, 2) if change is not None else None})
+    return envelope(rows, 0, source=PRICE_SOURCE, delayed_minutes=SETTINGS.quote_delay_minutes,
+                    note="Each window is a pair of dates; the index change is computed from recorded closes.")
 
 
-@router.post("/stress-test")
+@_routes.post("/stress-test")
 def run_stress_test(req: StressTestRequest):
-    """
-    Stress-tests a portfolio against historical or hypothetical crisis scenarios.
-    Computes constituent drawdown, overall portfolio loss, and SEBI regulatory margin requirements.
-    """
+    """Replay a crisis window, or apply a chosen index move, to a portfolio."""
+    positions = [{"symbol": h.symbol.upper(), "value_inr": h.value_inr} for h in req.portfolio]
+    index = _index()
+    histories = _histories(sorted({p["symbol"] for p in positions}))
     try:
-        results = quant_risk_lab.run_portfolio_stress_test(
-            positions=req.portfolio or [],
-            scenario_id=req.scenario_id,
-            custom_shocks=req.custom_shocks,
-        )
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=f"Stress-test calculation failed: {exc}") from exc
-    return envelope(
-        results,
-        60,
-        source="Arthdex Quant Risk & Stress Transmission Lab",
-        delayed_minutes=0,
-        note="Factor drawdown and multi-asset transmission with SEBI capital adequacy haircuts.",
-    )
+        if req.scenario_id:
+            scenario = risk_lab.scenario_by_id(req.scenario_id)
+            if scenario is None:
+                raise HTTPException(status_code=404, detail=f"Unknown scenario: {req.scenario_id}")
+            result = risk_lab.replay(positions, scenario, histories, index)
+        elif req.index_move_pct is not None:
+            result = risk_lab.index_move(positions, req.index_move_pct, histories, index)
+        else:
+            raise HTTPException(status_code=400, detail="Give a scenario_id or an index_move_pct")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return envelope(result, 0, source=PRICE_SOURCE, delayed_minutes=SETTINGS.quote_delay_minutes,
+                    note="Computed from recorded daily closes. Holdings marked 'estimate' were not listed for the whole window.")
 
 
-@router.get("/factor-exposures")
-def get_factor_exposures(
-    symbol: str = Query("NIFTY50", description="NSE equity or index symbol"),
-    lookback_days: int = Query(252, ge=30, le=1260, description="Lookback trading days"),
-):
+@_routes.get("/factor-exposures")
+def get_factor_exposures(symbol: str = Query(..., min_length=1, max_length=20)):
     """
-    Runs multi-factor OLS regression (Fama-French 3-Factor + Momentum + Low Volatility)
-    for Indian equities, reporting factor betas, alpha, t-stats, and variance attribution.
+    Beta, alpha and R-squared from ordinary least squares on daily returns against each index
+    with a real history. Size, value and momentum factor returns for India are not published
+    by any free source, so a multi-factor model is not offered.
     """
+    sym = symbol.upper()
+    if not _SYMBOL_RE.fullmatch(sym):
+        raise HTTPException(status_code=400, detail="Invalid symbol")
+
+    def fetch():
+        frame = yahoo.fetch_daily_history(sym, 3, "NSE")
+        if frame.empty:
+            raise ValueError("no price history")
+        return sensitivity.compute_sensitivities(frame)
+
     try:
-        results = quant_risk_lab.run_multi_factor_regression(
-            symbol=symbol,
-            lookback_days=lookback_days,
-        )
+        data, age = CACHE.get_or_fetch(f"company:sensitivity:NSE:{sym}", SETTINGS.quant_ttl, fetch)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=f"No price history for {sym}") from exc
     except Exception as exc:
-        raise HTTPException(status_code=400, detail=f"Factor regression failed: {exc}") from exc
-    return envelope(
-        results,
-        300,
-        source="Indian 5-Factor Quantitative Model (FCTR)",
-        delayed_minutes=0,
-        note="Fama-French 3-Factor + Momentum + Low Volatility calibrated for the Indian universe.",
-    )
+        raise HTTPException(status_code=503, detail=f"Regression unavailable: {exc}") from exc
+    return envelope({"symbol": sym, **data}, age, source=PRICE_SOURCE, delayed_minutes=SETTINGS.quote_delay_minutes,
+                    note="Single-index regressions on three years of daily returns. No size, value or momentum factors: India has no free published factor series.")
 
 
-@router.post("/backtest")
+@_routes.post("/backtest")
 def run_backtest(req: BacktestRequest):
-    """
-    Executes walk-forward strategy backtest deducting exact Indian statutory charges
-    (STT 0.1%, NSE Txn 0.003%, SEBI Turnover 0.0001%, Stamp Duty 0.015%, GST 18%).
-    Reports in-sample vs out-of-sample metrics side-by-side per PRD M22.8 policy.
-    """
+    """Moving-average crossover on the symbol's recorded daily closes, after transaction charges."""
+    sym = req.symbol.upper()
     try:
-        results = quant_risk_lab.run_walk_forward_backtest(
-            strategy=req.strategy,
-            symbol=req.symbol,
-            parameters=req.parameters,
-            start_date=req.start_date,
-            end_date=req.end_date,
-            initial_capital=req.initial_capital,
-            in_sample_pct=req.in_sample_pct,
-            slippage_bps=req.slippage_bps,
-            brokerage_per_order_inr=req.brokerage_per_order_inr,
-        )
+        series = _history(sym)
     except Exception as exc:
-        raise HTTPException(status_code=400, detail=f"Backtest execution failed: {exc}") from exc
-    return envelope(
-        results,
-        60,
-        source="Arthdex Walk-Forward Quantitative Backtester (BTST)",
-        delayed_minutes=0,
-        note="Walk-forward backtest including Indian statutory taxes (STT, Stamp Duty, GST, Exchange fees).",
-    )
+        raise HTTPException(status_code=503, detail=f"Price history unavailable: {exc}") from exc
+    if not series:
+        raise HTTPException(status_code=404, detail=f"No price history for {sym}")
+    cutoff = date.today().replace(year=date.today().year - req.years)
+    series = [(d, c) for d, c in series if d >= cutoff]
+    try:
+        result = risk_lab.sma_backtest(sym, series, req.fast_period, req.slow_period, req.initial_capital,
+                                       req.in_sample_pct, req.slippage_bps, req.brokerage_per_order_inr)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return envelope(result, 0, source=PRICE_SOURCE, delayed_minutes=SETTINGS.quote_delay_minutes,
+                    note="A historical simulation, not a forecast or a recommendation.")
+
+
+# The site's client (lib/api/endpoints.ts) calls every desk under /api/v1; the unversioned
+# path is kept for anything already pointed at it.
+router = APIRouter()
+router.include_router(_routes, prefix="/api/risk-lab")
+router.include_router(_routes, prefix="/api/v1/risk-lab", include_in_schema=False)

@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 
 from ..schemas import envelope
+from .. import not_connected
 from ..services import macro_economics
 
 router = APIRouter(prefix="/api/v1/macro", tags=["macro"])
@@ -13,6 +14,7 @@ router = APIRouter(prefix="/api/v1/macro", tags=["macro"])
 @router.get("/dashboard")
 def get_macro_dashboard():
     """India macroeconomic dashboard: CPI, WPI, GDP, IIP, GST collections, and BoP telemetry."""
+    not_connected.refuse("macro-dashboard")
     try:
         data = macro_economics.get_macro_dashboard()
     except Exception as exc:
@@ -29,6 +31,7 @@ def get_macro_dashboard():
 @router.get("/forex")
 def get_forex_monitor():
     """Foreign exchange cross-rates against INR, forward premia, and RBI REER/NEER indices."""
+    not_connected.refuse("forex-monitor")
     try:
         data = macro_economics.get_forex_monitor()
     except Exception as exc:

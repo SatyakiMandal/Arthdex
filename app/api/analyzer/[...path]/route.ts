@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { analyzerBaseUrl } from "@/lib/api/analyzer";
 import { backendHeaders } from "@/lib/api/auth";
+import { isCrossSiteRequest, rateLimit } from "@/lib/api/request-guards";
 
 /**
  * Same-origin proxy to the analyzer endpoints of the data service.
@@ -33,6 +34,19 @@ const DELETE_ALLOWED = [
 type Ctx = { params: Promise<{ path: string[] }> };
 
 async function forward(request: Request, ctx: Ctx, method: "GET" | "POST" | "DELETE") {
+  if (method !== "GET") {
+    // The proxy adds the service token, so a page on another site must not be able to drive it.
+    if (isCrossSiteRequest(request)) {
+      return NextResponse.json({ detail: "Cross-origin request forbidden" }, { status: 403 });
+    }
+    const wait = rateLimit("analyzer-write", request, 20, 60_000);
+    if (wait) {
+      return NextResponse.json(
+        { detail: "Too many requests" },
+        { status: 429, headers: { "Retry-After": String(wait) } },
+      );
+    }
+  }
   const { path } = await ctx.params;
   if (!Array.isArray(path) || path.length === 0 || path.some((seg) => !seg || seg === "." || seg === "..")) {
     return NextResponse.json({ detail: "Invalid path" }, { status: 400 });
@@ -66,15 +80,8 @@ async function forward(request: Request, ctx: Ctx, method: "GET" | "POST" | "DEL
 
     return new NextResponse(upstream.body, { status: upstream.status, headers });
   } catch (error) {
-    return NextResponse.json(
-      {
-        detail:
-          error instanceof Error
-            ? `Cannot reach the data service: ${error.message}`
-            : "Cannot reach the data service",
-      },
-      { status: 503 },
-    );
+    console.error("analyzer proxy:", error);
+    return NextResponse.json({ detail: "Cannot reach the data service" }, { status: 503 });
   }
 }
 

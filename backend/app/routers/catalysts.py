@@ -7,6 +7,7 @@ from fastapi import APIRouter
 from ..cache import CACHE
 from ..config import SETTINGS
 from ..schemas import envelope
+from .. import not_connected
 from ..services import buyback_arbitrage, index_rebalance, ipo_lockin
 
 router = APIRouter(prefix="/api/v1/catalysts", tags=["catalysts"])
@@ -15,6 +16,7 @@ router = APIRouter(prefix="/api/v1/catalysts", tags=["catalysts"])
 @router.get("/index-rebalance")
 def get_index_rebalance():
     """Semi-annual Nifty 50, Bank Nifty, and Nifty Next 50 rebalance forecast with passive ETF flows."""
+    not_connected.refuse("index-rebalance")
     key = "catalysts:index_rebalance"
     data, age = CACHE.get_or_fetch(
         key,
@@ -27,6 +29,7 @@ def get_index_rebalance():
 @router.get("/ipo-lockins")
 def get_ipo_lockins():
     """Anchor and Pre-IPO lock-in expiry schedule with supply impact volume ratios."""
+    not_connected.refuse("ipo-lockins")
     key = "catalysts:ipo_lockins"
     data, age = CACHE.get_or_fetch(
         key,
@@ -39,6 +42,7 @@ def get_ipo_lockins():
 @router.get("/buybacks")
 def get_buybacks():
     """Active tender-offer corporate buybacks with retail quota (₹2 Lakh) acceptance arbitrage simulations."""
+    not_connected.refuse("buybacks")
     key = "catalysts:buybacks"
     data, age = CACHE.get_or_fetch(
         key,

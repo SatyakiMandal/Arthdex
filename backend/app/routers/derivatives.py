@@ -11,6 +11,7 @@ from ..cache import CACHE
 from ..config import SETTINGS
 from ..providers import nse, nse_options
 from ..schemas import envelope
+from .. import not_connected
 from ..services import earnings_moves, fno_ban, fno_participants, options, options_strategy, quote_sources, volatility_surface
 
 router = APIRouter(prefix="/api/v1/derivatives", tags=["derivatives"])
@@ -123,11 +124,11 @@ def get_earnings_moves():
     except Exception as exc:
         raise HTTPException(status_code=503, detail=f"Earnings implied moves unavailable: {exc}") from exc
     return envelope(
-        data,
-        300,
+        {"season": "Upcoming results", "count": len(data), "moves": data},
+        0,
         source="NSE event calendar and options chain ATM straddles",
         delayed_minutes=SETTINGS.quote_delay_minutes,
-        note="Implied move is (Price(ATM CE) + Price(ATM PE)) / Spot, indicating market-expected volatility.",
+        note="Implied move is the at-the-money call plus put price as a share of spot. No historical average is shown: past post-result moves are not yet computed.",
     )
 
 
@@ -140,10 +141,10 @@ def get_participant_oi():
         raise HTTPException(status_code=503, detail=f"Participant OI unavailable: {exc}") from exc
     return envelope(
         data,
-        1800,
+        0,
         source="NSE daily participant-wise open interest report (fao_participant_oi)",
         delayed_minutes=0,
-        note="Aggregates long vs short positions in Index Futures, Stock Futures, Index Options and Stock Options.",
+        note=f"End-of-day positions for {data.get('asOf') or 'the latest session'}, in contracts. Net figures are long minus short.",
     )
 
 
@@ -188,6 +189,7 @@ def calculate_strategy_payoff(payload: dict[str, Any]):
 @router.get("/{symbol}/vol-surface")
 def get_vol_surface(symbol: str):
     """Implied volatility surface across strikes and expiries, 25-Delta skew, and term structure."""
+    not_connected.refuse("vol-surface")
     try:
         data = volatility_surface.get_volatility_surface(symbol=symbol)
     except Exception as exc:

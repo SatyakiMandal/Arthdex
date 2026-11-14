@@ -46,11 +46,34 @@ export function PaperTradingDesk({ initialData }: PaperTradingDeskProps) {
   }, []);
 
   // Order ticket state
-  const [symbol, setSymbol] = useState<string>("RELIANCE");
+  const [symbol, setSymbol] = useState<string>("");
   const [action, setAction] = useState<"BUY" | "SELL">("BUY");
   const [product, setProduct] = useState<"CNC" | "MIS">("CNC");
-  const [quantity, setQuantity] = useState<number>(50);
-  const [price, setPrice] = useState<number>(1325.0);
+  const [quantity, setQuantity] = useState<number>(1);
+  const [price, setPrice] = useState<number>(0);
+  const [priceNote, setPriceNote] = useState<string | null>(null);
+
+  // Fill the price box from the delayed quote for the typed symbol; the user can still edit it
+  const loadMarketPrice = async () => {
+    const sym = symbol.trim().toUpperCase();
+    if (!/^[A-Z0-9&_-]{1,20}$/.test(sym)) {
+      setPriceNote("Enter a ticker first.");
+      return;
+    }
+    setPriceNote("Fetching the delayed quote…");
+    try {
+      const res = await fetch(`/api/quote?symbol=${encodeURIComponent(sym)}`);
+      const body = await res.json().catch(() => ({}));
+      if (res.ok && body?.ok && typeof body.data?.cmp === "number") {
+        setPrice(body.data.cmp);
+        setPriceNote(`Delayed NSE price for ${sym}. The simulated order fills at whatever price is in the box.`);
+      } else {
+        setPriceNote(`No quote for ${sym}.`);
+      }
+    } catch {
+      setPriceNote("The quote service did not respond.");
+    }
+  };
   const [executionMessage, setExecutionMessage] = useState<string | null>(null);
 
   // Live regulatory charges calculation
@@ -91,6 +114,10 @@ export function PaperTradingDesk({ initialData }: PaperTradingDeskProps) {
   // Execute Virtual Order client-side
   const handleExecuteOrder = () => {
     setExecutionMessage(null);
+    if (!/^[A-Z0-9&_-]{1,20}$/.test(symbol) || !(quantity > 0) || !Number.isInteger(quantity) || !(price > 0)) {
+      setExecutionMessage("Enter a ticker, a whole-number quantity and a price above zero.");
+      return;
+    }
     const tradeVal = quantity * price;
 
     if (action === "BUY") {
@@ -125,7 +152,7 @@ export function PaperTradingDesk({ initialData }: PaperTradingDeskProps) {
           currentValue: tradeVal,
           unrealizedPnl: 0,
           unrealizedPnlPct: 0,
-          dayChangePct: 0.5,
+          dayChangePct: 0,
         });
       }
 
@@ -318,25 +345,24 @@ export function PaperTradingDesk({ initialData }: PaperTradingDeskProps) {
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="text-3xs uppercase text-muted-foreground">SYMBOL</label>
-                <select
-                  value={symbol}
-                  onChange={(e) => {
-                    const sym = e.target.value;
-                    setSymbol(sym);
-                    if (sym === "RELIANCE") setPrice(1325.0);
-                    else if (sym === "TCS") setPrice(4148.0);
-                    else if (sym === "HDFCBANK") setPrice(1728.0);
-                    else if (sym === "INFY") setPrice(1850.0);
-                    else if (sym === "ICICIBANK") setPrice(1280.0);
-                  }}
-                  className="w-full mt-0.5 px-2 py-1 text-xs bg-background border border-border font-mono text-foreground focus:outline-none focus:border-amber-500"
-                >
-                  <option value="RELIANCE">RELIANCE (₹1,325.0)</option>
-                  <option value="TCS">TCS (₹4,148.0)</option>
-                  <option value="HDFCBANK">HDFCBANK (₹1,728.0)</option>
-                  <option value="INFY">INFY (₹1,850.0)</option>
-                  <option value="ICICIBANK">ICICIBANK (₹1,280.0)</option>
-                </select>
+                <div className="mt-0.5 flex gap-1">
+                  <input
+                    aria-label="Ticker"
+                    value={symbol}
+                    onChange={(e) => setSymbol(e.target.value.toUpperCase().trim())}
+                    placeholder="e.g. TCS"
+                    maxLength={20}
+                    className="w-full min-w-0 px-2 py-1 text-xs bg-background border border-border font-mono uppercase text-foreground focus:outline-none focus:border-amber-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void loadMarketPrice()}
+                    className="shrink-0 border border-border px-2 text-3xs font-bold uppercase text-muted-foreground hover:text-foreground"
+                  >
+                    Get price
+                  </button>
+                </div>
+                {priceNote ? <p className="mt-1 text-3xs text-muted-foreground">{priceNote}</p> : null}
               </div>
 
               <div>
@@ -645,68 +671,21 @@ export function PaperTradingDesk({ initialData }: PaperTradingDeskProps) {
             <div className="space-y-3 p-2 font-mono text-2xs">
               <div className="flex items-center justify-between border-b border-border/60 pb-1.5">
                 <span className="font-bold text-foreground uppercase">
-                  EMSX: LIVE BROKER ORDER ROUTING &amp; DISPATCH (M27)
+                  Broker order routing
                 </span>
-                <span className="text-3xs text-accent font-bold">SEBI AUDIT TAG: ARTHDEX_ALGO</span>
+                <span className="text-3xs text-muted-foreground font-bold">NOT CONNECTED</span>
               </div>
 
-              {/* Supported Indian Brokers */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {[
-                  { name: "Zerodha Kite Connect", auth: "API Key + Request Token", status: "SIMULATED LIVE", ping: "14ms", desc: "NSE Equity & F&O Direct Market Access" },
-                  { name: "Upstox Pro API v2", auth: "OAuth 2.0 Access Token", status: "CONNECTED", ping: "22ms", desc: "NSE Cash & Currencies Router" },
-                  { name: "Angel One SmartAPI", auth: "TOTP 2FA + JWT Token", status: "READY", ping: "18ms", desc: "Multi-exchange Basket Orders" },
-                  { name: "Groww Execution", auth: "Direct Broker Connect", status: "READY", ping: "28ms", desc: "Instant Delivery Cash Orders" },
-                ].map((broker) => (
-                  <div key={broker.name} className="p-2.5 border border-border bg-surface-muted/30 flex flex-col justify-between">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-foreground uppercase">{broker.name}</span>
-                      <span className="text-[8px] font-bold px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                        {broker.status}
-                      </span>
-                    </div>
-                    <p className="text-3xs text-muted-foreground mt-1">{broker.desc}</p>
-                    <div className="flex justify-between items-center text-3xs text-muted-foreground pt-1.5 border-t border-border/40 mt-2">
-                      <span>Auth: {broker.auth}</span>
-                      <span className="text-accent">{broker.ping}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Multi-Leg Basket Dispatcher */}
-              <div className="p-3 border border-border bg-surface space-y-2">
-                <div className="flex items-center justify-between border-b border-border/60 pb-1">
-                  <span className="font-bold text-3xs uppercase text-foreground">Multi-Order Basket Dispatch</span>
-                  <span className="text-3xs text-muted-foreground">Pre-Trade Risk Checks: PASS</span>
-                </div>
-                <div className="grid grid-cols-3 gap-2 text-3xs">
-                  <div className="p-1.5 border border-border/60 bg-surface-muted/20">
-                    <span className="text-muted-foreground">Leg 1:</span>
-                    <div className="font-bold text-foreground">BUY 100 RELIANCE @ CMP</div>
-                  </div>
-                  <div className="p-1.5 border border-border/60 bg-surface-muted/20">
-                    <span className="text-muted-foreground">Leg 2:</span>
-                    <div className="font-bold text-foreground">BUY 50 TCS @ CMP</div>
-                  </div>
-                  <div className="p-1.5 border border-border/60 bg-surface-muted/20">
-                    <span className="text-muted-foreground">Leg 3:</span>
-                    <div className="font-bold text-foreground">BUY 150 HDFCBANK @ CMP</div>
-                  </div>
-                </div>
-
-                <div className="pt-2 flex items-center justify-between">
-                  <span className="text-3xs text-muted-foreground">
-                    Pre-trade margin validated. Orders tagged with unique client code (UCC).
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => alert("Simulated 3-leg basket dispatched to connected broker gateway with audit tag ARTHDEX_ALGO.")}
-                    className="px-3 py-1.5 bg-accent text-accent-foreground font-bold text-3xs uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all"
-                  >
-                    DISPATCH BASKET TO BROKER &lt;GO&gt;
-                  </button>
-                </div>
+              <div className="border border-border bg-surface-muted/30 p-3 space-y-2">
+                <p className="font-bold uppercase text-foreground">No broker is connected</p>
+                <p className="text-muted-foreground">
+                  Arthdex does not route orders to any broker. Everything on this page is a simulation against a virtual
+                  cash balance: no order leaves your browser, and nothing here is executed on an exchange.
+                </p>
+                <p className="text-muted-foreground">
+                  Live order routing would need a broker API integration (for example Zerodha Kite Connect or Upstox), your
+                  own API credentials with that broker, and the algo-order approvals SEBI and the exchanges require.
+                </p>
               </div>
             </div>
           )}

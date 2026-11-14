@@ -47,6 +47,8 @@ Oracle Cloud's free VM was rejected: its Always Free Arm allowance was cut to 2 
 
 `ARTHDEX_API_TOKEN` is optional in code: unset, no header is sent, which is what local development uses.
 
+On the data service, the same variable decides who may change state. With `ARTHDEX_API_TOKEN` set on the Space, every route except the health probe needs that bearer token. With it unset, the service answers reads from anywhere but takes writes (analyzer runs, paper orders, research notes, cache refresh, feed repair) from its own machine only, and returns 401 to anything else. A private Space, where Hugging Face checks the caller's token before the request arrives, sets `ARTHDEX_ALLOW_OPEN_WRITES=1` in the Space's variables to accept those writes. Do not set it on a public Space. The interactive API docs are off whenever a token is set; `ARTHDEX_ENABLE_DOCS=1` turns them back on.
+
 ## 3. Verify
 
 Follow the checklist at the end of `operations.md` against the Vercel URL. Pay particular attention to `/`, a company page with all tabs, `/ipo`, `/news` and `/analyzer` (run one analysis end to end).

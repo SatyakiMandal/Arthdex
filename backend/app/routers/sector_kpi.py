@@ -7,14 +7,16 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Path
 
 from ..schemas import envelope
+from .. import not_connected
 from ..services import sector_kpi
 
-router = APIRouter(prefix="/api/sectors", tags=["sectors"])
+_routes = APIRouter(tags=["sectors"])
 
 
-@router.get("/kpis")
+@_routes.get("/kpis")
 def get_all_sectors_kpis():
     """Returns top-line operational KPIs and status summary across all tracked Indian sectors (SKPI)."""
+    not_connected.refuse("sector-kpis")
     try:
         data = sector_kpi.get_all_sectors_summary()
     except Exception as exc:
@@ -28,7 +30,7 @@ def get_all_sectors_kpis():
     )
 
 
-@router.get("/kpis/{sector_code}")
+@_routes.get("/kpis/{sector_code}")
 def get_single_sector_kpi(
     sector_code: str = Path(..., description="Sector code: auto, banking, power, aviation, telecom"),
 ):
@@ -36,6 +38,7 @@ def get_single_sector_kpi(
     Returns detailed operational KPI payload, segment breakdowns, OEM/operator metrics,
     and 12-period historical time series for the specified Indian industry sector.
     """
+    not_connected.refuse("sector-kpis")
     try:
         data = sector_kpi.get_sector_kpi(sector_code)
     except ValueError as exc:
@@ -51,3 +54,10 @@ def get_single_sector_kpi(
         delayed_minutes=0,
         note=f"{data.get('sector_name')} granular operational telemetry and regulatory filings.",
     )
+
+
+# The site's client (lib/api/endpoints.ts) calls every desk under /api/v1; the unversioned
+# path is kept for anything already pointed at it.
+router = APIRouter()
+router.include_router(_routes, prefix="/api/sectors")
+router.include_router(_routes, prefix="/api/v1/sectors", include_in_schema=False)

@@ -2086,7 +2086,7 @@ export interface ApiCorporateHierarchy {
   group_name: string;
   parent_symbol: string;
   parent_name: string;
-  total_group_turnover_cr: number;
+  total_group_turnover_cr: number | null;
   holding_entities: ApiHoldingEntity[];
 }
 
@@ -2127,7 +2127,7 @@ export interface ApiSupplyChainNetwork {
   symbol: string;
   name: string;
   primary_sector: string;
-  annual_cogs_cr: number;
+  annual_cogs_cr: number | null;
   suppliers: ApiSupplyChainSupplier[];
   customers: ApiSupplyChainCustomer[];
   independent_contractors: ApiSupplyChainContractor[];
@@ -2155,81 +2155,85 @@ export interface ApiNetworkSummary {
 // Phase 11: Quant Risk Lab & Crisis Stress Testing (M22)
 // ==========================================
 
+/** A crisis window (dates only) with the Nifty 50's change over it, computed from prices. */
 export interface ApiCrisisScenario {
-  id: string;
+  scenario_id: string;
   name: string;
-  period: string;
+  start: string;
+  end: string;
   description: string;
-  niftyDrawdownPct: number;
-  volatilityPeakPct: number;
-  macroDriver: string;
-  provenance: string;
+  index_change_pct: number | null;
 }
 
-export interface ApiStressTestImpact {
+export interface ApiStressHolding {
   symbol: string;
-  weightPct: number;
-  beta: number;
-  expectedDrawdownPct: number;
-  var95Pct: number;
-  var99Pct: number;
-  lossCr: number;
+  value_inr: number;
+  weight_pct: number;
+  change_pct: number | null;
+  pnl_inr: number | null;
+  /** recorded: the holding's own prices; estimate: beta times the index; unavailable: no history. */
+  method: "recorded" | "estimate" | "unavailable";
+  beta: number | null;
+  note: string | null;
 }
 
 export interface ApiStressTestResult {
-  scenarioId: string;
-  scenarioName: string;
-  portfolioCapitalCr: number;
-  projectedPortfolioDrawdownPct: number;
-  projectedLossCr: number;
-  portfolioVar95_1D: number;
-  portfolioVar99_1D: number;
-  assetImpacts: ApiStressTestImpact[];
-  stressSummary: string;
-  statutoryProvenance: string;
+  scenario: { scenario_id: string; name: string; start: string | null; end: string | null; description: string };
+  portfolio_value_inr: number;
+  covered_value_inr: number;
+  coverage_pct: number;
+  pnl_inr: number | null;
+  change_pct: number | null;
+  index_change_pct: number | null;
+  relative_to_index_pct: number | null;
+  holdings: ApiStressHolding[];
+  methods: { recorded: number; estimated: number; unavailable: number };
+  provenance: string;
+  caveats: string[];
+}
+
+export interface ApiBenchmarkRegression {
+  benchmarkId: string;
+  benchmarkName: string;
+  beta: number | null;
+  alphaPct: number | null;
+  rSquared: number | null;
+  observationWindowDays: number;
+  tStatBeta: number | null;
 }
 
 export interface ApiFactorExposure {
   symbol: string;
-  name: string;
-  marketBeta: number;
-  sizeExposureSMB: number;
-  valueExposureHML: number;
-  momentumExposureWML: number;
-  qualityExposureRMW: number;
-  lowVolExposureBAB: number;
-  rSquared: number;
-  annualizedAlphaPct: number;
+  rows: ApiBenchmarkRegression[];
+  primary: string | null;
+  note: string;
 }
 
-export interface ApiBacktestTrade {
-  entryDate: string;
-  exitDate: string;
-  symbol: string;
-  type: "BUY" | "SELL";
-  entryPrice: number;
-  exitPrice: number;
-  grossReturnPct: number;
-  netReturnPct: number;
-  statutoryDeductionsInr: number;
+export interface ApiBacktestPeriod {
+  from: string;
+  to: string;
+  sessions: number;
+  initial_capital_inr: number;
+  final_capital_inr: number;
+  net_return_pct: number;
+  net_cagr_pct: number | null;
+  buy_and_hold_return_pct: number | null;
+  max_drawdown_pct: number;
+  sharpe_ratio: number | null;
+  closed_trades: number;
+  win_rate_pct: number | null;
+  open_position: boolean;
+  charges_paid_inr: number;
 }
 
 export interface ApiBacktestResult {
-  strategyName: string;
-  period: string;
-  initialCapitalInr: number;
-  finalCapitalInr: number;
-  cagrPct: number;
-  benchmarkCagrPct: number;
-  sharpeRatio: number;
-  sortinoRatio: number;
-  maxDrawdownPct: number;
-  winRatePct: number;
-  profitFactor: number;
-  totalTrades: number;
-  totalTaxesAndChargesInr: number;
-  equityCurve: { date: string; strategy: number; benchmark: number }[];
-  trades: ApiBacktestTrade[];
+  symbol: string;
+  strategy: string;
+  data: { from: string; to: string; sessions: number };
+  earlier_period: ApiBacktestPeriod;
+  later_period: ApiBacktestPeriod;
+  provenance: string;
+  caveats: string[];
 }
 
 // ==========================================
@@ -2297,6 +2301,29 @@ export interface ApiSectorKpiOverview {
 // Phase 13: Valuation Lab — DCF & Reverse DCF (M6)
 // ==========================================
 
+/** Starting inputs for the DCF workbench, read from the company's own figures. */
+export interface ApiDcfDefaults {
+  symbol: string;
+  name: string;
+  current_price: number;
+  shares_outstanding_cr: number;
+  cash_and_equivalents_cr: number;
+  total_debt_cr: number;
+  base_fcff_cr: number;
+  beta: number;
+  beta_basis: string | null;
+  debt_to_equity: number;
+  stage1_growth_rate: number;
+  historical_revenue_cagr: number | null;
+  terminal_growth_rate: number;
+  pretax_cost_of_debt: number;
+  as_of: string | null;
+  /** Field name to its tag: exchange data, actual filing, modelled or assumption. */
+  input_provenance: Record<string, string>;
+  notes: string[];
+  provenance: string;
+}
+
 export interface ApiDcfInputs {
   symbol: string;
   currentPrice: number;
@@ -2352,171 +2379,156 @@ export interface ApiReverseDcfResult {
 // Phase 14: Dedicated SME Exchange Board (M20)
 // ==========================================
 
-export interface ApiSmeScrip {
+/** One NSE Emerge security from the exchange's traded list. */
+export interface ApiSmeBoardRow {
   symbol: string;
-  name: string;
-  exchange: "NSE_EMERGE" | "BSE_SME";
-  sector: string;
-  ltp: number;
-  changePct: number;
-  lotSize: number;
-  minTicketInr: number;
-  marketCapCr: number;
-  peRatio: number;
-  rocePct: number;
-  listingDate: string;
-  eligibleForMainboard: boolean;
+  name: string | null;
+  series: string;
+  last: number | null;
+  changePct: number | null;
+  volume: number | null;
+  turnoverCr: number | null;
+  marketCapCr: number | null;
 }
 
-export interface ApiSmeIpoItem {
-  symbol: string;
-  companyName: string;
-  exchange: "NSE_EMERGE" | "BSE_SME";
-  issueSizeCr: number;
-  priceBand: string;
-  lotSize: number;
-  minApplicationInr: number;
-  openDate: string;
-  closeDate: string;
-  subscriptionQib: number;
-  subscriptionNii: number;
-  subscriptionRetail: number;
-  subscriptionTotal: number;
-  gmpEstimateInr: number;
-  status: "UPCOMING" | "OPEN" | "CLOSED" | "LISTED";
-}
-
-export interface ApiSmeMigrationCandidate {
-  symbol: string;
-  name: string;
-  smeExchange: "NSE_EMERGE" | "BSE_SME";
-  listingDate: string;
-  yearsListed: number;
-  paidUpCapitalCr: number;
-  netWorthCr: number;
-  patLastTwoYearsCr: number[];
-  migrationStatus: "ELIGIBLE" | "APPLICATION_SUBMITTED" | "APPROVED" | "IN_PROGRESS";
-  targetBoard: "NSE_MAIN" | "BSE_MAIN";
-}
-
+/** Aggregates over the board. `unavailable` lists what the feed does not carry. */
 export interface ApiSmeOverview {
-  totalEmergeListed: number;
-  totalBseSmeListed: number;
-  totalSmeMarketCapCr: number;
-  activeIposCount: number;
-  migratedToMainboardCount: number;
-  topSmeGainers: ApiSmeScrip[];
-  activeIpos: ApiSmeIpoItem[];
-  migrationCandidates: ApiSmeMigrationCandidate[];
+  asOf: string | null;
+  exchange: string;
+  count: number;
+  totalMarketCapCr: number | null;
+  totalTurnoverCr: number | null;
+  breadth: { advances: number; declines: number; unchanged: number };
+  marketCapTiers: { under100Cr: number; from100To250Cr: number; from250To500Cr: number; over500Cr: number };
+  gainers: ApiSmeBoardRow[];
+  losers: ApiSmeBoardRow[];
+  mostTraded: ApiSmeBoardRow[];
+  unavailable: Record<string, string>;
+}
+
+export interface ApiSmeScreen {
+  asOf: string | null;
+  total: number;
+  matched: number;
+  rows: ApiSmeBoardRow[];
+}
+
+export interface ApiSmeIpos {
+  issues: ApiIpoIssue[];
+  counts: Record<string, number>;
+  unavailable: Record<string, string>;
 }
 
 // ==========================================
-// Phase 15: Institutional Tear-Sheet & Notes (M25)
-// ==========================================
+
+type Maybe = number | null;
 
 export interface ApiTearSheetHeader {
   symbol: string;
   name: string;
-  isin: string;
-  cin?: string;
+  isin: string | null;
   exchange: string;
-  sector: string;
-  sub_industry: string;
-  website: string;
-  headquarters: string;
-  established_year: number;
-  key_executives: Array<{ designation: string; name: string }>;
-  business_summary: string;
+  sector: string | null;
+  sub_industry: string | null;
+  website: string | null;
+  headquarters: string | null;
+  employees: number | null;
+  key_executives: Array<{ designation: string | null; name: string }>;
+  business_summary: string | null;
 }
 
 export interface ApiTearSheetTradingStats {
   current_price: number;
-  change: number;
-  change_pct: number;
-  day_high: number;
-  day_low: number;
-  week_52_high: number;
-  week_52_low: number;
-  market_cap_cr: number;
-  enterprise_value_cr: number;
-  shares_outstanding_cr: number;
-  free_float_pct: number;
-  adtv_30d_cr: number;
-  beta_3y: number;
-  returns: Record<string, number>;
+  change: Maybe;
+  change_pct: Maybe;
+  day_high: Maybe;
+  day_low: Maybe;
+  week_52_high: Maybe;
+  week_52_low: Maybe;
+  market_cap_cr: Maybe;
+  enterprise_value_cr: Maybe;
+  shares_outstanding_cr: Maybe;
+  free_float_pct: Maybe;
+  avg_daily_value_cr: Maybe;
+  as_of: string | null;
+  /** Price return (not total return) keyed 1M_pct, 3M_pct, 6M_pct, 1Y_pct. */
+  returns: Record<string, Maybe>;
 }
 
 export interface ApiTearSheetFinancialYear {
   fiscal_year: string;
-  revenue_cr: number;
-  revenue_growth_pct?: number | null;
-  ebitda_cr: number;
-  ebitda_margin_pct: number;
-  pat_cr: number;
-  pat_margin_pct: number;
-  eps: number;
-  roce_pct: number;
-  roe_pct: number;
-  debt_to_equity: number;
-  interest_coverage: number;
-  fcf_cr: number;
+  period_end: string | null;
+  revenue_cr: Maybe;
+  revenue_growth_pct: Maybe;
+  operating_profit_cr: Maybe;
+  operating_margin_pct: Maybe;
+  pat_cr: Maybe;
+  pat_margin_pct: Maybe;
+  eps: Maybe;
+  roe_pct: Maybe;
+  debt_to_equity: Maybe;
+  current_ratio: Maybe;
 }
 
 export interface ApiTearSheetPeer {
   symbol: string;
-  name: string;
-  market_cap_cr: number;
-  pe_ttm: number;
-  pe_fwd: number;
-  ev_ebitda: number;
-  price_to_book: number;
-  dividend_yield_pct: number;
-  roce_pct: number;
-  sales_cagr_3y_pct: number;
+  name: string | null;
+  market_cap_cr: Maybe;
+  pe_ttm: Maybe;
+  dividend_yield_pct: Maybe;
+  roce_pct: Maybe;
+  sales_growth_qtr_pct: Maybe;
+  profit_growth_qtr_pct: Maybe;
 }
 
 export interface ApiTearSheetShareholdingQuarter {
   quarter: string;
-  promoter_holding_pct: number;
-  fii_holding_pct: number;
-  dii_holding_pct: number;
-  public_holding_pct: number;
-  other_holding_pct: number;
-  promoter_pledged_pct: number;
+  promoter_holding_pct: Maybe;
+  fii_holding_pct: Maybe;
+  dii_holding_pct: Maybe;
+  government_holding_pct: Maybe;
+  public_holding_pct: Maybe;
 }
 
 export interface ApiTearSheetConsensus {
-  total_coverage: number;
-  ratings_breakdown: {
-    buy: number;
-    outperform?: number;
-    hold: number;
-    underperform?: number;
-    sell: number;
-  };
-  consensus_rating: string;
-  target_price: {
-    median: number;
-    high: number;
-    low: number;
-    implied_upside_pct: number;
-  };
-  forecasts?: Record<string, { revenue_cr: number; ebitda_cr: number; pat_cr: number; eps: number; provenance: string }>;
+  total_coverage: number | null;
+  ratings_breakdown: { buy: number; hold: number; sell: number };
+  consensus_rating: string | null;
+  target_price: { median: Maybe; high: Maybe; low: Maybe; implied_upside_pct: Maybe };
+  forecasts: Record<string, { eps: Maybe; revenue_cr: Maybe; analysts: number | null; provenance: string }>;
 }
 
+/** Assembled by the data service from the company page's own sources; nothing is generated. */
 export interface ApiTearSheetData {
   header: ApiTearSheetHeader;
   trading_stats: ApiTearSheetTradingStats;
-  financials_10y: ApiTearSheetFinancialYear[];
-  peers: ApiTearSheetPeer[];
-  shareholding_trend: ApiTearSheetShareholdingQuarter[];
-  promoter_pledge_status: {
-    pledge_pct_of_promoter: number;
-    risk_tier: string;
-    sebi_disclosure: string;
+  multiples: {
+    pe_ttm: Maybe;
+    pe_forward: Maybe;
+    price_to_book: Maybe;
+    ev_ebitda: Maybe;
+    dividend_yield_pct: Maybe;
+    eps_ttm: Maybe;
+    eps_basis: string | null;
   };
-  analyst_consensus: ApiTearSheetConsensus;
+  returns_on_capital: { roe_pct: Maybe; roce_pct: Maybe; debt_to_equity: Maybe; current_ratio: Maybe; basis: string | null };
+  financials: ApiTearSheetFinancialYear[];
+  growth: {
+    span_years: number | null;
+    from: string | null;
+    to: string | null;
+    metrics: Array<{ metric: string; cagr_pct: Maybe; latest_yoy_pct: Maybe }>;
+    latest_quarter?: { quarter: string; revenue_yoy_pct: Maybe; net_profit_yoy_pct: Maybe };
+  };
+  peers: ApiTearSheetPeer[];
+  peer_industry: string | null;
+  shareholding_trend: ApiTearSheetShareholdingQuarter[];
+  promoter_pledge_status: { pledged_pct_of_total: Maybe; as_of: string | null; source: string } | null;
+  analyst_consensus: ApiTearSheetConsensus | null;
+  /** Sections whose source gave no response. */
+  unavailable: string[];
   provenance: string;
+  generated_at: string;
   latest_research_notes?: Array<{
     id: string;
     title: string;

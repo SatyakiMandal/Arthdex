@@ -1,211 +1,123 @@
-"""
-Unittest test suite for Phase 14: Dedicated SME Exchange Board (NSE Emerge & BSE SME).
-"""
+"""SME board: every row and aggregate comes from the exchange feed; nothing is hand-entered."""
 
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
 
-try:
-    from app.services.sme_markets import (
-        MIGRATED_MAINBOARD_STARS,
-        SME_ACTIVE_LISTINGS,
-        SME_IPO_PIPELINE,
-        MainboardMigrationCandidate,
-        MigratedCompanyRecord,
-        SMEIPOItem,
-        SMEListing,
-        check_mainboard_eligibility,
-        get_sme_ipos,
-        get_sme_migrations,
-        get_sme_overview,
-        screen_sme_stocks,
-    )
-except ImportError:
-    from backend.app.services.sme_markets import (
-        MIGRATED_MAINBOARD_STARS,
-        SME_ACTIVE_LISTINGS,
-        SME_IPO_PIPELINE,
-        MainboardMigrationCandidate,
-        MigratedCompanyRecord,
-        SMEIPOItem,
-        SMEListing,
-        check_mainboard_eligibility,
-        get_sme_ipos,
-        get_sme_migrations,
-        get_sme_overview,
-        screen_sme_stocks,
-    )
+from app.services import sme_live
 
 try:
     from starlette.testclient import TestClient
+
+    from app.cache import CACHE
     from app.main import app
+
     HAS_TESTCLIENT = True
 except Exception:
     HAS_TESTCLIENT = False
-    TestClient = None
-    app = None
+
+TRADED = {
+    "asOf": "13-Nov-2026 15:30:00",
+    "rows": {
+        "BIGSME": {"last": 800.0, "changePct": 4.0, "volume": 50_000, "turnoverCr": 4.0, "marketCapCr": 900.0, "series": "SM"},
+        "MIDSME": {"last": 120.0, "changePct": -2.5, "volume": 20_000, "turnoverCr": 0.24, "marketCapCr": 180.0, "series": "SM"},
+        "TINYSME": {"last": 40.0, "changePct": 0.0, "volume": 3_000, "turnoverCr": 0.01, "marketCapCr": 35.0, "series": "ST"},
+        "NOCAP": {"last": 10.0, "changePct": 1.0, "volume": None, "turnoverCr": None, "marketCapCr": None, "series": "SM"},
+        "MAINBOARD": {"last": 2400.0, "changePct": 1.0, "volume": 9_000_000, "turnoverCr": 2100.0, "marketCapCr": 880000.0, "series": "EQ"},
+    },
+}
+UNIVERSE = [{"symbol": "BIGSME", "name": "Big SME Limited"}, {"symbol": "MAINBOARD", "name": "Mainboard Limited"}]
+PIPELINE = {
+    "issues": [
+        {"symbol": "NEWSME", "segment": "sme", "status": "ongoing", "priceBandHigh": 120, "gmp": 40},
+        {"symbol": "OLDSME", "segment": "sme", "status": "listed"},
+        {"symbol": "BIGIPO", "segment": "mainboard", "status": "ongoing"},
+    ]
+}
 
 
-class TestSMEMarketsService(unittest.TestCase):
-    def test_sme_listings_dataset(self):
-        """Verifies active listings dataset coverage across NSE Emerge and BSE SME."""
-        self.assertGreaterEqual(len(SME_ACTIVE_LISTINGS), 10)
-        nse_listings = [i for i in SME_ACTIVE_LISTINGS if i.exchange == "NSE Emerge"]
-        bse_listings = [i for i in SME_ACTIVE_LISTINGS if i.exchange == "BSE SME"]
-        self.assertGreater(len(nse_listings), 0)
-        self.assertGreater(len(bse_listings), 0)
+class BoardTests(unittest.TestCase):
+    def test_only_emerge_series_are_on_the_board(self):
+        b = sme_live.board(TRADED, UNIVERSE)
+        self.assertEqual([r["symbol"] for r in b["rows"]], ["BIGSME", "MIDSME", "TINYSME", "NOCAP"])
+        self.assertEqual(b["count"], 4)
+        self.assertEqual(b["rows"][0]["name"], "Big SME Limited")
+        self.assertIsNone(b["rows"][1]["name"])  # not in the universe list: left blank, not invented
 
-        for item in SME_ACTIVE_LISTINGS:
-            self.assertGreater(item.market_cap_cr, 0.0)
-            self.assertGreater(item.lot_size, 0)
-            self.assertGreater(item.bid_ask_spread_pct, 0.0)
+    def test_aggregates_are_sums_of_the_rows(self):
+        b = sme_live.board(TRADED, UNIVERSE)
+        self.assertEqual(b["totalMarketCapCr"], 1115.0)
+        self.assertEqual(b["totalTurnoverCr"], 4.25)
+        self.assertEqual(b["breadth"], {"advances": 2, "declines": 1, "unchanged": 1})
+        self.assertEqual(b["marketCapTiers"], {"under100Cr": 1, "from100To250Cr": 1, "from250To500Cr": 0, "over500Cr": 1})
+        self.assertEqual(b["gainers"][0]["symbol"], "BIGSME")
+        self.assertEqual([r["symbol"] for r in b["losers"]], ["MIDSME"])
+        self.assertEqual(b["mostTraded"][0]["symbol"], "BIGSME")
 
-    def test_sebi_minimum_application_amount_mandate(self):
-        """
-        SEBI mandate test: All SME IPO lots must have minimum application amounts
-        strictly between ₹1.0 Lakh and ₹1.5 Lakh.
-        """
-        for ipo in SME_IPO_PIPELINE:
-            app_amount = ipo.lot_size * ipo.issue_price
-            self.assertAlmostEqual(ipo.min_application_amount, app_amount, places=1)
-            self.assertGreaterEqual(
-                app_amount,
-                100000.0,
-                f"{ipo.company_name} min application ({app_amount}) is below SEBI ₹1.0 Lakh minimum threshold",
-            )
-            self.assertLessEqual(
-                app_amount,
-                150000.0,
-                f"{ipo.company_name} min application ({app_amount}) exceeds SEBI ₹1.5 Lakh upper bound",
-            )
+    def test_empty_feed_gives_an_empty_board(self):
+        b = sme_live.board({"rows": {}, "asOf": None})
+        self.assertEqual((b["count"], b["rows"], b["totalMarketCapCr"]), (0, [], None))
 
-    def test_sme_overview_metrics(self):
-        """Validates market overview aggregation, sector breakdown, and market breadth."""
-        overview = get_sme_overview()
-        board = overview["board_summary"]
-        self.assertEqual(board["total_active_listings"], len(SME_ACTIVE_LISTINGS))
-        self.assertGreater(board["total_market_cap_cr"], 5000.0)
-        self.assertGreater(board["daily_turnover_lakhs"], 500.0)
+    def test_gaps_are_declared(self):
+        b = sme_live.board(TRADED)
+        for key in ("bseSme", "fundamentals", "migration", "greyMarketPremium"):
+            self.assertIn(key, b["unavailable"])
 
-        # Market breadth check
-        breadth = board["market_breadth"]
-        total_breadth = breadth["advances"] + breadth["declines"] + breadth["unchanged"]
-        self.assertEqual(total_breadth, len(SME_ACTIVE_LISTINGS))
+    def test_screen_filters_and_sorts(self):
+        rows = sme_live.board(TRADED)["rows"]
+        self.assertEqual([r["symbol"] for r in sme_live.screen(rows, min_market_cap_cr=100)], ["BIGSME", "MIDSME"])
+        self.assertEqual([r["symbol"] for r in sme_live.screen(rows, max_market_cap_cr=100)], ["TINYSME"])
+        self.assertEqual(sme_live.screen(rows, sort="changePct")[0]["symbol"], "BIGSME")
+        self.assertEqual(len(sme_live.screen(rows, limit=2)), 2)
 
-        # Sectors
-        sectors = overview["sector_distribution"]
-        self.assertGreaterEqual(len(sectors), 5)
-        sector_names = [s["sector"] for s in sectors]
-        self.assertIn("Renewable Energy & CleanTech", sector_names)
-        self.assertIn("IT, SaaS & Cybersecurity", sector_names)
 
-    def test_mainboard_migration_eligibility_checks(self):
-        """
-        Verifies SEBI 5-point eligibility check logic:
-          1. >= 36 months on SME
-          2. Paid-up capital >= 10 Cr
-          3. Market cap >= 25 Cr
-          4. Positive PAT in at least 2 of 3 years
-          5. Public shareholders >= 250
-        """
-        remus = next(i for i in SME_ACTIVE_LISTINGS if i.symbol == "REMUS")
-        cand_remus = check_mainboard_eligibility(remus)
-        self.assertTrue(cand_remus.is_fully_eligible)
-        self.assertEqual(cand_remus.criteria_met, 5)
-        self.assertEqual(cand_remus.migration_status, "Ready for Migration")
+class IpoTests(unittest.TestCase):
+    def test_only_sme_issues_and_no_grey_market_field_added(self):
+        out = sme_live.sme_ipos(PIPELINE)
+        self.assertEqual([i["symbol"] for i in out["issues"]], ["NEWSME", "OLDSME"])
+        self.assertEqual(out["counts"]["ongoing"], 1)
+        self.assertIn("greyMarketPremium", out["unavailable"])
+        self.assertEqual([i["symbol"] for i in sme_live.sme_ipos(PIPELINE, "listed")["issues"]], ["OLDSME"])
 
-        alpex = next(i for i in SME_ACTIVE_LISTINGS if i.symbol == "ALPEXSOLAR")
-        cand_alpex = check_mainboard_eligibility(alpex)
-        # Alpex listed in Feb 2024 -> ~33 months -> tenure not met yet
-        self.assertFalse(cand_alpex.is_fully_eligible)
-        self.assertFalse(cand_alpex.eligibility_details["tenure_3y_met"])
-        self.assertEqual(cand_alpex.criteria_met, 4)
-
-    def test_mainboard_migration_tracker(self):
-        """Checks migration tracker candidates list and graduated stars dataset."""
-        tracker = get_sme_migrations()
-        self.assertIn("eligible_candidates", tracker)
-        self.assertIn("graduated_mainboard_stars", tracker)
-
-        graduated = tracker["graduated_mainboard_stars"]
-        self.assertGreaterEqual(len(graduated), 4)
-        symbols = [g["symbol"] for g in graduated]
-        self.assertIn("GENSOL", symbols)
-        self.assertIn("FOCUS", symbols)
-        self.assertIn("DPABHUSHAN", symbols)
-
-        # All graduated stars have positive multi-bagger post-migration CAGR
-        for star in graduated:
-            self.assertGreater(star["post_migration_cagr_pct"], 0.0)
-
-    def test_sme_screener_filtering(self):
-        """Tests SME stock screener with various multi-factor filters."""
-        # Test 1: Renewable Energy sector filter
-        solar_stocks = screen_sme_stocks(sector="Renewable")
-        self.assertGreaterEqual(len(solar_stocks), 2)
-        for s in solar_stocks:
-            self.assertIn("Renewable", s["sector"])
-
-        # Test 2: Migration ready only
-        mig_ready = screen_sme_stocks(migration_ready_only=True)
-        self.assertGreaterEqual(len(mig_ready), 3)
-        for s in mig_ready:
-            self.assertTrue(s["is_migration_eligible"])
-
-        # Test 3: Tight bid-ask spread (<= 1.0%)
-        tight = screen_sme_stocks(max_spread_pct=1.0)
-        self.assertGreater(len(tight), 0)
-        for s in tight:
-            self.assertLessEqual(s["bid_ask_spread_pct"], 1.0)
-
-        # Test 4: Market cap sorting
-        sorted_mcap = screen_sme_stocks(sort_by="market_cap_cr", order="desc")
-        for i in range(len(sorted_mcap) - 1):
-            self.assertGreaterEqual(sorted_mcap[i]["market_cap_cr"], sorted_mcap[i + 1]["market_cap_cr"])
+    def test_service_has_no_hand_entered_listings(self):
+        for name in ("SME_ACTIVE_LISTINGS", "SME_IPO_PIPELINE", "MIGRATED_MAINBOARD_STARS"):
+            self.assertFalse(hasattr(sme_live, name))
 
 
 @unittest.skipUnless(HAS_TESTCLIENT, "Starlette TestClient dependencies not available")
-class TestSMEMarketsEndpoints(unittest.TestCase):
+class EndpointTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        if not HAS_TESTCLIENT:
-            return
         cls.client = TestClient(app)
 
-    def test_get_sme_overview_endpoint(self):
-        res = self.client.get("/api/sme/overview")
-        self.assertEqual(res.status_code, 200)
-        body = res.json()
-        self.assertIn("data", body)
-        data = body["data"]
-        self.assertIn("board_summary", data)
-        self.assertIn("sector_distribution", data)
+    def setUp(self):
+        CACHE.expire("sme:board:v2")
+        CACHE.expire("ipo:pipeline")
+        self.addCleanup(CACHE.expire, "sme:board:v2")
+        self.addCleanup(CACHE.expire, "ipo:pipeline")
 
-    def test_get_sme_ipos_endpoint(self):
-        res = self.client.get("/api/sme/ipos")
-        self.assertEqual(res.status_code, 200)
-        body = res.json()
-        self.assertIn("data", body)
-        data = body["data"]
-        self.assertIn("ipos", data)
-        self.assertGreater(data["count"], 0)
+    def test_overview_and_screener(self):
+        with patch("app.routers.sme_markets.nse.fetch_stocks_traded", return_value=TRADED), \
+             patch("app.routers.search.load_universe", return_value=(UNIVERSE, 0)):
+            overview = self.client.get("/api/v1/sme/overview")
+            screener = self.client.get("/api/v1/sme/screener?min_market_cap_cr=100&sort=changePct")
+        self.assertEqual(overview.status_code, 200)
+        self.assertEqual(overview.json()["data"]["count"], 4)
+        self.assertNotIn("rows", overview.json()["data"])
+        self.assertEqual(screener.status_code, 200)
+        self.assertEqual([r["symbol"] for r in screener.json()["data"]["rows"]], ["BIGSME", "MIDSME"])
 
-    def test_get_sme_migrations_endpoint(self):
-        res = self.client.get("/api/sme/migrations")
+    def test_ipos(self):
+        with patch("app.routers.sme_markets.ipo_service.build_pipeline", return_value=PIPELINE):
+            res = self.client.get("/api/v1/sme/ipos?status=ongoing")
         self.assertEqual(res.status_code, 200)
-        body = res.json()
-        data = body["data"]
-        self.assertIn("eligible_candidates", data)
-        self.assertIn("graduated_mainboard_stars", data)
+        self.assertEqual([i["symbol"] for i in res.json()["data"]["issues"]], ["NEWSME"])
 
-    def test_get_sme_screener_endpoint(self):
-        res = self.client.get("/api/sme/screener?sector=Renewable&order=desc")
-        self.assertEqual(res.status_code, 200)
-        body = res.json()
-        data = body["data"]
-        self.assertIn("results", data)
-        self.assertGreaterEqual(data["count"], 1)
+    def test_migration_tracker_is_not_offered(self):
+        res = self.client.get("/api/v1/sme/migrations")
+        self.assertEqual(res.status_code, 404)
+        self.assertIn("paid-up capital", res.json()["detail"])
 
 
 if __name__ == "__main__":

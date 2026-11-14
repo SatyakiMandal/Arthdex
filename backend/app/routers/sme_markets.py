@@ -1,140 +1,95 @@
-"""
-SME Exchange Board Router: NSE Emerge & BSE SME Overview, IPO Pipeline,
-Mainboard Migration Tracker, and Stock Screener.
-"""
+"""NSE Emerge (SME) board: live listings, a screener over them, and the SME IPO pipeline."""
 
 from __future__ import annotations
 
 from typing import Literal
+
 from fastapi import APIRouter, HTTPException, Query
 
 from ..cache import CACHE
+from ..config import SETTINGS
+from ..providers import nse
 from ..schemas import envelope
-from ..services import sme_markets
+from ..services import ipo as ipo_service
+from ..services import sme_live
 
 router = APIRouter(tags=["sme"])
+
+BOARD_TTL = 120
+SOURCE = "NSE (live-analysis-stocksTraded, series SM and ST)"
+
+
+def _board() -> tuple[dict, float]:
+    def compute():
+        traded = nse.fetch_stocks_traded()
+        try:
+            from .search import load_universe
+
+            universe = load_universe()[0]
+        except Exception:
+            universe = None  # names are a convenience; the board stands without them
+        return sme_live.board(traded, universe)
+
+    try:
+        return CACHE.get_or_fetch("sme:board:v2", BOARD_TTL, compute)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"SME board unavailable: {exc}") from exc
 
 
 @router.get("/api/sme/overview")
 @router.get("/api/v1/sme/overview")
 def get_sme_exchange_overview():
-    """
-    Returns high-level snapshot of NSE Emerge and BSE SME boards:
-    active listings count, exchange split, sector distribution, mcap tiers, and market breadth.
-    """
-    cache_key = "sme:overview:all"
-
-    def compute():
-        return sme_markets.get_sme_overview()
-
-    try:
-        data, age = CACHE.get_or_fetch(cache_key, 30, compute)
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"SME Overview error: {exc}") from exc
-
+    """Counts, market cap, turnover, breadth and the session's leaders on NSE Emerge."""
+    data, age = _board()
     return envelope(
-        data,
+        {k: v for k, v in data.items() if k != "rows"},
         age,
-        source="NSE Emerge & BSE SME Official Feeds",
-        delayed_minutes=0,
-        note="SME board metrics updated in real-time. Complies with SEBI SME trading framework.",
-    )
-
-
-@router.get("/api/sme/ipos")
-@router.get("/api/v1/sme/ipos")
-def get_sme_ipos(
-    status: Literal["all", "live", "upcoming", "closed", "listed"] = Query("all"),
-    exchange: Literal["ALL", "NSE", "BSE"] = Query("ALL"),
-):
-    """
-    Returns SME IPO Pipeline: issue size, lot size, minimum application amount (₹1.0L - ₹1.5L),
-    and QIB / NII / Retail subscription multiples.
-    """
-    cache_key = f"sme:ipos:{status}:{exchange}"
-
-    def compute():
-        return sme_markets.get_sme_ipos(status=status, exchange=exchange)
-
-    try:
-        data, age = CACHE.get_or_fetch(cache_key, 30, compute)
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"SME IPOs error: {exc}") from exc
-
-    return envelope(
-        data,
-        age,
-        source="NSE Emerge, BSE SME & Lead Manager Filings",
-        delayed_minutes=0,
-        note="SEBI mandates lot sizes with minimum investment of ₹1,00,000 - ₹1,50,000 per application.",
-    )
-
-
-@router.get("/api/sme/migrations")
-@router.get("/api/v1/sme/migrations")
-def get_mainboard_migrations(
-    status: Literal["all", "ready"] = Query("all"),
-):
-    """
-    Mainboard Migration Tracker:
-    Evaluates companies against SEBI / NSE / BSE 5-point migration eligibility criteria
-    and tracks historical post-migration performance of graduated stars.
-    """
-    cache_key = f"sme:migrations:{status}"
-
-    def compute():
-        return sme_markets.get_sme_migrations(status=status)
-
-    try:
-        data, age = CACHE.get_or_fetch(cache_key, 60, compute)
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"SME Migration error: {exc}") from exc
-
-    return envelope(
-        data,
-        age,
-        source="NSE & BSE Listing Compliance Disclosures",
-        delayed_minutes=0,
-        note="Audit criteria: 3Y listing tenure, Paid-up capital > ₹10 Cr, MCap > ₹25 Cr, Positive PAT (2/3Y).",
+        source=SOURCE,
+        delayed_minutes=SETTINGS.quote_delay_minutes,
+        note="NSE Emerge only. See 'unavailable' for what the feed does not carry.",
     )
 
 
 @router.get("/api/sme/screener")
 @router.get("/api/v1/sme/screener")
 def screen_sme_stocks(
-    exchange: Literal["ALL", "NSE", "BSE"] = Query("ALL"),
-    sector: str | None = Query(None, description="Filter by sector"),
-    min_market_cap: float | None = Query(None, description="Minimum market cap in ₹ Cr"),
-    max_market_cap: float | None = Query(None, description="Maximum market cap in ₹ Cr"),
-    min_pat_growth: float | None = Query(None, description="Minimum 3Y sales / profit growth %"),
-    max_pe: float | None = Query(None, description="Maximum P/E multiple"),
-    max_spread_pct: float | None = Query(None, description="Maximum bid-ask spread %"),
-    migration_ready_only: bool = Query(False, description="Filter only migration-eligible companies"),
-    sort_by: str = Query("market_cap_cr", description="Field to sort by"),
-    order: Literal["asc", "desc"] = Query("desc"),
+    min_market_cap_cr: float | None = Query(None, ge=0, le=1e7),
+    max_market_cap_cr: float | None = Query(None, ge=0, le=1e7),
+    min_turnover_cr: float | None = Query(None, ge=0, le=1e6),
+    sort: Literal["marketCapCr", "turnoverCr", "changePct", "volume"] = Query("marketCapCr"),
+    limit: int = Query(200, ge=1, le=1000),
 ):
-    """
-    Institutional multi-factor screener for SME exchange stocks.
-    """
+    """Emerge securities traded this session, filtered by size and liquidity."""
+    data, age = _board()
+    rows = sme_live.screen(data["rows"], min_market_cap_cr, max_market_cap_cr, min_turnover_cr, sort, limit)
+    return envelope(
+        {"asOf": data["asOf"], "total": data["count"], "matched": len(rows), "rows": rows},
+        age,
+        source=SOURCE,
+        delayed_minutes=SETTINGS.quote_delay_minutes,
+        note="Price, volume and market cap only: the exchange feed carries no fundamentals for SME companies.",
+    )
+
+
+@router.get("/api/sme/ipos")
+@router.get("/api/v1/sme/ipos")
+def get_sme_ipos(status: Literal["all", "ongoing", "upcoming", "closed", "listed"] = Query("all")):
+    """SME issues from the IPO pipeline, exactly as NSE lists them."""
     try:
-        results = sme_markets.screen_sme_stocks(
-            exchange=exchange,
-            sector=sector,
-            min_market_cap=min_market_cap,
-            max_market_cap=max_market_cap,
-            min_pat_growth=min_pat_growth,
-            max_pe=max_pe,
-            max_spread_pct=max_spread_pct,
-            migration_ready_only=migration_ready_only,
-            sort_by=sort_by,
-            order=order,
-        )
-        return envelope(
-            {"count": len(results), "results": results},
-            0.0,
-            source="Arthdex SME Screener Engine",
-            delayed_minutes=0,
-            note="Screened against active NSE Emerge and BSE SME universe.",
-        )
+        pipeline, age = CACHE.get_or_fetch("ipo:pipeline", SETTINGS.ipo_ttl, ipo_service.build_pipeline)
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"SME screener error: {exc}") from exc
+        raise HTTPException(status_code=503, detail=f"IPO pipeline unavailable: {exc}") from exc
+    return envelope(
+        sme_live.sme_ipos(pipeline, status),
+        age,
+        source="NSE IPO listings",
+        delayed_minutes=0,
+        note="Grey-market premium is not shown: it is an unofficial quote that no exchange publishes.",
+    )
+
+
+@router.get("/api/sme/migrations")
+@router.get("/api/v1/sme/migrations")
+def get_mainboard_migrations():
+    """Not offered: the inputs to the eligibility test are not in any connected source."""
+    raise HTTPException(status_code=404, detail=sme_live.UNAVAILABLE["migration"])

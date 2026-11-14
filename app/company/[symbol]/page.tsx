@@ -24,6 +24,7 @@ import {
   getUnlistedCompany,
   getValuation,
 } from "@/lib/api/endpoints";
+import { jsonLdScript } from "@/lib/json-ld";
 
 interface PageProps {
   params: Promise<{ symbol: string }>;
@@ -72,7 +73,7 @@ export default async function CompanyOverviewPage({ params }: PageProps) {
     <div className="mx-auto w-full max-w-[1920px] space-y-3 px-2 py-2 sm:px-3 lg:px-4">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdScript(jsonLd) }}
       />
       <section aria-label="Price history">
         {candles.ok ? (

@@ -220,24 +220,11 @@ class TestSectorKPI(unittest.TestCase):
         app.include_router(router)
         client = TestClient(app)
 
-        # GET /api/sectors/kpis
-        res_summary = client.get("/api/sectors/kpis")
-        self.assertEqual(res_summary.status_code, 200)
-        s_data = res_summary.json()
-        self.assertIn("data", s_data)
-        self.assertEqual(s_data["data"]["total_sectors_tracked"], 5)
-
-        # GET /api/sectors/kpis/{sector_code} for all 5 sectors
-        for sec in ["auto", "banking", "power", "aviation", "telecom"]:
-            res_sec = client.get(f"/api/sectors/kpis/{sec}")
-            self.assertEqual(res_sec.status_code, 200, f"Failed for sector {sec}")
-            data = res_sec.json()["data"]
-            self.assertEqual(data["sector_code"], sec)
-
-        # GET /api/sectors/kpis/invalid -> 404
-        res_invalid = client.get("/api/sectors/kpis/non_existent_sector")
-        self.assertEqual(res_invalid.status_code, 404)
-
+        # The figures in this module are hand-entered, so the routes do not serve them
+        for path in ("/api/sectors/kpis", "/api/v1/sectors/kpis", "/api/sectors/kpis/auto"):
+            res = client.get(path)
+            self.assertEqual(res.status_code, 404, path)
+            self.assertIn("no data source is connected", res.json()["detail"])
 
 if __name__ == "__main__":
     unittest.main()

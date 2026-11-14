@@ -8,6 +8,7 @@ from ..cache import CACHE
 from ..config import SETTINGS
 from ..providers import constituents, nse, yahoo
 from ..schemas import envelope
+from .. import not_connected
 from ..services import bhavcopy, commodities, fixed_income, sector_rotation, surveillance
 
 router = APIRouter(prefix="/api/v1/market", tags=["market"])
@@ -308,6 +309,7 @@ def get_surveillance(
 @router.get("/yield-curve")
 def get_yield_curve():
     """India Sovereign Par Yield Curve (91D to 40Y), Spreads, and RBI Monetary Policy Corridor."""
+    not_connected.refuse("yield-curve")
     try:
         data = fixed_income.get_sovereign_yield_curve()
     except Exception as exc:

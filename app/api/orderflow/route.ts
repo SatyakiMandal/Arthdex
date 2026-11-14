@@ -3,6 +3,8 @@ export const revalidate = 0;
 
 import { NextResponse } from "next/server";
 
+import { backendHeaders } from "@/lib/api/auth";
+
 const BASE_URL = process.env.ARTHDEX_API_URL ?? "http://127.0.0.1:8000";
 
 /**
@@ -30,9 +32,7 @@ export async function GET(request: Request) {
     const url = `${BASE_URL}/api/v1/orderflow/${encodeURIComponent(symbol.toUpperCase())}?market=${encodeURIComponent(market)}&interval=${encodeURIComponent(interval)}&_t=${Date.now()}`;
     const res = await fetch(url, {
       cache: "no-store",
-      headers: {
-        Accept: "application/json",
-      },
+      headers: backendHeaders({ Accept: "application/json" }),
     });
 
     if (!res.ok) {
@@ -59,7 +59,7 @@ export async function GET(request: Request) {
     );
   } catch (err) {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Order flow fetch failed" },
+      { error: "Order flow service unavailable" },
       { status: 503 },
     );
   }

@@ -5,6 +5,7 @@ import { CompanyHeader } from "@/components/company/company-header";
 import { CompanyTabs } from "@/components/company/company-tabs";
 import { CustomAlertEngine, type MetricOption } from "@/components/alerts/custom-alert-engine";
 import { getProfile, getQuote, getValuation } from "@/lib/api/endpoints";
+import { isValidSymbol } from "@/lib/api/request-guards";
 
 /**
  * Shared company shell.
@@ -22,7 +23,9 @@ export default async function CompanyLayout({
   params: Promise<{ symbol: string }>;
 }) {
   const { symbol } = await params;
-  const upper = symbol.toUpperCase();
+  // Reject anything that is not ticker-shaped before it reaches a backend URL or the page markup
+  if (!isValidSymbol(decodeURIComponent(symbol))) notFound();
+  const upper = decodeURIComponent(symbol).toUpperCase();
 
   const [quote, profile, valuation] = await Promise.all([
     getQuote(upper),

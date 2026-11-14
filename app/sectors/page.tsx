@@ -1,31 +1,37 @@
 import type { Metadata } from "next";
-import { SectorKpiDesk } from "@/components/sectors/sector-kpi-desk";
+
+import { SiteFooter } from "@/components/layout/site-footer";
+import { SiteHeader } from "@/components/layout/site-header";
+import { DataUnavailable, SourceLine } from "@/components/ui/data-provenance";
+import { getSectorKpiOverview } from "@/lib/api/endpoints";
 
 export const metadata: Metadata = {
-  title: "Sector Operating KPIs Dashboard (SKPI) · Arthdex",
-  description:
-    "Real-time Indian industry operating metrics: SIAM automotive wholesale & VAHAN retail, RBI sectoral credit deployment, CEA power demand, DGCA aviation passenger loads, and TRAI telecom subscribers.",
+  title: "Sector operating KPIs · Arthdex",
+  description: "Operating indicators by sector. Not yet connected to the publishing bodies' releases.",
+  robots: { index: false },
 };
 
-export default function SectorsPage() {
+export default async function SectorsPage() {
+  const res = await getSectorKpiOverview();
   return (
-    <div className="mx-auto w-full max-w-[1920px] p-2 sm:p-4 space-y-4">
-      {/* Title Header */}
-      <div className="flex flex-wrap items-baseline justify-between border-b border-border pb-2">
-        <div className="flex items-baseline gap-2">
-          <h1 className="font-mono text-base font-bold uppercase tracking-wider text-foreground">
-            SECTOR OPERATING KPIS DASHBOARD (SKPI)
-          </h1>
-          <span className="font-mono text-3xs text-muted-foreground">M19 · REAL-ECONOMY OPERATING RADAR</span>
-        </div>
-        <div className="flex items-center gap-2 font-mono text-3xs text-muted-foreground">
-          <span className="text-accent font-bold">ALT+K: SKPI &lt;GO&gt;</span>
-          <span>•</span>
-          <span>SIAM • VAHAN • RBI • CEA • DGCA • TRAI</span>
-        </div>
-      </div>
-
-      <SectorKpiDesk />
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <SiteHeader />
+      <main id="main" className="mx-auto w-full max-w-[1920px] flex-1 space-y-4 p-2 sm:p-4">
+        <h1 className="border-b border-border pb-2 font-mono text-base font-bold uppercase tracking-wider text-foreground">
+          Sector operating KPIs
+        </h1>
+        {res.ok ? (
+          <>
+            <pre className="overflow-x-auto border border-border bg-surface p-3 text-2xs">{JSON.stringify(res.data, null, 2)}</pre>
+            <SourceLine meta={res.meta} />
+          </>
+        ) : (
+          <div className="py-12">
+            <DataUnavailable title="Sector KPIs are not connected" message={res.message} />
+          </div>
+        )}
+      </main>
+      <SiteFooter />
     </div>
   );
 }

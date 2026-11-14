@@ -55,6 +55,7 @@ describe("app/api/quote/route", () => {
 
     const body = await res.json();
     expect(body.ok).toBe(false);
-    expect(body.error).toBe("Connection refused");
+    // the upstream error text stays in the server log
+    expect(body.error).toBe("Quote service unavailable");
   });
 });

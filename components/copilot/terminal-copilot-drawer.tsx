@@ -32,8 +32,6 @@ import {
   FinancialRole,
   FINANCIAL_ROLES,
   CORE_INSTITUTIONAL_CHIPS,
-  getStockDossier,
-  generateDeterministicSynthesis,
   StockDossier,
 } from "@/lib/copilot/quant-synthesis";
 
@@ -92,8 +90,25 @@ export function TerminalCopilotDrawer({
   const windowRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Active dossier for the selected symbol
-  const dossier: StockDossier = getStockDossier(symbol);
+  // Live header strip for the selected symbol; null while loading or when the symbol is not covered
+  const [dossier, setDossier] = useState<StockDossier | null>(null);
+  useEffect(() => {
+    if (!isOpen || !/^[A-Z0-9&_-]{1,20}$/.test(symbol)) {
+      queueMicrotask(() => setDossier(null));
+      return;
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      fetch(`/api/copilot/dossier?symbol=${encodeURIComponent(symbol)}`, { signal: controller.signal })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data: StockDossier | null) => setDossier(data && data.symbol === symbol ? data : null))
+        .catch(() => undefined);
+    }, 350);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [symbol, isOpen]);
 
   // Extract symbol from current pathname if user is browsing a stock page
   useEffect(() => {
@@ -112,7 +127,9 @@ export function TerminalCopilotDrawer({
   useEffect(() => {
     queueMicrotask(() => {
       try {
-        const storedKey = localStorage.getItem(BYOK_STORAGE_KEY);
+        // The key lives for the tab session only; drop any copy an earlier version persisted
+        localStorage.removeItem(BYOK_STORAGE_KEY);
+        const storedKey = sessionStorage.getItem(BYOK_STORAGE_KEY);
         if (storedKey) {
           setSavedKey(storedKey);
           setByokKey(storedKey);
@@ -222,10 +239,10 @@ export function TerminalCopilotDrawer({
   const saveCustomKey = () => {
     try {
       if (byokKey.trim()) {
-        localStorage.setItem(BYOK_STORAGE_KEY, byokKey.trim());
+        sessionStorage.setItem(BYOK_STORAGE_KEY, byokKey.trim());
         setSavedKey(byokKey.trim());
       } else {
-        localStorage.removeItem(BYOK_STORAGE_KEY);
+        sessionStorage.removeItem(BYOK_STORAGE_KEY);
         setSavedKey("");
       }
       setShowSettings(false);
@@ -260,7 +277,6 @@ export function TerminalCopilotDrawer({
     setPrompt("");
     setIsLoading(true);
 
-    // If mode is DETERMINISTIC, or if external fetch fails, we have full client-side algorithmic coverage
     try {
       const res = await fetch("/api/copilot/chat", {
         method: "POST",
@@ -274,11 +290,11 @@ export function TerminalCopilotDrawer({
         }),
       });
 
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
+        throw new Error(typeof data?.error === "string" ? data.error : `The request failed (${res.status}).`);
       }
 
-      const data = await res.json();
       if (data.response) {
         setMessages((prev) => [
           ...prev,
@@ -296,18 +312,17 @@ export function TerminalCopilotDrawer({
       } else {
         throw new Error(data.error || "Malformed response payload");
       }
-    } catch {
-      // Resilient Client-Side Deterministic Quant Fallback
-      const fallback = generateDeterministicSynthesis(q, symbol, activeRole);
+    } catch (err) {
+      // No figures are kept in the browser, so a failed request is reported, not papered over
       setMessages((prev) => [
         ...prev,
         {
           id: msgId,
           role: "copilot",
-          text: fallback.markdown,
-          title: fallback.title,
-          provenance: fallback.provenance,
-          sourceCitations: fallback.sourceCitations,
+          text: err instanceof Error && err.message ? err.message : "The request did not complete. Check the connection and try again.",
+          title: "No answer",
+          provenance: "NO DATA",
+          sourceCitations: [],
           isLiveAI: false,
           timestamp: getFormattedNow(),
         },
@@ -399,7 +414,7 @@ export function TerminalCopilotDrawer({
                       ? "bg-gold text-black shadow-sm font-bold"
                       : "text-muted-foreground hover:text-foreground"
                   )}
-                  title="Deterministic Quant Rules (Zero API Quota / Guaranteed Uptime)"
+                  title="Offline summary of the figures on file (no AI model used)"
                 >
                   <Activity className="h-2.5 w-2.5" />
                   <span>QUANT RULES (OFFLINE)</span>
@@ -521,31 +536,34 @@ export function TerminalCopilotDrawer({
 
             {/* Center/Right: Instant Financial Dossier Summary Badge */}
             <div className="flex items-center gap-2">
-              <div
-                className="px-2 py-0.5 bg-surface border border-border text-3xs text-foreground font-bold flex items-center gap-1.5 shadow-sm"
-                title={`${dossier.name} · ${dossier.sector}`}
-              >
-                <span className="text-accent">{dossier.symbol}</span>
-                <span className="text-muted-foreground">·</span>
-                <span>{dossier.cmp}</span>
-                <span className={dossier.isPositive ? "text-up" : "text-down"}>
-                  ({dossier.change})
-                </span>
-                <span className="text-muted-foreground">|</span>
-                <span className="text-muted-foreground font-normal">P/E:</span>
-                <span>{dossier.pe}</span>
-                <span className="text-muted-foreground font-normal">|</span>
-                <span className="text-muted-foreground font-normal">EV/EBITDA:</span>
-                <span>{dossier.evEbitda}</span>
-                <span className="text-muted-foreground font-normal">|</span>
-                <span className="text-muted-foreground font-normal">ROE:</span>
-                <span>{dossier.roe}</span>
-                <span className="text-muted-foreground font-normal">|</span>
-                <span className="text-muted-foreground font-normal">Beta:</span>
-                <span>{dossier.beta}</span>
-              </div>
+              {dossier ? (
+                <div
+                  className="px-2 py-0.5 bg-surface border border-border text-3xs text-foreground font-bold flex items-center gap-1.5 shadow-sm"
+                  title={[dossier.name, dossier.sector].filter(Boolean).join(" · ")}
+                >
+                  <span className="text-accent">{dossier.symbol}</span>
+                  <span className="text-muted-foreground">·</span>
+                  <span>₹{dossier.cmp.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  {dossier.changePct !== null ? (
+                    <span className={dossier.changePct >= 0 ? "text-up" : "text-down"}>
+                      ({dossier.changePct >= 0 ? "+" : ""}{dossier.changePct.toFixed(2)}%)
+                    </span>
+                  ) : null}
+                  {([["P/E", dossier.pe, ""], ["EV/EBITDA", dossier.evEbitda, "x"], ["ROE", dossier.roePct, "%"]] as const).map(([label, value, unit]) => (
+                    <span key={label} className="flex items-center gap-1.5">
+                      <span className="text-muted-foreground font-normal">|</span>
+                      <span className="text-muted-foreground font-normal">{label}:</span>
+                      <span>{value === null ? "—" : `${value.toFixed(label === "ROE" ? 1 : 2)}${unit}`}</span>
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <div className="px-2 py-0.5 bg-surface border border-border text-3xs text-muted-foreground">
+                  {symbol ? `No quote for ${symbol}` : "Enter a ticker"}
+                </div>
+              )}
               <span className="hidden sm:inline-block px-1 py-0.5 bg-surface-muted text-[7.5px] font-bold text-muted-foreground border border-border uppercase">
-                ACTUAL FILING
+                DELAYED QUOTE
               </span>
             </div>
           </div>
@@ -612,10 +630,10 @@ export function TerminalCopilotDrawer({
                 </div>
                 <div className="space-y-0.5">
                   <div className="text-xs font-bold text-foreground uppercase tracking-wide">
-                    Institutional Terminal Cockpit: {dossier.name} ({symbol})
+                    Ask about {dossier?.name ?? symbol}
                   </div>
                   <p className="text-3xs text-muted-foreground max-w-md mx-auto leading-relaxed">
-                    Zero-speculation analytical cockpit powered by Ind AS audited filings, Note 34 supply chain disclosures, and deterministic quant models.
+                    Answers are built from the company&apos;s figures on Arthdex: price, financials, shareholding and analyst estimates. Offline mode reports them; AI mode writes an analysis from them. Information only, not advice.
                   </p>
                 </div>
 
@@ -633,7 +651,7 @@ export function TerminalCopilotDrawer({
                         <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
                       </div>
                       <div className="text-[7.5px] text-muted-foreground mt-0.5">
-                        Run verified quant model on {symbol}
+                        Ask about {symbol}
                       </div>
                     </button>
                   ))}
@@ -643,7 +661,7 @@ export function TerminalCopilotDrawer({
                 <div className="pt-3 border-t border-border/40 max-w-md mx-auto flex items-center justify-around text-[7.5px] text-muted-foreground uppercase">
                   <span className="flex items-center gap-1">
                     <span className="w-1.5 h-1.5 bg-up rounded-full"></span>
-                    <span>[ACTUAL FILING] Audited Disclosures</span>
+                    <span>[ACTUAL FILING] Company filings</span>
                   </span>
                   <span className="flex items-center gap-1">
                     <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full"></span>
@@ -687,10 +705,10 @@ export function TerminalCopilotDrawer({
                         <div className="flex items-center gap-2">
                           <span className="flex items-center gap-1 text-up font-bold">
                             <CheckCircle2 className="h-2.5 w-2.5" />
-                            <span>{msg.provenance || "ACTUAL FILING & QUANT RULES"}</span>
+                            <span>{msg.provenance || "ARTHDEX FIGURES"}</span>
                           </span>
                           <span className="px-1 py-0.2 bg-surface-muted border border-border">
-                            {msg.isLiveAI ? "GEMINI 3.8 FLASH" : "DETERMINISTIC QUANT ENGINE"}
+                            {msg.isLiveAI ? "GEMINI 3.8 FLASH" : "OFFLINE SUMMARY"}
                           </span>
                         </div>
 
@@ -728,8 +746,8 @@ export function TerminalCopilotDrawer({
                   <Sparkles className="h-3.5 w-3.5 text-accent animate-spin" />
                   <span>
                     {mode === "GEMINI"
-                      ? "Executing Gemini 3.8 Flash grounded inference with audited filings..."
-                      : "Calculating deterministic quantitative matrices & DuPont decomposition..."}
+                      ? "Writing an analysis from the company's figures..."
+                      : "Collecting the company's figures..."}
                   </span>
                 </div>
                 <span className="text-[7.5px] px-1 bg-accent/20 text-accent font-bold uppercase">

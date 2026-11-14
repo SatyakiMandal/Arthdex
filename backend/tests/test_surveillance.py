@@ -9,18 +9,6 @@ from app.services import surveillance
 
 
 class SurveillanceTests(unittest.TestCase):
-    def test_baseline_surveillance_records(self) -> None:
-        """Baseline records must contain valid SEBI surveillance stages and margin rates."""
-        records = surveillance.BASELINE_SURVEILLANCE
-        self.assertGreater(len(records), 0)
-        for r in records:
-            self.assertIn("symbol", r)
-            self.assertIn(r["measure"], ("ASM-LT", "ASM-ST", "GSM", "T2T"))
-            self.assertIn(r["priceBandPct"], (2.0, 5.0, 10.0, 20.0))
-            self.assertGreaterEqual(r["marginRequiredPct"], 50.0)
-            self.assertIn(r["asdRatePct"], (0.0, 50.0, 100.0, 200.0))
-            self.assertIn(r["tradingWindow"], ("Daily", "Weekly (Monday)", "Fortnightly"))
-
     def test_parse_gsm_surveillance_csv(self) -> None:
         """GSM stage parsing correctly assigns 50%, 100%, and 200% ASD surcharge."""
         csv_data = """Symbol,Security Name,Series,Current Stage,Effective Date

@@ -266,7 +266,9 @@ def get_report(run_id: str):
         raise HTTPException(404, "Report not found")
     headers = {
         "Content-Security-Policy": (
-            "sandbox allow-same-origin allow-scripts; default-src 'none'; "
+            # no allow-same-origin: the report embeds scraped text, so its scripts get an
+            # opaque origin and cannot reach this API or the site that frames it
+            "sandbox allow-scripts allow-popups; default-src 'none'; "
             "img-src data: https:; style-src 'unsafe-inline'; script-src 'unsafe-inline'"
         )
     }

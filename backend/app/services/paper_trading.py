@@ -16,86 +16,29 @@ Features:
 from __future__ import annotations
 
 import logging
+import math
+import threading
+import uuid
 from datetime import datetime
 from typing import Any, Literal
 
 logger = logging.getLogger(__name__)
 
 INITIAL_CASH_BALANCE = 1000000.0  # ₹10 Lakh Virtual Capital
+MAX_ORDER_HISTORY = 200  # the blotter keeps the most recent fills only
 
-# In-memory virtual account state
+# One writer at a time: the account is a module-level dict shared by every request thread
+_ACCOUNT_LOCK = threading.RLock()
+
+# In-memory virtual account state. It starts as cash only: positions and fills appear when
+# the user places paper orders, never from sample data.
 VIRTUAL_ACCOUNT: dict[str, Any] = {
-    "cashBalance": 724850.0,
+    "cashBalance": INITIAL_CASH_BALANCE,
     "initialCapital": INITIAL_CASH_BALANCE,
-    "marginUsed": 275150.0,
-    "realizedPnl": 14200.0,
-    "positions": [
-        {
-            "symbol": "RELIANCE",
-            "name": "Reliance Industries Ltd",
-            "quantity": 100,
-            "product": "CNC",
-            "averagePrice": 1310.0,
-            "cmp": 1324.50,
-            "investedValue": 131000.0,
-            "currentValue": 132450.0,
-            "unrealizedPnl": 1450.0,
-            "unrealizedPnlPct": 1.11,
-            "dayChangePct": 0.85,
-        },
-        {
-            "symbol": "TCS",
-            "name": "Tata Consultancy Services Ltd",
-            "quantity": 25,
-            "product": "CNC",
-            "averagePrice": 4120.0,
-            "cmp": 4148.0,
-            "investedValue": 103000.0,
-            "currentValue": 103700.0,
-            "unrealizedPnl": 700.0,
-            "unrealizedPnlPct": 0.68,
-            "dayChangePct": 0.45,
-        },
-        {
-            "symbol": "HDFCBANK",
-            "name": "HDFC Bank Ltd",
-            "quantity": 75,
-            "product": "CNC",
-            "averagePrice": 1740.0,
-            "cmp": 1728.0,
-            "investedValue": 130500.0,
-            "currentValue": 129600.0,
-            "unrealizedPnl": -900.0,
-            "unrealizedPnlPct": -0.69,
-            "dayChangePct": -0.35,
-        },
-    ],
-    "orders": [
-        {
-            "orderId": "ORD-20261106-001",
-            "symbol": "RELIANCE",
-            "action": "BUY",
-            "product": "CNC",
-            "quantity": 100,
-            "price": 1310.0,
-            "tradeValue": 131000.0,
-            "totalCharges": 182.45,
-            "status": "FILLED",
-            "timestamp": "2026-11-06T09:45:12+05:30",
-        },
-        {
-            "orderId": "ORD-20261106-002",
-            "symbol": "TCS",
-            "action": "BUY",
-            "product": "CNC",
-            "quantity": 25,
-            "price": 4120.0,
-            "tradeValue": 103000.0,
-            "totalCharges": 145.20,
-            "status": "FILLED",
-            "timestamp": "2026-11-06T10:15:40+05:30",
-        },
-    ],
+    "marginUsed": 0.0,
+    "realizedPnl": 0.0,
+    "positions": [],
+    "orders": [],
 }
 
 
@@ -183,6 +126,19 @@ def execute_paper_order(
     sym = symbol.upper()
     act = action.upper()
     prod = product.upper()
+    # A negative quantity on a BUY would credit cash, and a NaN price would poison every
+    # later balance, so the engine refuses them itself rather than trusting its callers.
+    if act not in ("BUY", "SELL") or prod not in ("CNC", "MIS"):
+        return {"success": False, "error": "Action must be BUY or SELL and product CNC or MIS"}
+    if isinstance(quantity, bool) or not isinstance(quantity, int) or quantity <= 0:
+        return {"success": False, "error": "Quantity must be a positive whole number"}
+    if not isinstance(price, (int, float)) or not math.isfinite(price) or price <= 0:
+        return {"success": False, "error": "Price must be a positive number"}
+    with _ACCOUNT_LOCK:
+        return _fill_order(sym, act, quantity, float(price), prod)
+
+
+def _fill_order(sym: str, act: str, quantity: int, price: float, prod: str) -> dict[str, Any]:
     trade_val = quantity * price
 
     charges = calculate_regulatory_charges(trade_val, act, prod)
@@ -247,7 +203,7 @@ def execute_paper_order(
             pos["unrealizedPnl"] = round(pos["currentValue"] - pos["investedValue"], 2)
 
     order_record = {
-        "orderId": f"ORD-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+        "orderId": f"ORD-{datetime.now().strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:6].upper()}",
         "symbol": sym,
         "action": act,
         "product": prod,
@@ -259,6 +215,7 @@ def execute_paper_order(
         "timestamp": datetime.now().isoformat(),
     }
     VIRTUAL_ACCOUNT["orders"].insert(0, order_record)
+    del VIRTUAL_ACCOUNT["orders"][MAX_ORDER_HISTORY:]
 
     return {
         "success": True,

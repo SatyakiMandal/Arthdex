@@ -13,7 +13,7 @@ const VERDICT_STYLES: Record<string, { badge: string; text: string }> = {
   },
   "Normal Volatility Priced": {
     badge: "bg-accent/15 text-accent border-accent/40",
-    text: "Moderate expectation (3% – 6%). Consistent with historical post-earnings move.",
+    text: "Moderate implied move (3% to 6%).",
   },
   "Low Volatility Priced": {
     badge: "bg-up/15 text-up border-up/40",

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DcfWorkbench } from "@/components/valuation/dcf-workbench";
+import { getDcfDefaults } from "@/lib/api/endpoints";
 
 interface PageProps {
   params: Promise<{ symbol: string }>;
@@ -7,7 +8,7 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { symbol } = await params;
-  const sym = (symbol || "RELIANCE").toUpperCase();
+  const sym = decodeURIComponent(symbol).toUpperCase();
   return {
     title: `${sym} Valuation Lab & Interactive DCF (VAL) · Arthdex`,
     description: `2-stage FCFF model, Reverse DCF implied growth, CAPM WACC calculator and sensitivity matrix for ${sym}.`,
@@ -16,7 +17,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function ValuationPage({ params }: PageProps) {
   const { symbol } = await params;
-  const sym = (symbol || "RELIANCE").toUpperCase();
+  const sym = decodeURIComponent(symbol).toUpperCase();
+  const res = await getDcfDefaults(sym);
+  const unavailable = res.ok
+    ? null
+    : res.status === 422 || res.status === 404
+      ? res.message
+      : "The data service did not respond, so the model has no inputs. Try again shortly.";
 
   return (
     <div className="mx-auto w-full max-w-[1920px] p-2 sm:p-4 space-y-4">
@@ -35,7 +42,7 @@ export default async function ValuationPage({ params }: PageProps) {
         </div>
       </div>
 
-      <DcfWorkbench symbol={sym} />
+      <DcfWorkbench symbol={sym} defaults={res.ok ? res.data.defaults : null} unavailable={unavailable} />
     </div>
   );
 }

@@ -1,45 +1,52 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { getCandles } from "@/lib/api/endpoints";
+import { isValidSymbol, rateLimit } from "@/lib/api/request-guards";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const TEXT = { "Content-Type": "text/plain; charset=utf-8", "X-Content-Type-Options": "nosniff", "Cache-Control": "no-store" };
+
 /**
- * Historical Daily OHLCV in CSV for Excel / Google Sheets
- * Example:
+ * Daily OHLCV history as CSV for Excel and Google Sheets.
+ *
  *   =IMPORTDATA("https://arthdex.com/api/v1/xls/hist?symbol=RELIANCE&days=30")
+ *
+ * `days` is calendar days back from today, 1 to 365. The bars are the data service's daily
+ * candles, the same series as the company page chart.
  */
 export async function GET(request: NextRequest) {
+  const wait = rateLimit("xls", request, 120, 60_000);
+  if (wait) return new NextResponse("#RATE_LIMIT", { status: 429, headers: { ...TEXT, "Retry-After": String(wait) } });
+
   const { searchParams } = new URL(request.url);
-  const symbol = (searchParams.get("symbol") || "RELIANCE").toUpperCase();
-  const days = Math.min(365, parseInt(searchParams.get("days") || "30", 10));
+  const symbol = (searchParams.get("symbol") || "").toUpperCase();
+  if (!isValidSymbol(symbol) || !/^[A-Z0-9]/.test(symbol)) {
+    return new NextResponse("#INVALID_SYMBOL", { status: 400, headers: TEXT });
+  }
+  const requestedDays = Number.parseInt(searchParams.get("days") || "30", 10);
+  const days = Number.isFinite(requestedDays) ? Math.min(365, Math.max(1, requestedDays)) : 30;
 
-  const rows: string[] = ["DATE,OPEN,HIGH,LOW,CLOSE,VOLUME"];
-  const basePrice = symbol === "RELIANCE" ? 2900 : symbol === "TCS" ? 4100 : 1500;
-
-  const now = new Date();
-  for (let i = days; i >= 0; i--) {
-    const d = new Date(now.getTime() - i * 86400000);
-    // Skip weekends
-    if (d.getDay() === 0 || d.getDay() === 6) continue;
-
-    const dateStr = d.toISOString().split("T")[0];
-    const noise = Math.sin(i * 0.4) * (basePrice * 0.03);
-    const close = basePrice + noise;
-    const open = close - (Math.cos(i) * 15);
-    const high = Math.max(open, close) + Math.abs(Math.sin(i) * 20);
-    const low = Math.min(open, close) - Math.abs(Math.cos(i) * 18);
-    const vol = Math.floor(2500000 + Math.sin(i) * 800000);
-
-    rows.push(`${dateStr},${open.toFixed(2)},${high.toFixed(2)},${low.toFixed(2)},${close.toFixed(2)},${vol}`);
+  const series = await getCandles(symbol, "1Y");
+  if (!series.ok) {
+    const unknown = series.status === 404;
+    return new NextResponse(unknown ? "#UNKNOWN_SYMBOL" : "#UNAVAILABLE", { status: unknown ? 404 : 503, headers: TEXT });
   }
 
-  const csvContent = rows.join("\n");
+  const cutoff = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
+  const fixed = (v: number) => (Number.isFinite(v) ? v.toFixed(2) : "");
+  const rows = series.data.candles
+    .filter((c) => String(c.date).slice(0, 10) >= cutoff)
+    .map((c) => `${String(c.date).slice(0, 10)},${fixed(c.open)},${fixed(c.high)},${fixed(c.low)},${fixed(c.close)},${Number.isFinite(c.volume) ? Math.round(c.volume) : ""}`);
 
-  return new NextResponse(csvContent, {
+  const fileStem = symbol.replace(/[^A-Z0-9_-]/g, "_");
+  return new NextResponse(["DATE,OPEN,HIGH,LOW,CLOSE,VOLUME", ...rows].join("\n"), {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `inline; filename="${symbol}_hist.csv"`,
-      "Cache-Control": "public, max-age=3600",
+      "X-Content-Type-Options": "nosniff",
+      "Content-Disposition": `inline; filename="${fileStem}_hist.csv"`,
+      "Cache-Control": "public, max-age=900",
     },
   });
 }

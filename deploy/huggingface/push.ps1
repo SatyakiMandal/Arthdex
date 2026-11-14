@@ -13,9 +13,10 @@ $work = Join-Path $env:TEMP "arthdex-space"
 if (Test-Path $work) { Remove-Item $work -Recurse -Force }
 git clone "https://huggingface.co/spaces/$Space" $work
 
+# Local data (app_data, SQLite files) and secrets (.env*, keys) never leave this machine.
 # Replace the Space contents with backend/ + Dockerfile + Space card.
 Get-ChildItem $work -Force | Where-Object Name -ne ".git" | Remove-Item -Recurse -Force
-robocopy "$root\backend" $work /E /XD .venv __pycache__ analyzer_data cache .cache tests /XF *.pyc | Out-Null
+robocopy "$root\backend" $work /E /XD .venv __pycache__ analyzer_data app_data cache .cache .pytest_cache .ruff_cache tests /XF *.pyc .env .env.* *.db *.sqlite *.sqlite3 *.pem *.key | Out-Null
 Copy-Item "$PSScriptRoot\Dockerfile" "$work\Dockerfile"
 Copy-Item "$PSScriptRoot\SPACE_README.md" "$work\README.md"
 

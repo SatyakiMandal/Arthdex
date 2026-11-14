@@ -255,6 +255,9 @@ def parse_industry(html: str) -> list[dict[str, Any]]:
 
 
 def fetch_industry(path: str) -> list[dict[str, Any]]:
+    # The path is joined to the host, so it must stay a plain site-relative path
+    if not re.fullmatch(r"/[A-Za-z0-9/_\-%.]*", path) or path.startswith("//") or ".." in path:
+        raise ValueError(f"Unexpected screener path: {path!r}")
     res = requests.get(f"https://www.screener.in{path}", headers=UA, timeout=30)
     res.raise_for_status()
     return parse_industry(res.text)

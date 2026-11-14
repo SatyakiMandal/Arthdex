@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import threading
+import time
 from datetime import datetime, timezone
 
 from fastapi import APIRouter
@@ -49,10 +51,26 @@ def job_health():
     )
 
 
+FEED_RUN_COOLDOWN = 60.0  # seconds between on-demand probes of every upstream
+_feed_run_lock = threading.Lock()
+_feed_run_last: tuple[float, dict] | None = None
+
+
 @router.post("/health/feeds/run")
 def feed_health_run():
-    """Probe every feed now, repairing what can be repaired. Takes up to a minute on a cold cache."""
-    return watchdog.run_all(mode="on demand")
+    """
+    Probe every feed now, repairing what can be repaired. Takes up to a minute on a cold cache.
+
+    A run hits about twenty upstreams, so repeated calls inside the cooldown get the last
+    result back instead of starting another sweep (which is how an upstream bans this IP).
+    """
+    global _feed_run_last
+    with _feed_run_lock:
+        if _feed_run_last and time.monotonic() - _feed_run_last[0] < FEED_RUN_COOLDOWN:
+            return _feed_run_last[1]
+        state = watchdog.run_all(mode="on demand")
+        _feed_run_last = (time.monotonic(), state)
+        return state
 
 
 @router.get("/cache")

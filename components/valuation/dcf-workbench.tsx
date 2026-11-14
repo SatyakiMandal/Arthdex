@@ -14,28 +14,80 @@ import {
   Table,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { ApiDcfDefaults } from "@/lib/api/types";
 
 interface DcfWorkbenchProps {
-  symbol?: string;
-  defaultPrice?: number;
+  symbol: string;
+  /** The company's own figures. Without them the model is not shown. */
+  defaults: ApiDcfDefaults | null;
+  /** Why there are no inputs, when defaults is null. */
+  unavailable?: string | null;
 }
 
-export function DcfWorkbench({ symbol = "RELIANCE", defaultPrice = 2950 }: DcfWorkbenchProps) {
-  // Inputs
-  const [currentPrice, setCurrentPrice] = useState<number>(defaultPrice);
-  const [baseFcffCr, setBaseFcffCr] = useState<number>(45200); // Reliance FCFF
-  const [growthYears1_5, setGrowthYears1_5] = useState<number>(14.0); // 14% CAGR
-  const [terminalGrowth, setTerminalGrowth] = useState<number>(5.5); // 5.5% Indian GDP nominal
-  const [sharesCr, setSharesCr] = useState<number>(676.5); // Total shares
-  const [netDebtCr, setNetDebtCr] = useState<number>(112400); // Net debt
+const RISK_FREE_PCT = 7.18; // 10-year G-Sec, an assumption the reader can move
+const ERP_PCT = 6.0;
+const TAX_RATE_PCT = 25.17; // Section 115BAA
 
-  // CAPM WACC sliders
-  const [riskFreeRate, setRiskFreeRate] = useState<number>(7.18); // 10Y G-Sec
-  const [erp, setErp] = useState<number>(6.0); // Indian ERP
-  const [beta, setBeta] = useState<number>(1.05);
-  const [costOfDebtPreTax, setCostOfDebtPreTax] = useState<number>(8.25);
-  const [taxRate, setTaxRate] = useState<number>(25.17); // Sec 115BAA corporate tax
-  const [debtRatio, setDebtRatio] = useState<number>(20.0); // 20% debt, 80% equity
+/** Present value of the two-stage model's enterprise value at a given first-stage growth. */
+function enterpriseValueAt(baseFcff: number, growthPct: number, waccPct: number, terminalPct: number): number {
+  if (waccPct <= terminalPct) return Number.POSITIVE_INFINITY;
+  let total = 0;
+  let fcff = baseFcff;
+  for (let yr = 1; yr <= 5; yr++) {
+    fcff *= 1 + growthPct / 100;
+    total += fcff / Math.pow(1 + waccPct / 100, yr);
+  }
+  const terminal = (fcff * (1 + terminalPct / 100)) / ((waccPct - terminalPct) / 100);
+  return total + terminal / Math.pow(1 + waccPct / 100, 5);
+}
+
+/** First-stage growth at which the model's value equals the market's, by bisection; null if out of range. */
+function impliedGrowthPct(targetEv: number, baseFcff: number, waccPct: number, terminalPct: number): number | null {
+  if (!(targetEv > 0) || !(baseFcff > 0) || waccPct <= terminalPct) return null;
+  let lo = -50;
+  let hi = 100;
+  if (enterpriseValueAt(baseFcff, lo, waccPct, terminalPct) > targetEv) return null;
+  if (enterpriseValueAt(baseFcff, hi, waccPct, terminalPct) < targetEv) return null;
+  for (let i = 0; i < 60; i++) {
+    const mid = (lo + hi) / 2;
+    if (enterpriseValueAt(baseFcff, mid, waccPct, terminalPct) < targetEv) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
+export function DcfWorkbench({ symbol, defaults, unavailable = null }: DcfWorkbenchProps) {
+  if (!defaults) {
+    return (
+      <div className="w-full border border-border bg-surface p-6 font-mono text-2xs text-muted-foreground" role="status">
+        <p className="font-bold uppercase text-foreground">No DCF for {symbol}</p>
+        <p className="mt-1 max-w-prose">{unavailable ?? "The company's figures are not available, so the model has no inputs."}</p>
+      </div>
+    );
+  }
+  return <DcfModel key={defaults.symbol} symbol={symbol} defaults={defaults} />;
+}
+
+function DcfModel({ symbol, defaults }: { symbol: string; defaults: ApiDcfDefaults }) {
+  const startGrowth = Math.round(defaults.stage1_growth_rate * 1000) / 10;
+  const startTerminal = defaults.terminal_growth_rate * 100;
+  const startDebtRatio = (defaults.debt_to_equity / (1 + defaults.debt_to_equity)) * 100;
+
+  // Facts: reported by the exchange or the company, not editable here
+  const currentPrice = defaults.current_price;
+  const baseFcffCr = defaults.base_fcff_cr;
+  const sharesCr = defaults.shares_outstanding_cr;
+  const netDebtCr = defaults.total_debt_cr - defaults.cash_and_equivalents_cr;
+
+  // Assumptions: start from the company's history, then the reader's to move
+  const [growthYears1_5, setGrowthYears1_5] = useState<number>(startGrowth);
+  const [terminalGrowth, setTerminalGrowth] = useState<number>(startTerminal);
+  const [riskFreeRate, setRiskFreeRate] = useState<number>(RISK_FREE_PCT);
+  const [beta, setBeta] = useState<number>(defaults.beta);
+  const erp = ERP_PCT;
+  const costOfDebtPreTax = defaults.pretax_cost_of_debt * 100;
+  const taxRate = TAX_RATE_PCT;
+  const debtRatio = startDebtRatio;
 
   // Calculations
   const costOfEquity = riskFreeRate + beta * erp;
@@ -71,8 +123,7 @@ export function DcfWorkbench({ symbol = "RELIANCE", defaultPrice = 2950 }: DcfWo
   // Current Equity Market Cap = currentPrice * sharesCr
   const targetEquityValue = currentPrice * sharesCr;
   const targetEV = targetEquityValue + netDebtCr;
-  // Simple heuristic reverse growth solver approximation:
-  const impliedGrowthRatePct = Math.max(0, ((targetEV / (baseFcffCr * 12)) - 1) * 100 / 5 + 4.5);
+  const impliedGrowthRatePct = impliedGrowthPct(targetEV, baseFcffCr, wacc, terminalGrowth);
 
   // Sensitivity Matrix (WACC vs Terminal Growth)
   const waccVariations = [wacc - 1.0, wacc - 0.5, wacc, wacc + 0.5, wacc + 1.0];
@@ -100,11 +151,11 @@ export function DcfWorkbench({ symbol = "RELIANCE", defaultPrice = 2950 }: DcfWo
         <div className="flex items-center gap-2">
           <ShieldAlert className="h-4 w-4 text-accent shrink-0" />
           <span className="font-bold uppercase tracking-wider text-foreground">
-            SEBI NON-ADVISORY COMPLIANCE: 2-STAGE FCFF VALUATION LAB (M6)
+            A model output, not a recommendation. Arthdex is not a SEBI-registered adviser.
           </span>
         </div>
         <div className="flex items-center gap-3 text-muted-foreground text-3xs">
-          <span>ALGORITHMIC FAIR VALUE ESTIMATE • NOT AN INVESTMENT RECOMMENDATION</span>
+          <span>TWO-STAGE FREE CASH FLOW MODEL</span>
           <span className="border border-flat/40 bg-flat/10 text-flat px-1.5 py-0.5 font-bold uppercase">
             [MODELLED / ALGORITHMIC]
           </span>
@@ -116,7 +167,7 @@ export function DcfWorkbench({ symbol = "RELIANCE", defaultPrice = 2950 }: DcfWo
         <div className="p-3 border border-border bg-surface">
           <span className="text-3xs text-muted-foreground uppercase font-bold">Current Market Price</span>
           <div className="text-lg font-bold text-foreground mt-1">₹{currentPrice.toFixed(2)}</div>
-          <span className="text-3xs text-muted-foreground">Symbol: {symbol}</span>
+          <span className="text-3xs text-muted-foreground">{defaults.name} ({symbol})</span>
         </div>
 
         <div className={cn(
@@ -142,15 +193,49 @@ export function DcfWorkbench({ symbol = "RELIANCE", defaultPrice = 2950 }: DcfWo
             {marginOfSafetyPct >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
           </div>
           <span className="text-3xs text-muted-foreground">
-            {marginOfSafetyPct >= 20 ? "Undervalued (Safe)" : marginOfSafetyPct >= 0 ? "Fairly Valued" : "Premium Valuation"}
+            {marginOfSafetyPct >= 0 ? "Model value above the price" : "Model value below the price"}
           </span>
         </div>
 
         <div className="p-3 border border-border bg-surface">
           <span className="text-3xs text-muted-foreground uppercase font-bold">Reverse DCF Implied Growth</span>
-          <div className="text-lg font-bold text-accent mt-1">{impliedGrowthRatePct.toFixed(1)}% p.a.</div>
-          <span className="text-3xs text-muted-foreground">Priced into CMP for next 5 years</span>
+          <div className="text-lg font-bold text-accent mt-1">
+            {impliedGrowthRatePct === null ? "—" : `${impliedGrowthRatePct.toFixed(1)}% p.a.`}
+          </div>
+          <span className="text-3xs text-muted-foreground">
+            {impliedGrowthRatePct === null
+              ? "No growth rate in the model's range matches the price"
+              : "Cash-flow growth for 5 years that the price assumes"}
+          </span>
         </div>
+      </div>
+
+      <div className="border border-border bg-surface p-3">
+        <div className="border-b border-border/60 pb-1.5 text-3xs font-bold uppercase text-muted-foreground">
+          Inputs read from the company&apos;s figures
+        </div>
+        <dl className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1.5 text-2xs md:grid-cols-4">
+          {[
+            ["Free cash flow (trailing year)", `₹${baseFcffCr.toLocaleString("en-IN", { maximumFractionDigits: 0 })} Cr`, "base_fcff_cr"],
+            ["Cash", `₹${defaults.cash_and_equivalents_cr.toLocaleString("en-IN", { maximumFractionDigits: 0 })} Cr`, "cash_and_equivalents_cr"],
+            ["Debt", `₹${defaults.total_debt_cr.toLocaleString("en-IN", { maximumFractionDigits: 0 })} Cr`, "total_debt_cr"],
+            ["Shares outstanding", `${sharesCr.toLocaleString("en-IN", { maximumFractionDigits: 2 })} Cr`, "shares_outstanding_cr"],
+          ].map(([label, value, key]) => (
+            <div key={key}>
+              <dt className="text-3xs uppercase text-muted-foreground">{label}</dt>
+              <dd className="font-bold text-foreground">{value}</dd>
+              <dd className="text-3xs text-muted-foreground">{defaults.input_provenance[key] ?? ""}</dd>
+            </div>
+          ))}
+        </dl>
+        {defaults.notes.length || defaults.beta_basis ? (
+          <ul className="mt-2 list-disc space-y-0.5 pl-4 text-3xs text-muted-foreground">
+            {defaults.beta_basis ? <li>Beta {defaults.beta.toFixed(2)}: {defaults.beta_basis}.</li> : null}
+            {defaults.notes.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
+        ) : null}
       </div>
 
       {/* Main Interactive Controls & Projection Tables */}
@@ -162,10 +247,10 @@ export function DcfWorkbench({ symbol = "RELIANCE", defaultPrice = 2950 }: DcfWo
             <button
               type="button"
               onClick={() => {
-                setGrowthYears1_5(14.0);
-                setTerminalGrowth(5.5);
-                setBeta(1.05);
-                setRiskFreeRate(7.18);
+                setGrowthYears1_5(startGrowth);
+                setTerminalGrowth(startTerminal);
+                setBeta(defaults.beta);
+                setRiskFreeRate(RISK_FREE_PCT);
               }}
               className="hover:text-foreground flex items-center gap-1"
             >
@@ -182,7 +267,7 @@ export function DcfWorkbench({ symbol = "RELIANCE", defaultPrice = 2950 }: DcfWo
               </div>
               <input
                 type="range"
-                min="0"
+                min="-10"
                 max="30"
                 step="0.5"
                 value={growthYears1_5}
@@ -209,7 +294,7 @@ export function DcfWorkbench({ symbol = "RELIANCE", defaultPrice = 2950 }: DcfWo
 
             <div>
               <div className="flex justify-between text-2xs mb-1">
-                <span className="text-muted-foreground">Asset Beta (vs Nifty):</span>
+                <span className="text-muted-foreground">Beta (vs Nifty 50):</span>
                 <span className="font-bold text-foreground">{beta.toFixed(2)}</span>
               </div>
               <input

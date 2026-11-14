@@ -1,5 +1,7 @@
 import React from "react";
 
+import { jsonLdScript } from "@/lib/json-ld";
+
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arthdex.com";
 
 /**
@@ -68,7 +70,7 @@ export function StructuredData() {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: jsonLdScript(schema) }}
     />
   );
 }

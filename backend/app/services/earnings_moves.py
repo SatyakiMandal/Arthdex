@@ -60,33 +60,32 @@ def get_earnings_implied_moves() -> list[dict[str, Any]]:
 
                 if straddle > 0 and spot > 0:
                     implied_pct = round((straddle / spot) * 100.0, 2)
-                    # Heuristic baseline: typical large/mid cap earnings move is 2.5 - 4.5%
-                    hist_avg = 3.2 if implied_pct > 3.0 else 2.5
+                    # A label for the size of the implied move itself. There is no comparison
+                    # with past post-result moves: those are not computed yet.
                     verdict = (
-                        "Elevated volatility (favouring sellers)"
-                        if implied_pct > hist_avg * 1.25
-                        else "Compressed volatility (favouring buyers)"
-                        if implied_pct < hist_avg * 0.8
-                        else "Fairly priced"
+                        "High Volatility Priced" if implied_pct > 6.0
+                        else "Low Volatility Priced" if implied_pct < 3.0
+                        else "Normal Volatility Priced"
                     )
-
                     results.append({
                         "symbol": sym,
-                        "company": item.get("company") or sym,
-                        "resultsDate": item["date"],
-                        "spot": spot,
+                        "companyName": item.get("company") or sym,
+                        "resultDate": item["date"],
+                        "status": "upcoming",
+                        "spotPrice": spot,
                         "atmStrike": atm["strike"],
-                        "straddlePrice": round(straddle, 2),
-                        "impliedMovePts": round(straddle, 2),
+                        "straddleAtmPrice": round(straddle, 2),
                         "impliedMovePct": implied_pct,
-                        "historicalAvgMovePct": hist_avg,
                         "pricingVerdict": verdict,
+                        "callIv": (atm.get("ce") or {}).get("iv"),
+                        "putIv": (atm.get("pe") or {}).get("iv"),
                         "nearestExpiry": target_expiry,
+                        "asOf": datetime.now(ZoneInfo("Asia/Kolkata")).isoformat(timespec="seconds"),
                     })
             except Exception:
                 continue
 
         return results
 
-    data, _ = CACHE.get_or_fetch("derivatives:earnings_moves", 600, _build)
+    data, _ = CACHE.get_or_fetch("derivatives:earnings_moves:v2", 600, _build)
     return data

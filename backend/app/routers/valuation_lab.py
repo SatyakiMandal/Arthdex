@@ -5,43 +5,48 @@ Exposes endpoints adhering to SEBI standards and zero-dependency financial compu
 
 from __future__ import annotations
 
+import re
 from typing import Any, Literal
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from ..cache import CACHE
+from ..config import SETTINGS
 from ..schemas import envelope
 from ..services import valuation_lab
 
 router = APIRouter(tags=["valuation"])
 
+_SYMBOL_RE = re.compile(r"[A-Z0-9&_-]{1,20}")
+
 
 class CAPMParamsModel(BaseModel):
-    risk_free_rate: float = Field(0.0718, description="10Y G-Sec Sovereign yield (e.g. 0.0718 for 7.18%)")
-    equity_risk_premium: float = Field(0.0600, description="Indian Equity Risk Premium (e.g. 0.0600 for 6.0%)")
-    beta: float = Field(1.0, description="Equity beta")
+    risk_free_rate: float = Field(0.0718, ge=-1, le=5, allow_inf_nan=False, description="10Y G-Sec Sovereign yield (e.g. 0.0718 for 7.18%)")
+    equity_risk_premium: float = Field(0.0600, ge=-1, le=5, allow_inf_nan=False, description="Indian Equity Risk Premium (e.g. 0.0600 for 6.0%)")
+    beta: float = Field(1.0, ge=-10, le=10, allow_inf_nan=False, description="Equity beta")
     is_beta_unlevered: bool = Field(False, description="Whether provided beta is asset (unlevered) beta")
-    debt_to_equity: float = Field(0.20, description="Debt / Equity ratio")
-    pretax_cost_of_debt: float = Field(0.0850, description="Pre-tax corporate borrowing rate (e.g. 8.5%)")
-    tax_rate: float = Field(0.2517, description="Marginal corporate tax rate (25.17% under Sec 115BAA)")
-    equity_weight: float | None = None
-    debt_weight: float | None = None
+    debt_to_equity: float = Field(0.20, ge=0, le=1000, allow_inf_nan=False, description="Debt / Equity ratio")
+    pretax_cost_of_debt: float = Field(0.0850, ge=-1, le=5, allow_inf_nan=False, description="Pre-tax corporate borrowing rate (e.g. 8.5%)")
+    tax_rate: float = Field(0.2517, ge=0, le=1, allow_inf_nan=False, description="Marginal corporate tax rate (25.17% under Sec 115BAA)")
+    equity_weight: float | None = Field(None, ge=0, le=1, allow_inf_nan=False)
+    debt_weight: float | None = Field(None, ge=0, le=1, allow_inf_nan=False)
 
 
 class DCFCalculateRequest(BaseModel):
-    symbol: str
-    current_price: float
-    shares_outstanding_cr: float
-    cash_and_equivalents_cr: float = 0.0
-    total_debt_cr: float = 0.0
-    base_fcff_cr: float
-    stage1_growth_rate: float = 0.12
-    stage1_years: int = 5
-    terminal_growth_rate: float = 0.05
-    wacc: float | None = None
+    # Bounded so a request cannot ask for a million-year projection or feed NaN into the model
+    symbol: str = Field(..., min_length=1, max_length=20, pattern=r"^[A-Za-z0-9&_-]+$")
+    current_price: float = Field(..., gt=0, le=1e9, allow_inf_nan=False)
+    shares_outstanding_cr: float = Field(..., gt=0, le=1e9, allow_inf_nan=False)
+    cash_and_equivalents_cr: float = Field(0.0, ge=0, le=1e12, allow_inf_nan=False)
+    total_debt_cr: float = Field(0.0, ge=0, le=1e12, allow_inf_nan=False)
+    base_fcff_cr: float = Field(..., ge=-1e12, le=1e12, allow_inf_nan=False)
+    stage1_growth_rate: float = Field(0.12, ge=-1, le=5, allow_inf_nan=False)
+    stage1_years: int = Field(5, ge=1, le=30)
+    terminal_growth_rate: float = Field(0.05, ge=-0.5, le=0.5, allow_inf_nan=False)
+    wacc: float | None = Field(None, gt=0, le=5, allow_inf_nan=False)
     wacc_inputs: CAPMParamsModel | None = None
     model_type: Literal["2-stage", "3-stage"] = "2-stage"
-    stage2_years: int = 5
+    stage2_years: int = Field(5, ge=1, le=30)
 
 
 @router.get("/api/valuation/{symbol}/dcf")
@@ -58,7 +63,9 @@ def get_dcf_valuation(
     and computed Fair Value per share.
     """
     sym = symbol.upper()
-    cache_key = f"valuation:dcf:{sym}:{model_type}:{growth_rate}:{terminal_growth}:{wacc}"
+    if not _SYMBOL_RE.fullmatch(sym):
+        raise HTTPException(status_code=400, detail="Invalid symbol")
+    cache_key = f"valuation:dcf:v2:{sym}:{model_type}:{growth_rate}:{terminal_growth}:{wacc}"
 
     def compute():
         defaults = valuation_lab.get_company_dcf_defaults(sym)
@@ -91,7 +98,9 @@ def get_dcf_valuation(
         }
 
     try:
-        data, age = CACHE.get_or_fetch(cache_key, 60, compute)
+        data, age = CACHE.get_or_fetch(cache_key, 300, compute)
+    except valuation_lab.DcfInputsUnavailable as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
@@ -100,9 +109,9 @@ def get_dcf_valuation(
     return envelope(
         data,
         age,
-        source="NSE Filings, 10Y Indian Sovereign G-Sec Benchmark & DCF Model",
-        delayed_minutes=0,
-        note="Valuation model complies with SEBI fair value standards. Historical filings tagged [ACTUAL FILING].",
+        source="NSE, Yahoo Finance, screener.in; Arthdex DCF model",
+        delayed_minutes=SETTINGS.quote_delay_minutes,
+        note="A model output, not a recommendation. Price, cash flow, cash and debt are reported figures; growth and discount-rate inputs are assumptions listed in defaults.input_provenance.",
     )
 
 
@@ -149,6 +158,8 @@ def calculate_custom_dcf(request: DCFCalculateRequest):
             delayed_minutes=0,
             note="User parameterized valuation output.",
         )
+    except valuation_lab.DcfInputsUnavailable as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
@@ -166,7 +177,9 @@ def get_reverse_dcf(
     Reverse DCF Model: Solves for the implied 5-year Free Cash Flow CAGR priced into the current market price.
     """
     sym = symbol.upper()
-    cache_key = f"valuation:reversedcf:{sym}:{terminal_growth}:{wacc}"
+    if not _SYMBOL_RE.fullmatch(sym):
+        raise HTTPException(status_code=400, detail="Invalid symbol")
+    cache_key = f"valuation:reversedcf:v2:{sym}:{terminal_growth}:{wacc}"
 
     def compute():
         defaults = valuation_lab.get_company_dcf_defaults(sym)
@@ -195,7 +208,9 @@ def get_reverse_dcf(
         return result.to_dict()
 
     try:
-        data, age = CACHE.get_or_fetch(cache_key, 60, compute)
+        data, age = CACHE.get_or_fetch(cache_key, 300, compute)
+    except valuation_lab.DcfInputsUnavailable as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
@@ -223,7 +238,9 @@ def get_sensitivity_matrix(
     under varying WACC and Terminal Growth rates.
     """
     sym = symbol.upper()
-    cache_key = f"valuation:sensitivity:{sym}:{stage1_growth}:{terminal_growth}:{wacc}"
+    if not _SYMBOL_RE.fullmatch(sym):
+        raise HTTPException(status_code=400, detail="Invalid symbol")
+    cache_key = f"valuation:sensitivity:v2:{sym}:{stage1_growth}:{terminal_growth}:{wacc}"
 
     def compute():
         defaults = valuation_lab.get_company_dcf_defaults(sym)
@@ -253,7 +270,9 @@ def get_sensitivity_matrix(
         )
 
     try:
-        data, age = CACHE.get_or_fetch(cache_key, 60, compute)
+        data, age = CACHE.get_or_fetch(cache_key, 300, compute)
+    except valuation_lab.DcfInputsUnavailable as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:

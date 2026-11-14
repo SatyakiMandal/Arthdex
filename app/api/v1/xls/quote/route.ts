@@ -1,84 +1,80 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { getFinancials, getQuote, getValuation } from "@/lib/api/endpoints";
+import { isValidSymbol, rateLimit } from "@/lib/api/request-guards";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const TEXT = { "Content-Type": "text/plain; charset=utf-8", "X-Content-Type-Options": "nosniff" };
+
+/** A spreadsheet cell shows this text, so a failure is visible instead of looking like a price. */
+function cellError(code: string, status: number, extra: Record<string, string> = {}) {
+  return new NextResponse(code, { status, headers: { ...TEXT, "Cache-Control": "no-store", ...extra } });
+}
+
+function num(value: number | null | undefined, digits: number): string {
+  return typeof value === "number" && Number.isFinite(value) ? value.toFixed(digits) : "";
+}
+
 /**
- * Excel & Google Sheets Live Formula Endpoint
- * Example:
+ * Live quote for Excel and Google Sheets formulas.
+ *
  *   =IMPORTDATA("https://arthdex.com/api/v1/xls/quote?symbol=RELIANCE&field=PRICE")
  *   =WEBSERVICE("https://arthdex.com/api/v1/xls/quote?symbol=TCS&field=PE")
+ *
+ * Fields: PRICE, CHANGE_PCT, PE, PB, MCAP (MARKET_CAP_CR), ROCE, HIGH_52W, LOW_52W.
+ * Without a field the response is a one-row CSV. Every figure comes from the data service,
+ * the same source as the company page; a figure the service does not have is an empty cell.
  */
 export async function GET(request: NextRequest) {
+  const wait = rateLimit("xls", request, 120, 60_000);
+  if (wait) return cellError("#RATE_LIMIT", 429, { "Retry-After": String(wait) });
+
   const { searchParams } = new URL(request.url);
-  const symbol = (searchParams.get("symbol") || "RELIANCE").toUpperCase();
-  const field = (searchParams.get("field") || "PRICE").toUpperCase();
+  const symbol = (searchParams.get("symbol") || "").toUpperCase();
+  // The symbol is echoed into a CSV cell and a file name: it must be ticker-shaped and must
+  // not open with a character a spreadsheet reads as a formula.
+  if (!isValidSymbol(symbol) || !/^[A-Z0-9]/.test(symbol)) return cellError("#INVALID_SYMBOL", 400);
+  const field = (searchParams.get("field") || "").toUpperCase();
 
-  // Standard reference quotes (fallback & deterministic data)
-  const SAMPLE_QUOTES: Record<string, { price: number; changePct: number; pe: number; pb: number; mcapCr: number; roce: number; high52: number; low52: number }> = {
-    RELIANCE: { price: 2945.50, changePct: 1.42, pe: 28.4, pb: 2.45, mcapCr: 1992400, roce: 11.2, high52: 3024.0, low52: 2220.0 },
-    TCS: { price: 4120.00, changePct: -0.35, pe: 31.2, pb: 14.8, mcapCr: 1490200, roce: 58.4, high52: 4585.0, low52: 3312.0 },
-    HDFCBANK: { price: 1680.00, changePct: 0.85, pe: 18.9, pb: 2.65, mcapCr: 1280400, roce: 16.5, high52: 1794.0, low52: 1363.0 },
-    INFY: { price: 1845.00, changePct: -0.15, pe: 26.5, pb: 8.9, mcapCr: 765000, roce: 39.8, high52: 1975.0, low52: 1358.0 },
-    "M&M": { price: 2880.00, changePct: 2.15, pe: 29.8, pb: 4.8, mcapCr: 358200, roce: 22.4, high52: 3014.0, low52: 1475.0 },
-    TATAMOTORS: { price: 890.00, changePct: -1.10, pe: 10.5, pb: 3.2, mcapCr: 327400, roce: 19.8, high52: 1179.0, low52: 630.0 },
+  const quote = await getQuote(symbol);
+  if (!quote.ok) return cellError(quote.status === 404 ? "#UNKNOWN_SYMBOL" : "#UNAVAILABLE", quote.status === 404 ? 404 : 503);
+  const q = quote.data;
+
+  const needsFundamentals = !field || ["PE", "PB", "ROCE"].includes(field);
+  const [valuation, financials] = needsFundamentals
+    ? await Promise.all([getValuation(symbol), getFinancials(symbol)])
+    : [null, null];
+
+  const values: Record<string, string> = {
+    PRICE: num(q.cmp, 2),
+    CHANGE_PCT: num(q.change?.percent, 2),
+    PE: num(valuation?.data.peRatio, 2),
+    PB: num(valuation?.data.pbRatio, 2),
+    MCAP_CR: num(q.marketCapCr, 0),
+    ROCE: num(financials?.data.ratios?.rocePct, 2),
+    "52W_HIGH": num(q.high52w, 2),
+    "52W_LOW": num(q.low52w, 2),
   };
+  const aliases: Record<string, string> = { MARKET_CAP_CR: "MCAP_CR", MCAP: "MCAP_CR", HIGH_52W: "52W_HIGH", LOW_52W: "52W_LOW" };
 
-  const quote = SAMPLE_QUOTES[symbol] || {
-    price: 1000.0,
-    changePct: 0.0,
-    pe: 20.0,
-    pb: 3.0,
-    mcapCr: 50000,
-    roce: 15.0,
-    high52: 1200.0,
-    low52: 800.0,
-  };
-
-  if (field === "PRICE") {
-    return new NextResponse(quote.price.toFixed(2), {
-      headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=15" },
-    });
+  if (field) {
+    const key = aliases[field] ?? field;
+    if (!(key in values)) return cellError("#INVALID_FIELD", 400);
+    if (values[key] === "") return cellError("#N/A", 404);
+    return new NextResponse(values[key], { headers: { ...TEXT, "Cache-Control": "public, max-age=15" } });
   }
 
-  if (field === "CHANGE_PCT") {
-    return new NextResponse(quote.changePct.toFixed(2), {
-      headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=15" },
-    });
-  }
-
-  if (field === "PE") {
-    return new NextResponse(quote.pe.toFixed(2), {
-      headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=300" },
-    });
-  }
-
-  if (field === "PB") {
-    return new NextResponse(quote.pb.toFixed(2), {
-      headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=300" },
-    });
-  }
-
-  if (field === "MARKET_CAP_CR" || field === "MCAP") {
-    return new NextResponse(quote.mcapCr.toFixed(0), {
-      headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=300" },
-    });
-  }
-
-  if (field === "ROCE") {
-    return new NextResponse(quote.roce.toFixed(2), {
-      headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=300" },
-    });
-  }
-
-  // Full CSV row for multiple cells
-  const csv = `SYMBOL,PRICE,CHANGE_PCT,PE,PB,MCAP_CR,ROCE,52W_HIGH,52W_LOW\n${symbol},${quote.price},${quote.changePct},${quote.pe},${quote.pb},${quote.mcapCr},${quote.roce},${quote.high52},${quote.low52}`;
-
+  const columns = Object.keys(values);
+  const csv = `SYMBOL,${columns.join(",")},AS_OF,SOURCE\n${symbol},${columns.map((c) => values[c]).join(",")},${JSON.stringify(q.asOf ?? "")},${JSON.stringify(quote.meta.source ?? "")}`;
+  const fileStem = symbol.replace(/[^A-Z0-9_-]/g, "_");
   return new NextResponse(csv, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `inline; filename="${symbol}_quote.csv"`,
-      "Cache-Control": "public, max-age=30",
+      "X-Content-Type-Options": "nosniff",
+      "Content-Disposition": `inline; filename="${fileStem}_quote.csv"`,
+      "Cache-Control": "public, max-age=15",
     },
   });
 }

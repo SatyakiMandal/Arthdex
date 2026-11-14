@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Query
 
 from ..schemas import envelope
+from .. import not_connected
 from ..services import funds
 
 router = APIRouter(prefix="/api/v1/funds", tags=["funds"])
@@ -13,6 +14,7 @@ router = APIRouter(prefix="/api/v1/funds", tags=["funds"])
 @router.get("/screener")
 def get_funds_screener(category: str | None = Query(None), amc: str | None = Query(None)):
     """AMFI mutual fund scheme master, performance CAGRs (1Y, 3Y, 5Y), TER, and risk ratios."""
+    not_connected.refuse("funds")
     try:
         data = funds.get_funds_overview(category=category, amc=amc)
     except Exception as exc:
@@ -32,6 +34,7 @@ def get_portfolio_overlap(
     fund_b: str = Query("118989", description="Scheme code of second fund"),
 ):
     """Calculates pairwise portfolio stock holding overlap percentage between two schemes."""
+    not_connected.refuse("funds")
     try:
         data = funds.calculate_portfolio_overlap(fund_a_code=fund_a, fund_b_code=fund_b)
     except Exception as exc:

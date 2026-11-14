@@ -10,19 +10,6 @@ from app.services import fno_participants, options_strategy, volatility_surface
 
 
 class TestDerivativesIntelligence(unittest.TestCase):
-    def test_participant_oi_overview(self):
-        """Participant OI overview computes institutional metrics and sentiment classification."""
-        data = fno_participants.get_participant_oi_overview()
-        self.assertIn("fiiIndexLongPct", data)
-        self.assertIn("fiiNetIndexContracts", data)
-        self.assertIn("marketRegime", data)
-        self.assertIn("participants", data)
-        self.assertEqual(len(data["participants"]), 4)
-
-        fii = next(p for p in data["participants"] if p["participant"] == "FII")
-        self.assertEqual(fii["label"], "Foreign Institutional Investors")
-        self.assertTrue(fii["indexFutures"]["net"] < 0)  # Institutional short bias baseline
-
     def test_options_strategy_payoff(self):
         """Bull Call Spread payoff calculates net debit, capped profit, and defined risk."""
         legs = [

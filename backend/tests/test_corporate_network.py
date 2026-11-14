@@ -57,15 +57,23 @@ class TestCorporateNetwork(unittest.TestCase):
         self.assertIn("TATASTEEL", symbols)
         self.assertIn("TATATECH", symbols)
 
-    def test_generic_symbol_fallback(self):
-        # Should gracefully return a realistic corporate structure and supply chain for any symbol
-        hold = get_corporate_hierarchy("WIPRO")
-        self.assertIn("WIPRO", hold["parent_name"])
-        self.assertGreaterEqual(len(hold["holding_entities"]), 2)
+    def test_company_not_on_file_gets_nothing_generated(self):
+        from app.services.corporate_network import NetworkNotOnFile, get_network_summary
 
-        splc = get_supply_chain_network("WIPRO")
-        self.assertEqual(splc["symbol"], "WIPRO")
-        self.assertGreaterEqual(len(splc["suppliers"]), 2)
+        for fn in (get_corporate_hierarchy, get_supply_chain_network, get_network_summary):
+            with self.assertRaises(NetworkNotOnFile):
+                fn("WIPRO")
+
+    def test_company_with_only_one_side_on_file_gets_an_empty_other_side(self):
+        from app.services.corporate_network import CONGLOMERATE_HIERARCHIES, SUPPLY_CHAIN_NETWORKS
+
+        only_hierarchy = sorted(set(CONGLOMERATE_HIERARCHIES) - set(SUPPLY_CHAIN_NETWORKS))
+        for sym in only_hierarchy:
+            splc = get_supply_chain_network(sym)
+            self.assertEqual((splc["suppliers"], splc["customers"]), ([], []))
+        only_chain = sorted(set(SUPPLY_CHAIN_NETWORKS) - set(CONGLOMERATE_HIERARCHIES))
+        for sym in only_chain:
+            self.assertEqual(get_corporate_hierarchy(sym)["holding_entities"], [])
 
     def test_network_summary(self):
         summary = get_network_summary("M&M")

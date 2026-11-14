@@ -28,116 +28,6 @@ NSE_ASM_LT_URL = "https://nsearchives.nseindia.com/content/equities/sec_list_asm
 NSE_ASM_ST_URL = "https://nsearchives.nseindia.com/content/equities/sec_list_asm_st.csv"
 NSE_GSM_URL = "https://nsearchives.nseindia.com/content/equities/sec_list_gsm.csv"
 
-# Pre-vetted baseline surveillance records for known high-surveillance equities
-# Used as reliable fallback when exchange archives are mid-session rate-limiting
-BASELINE_SURVEILLANCE: list[dict[str, Any]] = [
-    {
-        "symbol": "SINTEX",
-        "name": "Sintex Industries Limited",
-        "series": "BE",
-        "measure": "GSM",
-        "stage": "Stage III",
-        "entryDate": "2024-01-15",
-        "priceBandPct": 5.0,
-        "marginRequiredPct": 100.0,
-        "asdRatePct": 100.0,
-        "tradingWindow": "Weekly (Monday)",
-        "reason": "PE divergence and market cap mismatch under SEBI GSM framework",
-    },
-    {
-        "symbol": "RCOM",
-        "name": "Reliance Communications Limited",
-        "series": "BE",
-        "measure": "GSM",
-        "stage": "Stage II",
-        "entryDate": "2023-11-20",
-        "priceBandPct": 5.0,
-        "marginRequiredPct": 100.0,
-        "asdRatePct": 50.0,
-        "tradingWindow": "Daily",
-        "reason": "Negative net worth and persistent price volatility",
-    },
-    {
-        "symbol": "VIKASLIFE",
-        "name": "Vikas Lifecare Limited",
-        "series": "EQ",
-        "measure": "ASM-LT",
-        "stage": "Stage I",
-        "entryDate": "2024-03-04",
-        "priceBandPct": 5.0,
-        "marginRequiredPct": 100.0,
-        "asdRatePct": 0.0,
-        "tradingWindow": "Daily",
-        "reason": "High-Low variation and abnormal client concentration",
-    },
-    {
-        "symbol": "FCSSOFT",
-        "name": "FCS Software Solutions Limited",
-        "series": "EQ",
-        "measure": "ASM-LT",
-        "stage": "Stage II",
-        "entryDate": "2024-02-19",
-        "priceBandPct": 5.0,
-        "marginRequiredPct": 100.0,
-        "asdRatePct": 0.0,
-        "tradingWindow": "Daily",
-        "reason": "Volume spurt and close-to-close price variation across 25 trading sessions",
-    },
-    {
-        "symbol": "URJA",
-        "name": "Urja Global Limited",
-        "series": "EQ",
-        "measure": "ASM-ST",
-        "stage": "Stage I",
-        "entryDate": "2024-04-12",
-        "priceBandPct": 5.0,
-        "marginRequiredPct": 50.0,
-        "asdRatePct": 0.0,
-        "tradingWindow": "Daily",
-        "reason": "Short-term high-low price variation with high top-client concentration",
-    },
-    {
-        "symbol": "GTLINFRA",
-        "name": "GTL Infrastructure Limited",
-        "series": "BE",
-        "measure": "T2T",
-        "stage": "Stage I",
-        "entryDate": "2023-09-08",
-        "priceBandPct": 2.0,
-        "marginRequiredPct": 100.0,
-        "asdRatePct": 0.0,
-        "tradingWindow": "Daily",
-        "reason": "Shift to Trade-to-Trade segment as per SEBI quarterly surveillance review",
-    },
-    {
-        "symbol": "JPPOWER",
-        "name": "Jaiprakash Power Ventures Limited",
-        "series": "EQ",
-        "measure": "ASM-LT",
-        "stage": "Stage I",
-        "entryDate": "2024-01-22",
-        "priceBandPct": 5.0,
-        "marginRequiredPct": 100.0,
-        "asdRatePct": 0.0,
-        "tradingWindow": "Daily",
-        "reason": "Delivery percentage versus volume variation over 3-month trailing window",
-    },
-    {
-        "symbol": "OPTOCIRCUI",
-        "name": "Opto Circuits (India) Limited",
-        "series": "BE",
-        "measure": "GSM",
-        "stage": "Stage IV",
-        "entryDate": "2023-05-15",
-        "priceBandPct": 2.0,
-        "marginRequiredPct": 100.0,
-        "asdRatePct": 200.0,
-        "tradingWindow": "Weekly (Monday)",
-        "reason": "Severe fundamental deterioration and non-compliance with listing norms",
-    },
-]
-
-
 def _parse_surveillance_csv(csv_text: str, measure_type: str) -> list[dict[str, Any]]:
     """Parses standard NSE surveillance CSV exports."""
     rows: list[dict[str, Any]] = []
@@ -199,13 +89,9 @@ def _parse_surveillance_csv(csv_text: str, measure_type: str) -> list[dict[str, 
 
 
 def fetch_live_surveillance() -> list[dict[str, Any]]:
-    """Fetches real-time surveillance lists from NSE archives with baseline fallback."""
+    """Surveillance lists from NSE archives. A list that cannot be fetched is simply absent; nothing is stored in its place."""
     session = _get_session()
     combined: dict[str, dict[str, Any]] = {}
-
-    # Seed baseline surveillance
-    for b in BASELINE_SURVEILLANCE:
-        combined[b["symbol"]] = dict(b)
 
     # 1. Fetch equity master to detect T2T (BE series)
     try:

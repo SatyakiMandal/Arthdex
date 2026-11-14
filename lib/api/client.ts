@@ -58,8 +58,11 @@ export async function apiGet<T>(
   const url = `${BASE_URL}${path}`;
 
   try {
+    // revalidate 0 means "always ask the data service". Next's timed cache serves the stored
+    // copy first and refreshes behind it, so after a quiet spell a 5-second entry can be days
+    // old on first paint. That is acceptable for slow data and wrong for a price.
     const response = await fetch(url, {
-      next: { revalidate, tags: ["api"] },
+      ...(revalidate === 0 ? { cache: "no-store" as const } : { next: { revalidate, tags: ["api"] } }),
       headers: backendHeaders({ Accept: "application/json" }),
     });
 

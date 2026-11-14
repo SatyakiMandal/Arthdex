@@ -3,6 +3,8 @@ export const revalidate = 0;
 
 import { NextResponse } from "next/server";
 
+import { backendHeaders } from "@/lib/api/auth";
+
 const BASE_URL = process.env.ARTHDEX_API_URL ?? "http://127.0.0.1:8000";
 
 /**
@@ -20,6 +22,15 @@ export async function GET(request: Request) {
   if (!symbol || !/^[A-Za-z0-9&_-]{1,20}$/.test(symbol)) {
     return NextResponse.json({ error: "valid symbol is required" }, { status: 400 });
   }
+  const capitalValue = Number(capital);
+  const riskValue = Number(riskPct);
+  if (
+    !/^[A-Za-z]{2,6}$/.test(exchange) ||
+    !Number.isFinite(capitalValue) || capitalValue <= 0 || capitalValue > 1e12 ||
+    !Number.isFinite(riskValue) || riskValue <= 0 || riskValue > 100
+  ) {
+    return NextResponse.json({ error: "invalid exchange, capital or risk_pct" }, { status: 400 });
+  }
 
   try {
     const url = `${BASE_URL}/api/v1/forecast/scenarios/${encodeURIComponent(
@@ -30,9 +41,7 @@ export async function GET(request: Request) {
 
     const res = await fetch(url, {
       cache: "no-store",
-      headers: {
-        Accept: "application/json",
-      },
+      headers: backendHeaders({ Accept: "application/json" }),
     });
 
     if (!res.ok) {
@@ -52,10 +61,11 @@ export async function GET(request: Request) {
         "Cache-Control": "no-store, no-cache, must-revalidate",
       },
     });
-  } catch (err: any) {
+  } catch (err) {
+    console.error("forecast proxy:", err);
     return NextResponse.json(
-      { error: `Internal scenario forecast proxy error: ${err.message}` },
-      { status: 500 },
+      { error: "Scenario forecast service unavailable" },
+      { status: 503 },
     );
   }
 }
