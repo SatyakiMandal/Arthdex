@@ -15,7 +15,7 @@ from typing import Any
 import pandas as pd
 import yfinance as yf
 
-from ..providers.yahoo import frame_in_inr, inr_rate, statement_currency
+from ..providers.yahoo import frame_in_inr, inr_rate, statement_currency, to_yahoo_symbol
 
 CR = 1e7
 
@@ -57,7 +57,7 @@ def _date(epoch: Any) -> str | None:
 
 
 def _ticker(symbol: str) -> yf.Ticker:
-    return yf.Ticker(f"{symbol.upper()}.NS")
+    return yf.Ticker(to_yahoo_symbol(symbol))
 
 
 # ---------------------------------------------------------------- profile and statistics

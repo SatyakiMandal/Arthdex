@@ -20,6 +20,7 @@ import pandas as pd
 
 from . import risk_layer, technicals
 from .technicals import _f
+from ..providers.yahoo import to_yahoo_symbol
 
 DB_PATH = Path(__file__).resolve().parents[2] / "app_data" / "decisions.db"
 HORIZONS = (1, 5, 20)
@@ -151,7 +152,7 @@ def listing() -> dict[str, Any]:
     def frame(sym: str) -> pd.DataFrame:
         if sym not in cache:
             try:
-                cache[sym] = _daily(sym if sym == NIFTY else f"{sym}.NS")
+                cache[sym] = _daily(sym if sym == NIFTY else to_yahoo_symbol(sym))
             except Exception:
                 cache[sym] = pd.DataFrame()
         return cache[sym]

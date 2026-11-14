@@ -139,7 +139,7 @@ def get_buyback_desk(as_of: date | None = None) -> dict[str, Any]:
                 SETTINGS.quote_ttl,
                 lambda s=sym: quote_sources.fetch(s, "NSE"),
             )
-            cmp = float(q.get("cmp", 0.0)) if q else None
+            cmp = float(q["cmp"]) if q and q.get("cmp") else None
         except Exception:
             cmp = None
 

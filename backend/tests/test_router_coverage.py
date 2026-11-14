@@ -95,12 +95,12 @@ class RouterCoverageTests(unittest.TestCase):
         self.assertIn("banned", body["data"])
 
     def test_universe_stats(self) -> None:
-        """Universe stats returns total symbol counts."""
+        """Universe stats returns company counts across NSE and BSE."""
         res = self.client.get("/api/v1/universe/stats")
         self.assertEqual(res.status_code, 200)
         body = res.json()
         self.assertIn("data", body)
-        self.assertIn("total", body["data"])
+        self.assertIn("companies", body["data"])
 
     def test_corporate_network_endpoints(self) -> None:
         """M28 Corporate Network & SPLC endpoints return 200 and schema data."""
