@@ -1,5 +1,7 @@
 import { PageStamp } from "@/components/layout/refresh-control";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
+import { EXCHANGE_VIEW_COOKIE, parseExchangeView, priceExchange } from "@/lib/exchange-view";
 import { PriceChart } from "@/components/company/price-chart";
 import {
   AnnualPnLPanel,
@@ -42,9 +44,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function CompanyOverviewPage({ params }: PageProps) {
   const { symbol } = await params;
   const upper = symbol.toUpperCase();
+  const exchange = priceExchange(parseExchangeView((await cookies()).get(EXCHANGE_VIEW_COOKIE)?.value));
 
   const [candles, financials, valuation, profile, preIpoMatch, peers, band, forensics] = await Promise.all([
-    getCandles(upper, "1Y"),
+    getCandles(upper, "1Y", exchange),
     getFinancials(upper),
     getValuation(upper),
     getProfile(upper),
@@ -77,7 +80,7 @@ export default async function CompanyOverviewPage({ params }: PageProps) {
       <section aria-label="Price history">
         {candles.ok ? (
           <>
-            <PriceChart symbol={upper} initialCandles={candles.data.candles} initialPeriod="1Y" />
+            <PriceChart key={candles.data.exchange ?? exchange} symbol={upper} exchange={candles.data.exchange ?? exchange} initialCandles={candles.data.candles} initialPeriod="1Y" />
             <PageStamp meta={candles.meta} />
             <SourceLine meta={candles.meta} className="mt-1 text-2xs px-1" />
           </>

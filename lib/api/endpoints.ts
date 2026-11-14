@@ -2,6 +2,9 @@ import "server-only";
 
 import { apiGet, apiGetOrNull, apiPost, REVALIDATE, type ApiResult } from "./client";
 import type {
+  ApiExchange,
+  ApiExchangeComparison,
+  ApiUniverseStats,
   ApiCalendar,
   ApiDeals,
   ApiMoverExplained,
@@ -119,15 +122,19 @@ export const getMoverUniverses = () =>
 
 // -- company ----------------------------------------------------------------
 
-export const getQuote = (symbol: string) =>
-  apiGet<ApiQuote>(`/api/v1/company/${encodeURIComponent(symbol)}/quote?v=2`, REVALIDATE.quote);
+export const getQuote = (symbol: string, exchange: ApiExchange = "NSE") =>
+  apiGet<ApiQuote>(`/api/v1/company/${encodeURIComponent(symbol)}/quote?exchange=${exchange}&v=3`, REVALIDATE.quote);
+
+/** NSE and BSE side by side, for a company listed on both */
+export const getExchangeComparison = (symbol: string) =>
+  apiGetOrNull<ApiExchangeComparison>(`/api/v1/company/${encodeURIComponent(symbol)}/exchanges`, REVALIDATE.quote);
 
 export const getProfile = (symbol: string) =>
   apiGetOrNull<ApiProfile>(`/api/v1/company/${encodeURIComponent(symbol)}/profile?v=2`, REVALIDATE.fundamentals);
 
-export const getCandles = (symbol: string, period: string) =>
+export const getCandles = (symbol: string, period: string, exchange: ApiExchange = "NSE") =>
   apiGet<ApiCandleSeries>(
-    `/api/v1/company/${encodeURIComponent(symbol)}/candles?period=${encodeURIComponent(period)}&v=3`,
+    `/api/v1/company/${encodeURIComponent(symbol)}/candles?period=${encodeURIComponent(period)}&exchange=${exchange}&v=4`,
     REVALIDATE.candles,
   );
 
@@ -215,7 +222,7 @@ export const getWindowedMovers = (window: string, index = "nifty100", limit = 15
   );
 
 export const getUniverseStats = () =>
-  apiGetOrNull<{ total: number; bySeries: Record<string, number> }>(
+  apiGetOrNull<ApiUniverseStats>(
     "/api/v1/universe/stats",
     REVALIDATE.universe,
   );

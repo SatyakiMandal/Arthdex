@@ -56,7 +56,7 @@ export async function Hero() {
   const nifty = indices.ok ? indices.data.find((i) => i.id === "nifty-50") : undefined;
   const line = todayInOneLine(nifty, pulse.ok ? pulse.data : null);
   const stats = [
-    universe ? { label: "Listed equities", value: formatINR(universe.data.total, 0) } : null,
+    universe ? { label: "Listed companies, NSE and BSE", value: formatINR(universe.data.companies, 0) } : null,
     unlisted.ok ? { label: "Unlisted tracked", value: formatINR(unlisted.data.total, 0) } : null,
     pulse.ok ? { label: "Price delay", value: `${pulse.meta.delayedMinutes} min` } : null,
   ].filter((s): s is { label: string; value: string } => s !== null);

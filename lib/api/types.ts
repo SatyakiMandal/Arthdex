@@ -30,6 +30,79 @@ export interface ApiQuote {
   marketCapCr: number;
   currency: string;
   asOf: string;
+  /** BSE quotes only: turnover in crore, volume-weighted average price, BSE's own timestamp */
+  turnoverCr?: number | null;
+  vwap?: number | null;
+  exchangeTime?: string | null;
+  /** Where the company trades, from the exchanges' own listing files */
+  listing?: ApiListing;
+  sources?: {
+    used: "nse" | "bse" | "yahoo";
+    exchange: "NSE" | "BSE";
+    exchangePrice: number | null;
+    yahooPrice: number | null;
+    agree: boolean | null;
+    gapPct: number | null;
+  };
+}
+
+export type ApiExchange = "NSE" | "BSE";
+
+export interface ApiListing {
+  /** The company's id across the site: the NSE symbol, or the BSE scrip code if it trades only on BSE */
+  id: string;
+  isin: string | null;
+  exchanges: ApiExchange[];
+  nse: { symbol: string; series: string | null; board: "main" | "sme" } | null;
+  bse: { code: string; scripId: string | null; group: string | null; board: "main" | "sme"; status: "active" | "suspended" } | null;
+}
+
+export interface ApiExchangeSide {
+  cmp: number;
+  change: Delta;
+  open: number | null;
+  previousClose: number | null;
+  dayHigh: number | null;
+  dayLow: number | null;
+  high52w: number | null;
+  low52w: number | null;
+  volume: number | null;
+  turnoverCr: number | null;
+  vwap: number | null;
+  exchangeTime: string | null;
+  asOf: string;
+}
+
+export interface ApiExchangeComparison {
+  id: string;
+  name: string;
+  isin: string | null;
+  nseSymbol: string;
+  bseCode: string;
+  bseScripId: string | null;
+  /** Null when that exchange's own quote was unavailable: Yahoo is never compared in its place */
+  nse: ApiExchangeSide | null;
+  bse: ApiExchangeSide | null;
+  gap: { absolute: number; percent: number } | null;
+  volumeShare: { nse: number; bse: number } | null;
+  history: { date: string; nse: number; bse: number; gapPct: number; nseVolume: number; bseVolume: number }[];
+  historySummary: {
+    days: number;
+    meanAbsGapPct: number | null;
+    maxAbsGapPct: number | null;
+    daysNseHigher: number;
+    daysBseHigher: number;
+    nseVolumeSharePct: number | null;
+  };
+}
+
+export interface ApiUniverseStats {
+  companies: number;
+  bothExchanges: number;
+  nseOnly: number;
+  bseOnly: number;
+  nse: { main: number; sme: number };
+  bse: { main: number; sme: number; suspended: number };
 }
 
 export interface ApiProfile {
@@ -54,6 +127,8 @@ export interface ApiCandle {
 export interface ApiCandleSeries {
   symbol: string;
   period: string;
+  /** The exchange the prices are from */
+  exchange?: "NSE" | "BSE";
   candles: ApiCandle[];
 }
 
@@ -351,6 +426,10 @@ export interface ApiSearchResult {
   isin: string | null;
   kind: "listed" | "unlisted";
   href: string;
+  exchanges?: ApiExchange[];
+  nseSymbol?: string | null;
+  bseCode?: string | null;
+  board?: "main" | "sme";
 }
 
 export interface ApiIpoIssue {

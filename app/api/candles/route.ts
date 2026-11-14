@@ -9,6 +9,7 @@ export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   const symbol = params.get("symbol");
   const period = (params.get("period") ?? "1Y").toUpperCase();
+  const exchange = params.get("exchange") === "BSE" ? "BSE" : "NSE";
 
   if (!symbol || !SYMBOL_RE.test(symbol)) {
     return NextResponse.json({ error: "valid symbol is required" }, { status: 400 });
@@ -17,7 +18,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "invalid period" }, { status: 400 });
   }
 
-  const result = await getCandles(symbol, period);
+  const result = await getCandles(symbol, period, exchange);
   if (!result.ok) {
     return NextResponse.json({ error: result.message }, { status: result.status || 503 });
   }
