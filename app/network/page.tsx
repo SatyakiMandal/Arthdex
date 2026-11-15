@@ -1,70 +1,43 @@
 import type { Metadata } from "next";
-import { SiteHeader } from "@/components/layout/site-header";
+import { redirect } from "next/navigation";
+
 import { SiteFooter } from "@/components/layout/site-footer";
-import { SourceLine, DataUnavailable } from "@/components/ui/data-provenance";
-import { CorporateGraphView } from "@/components/network/corporate-graph-view";
-import { getCorporateHierarchy, getSupplyChainNetwork, getNetworkSummary } from "@/lib/api/endpoints";
+import { SiteHeader } from "@/components/layout/site-header";
 
 export const metadata: Metadata = {
-  title: "Corporate Network & Supply Chain Web (SPLC / HOLD) · Arthdex Terminal",
-  description: "Interconnected web of Indian conglomerates, multi-tier suppliers, independent contractors, customer channels, sole-source bottlenecks, and group subsidiary holdings.",
+  title: "Company ownership · Arthdex",
+  description: "Look up who owns any NSE-listed company: promoters, promoter-group entities and large public shareholders, from its shareholding filing.",
 };
 
-export const revalidate = 3600;
-
-interface NetworkPageProps {
-  searchParams: Promise<{
-    symbol?: string;
-    mode?: string;
-  }>;
-}
-
-export default async function NetworkPage({ searchParams }: NetworkPageProps) {
-  const { symbol = "M&M", mode = "splc" } = await searchParams;
-  const cleanSymbol = symbol.trim().toUpperCase() || "M&M";
-
-  const [hierarchyRes, supplyChainRes, summaryRes] = await Promise.all([
-    getCorporateHierarchy(cleanSymbol),
-    getSupplyChainNetwork(cleanSymbol),
-    getNetworkSummary(cleanSymbol),
-  ]);
+/** The ownership view lives on each company's page; this page is the way in by ticker. */
+export default async function NetworkPage({ searchParams }: { searchParams: Promise<{ symbol?: string }> }) {
+  const { symbol } = await searchParams;
+  const clean = (symbol ?? "").trim().toUpperCase();
+  if (/^[A-Z0-9&_-]{1,20}$/.test(clean)) redirect(`/company/${encodeURIComponent(clean)}/network`);
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <SiteHeader />
-
-      <main className="flex-1 w-full max-w-[1920px] mx-auto px-2 pt-1 pb-4 sm:px-3 lg:px-4">
-        {hierarchyRes.ok && supplyChainRes.ok && summaryRes.ok ? (
-          <>
-            <CorporateGraphView
-              initialSymbol={cleanSymbol}
-              initialHierarchy={hierarchyRes.data}
-              initialSupplyChain={supplyChainRes.data}
-              initialSummary={summaryRes.data}
-              initialMode={mode.toUpperCase() === "HOLD" ? "HOLD" : "SPLC"}
-            />
-            <div className="mt-3 px-2">
-              <SourceLine meta={supplyChainRes.meta} />
-            </div>
-          </>
-        ) : (
-          <div className="py-12">
-            <DataUnavailable
-              title="Corporate Network Engine Unavailable"
-              message={
-                (!hierarchyRes.ok
-                  ? hierarchyRes.message
-                  : !supplyChainRes.ok
-                  ? supplyChainRes.message
-                  : summaryRes.ok
-                  ? null
-                  : summaryRes.message) || "Unable to retrieve corporate network relationships"
-              }
-            />
-          </div>
-        )}
+      <main id="main" className="mx-auto w-full max-w-3xl flex-1 space-y-4 px-4 py-10 font-mono">
+        <h1 className="text-base font-bold uppercase tracking-wider">Company ownership</h1>
+        <p className="text-2xs text-muted-foreground">
+          Enter an NSE ticker to see its promoters, promoter-group entities and public shareholders above 1%, as the company filed them with the exchange.
+        </p>
+        <form method="get" className="flex gap-2">
+          <label className="sr-only" htmlFor="network-symbol">Ticker</label>
+          <input
+            id="network-symbol"
+            name="symbol"
+            placeholder="e.g. TECHM"
+            maxLength={20}
+            className="w-48 border border-border bg-surface-muted px-2 py-1.5 text-xs uppercase text-foreground focus:border-accent focus:outline-none"
+          />
+          <button type="submit" className="bg-accent px-3 py-1.5 text-3xs font-bold uppercase tracking-wider text-accent-foreground hover:brightness-110">
+            Show ownership
+          </button>
+        </form>
+        {clean ? <p className="text-2xs text-down" role="alert">That does not look like a ticker.</p> : null}
       </main>
-
       <SiteFooter />
     </div>
   );

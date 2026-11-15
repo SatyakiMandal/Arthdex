@@ -63,13 +63,13 @@ export const FINANCIAL_ROLES: RoleDef[] = [
   },
   {
     id: "macro_splc",
-    label: "Macro & SPLC",
-    tagline: "Multi-tier supply chain bottlenecks · sovereign yield curve · RBI repo stance",
+    label: "Macro & Ownership",
+    tagline: "Promoter and institutional ownership · policy rates · yield curve",
     chips: [
-      "Supply Chain & Off-Take Bottlenecks",
-      "RBI Repo Stance & 10Y Sovereign Yield Spread",
-      "Ind AS 24 Note 34 Related Party Transaction Audit",
-      "Conglomerate Holding Company Discount Analysis",
+      "Who are the promoters and large shareholders?",
+      "Promoter pledging and shareholding trend",
+      "Valuation against peers",
+      "Revenue and profit growth over the filed years",
     ],
   },
 ];
@@ -79,6 +79,6 @@ export const CORE_INSTITUTIONAL_CHIPS: string[] = [
   "2-Stage FCFF DCF vs Market Price",
   "Stress Test: Rates +100bps & Rupee Deprec.",
   "Promoter Pledging & Governance Audit",
-  "Supply Chain & Off-Take Bottlenecks",
+  "Who are the promoters and large shareholders?",
   "Options OI Build-up & Put-Call Ratio",
 ];

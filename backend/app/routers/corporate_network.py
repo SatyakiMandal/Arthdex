@@ -1,66 +1,61 @@
-"""
-Corporate Network, Conglomerate Hierarchy & Supply Chain Router (SPLC, HOLD, REL).
-"""
+"""Ownership network: each company's named shareholders, read from its exchange filing."""
 
 from __future__ import annotations
 
+import re
+import urllib.parse
+
 from fastapi import APIRouter, HTTPException, Query
 
+from ..cache import CACHE
+from ..providers import nse
 from ..schemas import envelope
-from ..services import corporate_network
+from ..services import ownership_live
 
 router = APIRouter(prefix="/api/v1/network", tags=["network"])
 
+_SYMBOL_RE = re.compile(r"[A-Z0-9&_-]{1,20}")
+OWNERSHIP_TTL = 12 * 3600  # filings change once a quarter
 
-@router.get("/hierarchy")
-def get_hierarchy(symbol: str = Query("M&M", description="NSE equity symbol")):
-    """Returns the conglomerate corporate structure tree for a given symbol (HOLD)."""
+
+def _universe() -> list[dict]:
+    """Listed-company names for linking holders to their own pages. A convenience only."""
     try:
-        data = corporate_network.get_hierarchy_cached(symbol)
-    except corporate_network.NetworkNotOnFile as exc:
+        from .search import load_universe
+
+        return load_universe()[0]
+    except Exception:
+        return []
+
+
+@router.get("/ownership")
+def get_ownership(symbol: str = Query(..., min_length=1, max_length=20, description="NSE symbol")):
+    """Promoters, promoter-group entities and public holders above 1%, as filed with the exchange."""
+    sym = symbol.upper().strip()
+    if not _SYMBOL_RE.fullmatch(sym):
+        raise HTTPException(status_code=400, detail="Invalid symbol")
+
+    def fetch():
+        filings = nse.nse_get(f"/api/corporate-share-holdings-master?index=equities&symbol={urllib.parse.quote(sym, safe='')}") or []
+        session = nse._get_session()
+
+        def get_text(url: str) -> str:
+            response = session.get(url, timeout=60)
+            response.raise_for_status()
+            return response.text
+
+        return ownership_live.build(sym, filings, get_text, _universe())
+
+    try:
+        data, age = CACHE.get_or_fetch(f"network:ownership:v1:{sym}", OWNERSHIP_TTL, fetch)
+    except ownership_live.OwnershipUnavailable as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except Exception as exc:
-        raise HTTPException(status_code=503, detail=f"Corporate hierarchy unavailable: {exc}") from exc
+        raise HTTPException(status_code=503, detail=f"Shareholding filing unavailable: {exc}") from exc
     return envelope(
         data,
-        3600,
-        source="Compiled by hand from company annual reports",
+        age,
+        source="NSE shareholding pattern filing (XBRL)",
         delayed_minutes=0,
-        note="Hand-compiled and not machine-checked against filings; stakes and revenue shares may be out of date.",
-    )
-
-
-@router.get("/supply-chain")
-def get_supply_chain(symbol: str = Query("M&M", description="NSE equity symbol")):
-    """Returns the multi-tier supply chain and customer network for a given symbol (SPLC)."""
-    try:
-        data = corporate_network.get_supply_chain_cached(symbol)
-    except corporate_network.NetworkNotOnFile as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except Exception as exc:
-        raise HTTPException(status_code=503, detail=f"Supply chain network unavailable: {exc}") from exc
-    return envelope(
-        data,
-        3600,
-        source="Compiled by hand from company annual reports",
-        delayed_minutes=0,
-        note="Hand-compiled. Supplier dependency and cost shares are estimates unless marked ACTUAL FILING; companies do not disclose them in full.",
-    )
-
-
-@router.get("/summary")
-def get_summary(symbol: str = Query("M&M", description="NSE equity symbol")):
-    """Returns high-level supply chain and conglomerate summary metrics."""
-    try:
-        data = corporate_network.get_summary_cached(symbol)
-    except corporate_network.NetworkNotOnFile as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except Exception as exc:
-        raise HTTPException(status_code=503, detail=f"Network summary unavailable: {exc}") from exc
-    return envelope(
-        data,
-        3600,
-        source="Compiled by hand from company annual reports",
-        delayed_minutes=0,
-        note="Supplier counts, dependency metrics, and provenance breakdown.",
+        note=f"As filed for the quarter ended {data.get('asOf')}. Names and stakes are the company's own disclosure.",
     )

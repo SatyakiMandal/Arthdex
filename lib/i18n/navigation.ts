@@ -278,7 +278,7 @@ export function getLocalizedNavGroups(locale: SupportedLocale, dict: Dictionary)
         resolveItem("/unlisted", "Unlisted companies", "Dealer prices for private equity", Building2),
         resolveItem("/watchlist", "Watchlist", "Your companies at a glance", Star),
         resolveItem("/portfolio", "Portfolio & tax desk", "Holdings, XIRR and ₹1.25L tax harvester", Briefcase),
-        resolveItem("/network", "Corporate network & SPLC", "Multi-tier supply chain, customer off-take & group holdings", Network, dict.nav.corporateNetwork),
+        resolveItem("/network", "Company ownership", "Promoters and large shareholders from exchange filings", Network, dict.nav.corporateNetwork),
       ],
     },
     {

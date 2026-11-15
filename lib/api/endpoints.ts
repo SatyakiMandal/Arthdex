@@ -72,9 +72,7 @@ import type {
   ApiPaperAccountResponse,
   ApiRegulatoryCharges,
   ApiPaperOrderResult,
-  ApiCorporateHierarchy,
-  ApiSupplyChainNetwork,
-  ApiNetworkSummary,
+  ApiOwnership,
   ApiCrisisScenario,
   ApiStressTestResult,
   ApiFactorExposure,
@@ -430,14 +428,8 @@ export const postPlacePaperOrder = (payload: {
 
 // -- Corporate Network & Supply Chain (SPLC, HOLD, REL) ----------------------
 
-export const getCorporateHierarchy = (symbol: string = "M&M") =>
-  apiGet<ApiCorporateHierarchy>(`/api/v1/network/hierarchy?symbol=${encodeURIComponent(symbol)}`, 3600);
-
-export const getSupplyChainNetwork = (symbol: string = "M&M") =>
-  apiGet<ApiSupplyChainNetwork>(`/api/v1/network/supply-chain?symbol=${encodeURIComponent(symbol)}`, 3600);
-
-export const getNetworkSummary = (symbol: string = "M&M") =>
-  apiGet<ApiNetworkSummary>(`/api/v1/network/summary?symbol=${encodeURIComponent(symbol)}`, 3600);
+export const getOwnership = (symbol: string) =>
+  apiGet<ApiOwnership>(`/api/v1/network/ownership?symbol=${encodeURIComponent(symbol)}`, REVALIDATE.fundamentals);
 
 // -- Quant Risk Lab (STRS, MARS, FCTR, BTST) --------------------------------
 /** Crisis windows with the Nifty 50's computed change over each. */

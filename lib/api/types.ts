@@ -1952,87 +1952,34 @@ export interface ApiPaperOrderResult {
   account?: ApiPaperAccountResponse;
 }
 
-// -- Corporate Network & Supply Chain (SPLC, HOLD, REL) ----------------------
+// -- Ownership network, from the shareholding filing ---------------------------
 
-export interface ApiHoldingEntity {
-  symbol: string | null;
+export interface ApiOwnershipHolder {
   name: string;
-  listing_status: string;
-  ownership_pct: number;
-  relation_type: string;
-  revenue_contrib_cr: number;
-  ebitda_contrib_pct: number;
-  business_segment: string;
-  provenance: string;
+  holderType: string;
+  shares: number;
+  /** Stake as filed, in per cent. */
+  pct: number | null;
+  /** NSE symbol when the holder's name matches a listed company exactly. */
+  symbol?: string | null;
 }
 
-export interface ApiCorporateHierarchy {
-  group_name: string;
-  parent_symbol: string;
-  parent_name: string;
-  total_group_turnover_cr: number | null;
-  holding_entities: ApiHoldingEntity[];
-}
-
-export interface ApiSupplyChainSupplier {
-  symbol: string | null;
-  name: string;
-  tier: string;
-  cluster: string;
-  component: string;
-  dependency_pct: number;
-  cogs_share_pct: number;
-  is_sole_source: boolean;
-  contract_type: string;
-  origin: string;
-  location: string;
-  provenance: string;
-}
-
-export interface ApiSupplyChainCustomer {
-  name: string;
-  category: string;
-  channel_type: string;
-  volume_share_pct: number;
-  regions: string;
-  key_products: string;
-  provenance: string;
-}
-
-export interface ApiSupplyChainContractor {
-  name: string;
-  service_category: string;
-  scope: string;
-  spend_cr: number;
-  is_related_party: boolean;
-}
-
-export interface ApiSupplyChainNetwork {
+/** Named shareholders from the company's quarterly shareholding-pattern filing. */
+export interface ApiOwnership {
   symbol: string;
-  name: string;
-  primary_sector: string;
-  annual_cogs_cr: number | null;
-  suppliers: ApiSupplyChainSupplier[];
-  customers: ApiSupplyChainCustomer[];
-  independent_contractors: ApiSupplyChainContractor[];
-}
-
-export interface ApiNetworkSummary {
-  symbol: string;
-  name: string;
-  primary_sector: string;
-  group_name: string;
-  total_suppliers_tracked: number;
-  sole_source_bottlenecks: number;
-  high_dependency_suppliers: number;
-  total_customer_segments: number;
-  total_independent_contractors: number;
-  total_holding_subsidiaries: number;
-  product_clusters: string[];
-  provenance_summary: {
-    audited_filing_nodes: number;
-    modelled_estimated_nodes: number;
-  };
+  companyName: string;
+  asOf: string | null;
+  filedOn: string | null;
+  promoterAndGroupPct: number | null;
+  publicPct: number | null;
+  promoters: ApiOwnershipHolder[];
+  promoterNamedTotalPct: number | null;
+  promoterGroupWithoutShares: string[];
+  promoterGroupWithoutSharesCount: number;
+  publicHoldersAbove1Pct: ApiOwnershipHolder[];
+  filingUrl: string;
+  notes: string | null;
+  unavailable: Record<string, string>;
 }
 
 // ==========================================

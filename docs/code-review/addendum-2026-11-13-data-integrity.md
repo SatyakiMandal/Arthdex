@@ -52,6 +52,43 @@ switched-off route now carry `?v=2`, which bypasses the stored copies.
 GDP growth is computed between quarters on the same base year only: MOSPI returns several
 base years in one response, and comparing across them gave a growth figure of 69.9%.
 
+## Network data verified and replaced, 2026-11-16
+
+F-106. The hand-compiled group structures and supply chains for M&M, Tata Motors, Reliance
+and L&T were checked against live exchange data and the companies' shareholding filings.
+They did not hold up, so they are removed.
+
+| Entry | Claimed | Found | Verdict |
+|---|---|---|---|
+| Tata Motors (whole entry) | Trades as TATAMOTORS | No such symbol on NSE any more | Obsolete |
+| L&T: LTIMindtree | Symbol LTIM, 68.6% | No such symbol on NSE any more | Obsolete |
+| M&M: Swaraj Engines | Associate, 34.7% | M&M holds 52.11% (filing, Sep 2026) | Wrong |
+| M&M: Tech Mahindra | 26.2% | 25.30% | Stale |
+| Reliance: Network18 | 73.1% | Promoter group 56.89% | Wrong |
+| Reliance: Just Dial | 63.8% | Reliance Retail Ventures 63.83% | Matches |
+| L&T: LTTS, L&T Finance | 73.8%, 65.9% | 73.51%, 65.93% | Close |
+| M&M: M&M Financial, Lifespace, Logistics, Holidays | 52.2, 51.3, 58.1, 67.4% | Promoter 52.48, 52.40, 59.54, 66.73% | Close but stale |
+| Subsidiary revenue figures | e.g. Network18 Rs 9,280 Cr, M&M Financial Rs 15,890 Cr | Reported FY26: Rs 2,038 Cr, Rs 10,756 Cr | Stale or wrong |
+| Group turnover | M&M Rs 1.39 lakh Cr, L&T Rs 2.21 lakh Cr | Reported FY26: Rs 1.93 lakh Cr, Rs 2.84 lakh Cr | Stale |
+| Supplier dependency %, cost share %, sole-source flags, customer volume shares | Tagged "ACTUAL FILING" | No company discloses these; there is no filing to check them against | Unverifiable |
+| Unlisted subsidiaries (Jio Platforms, JLR, MEAL and others) | Stakes and revenues | Not in any connected source | Unverifiable |
+
+Replacement: `services/ownership_live.py` reads each company's quarterly shareholding-pattern
+XBRL from NSE. For any NSE-listed company the Ownership tab (`/company/X/network`) now shows
+every promoter and promoter-group entity with its filed stake, public shareholders above 1%,
+and the group entities that hold no shares. Holders that are themselves listed link to their
+own page. The named promoter stakes are checked against the filing's promoter total on the
+page. Subsidiaries, suppliers and customers are declared as not available.
+
+## Listed-company coverage
+
+The site on this branch knows NSE's main board (2,635 companies) and NSE Emerge (583).
+The branch `feature/bse-listings` (another session's work, not yet merged or pushed) joins
+NSE and BSE by ISIN: 7,059 companies in all, 2,507 on both exchanges, 711 on NSE only and
+3,841 on BSE only (BSE: 5,147 active and 1,201 suspended scrips). It was run and counted on
+2026-11-16. The two branches change some of the same files and will need merging.
+The ownership view covers NSE-listed companies; BSE-only companies need BSE's filings.
+
 ## Switched off until a source is connected
 
 These routes return 404 with the source they need.
@@ -76,8 +113,6 @@ These routes return 404 with the source they need.
 
 ## Open
 
-- **Hand-compiled network data** for M&M, Tata Motors, Reliance and L&T (stakes, supplier
-  dependency shares) has not been checked against filings. Owner to decide: verify, or remove.
 - **Surveillance** assumes a 5% price band for every trade-to-trade security.
 - **Earnings moves**: the historical post-result average is not computed yet.
 - **Static tables** remain in `sector_kpi.py` and `index_rebalance.py`; delete them once each desk has a real source.

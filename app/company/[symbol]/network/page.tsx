@@ -1,60 +1,37 @@
 import type { Metadata } from "next";
-import { SourceLine, DataUnavailable } from "@/components/ui/data-provenance";
-import { CorporateGraphView } from "@/components/network/corporate-graph-view";
-import { getCorporateHierarchy, getSupplyChainNetwork, getNetworkSummary } from "@/lib/api/endpoints";
 
-export const metadata: Metadata = {
-  title: "Supply Chain & Corporate Network (SPLC / HOLD) · Arthdex Terminal",
-  description: "Interconnected multi-tier supply chain, customer off-take channels, sole-source dependencies, and conglomerate holding structures.",
-};
+import { OwnershipView } from "@/components/network/ownership-view";
+import { DataUnavailable, SourceLine } from "@/components/ui/data-provenance";
+import { getOwnership } from "@/lib/api/endpoints";
 
-export const revalidate = 3600;
-
-interface CompanyNetworkPageProps {
+interface PageProps {
   params: Promise<{ symbol: string }>;
-  searchParams?: Promise<{ mode?: string }>;
 }
 
-export default async function CompanyNetworkPage({ params, searchParams }: CompanyNetworkPageProps) {
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { symbol } = await params;
-  const sp = searchParams ? await searchParams : {};
-  const cleanSymbol = symbol.trim().toUpperCase();
+  const sym = decodeURIComponent(symbol).toUpperCase();
+  return {
+    title: `${sym} ownership · Arthdex`,
+    description: `Promoters, promoter-group entities and large public shareholders of ${sym}, from its latest shareholding filing.`,
+  };
+}
 
-  const [hierarchyRes, supplyChainRes, summaryRes] = await Promise.all([
-    getCorporateHierarchy(cleanSymbol),
-    getSupplyChainNetwork(cleanSymbol),
-    getNetworkSummary(cleanSymbol),
-  ]);
+export default async function CompanyNetworkPage({ params }: PageProps) {
+  const { symbol } = await params;
+  const sym = decodeURIComponent(symbol).toUpperCase();
+  const res = await getOwnership(sym);
 
   return (
-    <div className="w-full space-y-3 py-2">
-      {hierarchyRes.ok && supplyChainRes.ok && summaryRes.ok ? (
+    <div className="mx-auto w-full max-w-[1920px] space-y-3 px-2 py-3 sm:px-3 lg:px-4">
+      {res.ok ? (
         <>
-          <CorporateGraphView
-            initialSymbol={cleanSymbol}
-            initialHierarchy={hierarchyRes.data}
-            initialSupplyChain={supplyChainRes.data}
-            initialSummary={summaryRes.data}
-            initialMode={sp?.mode?.toUpperCase() === "HOLD" ? "HOLD" : "SPLC"}
-          />
-          <div className="mt-2 px-2">
-            <SourceLine meta={supplyChainRes.meta} />
-          </div>
+          <OwnershipView data={res.data} />
+          <SourceLine meta={res.meta} />
         </>
       ) : (
         <div className="py-12">
-          <DataUnavailable
-            title="Corporate Network Unavailable"
-            message={
-              (!hierarchyRes.ok
-                ? hierarchyRes.message
-                : !supplyChainRes.ok
-                ? supplyChainRes.message
-                : summaryRes.ok
-                ? null
-                : summaryRes.message) || "Unable to retrieve corporate network relationships"
-            }
-          />
+          <DataUnavailable title="Ownership not available" message={res.message} />
         </div>
       )}
     </div>

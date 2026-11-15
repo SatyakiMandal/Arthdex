@@ -46,7 +46,7 @@ const ELSEWHERE: { words: string[]; text: (symbol: string) => string }[] = [
   },
   {
     words: ["supply chain", "supplier", "off-take", "related party", "holding company", "subsidiar", "conglomerate"],
-    text: (s) => `Group structure and supply chain, where compiled, are on the Network tab (\`/company/${s}/network\`).`,
+    text: (s) => `Named promoters and large shareholders are on the Ownership tab (\`/company/${s}/network\`). Subsidiaries and suppliers are not available.`,
   },
   {
     words: ["repo", "rbi", "yield", "g-sec", "sovereign", "inflation", "macro"],

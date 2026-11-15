@@ -48,8 +48,8 @@ const PRESET_PANELS: Record<PresetWorkspace, PanelConfig[]> = {
     { id: 4, title: "Sector Operating KPIs", command: "SKPI", symbol: "GLOBAL", channel: "EMERALD", embedUrl: "/sectors" },
   ],
   RISK_SUPPLY: [
-    { id: 1, title: "Corporate Supply Chain Web", command: "SPLC", symbol: "M&M", channel: "MAGENTA", embedUrl: "/network?mode=splc" },
-    { id: 2, title: "Conglomerate Holding Tree", command: "HOLD", symbol: "M&M", channel: "MAGENTA", embedUrl: "/network?mode=hold" },
+    { id: 1, title: "Ownership: M&M", command: "SPLC", symbol: "M&M", channel: "MAGENTA", embedUrl: "/company/M%26M/network" },
+    { id: 2, title: "Ownership: Tech Mahindra", command: "HOLD", symbol: "TECHM", channel: "MAGENTA", embedUrl: "/company/TECHM/network" },
     { id: 3, title: "Crisis Stress Testing", command: "STRS", symbol: "PORT", channel: "MAGENTA", embedUrl: "/risk-lab" },
     { id: 4, title: "Dedicated SME Board", command: "SME", symbol: "GLOBAL", channel: "MAGENTA", embedUrl: "/sme" },
   ],

@@ -20,7 +20,7 @@ const ROLE_LABELS: Record<FinancialRole, string> = {
   equity_analyst: "Equity Analyst",
   derivatives_trader: "Derivatives Trader",
   risk_officer: "Risk Officer",
-  macro_splc: "Macro and Supply Chain Analyst",
+  macro_splc: "Macro and Ownership Analyst",
 };
 
 const SYSTEM_PROMPT = `You are the Arthdex research assistant for Indian listed companies.

@@ -2,18 +2,18 @@ import { describe, it, expect } from "vitest";
 import { parseTerminalCommand, TERMINAL_FUNCTIONS } from "../lib/terminal/functions";
 
 describe("Terminal Command Parsing & Routing", () => {
-  it("binds SPLC and NETWORK to corporate network routes", () => {
+  it("binds SPLC and NETWORK to the ownership routes", () => {
     const splc = parseTerminalCommand("SPLC");
     expect(splc.isValid).toBe(true);
-    expect(splc.targetUrl).toBe("/network?mode=splc");
+    expect(splc.targetUrl).toBe("/network");
 
     const network = parseTerminalCommand("NETWORK");
     expect(network.isValid).toBe(true);
-    expect(network.targetUrl).toBe("/network?mode=splc");
+    expect(network.targetUrl).toBe("/network");
 
     const withTicker = parseTerminalCommand("RELIANCE SPLC");
     expect(withTicker.isValid).toBe(true);
-    expect(withTicker.targetUrl).toBe("/company/RELIANCE/network?mode=splc");
+    expect(withTicker.targetUrl).toBe("/company/RELIANCE/network");
   });
 
   it("binds STRS to Quant Risk Lab", () => {

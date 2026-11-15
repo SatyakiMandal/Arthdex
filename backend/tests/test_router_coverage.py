@@ -103,13 +103,8 @@ class RouterCoverageTests(unittest.TestCase):
         self.assertIn("total", body["data"])
 
     def test_corporate_network_endpoints(self) -> None:
-        """M28 Corporate Network & SPLC endpoints return 200 and schema data."""
-        for endpoint in ["/api/v1/network/hierarchy?symbol=M%26M", "/api/v1/network/supply-chain?symbol=M%26M", "/api/v1/network/summary?symbol=M%26M"]:
-            res = self.client.get(endpoint)
-            self.assertEqual(res.status_code, 200, f"Failed for {endpoint}")
-            data = res.json()
-            self.assertIn("data", data)
-            self.assertIn("meta", data)
+        """M28 ownership route is covered offline in test_corporate_network; the hand-compiled routes are gone."""
+        self.assertEqual(self.client.get("/api/v1/network/hierarchy?symbol=RELIANCE").status_code, 404)
 
     def test_quant_risk_lab_endpoints(self) -> None:
         """M22 risk lab routes are covered offline in test_quant_risk_lab; here only input validation."""
