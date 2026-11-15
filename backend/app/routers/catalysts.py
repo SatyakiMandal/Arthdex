@@ -1,48 +1,30 @@
-"""Catalyst endpoints: index rebalances, IPO lock-in expiries, and buyback arbitrage."""
+"""
+Corporate catalysts: refused until each has a real source.
+
+The index-rebalance desk assigned invented inclusion probabilities, the buyback desk
+used invented acceptance ratios and the lock-in calendar fixed share counts. Each needs
+exchange data Arthdex does not fetch yet, so the endpoints say so.
+"""
 
 from __future__ import annotations
 
 from fastapi import APIRouter
 
-from ..cache import CACHE
-from ..config import SETTINGS
-from ..schemas import envelope
-from ..services import buyback_arbitrage, index_rebalance, ipo_lockin
+from ..not_sourced import refuse
 
 router = APIRouter(prefix="/api/v1/catalysts", tags=["catalysts"])
 
 
 @router.get("/index-rebalance")
 def get_index_rebalance():
-    """Semi-annual Nifty 50, Bank Nifty, and Nifty Next 50 rebalance forecast with passive ETF flows."""
-    key = "catalysts:index_rebalance"
-    data, age = CACHE.get_or_fetch(
-        key,
-        SETTINGS.fundamentals_ttl,
-        index_rebalance.predict_rebalance,
-    )
-    return envelope(data, age, source="NSE Indices Methodology", delayed_minutes=0)
+    refuse("Index rebalance candidates", "free-float market caps and turnover for the index review window", "NSE Indices publishes the methodology but no free-float feed")
 
 
 @router.get("/ipo-lockins")
 def get_ipo_lockins():
-    """Anchor and Pre-IPO lock-in expiry schedule with supply impact volume ratios."""
-    key = "catalysts:ipo_lockins"
-    data, age = CACHE.get_or_fetch(
-        key,
-        SETTINGS.fundamentals_ttl,
-        ipo_lockin.build_lockin_calendar,
-    )
-    return envelope(data, age, source="SEBI ICDR Regulations", delayed_minutes=0)
+    refuse("IPO lock-in expiries", "each issue's lock-in schedule and locked share counts", "they are in each offer document, which is not parsed yet")
 
 
 @router.get("/buybacks")
 def get_buybacks():
-    """Active tender-offer corporate buybacks with retail quota (₹2 Lakh) acceptance arbitrage simulations."""
-    key = "catalysts:buybacks"
-    data, age = CACHE.get_or_fetch(
-        key,
-        SETTINGS.fundamentals_ttl,
-        buyback_arbitrage.get_buyback_desk,
-    )
-    return envelope(data, age, source="SEBI Buy-Back Disclosures", delayed_minutes=0)
+    refuse("Buyback arbitrage", "open buyback offers with entitlement and acceptance ratios", "they are in each offer letter, which is not parsed yet")

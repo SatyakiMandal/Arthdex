@@ -1,31 +1,22 @@
 import type { Metadata } from "next";
-import { QuantRiskLab } from "@/components/quant/quant-risk-lab";
+import { SiteHeader } from "@/components/layout/site-header";
+import { SiteFooter } from "@/components/layout/site-footer";
+import { NotSourced } from "@/components/ui/not-sourced";
 
 export const metadata: Metadata = {
-  title: "Quant Risk Lab & Crisis Stress-Testing (STRS) · Arthdex",
-  description:
-    "Institutional stress-testing, historical crisis drawdown simulation (2008 GFC, 2020 COVID, 2024 Election), and statutory-deducted backtesting.",
+  title: "Risk lab · Arthdex",
+  description: "Crisis stress tests and factor exposures, shown once they run on real histories.",
 };
 
-export default function RiskLabPage() {
+export default function Page() {
   return (
-    <div className="mx-auto w-full max-w-[1920px] p-2 sm:p-4 space-y-4">
-      {/* Terminal Title Bar */}
-      <div className="flex flex-wrap items-baseline justify-between border-b border-border pb-2">
-        <div className="flex items-baseline gap-2">
-          <h1 className="font-mono text-base font-bold uppercase tracking-wider text-foreground">
-            QUANT RISK LAB &amp; CRISIS STRESS-TESTING (STRS)
-          </h1>
-          <span className="font-mono text-3xs text-muted-foreground">M22 · INSTITUTIONAL RISK ENGINE</span>
-        </div>
-        <div className="flex items-center gap-2 font-mono text-3xs text-muted-foreground">
-          <span className="text-accent font-bold">ALT+K: STRS &lt;GO&gt;</span>
-          <span>•</span>
-          <span>HISTORICAL TICKS &amp; PARAMETRIC VAR</span>
-        </div>
-      </div>
-
-      <QuantRiskLab />
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <SiteHeader />
+      <main id="main" className="mx-auto w-full max-w-[1920px] flex-1 px-2 pt-3 pb-4 sm:px-3 lg:px-4">
+        <h1 className="text-2xl font-semibold">Risk lab</h1>
+        <NotSourced title="Risk lab" path="/api/risk-lab/crisis-scenarios" />
+      </main>
+      <SiteFooter />
     </div>
   );
 }

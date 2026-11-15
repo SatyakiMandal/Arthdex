@@ -1773,67 +1773,44 @@ export interface ApiSurveillanceOverview {
 
 // -- Sovereign Yield Curve & Fixed Income (GC IN / GSEC) ----------------------
 
-export interface ApiYieldTenor {
-  tenor: string;
-  label: string;
-  years: number;
-  category: "T-Bill" | "G-Sec";
-  paper: string;
-  benchmark: boolean;
+export interface ApiYieldChange {
+  /** Date of this service's own earlier snapshot */
+  asOf: string;
   yieldPct: number;
-  modelYieldPct: number;
-  change1wBps: number;
-  change1mBps: number;
-  change1yBps: number;
-  history: {
-    current: number;
-    oneWeekAgo: number;
-    oneMonthAgo: number;
-    oneYearAgo: number;
-  };
+  changeBps: number;
 }
 
-export interface ApiSpreadMatrixItem {
-  assetClass: string;
-  issuer: string;
-  indicativeYield: number;
-  spreadOverGsecBps: number;
-  creditRating: string;
+export interface ApiYieldTenor {
+  tenor: string;
+  /** The RBI's own line: "6.94% GS 2036", "91 day T-bill" */
+  paper: string;
+  category: "T-Bill" | "G-Sec";
+  maturityYear: number | null;
+  years: number;
+  yieldPct: number;
+  /** Null until a snapshot from that far back exists */
+  history: { "1w": ApiYieldChange | null; "1m": ApiYieldChange | null; "1y": ApiYieldChange | null };
 }
 
 export interface ApiYieldCurveResponse {
+  /** The RBI's "as on" date for the G-sec yields */
   asOf: string;
-  benchmark10y: number;
-  benchmarkPaper: string;
-  curveShape: "Normal Upward Sloping" | "Flat" | "Inverted";
-  spreads: {
-    spread2s10sBps: number;
-    spread5s10sBps: number;
-    spread10s30sBps: number;
-    spread3m10yBps: number;
-    termPremiumRepoBps: number;
-    inverted2s10s: boolean;
-    inverted3m10y: boolean;
-  };
-  rbiCorridor: {
-    repoRate: number;
-    sdfRate: number;
-    msfRate: number;
-    bankRate: number;
-    reverseRepoRate: number;
-    crrPct: number;
-    slrPct: number;
-    stance: string;
-    lastChanged: string;
-  };
-  nelsonSiegelFit: {
-    beta0: number;
-    beta1: number;
-    beta2: number;
-    lambda: number;
-  };
+  fetchedAt: string;
   tenors: ApiYieldTenor[];
-  spreadMatrix: ApiSpreadMatrixItem[];
+  /** The G-sec closest to ten years */
+  benchmark: ApiYieldTenor | null;
+  spreads: { long: string; short: string; bps: number }[];
+  rbiCorridor: {
+    repoRate?: number;
+    sdfRate?: number;
+    msfRate?: number;
+    bankRate?: number;
+    reverseRepoRate?: number;
+    crrPct?: number;
+    slrPct?: number;
+  };
+  historyDays: number;
+  source: string;
 }
 
 export interface ApiParticipantPosition {
@@ -2008,33 +1985,21 @@ export interface ApiMacroDashboardResponse {
 }
 
 export interface ApiForexPair {
+  /** "USD/INR", or "JPY/INR (per 100)" where the RBI quotes per 100 or 10,000 units */
   pair: string;
+  currency: string;
+  units: number;
+  /** Rupees per `units` of the currency: the RBI reference rate */
   rate: number;
-  change: number;
-  changePct: number;
-  high: number;
-  low: number;
-  trend: "up" | "down" | "neutral";
-  fbilRef: number;
-}
-
-export interface ApiForwardPremium {
-  tenor: string;
-  points: number;
-  annualizedPct: number;
+  /** Arthdex's own earlier snapshot of the same rate; null until one exists */
+  previous: { asOf: string; rate: number; change: number; changePct: number } | null;
 }
 
 export interface ApiForexMonitorResponse {
-  asOf: string;
+  fetchedAt: string;
   baseCurrency: string;
   pairs: ApiForexPair[];
-  forwardPremia: ApiForwardPremium[];
-  reerIndices: {
-    reer40Basket: number;
-    neer40Basket: number;
-    valuation: string;
-    source: string;
-  };
+  source: string;
 }
 
 export interface ApiFundHolding {

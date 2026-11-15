@@ -102,40 +102,25 @@ class RouterCoverageTests(unittest.TestCase):
         self.assertIn("data", body)
         self.assertIn("companies", body["data"])
 
-    def test_corporate_network_endpoints(self) -> None:
-        """M28 Corporate Network & SPLC endpoints return 200 and schema data."""
-        for endpoint in ["/api/v1/network/hierarchy?symbol=M&M", "/api/v1/network/supply-chain?symbol=M&M", "/api/v1/network/summary?symbol=M&M"]:
-            res = self.client.get(endpoint)
-            self.assertEqual(res.status_code, 200, f"Failed for {endpoint}")
-            data = res.json()
-            self.assertIn("data", data)
-            self.assertIn("meta", data)
-
-    def test_quant_risk_lab_endpoints(self) -> None:
-        """M22 Quant Risk Lab endpoints return 200 and valid stress scenarios."""
-        res = self.client.get("/api/risk-lab/crisis-scenarios")
-        self.assertEqual(res.status_code, 200)
-        self.assertIsInstance(res.json()["data"], list)
-        self.assertTrue(len(res.json()["data"]) > 0)
-
-        stress_payload = {
-            "portfolio": [{"symbol": "RELIANCE", "weight": 0.5}, {"symbol": "TCS", "weight": 0.5}],
-            "scenario_id": "covid_shock_2020",
-        }
-        res_post = self.client.post("/api/risk-lab/stress-test", json=stress_payload)
-        self.assertEqual(res_post.status_code, 200)
-        self.assertIn("portfolio_stress_summary", res_post.json()["data"])
-        self.assertIn("portfolio_drawdown_pct", res_post.json()["data"]["portfolio_stress_summary"])
-
-    def test_sector_kpi_endpoints(self) -> None:
-        """M19 Sector Operating KPI endpoints return 200 for summary and single sector."""
-        res = self.client.get("/api/sectors/kpis")
-        self.assertEqual(res.status_code, 200)
-        self.assertIn("sectors", res.json()["data"])
-
-        res_auto = self.client.get("/api/sectors/kpis/auto")
-        self.assertEqual(res_auto.status_code, 200)
-        self.assertEqual(res_auto.json()["data"]["sector_code"], "auto")
+    def test_unsourced_desks_refuse(self) -> None:
+        """Desks with no real data source answer 503 with an explanation, never invented figures."""
+        for method, endpoint in [
+            ("get", "/api/v1/network/hierarchy?symbol=M&M"),
+            ("get", "/api/v1/network/supply-chain?symbol=M&M"),
+            ("get", "/api/v1/network/summary?symbol=M&M"),
+            ("get", "/api/risk-lab/crisis-scenarios"),
+            ("post", "/api/risk-lab/stress-test"),
+            ("get", "/api/risk-lab/factor-exposures"),
+            ("post", "/api/risk-lab/backtest"),
+            ("get", "/api/sectors/kpis"),
+            ("get", "/api/sectors/kpis/auto"),
+            ("get", "/api/v1/catalysts/index-rebalance"),
+            ("get", "/api/v1/catalysts/ipo-lockins"),
+            ("get", "/api/v1/catalysts/buybacks"),
+        ]:
+            res = getattr(self.client, method)(endpoint)
+            self.assertEqual(res.status_code, 503, endpoint)
+            self.assertIn("No figures are shown in its place", res.json()["detail"], endpoint)
 
     def test_sme_markets_endpoints(self) -> None:
         """M20 Dedicated SME Board endpoints return 200 for overview, IPOs, migrations, and screener."""

@@ -1,60 +1,33 @@
 """
-Corporate Network, Conglomerate Hierarchy & Supply Chain Router (SPLC, HOLD, REL).
+Group structures and supply chains: refused until a real source is parsed.
+
+Subsidiary ownership and related-party flows are in each company's annual report and
+XBRL filings, which Arthdex does not yet parse for these fields. The endpoints say so
+instead of serving fixed tables or generated subsidiaries.
 """
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Query
 
-from ..schemas import envelope
-from ..services import corporate_network
+from ..not_sourced import refuse
 
 router = APIRouter(prefix="/api/v1/network", tags=["network"])
 
+_NEEDS = "subsidiary ownership and related-party transactions for this company"
+_WHERE = "they are disclosed in annual reports and XBRL filings, which are not parsed for this yet"
+
 
 @router.get("/hierarchy")
-def get_hierarchy(symbol: str = Query("M&M", description="NSE equity symbol")):
-    """Returns the conglomerate corporate structure tree for a given symbol (HOLD)."""
-    try:
-        data = corporate_network.get_hierarchy_cached(symbol)
-    except Exception as exc:
-        raise HTTPException(status_code=503, detail=f"Corporate hierarchy unavailable: {exc}") from exc
-    return envelope(
-        data,
-        3600,
-        source="Audited Annual Reports (Related Party Disclosures Note 34), NSE & MCA",
-        delayed_minutes=0,
-        note="Consolidated holdings, listed associates, wholly owned subsidiaries, and JVs.",
-    )
+def get_hierarchy(symbol: str = Query("M&M")):
+    refuse("The group structure", _NEEDS, _WHERE)
 
 
 @router.get("/supply-chain")
-def get_supply_chain(symbol: str = Query("M&M", description="NSE equity symbol")):
-    """Returns the multi-tier supply chain and customer network for a given symbol (SPLC)."""
-    try:
-        data = corporate_network.get_supply_chain_cached(symbol)
-    except Exception as exc:
-        raise HTTPException(status_code=503, detail=f"Supply chain network unavailable: {exc}") from exc
-    return envelope(
-        data,
-        3600,
-        source="Exchange LODR filings, Annual Report Notes to Accounts, and Procurement disclosures",
-        delayed_minutes=0,
-        note="Multi-tier suppliers, customer volume breakdown, and critical sole-source bottlenecks.",
-    )
+def get_supply_chain(symbol: str = Query("M&M")):
+    refuse("The supply chain", _NEEDS, _WHERE)
 
 
 @router.get("/summary")
-def get_summary(symbol: str = Query("M&M", description="NSE equity symbol")):
-    """Returns high-level supply chain and conglomerate summary metrics."""
-    try:
-        data = corporate_network.get_summary_cached(symbol)
-    except Exception as exc:
-        raise HTTPException(status_code=503, detail=f"Network summary unavailable: {exc}") from exc
-    return envelope(
-        data,
-        3600,
-        source="Arthdex Corporate Network Intelligence",
-        delayed_minutes=0,
-        note="Supplier counts, dependency metrics, and provenance breakdown.",
-    )
+def get_summary(symbol: str = Query("M&M")):
+    refuse("The corporate network", _NEEDS, _WHERE)

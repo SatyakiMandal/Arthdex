@@ -307,18 +307,18 @@ def get_surveillance(
 
 @router.get("/yield-curve")
 def get_yield_curve():
-    """India Sovereign Par Yield Curve (91D to 40Y), Spreads, and RBI Monetary Policy Corridor."""
+    """India's government bond curve (RBI benchmark G-secs and T-bills) and the RBI policy corridor."""
     try:
         data = fixed_income.get_sovereign_yield_curve()
     except Exception as exc:
-        raise HTTPException(status_code=503, detail=f"Sovereign yield curve unavailable: {exc}") from exc
+        raise HTTPException(status_code=503, detail=f"RBI rates unavailable: {exc}") from exc
 
     return envelope(
         data,
-        3600,
-        source="RBI NDS-OM Secondary Market & CCIL Sovereign Par Yields",
-        delayed_minutes=15,
-        note="10-Year Benchmark yield (7.18 GS 2033 / 7.10 GS 2034) anchored against the RBI operating corridor (SDF floor 6.25% to MSF ceiling 6.75%).",
+        CACHE.age("market:fixed-income:yield-curve") or 0.0,
+        source="Reserve Bank of India (rbi.org.in): policy rates, T-bill cut-offs, benchmark G-sec yields",
+        delayed_minutes=0,
+        note=f"G-sec yields as on {data['asOf']}. Changes appear once this service has its own snapshot from that far back.",
     )
 
 

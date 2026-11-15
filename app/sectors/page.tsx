@@ -1,31 +1,22 @@
 import type { Metadata } from "next";
-import { SectorKpiDesk } from "@/components/sectors/sector-kpi-desk";
+import { SiteHeader } from "@/components/layout/site-header";
+import { SiteFooter } from "@/components/layout/site-footer";
+import { NotSourced } from "@/components/ui/not-sourced";
 
 export const metadata: Metadata = {
-  title: "Sector Operating KPIs Dashboard (SKPI) · Arthdex",
-  description:
-    "Real-time Indian industry operating metrics: SIAM automotive wholesale & VAHAN retail, RBI sectoral credit deployment, CEA power demand, DGCA aviation passenger loads, and TRAI telecom subscribers.",
+  title: "Sector KPIs · Arthdex",
+  description: "Industry operating data by sector, shown once a real feed is connected.",
 };
 
-export default function SectorsPage() {
+export default function Page() {
   return (
-    <div className="mx-auto w-full max-w-[1920px] p-2 sm:p-4 space-y-4">
-      {/* Title Header */}
-      <div className="flex flex-wrap items-baseline justify-between border-b border-border pb-2">
-        <div className="flex items-baseline gap-2">
-          <h1 className="font-mono text-base font-bold uppercase tracking-wider text-foreground">
-            SECTOR OPERATING KPIS DASHBOARD (SKPI)
-          </h1>
-          <span className="font-mono text-3xs text-muted-foreground">M19 · REAL-ECONOMY OPERATING RADAR</span>
-        </div>
-        <div className="flex items-center gap-2 font-mono text-3xs text-muted-foreground">
-          <span className="text-accent font-bold">ALT+K: SKPI &lt;GO&gt;</span>
-          <span>•</span>
-          <span>SIAM • VAHAN • RBI • CEA • DGCA • TRAI</span>
-        </div>
-      </div>
-
-      <SectorKpiDesk />
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <SiteHeader />
+      <main id="main" className="mx-auto w-full max-w-[1920px] flex-1 px-2 pt-3 pb-4 sm:px-3 lg:px-4">
+        <h1 className="text-2xl font-semibold">Sector operating KPIs</h1>
+        <NotSourced title="Sector operating KPIs" path="/api/sectors/kpis" />
+      </main>
+      <SiteFooter />
     </div>
   );
 }

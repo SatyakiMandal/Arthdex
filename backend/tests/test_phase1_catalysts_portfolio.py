@@ -1,10 +1,10 @@
-"""Unit tests for Phase 1: Portfolio Analytics (XIRR & Section 112A Tax Harvesting) and Catalysts (Index Rebalance, IPO Lock-in, Buybacks)."""
+"""Unit tests for portfolio analytics: XIRR and Section 112A tax harvesting."""
 
 from datetime import date, timedelta
 import unittest
 from unittest.mock import patch
 
-from app.services import buyback_arbitrage, index_rebalance, ipo_lockin, portfolio_analytics
+from app.services import portfolio_analytics
 
 
 class PortfolioAnalyticsTests(unittest.TestCase):
@@ -63,49 +63,6 @@ class PortfolioAnalyticsTests(unittest.TestCase):
         opps = tax["opportunities"]
         self.assertEqual(len(opps), 2)
         self.assertIn("INFY", opps[0]["recommendedSwaps"])
-
-
-class IndexRebalanceTests(unittest.TestCase):
-    @patch("app.services.quote_sources.fetch")
-    def test_rebalance_prediction_flows(self, mock_fetch):
-        mock_fetch.return_value = {"cmp": 280.0}
-        data = index_rebalance.predict_rebalance(as_of=date(2025, 2, 10))
-        self.assertIn("March", data["reviewName"])
-        self.assertTrue(len(data["candidates"]) > 0)
-
-        # Candidate should have estimated flows and days to cover
-        c0 = data["candidates"][0]
-        self.assertIn("estFlowCr", c0)
-        self.assertIn("daysToCover", c0)
-        self.assertTrue(c0["daysToCover"] > 0)
-
-
-class IpoLockinTests(unittest.TestCase):
-    @patch("app.services.quote_sources.fetch")
-    def test_lockin_tranches_and_supply_ratio(self, mock_fetch):
-        mock_fetch.return_value = {"cmp": 450.0}
-        data = ipo_lockin.build_lockin_calendar(as_of=date(2025, 2, 1))
-        self.assertTrue(data["totalEventsTracked"] > 0)
-        e0 = data["events"][0]
-        self.assertIn("lockinCategory", e0)
-        self.assertIn("sharesUnlocking", e0)
-        self.assertIn("supplyImpactRatio", e0)
-        self.assertIn("riskLevel", e0)
-
-
-class BuybackArbitrageTests(unittest.TestCase):
-    @patch("app.services.quote_sources.fetch")
-    def test_retail_arbitrage_scenarios(self, mock_fetch):
-        mock_fetch.return_value = {"cmp": 4000.0}
-        data = buyback_arbitrage.get_buyback_desk(as_of=date(2025, 2, 1))
-        self.assertTrue(len(data["buybacks"]) > 0)
-        bb0 = data["buybacks"][0]
-        self.assertIn("arbitrageSimulation", bb0)
-        sim = bb0["arbitrageSimulation"]
-        if sim:
-            self.assertEqual(sim["maxCapitalLimit"], 200000.0)
-            self.assertEqual(len(sim["scenarios"]), 3)
-            self.assertEqual(sim["scenarios"][0]["acceptanceRatioPct"], 20.0)
 
 
 if __name__ == "__main__":

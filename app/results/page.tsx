@@ -15,10 +15,6 @@ import {
   getBuybacks,
 } from "@/lib/api/endpoints";
 import type { ApiReportedResult } from "@/lib/api/types";
-import { IndexRebalanceTable } from "@/components/catalysts/index-rebalance-table";
-import { IpoLockinCalendar } from "@/components/catalysts/ipo-lockin-calendar";
-import { BuybackArbitrageDesk } from "@/components/catalysts/buyback-arbitrage-desk";
-import { FALLBACK_BUYBACKS, FALLBACK_IPOLOCKIN, FALLBACK_REBALANCE } from "@/components/catalysts/defaults";
 import { cn, deltaColor, formatINR, formatPct } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -49,30 +45,15 @@ interface PageProps {
 export default async function ResultsPage({ searchParams }: PageProps) {
   const { sort = "netProfit", tab = "scorecard" } = await searchParams;
 
-  let rebalanceData = FALLBACK_REBALANCE;
-  let lockinData = FALLBACK_IPOLOCKIN;
-  let buybackData = FALLBACK_BUYBACKS;
-
   const [res, calendarRes, movesRes] = await Promise.all([
     tab === "scorecard" ? getResultsSeason().catch(() => null) : Promise.resolve(null),
     tab === "calendar" || tab === "scorecard" ? getCalendar().catch(() => null) : Promise.resolve(null),
     tab === "implied" ? getEarningsMoves().catch(() => null) : Promise.resolve(null),
   ]);
 
-  if (tab === "catalysts") {
-    try {
-      const [rebalanceRes, lockinRes, buybackRes] = await Promise.all([
-        getIndexRebalance().catch(() => null),
-        getIpoLockins().catch(() => null),
-        getBuybacks().catch(() => null),
-      ]);
-      if (rebalanceRes?.ok && rebalanceRes.data) rebalanceData = rebalanceRes.data;
-      if (lockinRes?.ok && lockinRes.data) lockinData = lockinRes.data;
-      if (buybackRes?.ok && buybackRes.data) buybackData = buybackRes.data;
-    } catch {
-      // Graceful fallback to cached catalyst data
-    }
-  }
+  // Each catalyst desk refuses until it has a real source; the data service says why
+  const catalysts =
+    tab === "catalysts" ? await Promise.all([getIndexRebalance(), getIpoLockins(), getBuybacks()]) : null;
 
   const key = (SORTS.find((s) => s.key === sort)?.key ?? "netProfit") as keyof ApiReportedResult;
 
@@ -352,36 +333,20 @@ export default async function ResultsPage({ searchParams }: PageProps) {
         )}
 
         {/* TAB 4: CORPORATE CATALYSTS */}
-        {tab === "catalysts" && (
-          <div className="mt-2.5 space-y-4 animate-in fade-in-50">
-            {/* Section 1: Index Rebalance Predictor */}
-            <section className="space-y-2">
-              <SectionHead
-                title="Index Rebalance Forecast"
-                note="Semi-annual rebalance forecasting for Nifty 50, Bank Nifty, and Nifty Next 50. Anticipates passive ETF flows."
-              />
-              <IndexRebalanceTable initialData={rebalanceData} />
-            </section>
-
-            {/* Section 2: IPO Lock-in Expiry Calendar */}
-            <section className="space-y-2">
-              <SectionHead
-                title="IPO Anchor & Promoter Lock-in Expiries"
-                note="Anchor 30-day, Anchor 90-day, and 1-year Pre-IPO quotas with volume-relative Supply Impact Ratios."
-              />
-              <IpoLockinCalendar initialData={lockinData} />
-            </section>
-
-            {/* Section 3: Tender Offer Buyback Arbitrage Desk */}
-            <section className="space-y-2">
-              <SectionHead
-                title="Buyback Arbitrage & Small Shareholder Quota"
-                note="SEBI 15% retail reserved tender quota under ₹2,00,000 threshold with acceptance ratio payoff curves."
-              />
-              <BuybackArbitrageDesk initialData={buybackData} />
-            </section>
+        {tab === "catalysts" && catalysts ? (
+          <div className="mt-2.5 space-y-4">
+            {[
+              { title: "Index rebalance candidates", res: catalysts[0] },
+              { title: "IPO lock-in expiries", res: catalysts[1] },
+              { title: "Buyback offers", res: catalysts[2] },
+            ].map(({ title, res }) => (
+              <section key={title} className="space-y-2">
+                <SectionHead title={title} />
+                {res.ok ? null : <DataUnavailable title={`${title}: not shown`} message={res.message} />}
+              </section>
+            ))}
           </div>
-        )}
+        ) : null}
       </main>
       <SiteFooter />
     </div>

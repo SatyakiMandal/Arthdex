@@ -7,11 +7,11 @@ import { FxMonitorDesk } from "@/components/market/fx-monitor-desk";
 import { getForexMonitor } from "@/lib/api/endpoints";
 
 export const metadata: Metadata = {
-  title: "Foreign Exchange Cross-Rates & INR Monitor (FXM) · Arthdex Terminal",
-  description: "Live INR spot cross-rates (USD, EUR, GBP, JPY, AED, CNY), official FBIL reference rates, forward premia term structure, and RBI 40-currency REER/NEER indices.",
+  title: "Rupee reference rates · Arthdex",
+  description: "The RBI's reference rates for the rupee against the dollar, pound, euro, yen, dirham, rupiah and rouble.",
 };
 
-export const revalidate = 120;
+export const revalidate = 3600;
 
 export default async function FxPage() {
   const res = await getForexMonitor();
@@ -31,8 +31,8 @@ export default async function FxPage() {
         ) : (
           <div className="py-12">
             <DataUnavailable
-              title="Forex Telemetry Offline"
-              message={res.message || "Interbank foreign exchange feeds temporarily unavailable"}
+              title="RBI reference rates unavailable"
+              message={res.message || "The RBI website did not answer"}
             />
           </div>
         )}

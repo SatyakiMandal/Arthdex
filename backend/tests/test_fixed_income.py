@@ -1,61 +1,59 @@
-"""Tests for India Sovereign Yield Curve & Fixed Income Analytics."""
-
-from __future__ import annotations
+"""The RBI rates parser, and how the curve uses (and never invents) history."""
 
 import unittest
 
 from app.services import fixed_income
 
+HOME = """
+<table>
+<tr><th>Policy Repo Rate</th><td>: 5.50%</td></tr>
+<tr><th>Standing Deposit Facility Rate</th><td>: 5.25%</td></tr>
+<tr><th>CRR</th><td>: 3.00%</td></tr>
+<tr><th>INR / 1 USD</th><td>: 94.1997</td></tr>
+<tr><th>INR / 100 JPY</th><td>: 58.9400</td></tr>
+<tr><th>6.20% GS 2029</th><td>: 6.8894% #</td></tr>
+<tr><th>6.94% GS 2036</th><td>: 7.2430% #</td></tr>
+<tr><th>91 day T-bills</th><td>: 5.8681%*</td></tr>
+</table>
+<p>as on November 12, 2026 Government Securities Market</p>
+"""
 
-class FixedIncomeTests(unittest.TestCase):
-    def test_tenor_monotonic_ordering(self) -> None:
-        """Tenors must have strictly increasing maturity horizons."""
-        tenors = fixed_income.TENOR_DEFINITIONS
-        self.assertGreaterEqual(len(tenors), 10)
-        years = [t["years"] for t in tenors]
-        self.assertEqual(years, sorted(years))
 
-    def test_rbi_corridor_integrity(self) -> None:
-        """RBI operating corridor must respect SDF (floor) <= Repo <= MSF (ceiling)."""
-        corridor = fixed_income.RBI_CORRIDOR
-        self.assertLess(corridor["sdfRate"], corridor["repoRate"])
-        self.assertGreater(corridor["msfRate"], corridor["repoRate"])
-        self.assertEqual(corridor["msfRate"] - corridor["repoRate"], 0.25)
-        self.assertEqual(corridor["repoRate"] - corridor["sdfRate"], 0.25)
+class ParseTests(unittest.TestCase):
+    def test_reads_policy_curve_and_fx_as_published(self):
+        d = fixed_income.parse_home(HOME)
+        self.assertEqual(d["policy"]["repoRate"], 5.5)
+        self.assertEqual(d["gsecAsOn"], "2026-11-12")
+        papers = {p["paper"]: p["yieldPct"] for p in d["points"]}
+        self.assertEqual(papers["6.94% GS 2036"], 7.243)
+        self.assertEqual(papers["91 day T-bill"], 5.8681)
+        self.assertIn({"currency": "JPY", "units": 100, "rate": 58.94}, d["fx"])
 
-    def test_nelson_siegel_par_fitting(self) -> None:
-        """Nelson-Siegel interpolation must return plausible positive yields."""
-        y_1y = fixed_income.nelson_siegel_yield(1.0)
-        y_10y = fixed_income.nelson_siegel_yield(10.0)
-        y_30y = fixed_income.nelson_siegel_yield(30.0)
+    def test_page_without_the_rates_block_is_an_error_not_a_default(self):
+        with self.assertRaises(ValueError):
+            fixed_income.parse_home("<html><body>maintenance</body></html>")
 
-        self.assertGreater(y_1y, 5.0)
-        self.assertLess(y_1y, 10.0)
-        self.assertGreater(y_10y, y_1y)  # Upward sloping baseline
-        self.assertGreater(y_30y, y_10y)
 
-    def test_sovereign_yield_curve_payload(self) -> None:
-        """get_sovereign_yield_curve returns complete curve with spreads and corridor."""
-        data = fixed_income.get_sovereign_yield_curve()
-        self.assertIn("benchmark10y", data)
-        self.assertIn("spreads", data)
-        self.assertIn("rbiCorridor", data)
-        self.assertIn("tenors", data)
-        self.assertIn("spreadMatrix", data)
+class CurveTests(unittest.TestCase):
+    def setUp(self):
+        self.data = fixed_income.parse_home(HOME)
 
-        spreads = data["spreads"]
-        self.assertIn("spread2s10sBps", spreads)
-        self.assertIn("spread5s10sBps", spreads)
-        self.assertIn("spread3m10yBps", spreads)
-        self.assertIn("termPremiumRepoBps", spreads)
+    def test_no_history_means_no_changes(self):
+        curve = fixed_income.build_curve(self.data, [])
+        for t in curve["tenors"]:
+            self.assertEqual(t["history"], {"1w": None, "1m": None, "1y": None})
 
-        # 2s10s spread must match 10Y - 2Y
-        tenor_map = {t["tenor"]: t["yieldPct"] for t in data["tenors"]}
-        expected_2s10s = round((tenor_map["10Y"] - tenor_map["2Y"]) * 100, 1)
-        self.assertEqual(spreads["spread2s10sBps"], expected_2s10s)
+    def test_changes_come_from_stored_snapshots(self):
+        older = {"asOf": "2026-11-05", "value": {"points": [{"tenor": "GS 2036", "yieldPct": 7.20}]}}
+        curve = fixed_income.build_curve(self.data, [older])
+        bench = next(t for t in curve["tenors"] if t["tenor"] == "GS 2036")
+        self.assertEqual(bench["history"]["1w"], {"asOf": "2026-11-05", "yieldPct": 7.2, "changeBps": 4.3})
+        self.assertIsNone(bench["history"]["1y"])
 
-        # Spread matrix must have at least 5 benchmarks
-        self.assertGreaterEqual(len(data["spreadMatrix"]), 5)
+    def test_benchmark_is_the_published_paper_nearest_ten_years(self):
+        curve = fixed_income.build_curve(self.data, [])
+        self.assertEqual(curve["benchmark"]["paper"], "6.94% GS 2036")
+        self.assertEqual([t["tenor"] for t in curve["tenors"]], ["91D", "GS 2029", "GS 2036"])
 
 
 if __name__ == "__main__":
