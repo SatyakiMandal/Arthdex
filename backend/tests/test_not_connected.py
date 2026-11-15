@@ -104,11 +104,8 @@ class RouteTests(unittest.TestCase):
         for path in (
             "/api/v1/sectors/kpis",
             "/api/sectors/kpis/auto",
-            "/api/v1/macro/dashboard",
-            "/api/v1/market/yield-curve",
             "/api/v1/funds/overlap",
             "/api/v1/catalysts/index-rebalance",
-            "/api/v1/catalysts/buybacks",
         ):
             res = self.client.get(path)
             self.assertEqual(res.status_code, 404, path)

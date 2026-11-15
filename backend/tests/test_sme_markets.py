@@ -92,14 +92,14 @@ class EndpointTests(unittest.TestCase):
         cls.client = TestClient(app)
 
     def setUp(self):
-        CACHE.expire("sme:board:v2")
+        CACHE.expire("sme:board:v3")
         CACHE.expire("ipo:pipeline")
-        self.addCleanup(CACHE.expire, "sme:board:v2")
+        self.addCleanup(CACHE.expire, "sme:board:v3")
         self.addCleanup(CACHE.expire, "ipo:pipeline")
 
     def test_overview_and_screener(self):
         with patch("app.routers.sme_markets.nse.fetch_stocks_traded", return_value=TRADED), \
-             patch("app.routers.search.load_universe", return_value=(UNIVERSE, 0)):
+             patch("app.routers.sme_markets._emerge_names", return_value=UNIVERSE):
             overview = self.client.get("/api/v1/sme/overview")
             screener = self.client.get("/api/v1/sme/screener?min_market_cap_cr=100&sort=changePct")
         self.assertEqual(overview.status_code, 200)

@@ -7,9 +7,11 @@ from fastapi import APIRouter, HTTPException
 from ..cache import CACHE
 from ..config import SETTINGS
 from ..schemas import envelope
+from ..providers import nse
+from ..services import buybacks_live
 from ..services import ipo as ipo_service
 from .. import not_connected
-from ..services import buyback_arbitrage, index_rebalance, ipo_lockin
+from ..services import index_rebalance, ipo_lockin
 
 router = APIRouter(prefix="/api/v1/catalysts", tags=["catalysts"])
 
@@ -45,12 +47,19 @@ def get_ipo_lockins():
 
 @router.get("/buybacks")
 def get_buybacks():
-    """Active tender-offer corporate buybacks with retail quota (₹2 Lakh) acceptance arbitrage simulations."""
-    not_connected.refuse("buybacks")
-    key = "catalysts:buybacks"
-    data, age = CACHE.get_or_fetch(
-        key,
-        SETTINGS.fundamentals_ttl,
-        buyback_arbitrage.get_buyback_desk,
+    """Buybacks in NSE's corporate-actions list, with ex-dates and record dates."""
+
+    def fetch():
+        return buybacks_live.build(nse.nse_get("/api/corporates-corporateActions?index=equities"))
+
+    try:
+        data, age = CACHE.get_or_fetch("catalysts:buybacks:v2", 3600, fetch)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Corporate actions unavailable: {exc}") from exc
+    return envelope(
+        data,
+        age,
+        source="NSE corporate actions",
+        delayed_minutes=0,
+        note="Dates only. Offer price and size are in each company's announcement and are not shown.",
     )
-    return envelope(data, age, source="SEBI Buy-Back Disclosures", delayed_minutes=0)

@@ -40,18 +40,27 @@ F-101: Next keeps serving a stored 200 response when a route starts answering 40
 switched-off desk could go on showing its old table. The addresses of every rebuilt or
 switched-off route now carry `?v=2`, which bypasses the stored copies.
 
+## Feeds connected on 2026-11-16
+
+| ID | Desk | Source | Not covered |
+|---|---|---|---|
+| F-102 | Macro dashboard (`/macro`) | MOSPI's public API for CPI, IIP and quarterly GDP; RBI's homepage rates panel | Wholesale prices, GST collections, trade balance. MOSPI's CPI series on the API ends at December 2025 |
+| F-103 | Yield curve (`/yield-curve`) | CCIL's daily tenorwise indicative yields (treasury bills, central and state bonds) | No fitted curve; only the tenors CCIL lists |
+| F-104 | Buybacks (`/results`) | NSE corporate actions: company, ex-date, record date | Offer price, size and route, so no arbitrage estimate |
+| F-105 | SME board company names | NSE Emerge master list | |
+
+GDP growth is computed between quarters on the same base year only: MOSPI returns several
+base years in one response, and comparing across them gave a growth figure of 69.9%.
+
 ## Switched off until a source is connected
 
-These routes return 404 with the source they need. The static tables remain in the service
-files but are not served.
+These routes return 404 with the source they need.
 
 | ID | Desk | Needs |
 |---|---|---|
 | F-85 | Sector operating KPIs (`/sectors`) | SIAM, VAHAN, RBI sectoral credit, CEA, DGCA, TRAI releases |
-| F-86 | Macro dashboard (`/macro`) | MOSPI, OEA, GSTN, RBI DBIE |
-| F-87 | Sovereign yield curve (`/yield-curve`) | CCIL or FBIL par yields |
 | F-88 | Mutual fund portfolio overlap | AMC monthly portfolio disclosures |
-| F-89 | Index rebalance forecast and buyback desk (`/results`) | See `not_connected.py` |
+| F-89 | Index rebalance forecast (`/results`) | Six-month average free-float market cap and turnover per candidate |
 
 ## Smaller fixes
 
@@ -70,8 +79,6 @@ files but are not served.
 - **Hand-compiled network data** for M&M, Tata Motors, Reliance and L&T (stakes, supplier
   dependency shares) has not been checked against filings. Owner to decide: verify, or remove.
 - **Surveillance** assumes a 5% price band for every trade-to-trade security.
-- **SME company names** are blank: the NSE equity master used for names covers the main board only.
 - **Earnings moves**: the historical post-result average is not computed yet.
-- **Static tables** in `sector_kpi.py`, `macro_economics.py`, `fixed_income.py`,
-  `index_rebalance.py` and `buyback_arbitrage.py` should be deleted once each desk has a real source.
+- **Static tables** remain in `sector_kpi.py` and `index_rebalance.py`; delete them once each desk has a real source.
 - `PROJECT_PROGRESS.md` and `docs/prd-remaining-work.md` still describe phases 9 to 18 as complete.

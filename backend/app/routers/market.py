@@ -8,8 +8,8 @@ from ..cache import CACHE
 from ..config import SETTINGS
 from ..providers import constituents, nse, yahoo
 from ..schemas import envelope
-from .. import not_connected
-from ..services import bhavcopy, commodities, fixed_income, sector_rotation, surveillance
+from ..services import yield_curve_live
+from ..services import bhavcopy, commodities, sector_rotation, surveillance
 
 router = APIRouter(prefix="/api/v1/market", tags=["market"])
 
@@ -308,19 +308,17 @@ def get_surveillance(
 
 @router.get("/yield-curve")
 def get_yield_curve():
-    """India Sovereign Par Yield Curve (91D to 40Y), Spreads, and RBI Monetary Policy Corridor."""
-    not_connected.refuse("yield-curve")
+    """Government securities yields by tenor from CCIL's daily indicative table, with spreads."""
     try:
-        data = fixed_income.get_sovereign_yield_curve()
+        data, age = CACHE.get_or_fetch("market:yield-curve:v2", 3 * 3600, yield_curve_live.fetch)
     except Exception as exc:
-        raise HTTPException(status_code=503, detail=f"Sovereign yield curve unavailable: {exc}") from exc
-
+        raise HTTPException(status_code=503, detail=f"Yield data unavailable: {exc}") from exc
     return envelope(
         data,
-        3600,
-        source="RBI NDS-OM Secondary Market & CCIL Sovereign Par Yields",
-        delayed_minutes=15,
-        note="10-Year Benchmark yield (7.18 GS 2033 / 7.10 GS 2034) anchored against the RBI operating corridor (SDF floor 6.25% to MSF ceiling 6.75%).",
+        age,
+        source="CCIL tenorwise indicative yields; Reserve Bank of India policy rates",
+        delayed_minutes=0,
+        note=data.get("method"),
     )
 
 

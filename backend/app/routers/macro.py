@@ -7,27 +7,24 @@ from fastapi import APIRouter, HTTPException
 from ..cache import CACHE
 from ..config import SETTINGS
 from ..schemas import envelope
-from ..services import fx_live
-from .. import not_connected
-from ..services import macro_economics
+from ..services import fx_live, macro_live
 
 router = APIRouter(prefix="/api/v1/macro", tags=["macro"])
 
 
 @router.get("/dashboard")
 def get_macro_dashboard():
-    """India macroeconomic dashboard: CPI, WPI, GDP, IIP, GST collections, and BoP telemetry."""
-    not_connected.refuse("macro-dashboard")
+    """GDP growth, consumer inflation and industrial production from MOSPI, and RBI's policy rates."""
     try:
-        data = macro_economics.get_macro_dashboard()
+        data, age = CACHE.get_or_fetch("macro:dashboard:v2", 6 * 3600, macro_live.fetch)
     except Exception as exc:
-        raise HTTPException(status_code=503, detail=f"Macro dashboard unavailable: {exc}") from exc
+        raise HTTPException(status_code=503, detail=f"Macro data unavailable: {exc}") from exc
     return envelope(
         data,
-        3600,
-        source="MOSPI, RBI DBIE, Ministry of Finance, Office of Economic Adviser",
+        age,
+        source="MOSPI (api.mospi.gov.in); Reserve Bank of India",
         delayed_minutes=0,
-        note="Official release data aggregated directly from central government and central bank feeds.",
+        note="Each figure is shown with the period it refers to. MOSPI's API can trail the latest press release.",
     )
 
 

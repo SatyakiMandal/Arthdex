@@ -40,6 +40,19 @@ def _name_map(universe: Any) -> dict[str, str]:
     return names
 
 
+def parse_master(text: str) -> list[dict[str, str]]:
+    """Symbol and company name from NSE's Emerge master CSV (SYMBOL,NAME_OF_COMPANY,...)."""
+    lines = [ln for ln in text.splitlines() if ln.strip()]
+    if not lines or "SYMBOL" not in lines[0].upper() or "NAME" not in lines[0].upper():
+        raise ValueError("Emerge master list has an unexpected header")
+    out = []
+    for line in lines[1:]:
+        parts = [p.strip() for p in line.split(",")]
+        if len(parts) >= 2 and parts[0] and parts[1]:
+            out.append({"symbol": parts[0].upper(), "name": parts[1]})
+    return out
+
+
 def board(traded: dict[str, Any] | None, universe: Any = None) -> dict[str, Any]:
     """Every Emerge security traded in the session, plus aggregates over them."""
     names = _name_map(universe)

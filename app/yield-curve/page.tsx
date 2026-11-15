@@ -7,8 +7,8 @@ import { YieldCurveDesk } from "@/components/market/yield-curve-desk";
 import { getYieldCurve } from "@/lib/api/endpoints";
 
 export const metadata: Metadata = {
-  title: "India Sovereign Yield Curve (GC IN) · Arthdex Terminal",
-  description: "India Sovereign Par Yield Curve across 10 tenors (91D T-Bill to 40Y G-Sec), 2s10s and 5s10s slope spreads, RBI Monetary Policy Corridor, and Nelson-Siegel parametric fitting.",
+  title: "Government securities yield curve · Arthdex",
+  description: "Indian government securities yields by tenor from CCIL's daily indicative table, with spreads and the RBI policy rate.",
 };
 
 export const revalidate = 3600;
@@ -31,7 +31,7 @@ export default async function YieldCurvePage() {
         ) : (
           <div className="py-12">
             <DataUnavailable
-              title="Sovereign Yield Curve Offline"
+              title="Yield data unavailable"
               message={res.message || "RBI NDS-OM sovereign bond feeds temporarily unavailable"}
             />
           </div>

@@ -17,14 +17,6 @@ NEEDS: dict[str, tuple[str, str]] = {
         "monthly releases from SIAM and VAHAN (auto), RBI sectoral credit (banking), CEA and Grid-India (power), "
         "DGCA (aviation) and TRAI (telecom). None publishes a free API; each needs a scheduled parser of its bulletin.",
     ),
-    "macro-dashboard": (
-        "Macro dashboard",
-        "MOSPI releases for CPI, IIP and GDP, the Office of the Economic Adviser for WPI, GSTN collections and RBI DBIE series.",
-    ),
-    "yield-curve": (
-        "Sovereign yield curve",
-        "CCIL or FBIL par yields by tenor and RBI's policy-rate announcements.",
-    ),
     "funds": (
         "Mutual fund portfolio overlap",
         "each AMC's monthly portfolio disclosure. The screener itself runs on AMFI's NAV files.",
@@ -32,10 +24,6 @@ NEEDS: dict[str, tuple[str, str]] = {
     "index-rebalance": (
         "Index rebalance forecast",
         "six-month average free-float market capitalisation and turnover for every candidate, which NSE Indices does not publish.",
-    ),
-    "buybacks": (
-        "Buyback desk",
-        "open tender offers from SEBI or exchange corporate-action filings, with record dates and offer sizes.",
     ),
 }
 

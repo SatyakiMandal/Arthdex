@@ -1609,47 +1609,27 @@ export interface ApiIpoLockinResponse {
   rules: Record<string, string>;
 }
 
-export interface ApiBuybackScenario {
-  acceptanceRatioPct: number;
-  acceptedShares: number;
-  unacceptedShares: number;
-  cashFromAccepted: number;
-  residualSharesValue: number;
-  netProfitINR: number;
-  returnPct: number;
-}
-
-export interface ApiBuybackArbitrageSimulation {
-  maxCapitalLimit: number;
-  sharesAcquired: number;
-  actualInvested: number;
-  premiumPct: number;
-  assumedPostBuybackPrice: number;
-  scenarios: ApiBuybackScenario[];
-}
-
+/** A buyback from NSE's corporate-actions list. Dates only: price and size are not in the feed. */
 export interface ApiBuybackItem {
-  symbol: string;
-  name: string;
-  buybackPrice: number;
-  type: string;
-  totalSizeCr: number;
-  recordDate: string;
-  tenderEndDate: string;
-  status: "ACTIVE" | "UPCOMING" | "COMPLETED";
-  historicalAcceptancePct: number;
-  cmp: number | null;
-  premiumPct: number | null;
-  arbitrageSimulation?: ApiBuybackArbitrageSimulation;
+  symbol: string | null;
+  companyName: string;
+  subject: string;
+  series: string | null;
+  faceValue: string | null;
+  exDate: string | null;
+  recordDate: string | null;
+  daysToRecordDate: number | null;
+  status: "UPCOMING" | "PAST" | "UNDATED";
 }
 
 export interface ApiBuybackResponse {
   asOf: string;
-  totalCount: number;
+  count: number;
+  upcomingCount: number;
   buybacks: ApiBuybackItem[];
-  rules: Record<string, string>;
+  recordDateRule: string;
+  notShown: string;
 }
-
 
 // -- SEBI / NSE Surveillance & Price Bands (SURV) -----------------------------
 
@@ -1696,68 +1676,28 @@ export interface ApiSurveillanceOverview {
 
 // -- Sovereign Yield Curve & Fixed Income (GC IN / GSEC) ----------------------
 
-export interface ApiYieldTenor {
+/** One benchmark security CCIL lists for a tenor bucket. */
+export interface ApiYieldPoint {
   tenor: string;
-  label: string;
+  bucket: string;
   years: number;
-  category: "T-Bill" | "G-Sec";
-  paper: string;
-  benchmark: boolean;
+  security: string;
+  kind: string;
   yieldPct: number;
-  modelYieldPct: number;
-  change1wBps: number;
-  change1mBps: number;
-  change1yBps: number;
-  history: {
-    current: number;
-    oneWeekAgo: number;
-    oneMonthAgo: number;
-    oneYearAgo: number;
-  };
 }
 
-export interface ApiSpreadMatrixItem {
-  assetClass: string;
-  issuer: string;
-  indicativeYield: number;
-  spreadOverGsecBps: number;
-  creditRating: string;
-}
-
+/** CCIL's indicative yields placed by tenor. No curve is fitted between the points. */
 export interface ApiYieldCurveResponse {
   asOf: string;
-  benchmark10y: number;
-  benchmarkPaper: string;
-  curveShape: "Normal Upward Sloping" | "Flat" | "Inverted";
-  spreads: {
-    spread2s10sBps: number;
-    spread5s10sBps: number;
-    spread10s30sBps: number;
-    spread3m10yBps: number;
-    termPremiumRepoBps: number;
-    inverted2s10s: boolean;
-    inverted3m10y: boolean;
-  };
-  rbiCorridor: {
-    repoRate: number;
-    sdfRate: number;
-    msfRate: number;
-    bankRate: number;
-    reverseRepoRate: number;
-    crrPct: number;
-    slrPct: number;
-    stance: string;
-    lastChanged: string;
-  };
-  nelsonSiegelFit: {
-    beta0: number;
-    beta1: number;
-    beta2: number;
-    lambda: number;
-  };
-  tenors: ApiYieldTenor[];
-  spreadMatrix: ApiSpreadMatrixItem[];
+  curve: ApiYieldPoint[];
+  stateBonds: Array<{ tenor: string; security: string; yieldPct: number }>;
+  spreads: Array<{ label: string; bps: number }>;
+  policyRates: Record<string, number> | null;
+  shape: string;
+  method: string;
 }
+
+// -- F&O participant open interest ---------------------------------------------
 
 export interface ApiParticipantPosition {
   long: number;
@@ -1878,57 +1818,25 @@ export interface ApiVolSurfaceResponse {
   }>;
 }
 
+/** One published series with the period it refers to. */
 export interface ApiMacroIndicator {
+  id: string;
+  label: string;
+  period: string;
   value: number;
   unit: string;
-  previous: number;
-  period: string;
-  source: string;
-  status: string;
-  tone: "up" | "down" | "neutral" | "gold";
-  rbiTarget?: string;
-  nominalGdp?: number;
-  growthYoY?: number;
-  fcaBillion?: number;
-  goldBillion?: number;
-  sdrBillion?: number;
-}
-
-export interface ApiInflationCategory {
-  category: string;
-  current: number;
-  previous: number;
-  changeYoY: string;
-  weight: number;
-}
-
-export interface ApiActivityIndicator {
-  indicator: string;
-  value: string;
-  source: string;
-  trend: "up" | "down" | "neutral";
+  previous: number | null;
   detail: string;
-}
-
-export interface ApiMacroCalendarEvent {
-  event: string;
-  date: string;
-  impact: "HIGH" | "MEDIUM" | "LOW";
-  consensus: string;
-  previous: string;
+  series: Array<{ period: string; inflationPct?: number | null; growthPct?: number | null }>;
+  source: string;
 }
 
 export interface ApiMacroDashboardResponse {
-  asOf: string;
-  headline: {
-    cpiInflation: ApiMacroIndicator;
-    gdpGrowth: ApiMacroIndicator;
-    gstCollections: ApiMacroIndicator;
-    forexReserves: ApiMacroIndicator;
-  };
-  inflationBreakdown: ApiInflationCategory[];
-  activityIndicators: ApiActivityIndicator[];
-  calendar: ApiMacroCalendarEvent[];
+  indicators: ApiMacroIndicator[];
+  /** RBI's current rates in percent, keyed repo, sdf, msf, bankRate, reverseRepo, crr, slr. */
+  policyRates: Record<string, number> | null;
+  /** Series that are not connected or could not be read just now. */
+  unavailable: Record<string, string>;
 }
 
 export interface ApiForexPair {

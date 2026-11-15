@@ -7,8 +7,8 @@ import { MacroEconomicDesk } from "@/components/macro/macro-economic-desk";
 import { getMacroDashboard } from "@/lib/api/endpoints";
 
 export const metadata: Metadata = {
-  title: "India Macro & Economics (ECO) · Arthdex Terminal",
-  description: "India macroeconomic telemetry: CPI & WPI inflation, GDP growth, GST collections, E-Way bills, RBI forex reserves, and policy release calendar.",
+  title: "India macro indicators · Arthdex",
+  description: "GDP growth, consumer inflation and industrial production as published by MOSPI, and the Reserve Bank of India's current policy rates.",
 };
 
 export const revalidate = 3600;
@@ -31,7 +31,7 @@ export default async function MacroPage() {
         ) : (
           <div className="py-12">
             <DataUnavailable
-              title="Macroeconomic Telemetry Offline"
+              title="Macro data unavailable"
               message={res.message || "Central statistical databases temporarily unavailable"}
             />
           </div>

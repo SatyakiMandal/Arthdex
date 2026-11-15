@@ -4,7 +4,7 @@ from datetime import date, timedelta
 import unittest
 from unittest.mock import patch
 
-from app.services import buyback_arbitrage, index_rebalance, ipo_lockin, portfolio_analytics
+from app.services import index_rebalance, ipo_lockin, portfolio_analytics
 
 
 class PortfolioAnalyticsTests(unittest.TestCase):
@@ -102,20 +102,6 @@ class IpoLockinTests(unittest.TestCase):
         self.assertEqual(data["upcomingCount"], 2)
         self.assertIn("allotment", data["rules"]["basis"])
         self.assertFalse(hasattr(ipo_lockin, "KNOWN_LOCKIN_SCHEDULES"))
-
-    @patch("app.services.quote_sources.fetch")
-    def test_retail_arbitrage_scenarios(self, mock_fetch):
-        mock_fetch.return_value = {"cmp": 4000.0}
-        data = buyback_arbitrage.get_buyback_desk(as_of=date(2025, 2, 1))
-        self.assertTrue(len(data["buybacks"]) > 0)
-        bb0 = data["buybacks"][0]
-        self.assertIn("arbitrageSimulation", bb0)
-        sim = bb0["arbitrageSimulation"]
-        if sim:
-            self.assertEqual(sim["maxCapitalLimit"], 200000.0)
-            self.assertEqual(len(sim["scenarios"]), 3)
-            self.assertEqual(sim["scenarios"][0]["acceptanceRatioPct"], 20.0)
-
 
 if __name__ == "__main__":
     unittest.main()

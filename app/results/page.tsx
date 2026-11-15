@@ -377,8 +377,8 @@ export default async function ResultsPage({ searchParams }: PageProps) {
             {/* Section 3: Tender Offer Buyback Arbitrage Desk */}
             <section className="space-y-2">
               <SectionHead
-                title="Buyback Arbitrage & Small Shareholder Quota"
-                note="SEBI 15% retail reserved tender quota under ₹2,00,000 threshold with acceptance ratio payoff curves."
+                title="Buybacks"
+                note="Buybacks in NSE's corporate-actions list, with ex-dates and record dates."
               />
               {buybacks.data ? <BuybackArbitrageDesk initialData={buybacks.data} /> : <DataUnavailable title="Buyback desk not available" message={buybacks.reason} />}
             </section>

@@ -19,19 +19,30 @@ BOARD_TTL = 120
 SOURCE = "NSE (live-analysis-stocksTraded, series SM and ST)"
 
 
+EMERGE_MASTER_URL = "https://nsearchives.nseindia.com/emerge/corporates/content/SME_EQUITY_L.csv"
+
+
+def _emerge_names() -> list[dict[str, str]]:
+    """Company names from NSE's Emerge master list. A convenience: the board stands without them."""
+
+    def fetch():
+        response = nse._get_session().get(EMERGE_MASTER_URL, timeout=20)
+        response.raise_for_status()
+        return sme_live.parse_master(response.text)
+
+    try:
+        return CACHE.get_or_fetch("sme:names:v1", 86_400, fetch)[0]
+    except Exception:
+        return []
+
+
 def _board() -> tuple[dict, float]:
     def compute():
         traded = nse.fetch_stocks_traded()
-        try:
-            from .search import load_universe
-
-            universe = load_universe()[0]
-        except Exception:
-            universe = None  # names are a convenience; the board stands without them
-        return sme_live.board(traded, universe)
+        return sme_live.board(traded, _emerge_names())
 
     try:
-        return CACHE.get_or_fetch("sme:board:v2", BOARD_TTL, compute)
+        return CACHE.get_or_fetch("sme:board:v3", BOARD_TTL, compute)
     except Exception as exc:
         raise HTTPException(status_code=503, detail=f"SME board unavailable: {exc}") from exc
 

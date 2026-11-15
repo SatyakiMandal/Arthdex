@@ -125,14 +125,14 @@ class RouterCoverageTests(unittest.TestCase):
         traded = {"asOf": "t", "rows": {"ZZSME": {"last": 10.0, "changePct": 1.0, "volume": 1, "turnoverCr": 0.1, "marketCapCr": 50.0, "series": "SM"}}}
         from app.cache import CACHE
 
-        CACHE.expire("sme:board:v2")
-        with patch("app.routers.sme_markets.nse.fetch_stocks_traded", return_value=traded),              patch("app.routers.sme_markets.ipo_service.build_pipeline", return_value={"issues": []}):
+        CACHE.expire("sme:board:v3")
+        with patch("app.routers.sme_markets.nse.fetch_stocks_traded", return_value=traded), patch("app.routers.sme_markets._emerge_names", return_value=[]),              patch("app.routers.sme_markets.ipo_service.build_pipeline", return_value={"issues": []}):
             CACHE.expire("ipo:pipeline")
             for path in ["/api/sme/overview", "/api/sme/ipos", "/api/sme/screener"]:
                 res = self.client.get(path)
                 self.assertEqual(res.status_code, 200, f"Failed for {path}")
                 self.assertIn("data", res.json())
-        CACHE.expire("sme:board:v2")
+        CACHE.expire("sme:board:v3")
         CACHE.expire("ipo:pipeline")
         self.assertEqual(self.client.get("/api/sme/migrations").status_code, 404)
 
