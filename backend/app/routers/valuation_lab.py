@@ -66,6 +66,7 @@ def get_dcf_valuation(
         g_term = terminal_growth if terminal_growth is not None else defaults["terminal_growth_rate"]
 
         wacc_breakdown = valuation_lab.calculate_wacc(
+            risk_free_rate=defaults["risk_free_rate"],
             beta=defaults["beta"],
             debt_to_equity=defaults["debt_to_equity"],
             pretax_cost_of_debt=defaults["pretax_cost_of_debt"],
@@ -100,9 +101,9 @@ def get_dcf_valuation(
     return envelope(
         data,
         age,
-        source="NSE Filings, 10Y Indian Sovereign G-Sec Benchmark & DCF Model",
-        delayed_minutes=0,
-        note="Valuation model complies with SEBI fair value standards. Historical filings tagged [ACTUAL FILING].",
+        source="Exchange quote, Yahoo Finance statistics, RBI benchmark G-sec yield; model assumptions marked",
+        delayed_minutes=15,
+        note="A model, not a price target: the result moves with the assumptions, which are labelled and editable.",
     )
 
 
@@ -176,6 +177,7 @@ def get_reverse_dcf(
             resolved_wacc = wacc
         else:
             wacc_b = valuation_lab.calculate_wacc(
+                risk_free_rate=defaults["risk_free_rate"],
                 beta=defaults["beta"],
                 debt_to_equity=defaults["debt_to_equity"],
                 pretax_cost_of_debt=defaults["pretax_cost_of_debt"],
@@ -234,6 +236,7 @@ def get_sensitivity_matrix(
             resolved_wacc = wacc
         else:
             wacc_b = valuation_lab.calculate_wacc(
+                risk_free_rate=defaults["risk_free_rate"],
                 beta=defaults["beta"],
                 debt_to_equity=defaults["debt_to_equity"],
                 pretax_cost_of_debt=defaults["pretax_cost_of_debt"],

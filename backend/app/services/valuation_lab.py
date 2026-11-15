@@ -16,16 +16,18 @@ from dataclasses import asdict, dataclass, field
 from typing import Any, Literal
 
 # --- Indian Market Benchmark Defaults ---
-DEFAULT_RISK_FREE_RATE = 0.0718  # 7.18% based on 10Y Indian Sovereign G-Sec
-DEFAULT_EQUITY_RISK_PREMIUM = 0.0600  # 6.00% Indian Equity Risk Premium (5.5% - 6.5% corridor)
-DEFAULT_CORPORATE_TAX_RATE = 0.2517  # 25.17% marginal corporate tax rate under Section 115BAA
-DEFAULT_PRETAX_COST_OF_DEBT = 0.0850  # 8.50% Indian corporate commercial borrowing rate
-DEFAULT_TERMINAL_GROWTH_RATE = 0.0500  # 5.00% Indian long-term nominal GDP / inflation anchor
+# Model assumptions, each editable by the reader and labelled as an assumption wherever shown.
+# The risk-free rate is not one of them: it is read from the RBI's benchmark 10-year G-sec.
+DEFAULT_RISK_FREE_RATE = 0.0  # placeholder for signatures only; callers pass the RBI rate
+DEFAULT_EQUITY_RISK_PREMIUM = 0.0600  # assumption: Indian equity risk premium
+DEFAULT_CORPORATE_TAX_RATE = 0.2517  # statutory: 25.17% under Section 115BAA
+DEFAULT_PRETAX_COST_OF_DEBT = 0.0850  # assumption: pre-tax corporate borrowing cost
+DEFAULT_TERMINAL_GROWTH_RATE = 0.0500  # assumption: long-run nominal growth
 
 # --- Data Provenance Constants ---
-TAG_ACTUAL = "[ACTUAL FILING]"
-TAG_MODELLED = "[MODELLED / ALGORITHMIC]"
-TAG_CONSENSUS = "[CONSENSUS ESTIMATE]"
+TAG_ACTUAL = "[FROM SOURCE]"
+TAG_MODELLED = "[MODEL OUTPUT]"
+TAG_CONSENSUS = "[ASSUMPTION, EDITABLE]"
 
 
 def unlever_beta(levered_beta: float, debt_to_equity: float, tax_rate: float = DEFAULT_CORPORATE_TAX_RATE) -> float:
@@ -608,136 +610,86 @@ def compute_sensitivity_matrix(
 
 
 # --- Curated Indian Benchmark Defaults for Marquee Symbols ---
-MARQUEE_INDIAN_COMPANIES: dict[str, dict[str, Any]] = {
-    "RELIANCE": {
-        "name": "Reliance Industries Limited",
-        "current_price": 2985.50,
-        "shares_outstanding_cr": 676.5,
-        "cash_and_equivalents_cr": 182400.0,
-        "total_debt_cr": 324500.0,
-        "base_fcff_cr": 72500.0,
-        "beta": 1.05,
-        "debt_to_equity": 0.35,
-        "stage1_growth_rate": 0.135,
-        "terminal_growth_rate": 0.050,
-        "pretax_cost_of_debt": 0.082,
-    },
-    "TCS": {
-        "name": "Tata Consultancy Services Limited",
-        "current_price": 4120.00,
-        "shares_outstanding_cr": 361.8,
-        "cash_and_equivalents_cr": 15800.0,
-        "total_debt_cr": 0.0,
-        "base_fcff_cr": 44800.0,
-        "beta": 0.82,
-        "debt_to_equity": 0.0,
-        "stage1_growth_rate": 0.095,
-        "terminal_growth_rate": 0.050,
-        "pretax_cost_of_debt": 0.075,
-    },
-    "INFY": {
-        "name": "Infosys Limited",
-        "current_price": 1865.00,
-        "shares_outstanding_cr": 415.2,
-        "cash_and_equivalents_cr": 14200.0,
-        "total_debt_cr": 0.0,
-        "base_fcff_cr": 23400.0,
-        "beta": 0.95,
-        "debt_to_equity": 0.0,
-        "stage1_growth_rate": 0.105,
-        "terminal_growth_rate": 0.050,
-        "pretax_cost_of_debt": 0.075,
-    },
-    "HDFCBANK": {
-        "name": "HDFC Bank Limited",
-        "current_price": 1680.00,
-        "shares_outstanding_cr": 761.5,
-        "cash_and_equivalents_cr": 230000.0,
-        "total_debt_cr": 0.0,  # Financial institution handled on equity DCF
-        "base_fcff_cr": 64000.0,
-        "beta": 0.98,
-        "debt_to_equity": 0.15,
-        "stage1_growth_rate": 0.140,
-        "terminal_growth_rate": 0.055,
-        "pretax_cost_of_debt": 0.078,
-    },
-    "TATAMOTORS": {
-        "name": "Tata Motors Limited",
-        "current_price": 965.00,
-        "shares_outstanding_cr": 367.2,
-        "cash_and_equivalents_cr": 38500.0,
-        "total_debt_cr": 54200.0,
-        "base_fcff_cr": 26800.0,
-        "beta": 1.25,
-        "debt_to_equity": 0.40,
-        "stage1_growth_rate": 0.145,
-        "terminal_growth_rate": 0.050,
-        "pretax_cost_of_debt": 0.088,
-    },
-    "BHARTIARTL": {
-        "name": "Bharti Airtel Limited",
-        "current_price": 1580.00,
-        "shares_outstanding_cr": 571.4,
-        "cash_and_equivalents_cr": 16200.0,
-        "total_debt_cr": 142000.0,
-        "base_fcff_cr": 38500.0,
-        "beta": 0.78,
-        "debt_to_equity": 0.85,
-        "stage1_growth_rate": 0.150,
-        "terminal_growth_rate": 0.050,
-        "pretax_cost_of_debt": 0.084,
-    },
-    "ITC": {
-        "name": "ITC Limited",
-        "current_price": 490.00,
-        "shares_outstanding_cr": 1248.0,
-        "cash_and_equivalents_cr": 12800.0,
-        "total_debt_cr": 0.0,
-        "base_fcff_cr": 19200.0,
-        "beta": 0.65,
-        "debt_to_equity": 0.0,
-        "stage1_growth_rate": 0.090,
-        "terminal_growth_rate": 0.050,
-        "pretax_cost_of_debt": 0.075,
-    },
-}
-
-
 def get_company_dcf_defaults(symbol: str) -> dict[str, Any]:
     """
-    Returns verified filings-based DCF baseline for known Indian symbols,
-    or generates an algorithmic, structurally sound profile for any symbol.
+    DCF inputs for a company from Arthdex's real data, with the assumptions marked.
+
+    From source: price and shares (exchange quote, Yahoo share count), cash, debt, free
+    cash flow and beta (Yahoo Finance statistics), the risk-free rate (the RBI's benchmark
+    G-sec nearest ten years). Stage-one growth defaults to the company's own revenue
+    growth over its last three reported years. The equity premium, cost of debt and
+    terminal growth are assumptions. A company without positive free cash flow, or with
+    no share count, has no DCF: that is an error, not a default.
     """
+    from ..routers import company
+    from . import fixed_income
+
     sym = symbol.upper()
-    if sym in MARQUEE_INDIAN_COMPANIES:
-        data = dict(MARQUEE_INDIAN_COMPANIES[sym])
-        data["symbol"] = sym
-        data["provenance"] = TAG_ACTUAL
-        return data
+    quote = company.get_quote(sym, "NSE")["data"]
+    stats = company.get_statistics(sym)["data"]
+    hi, tr = stats.get("highlights") or {}, stats.get("trading") or {}
+    price = quote.get("cmp")
+    shares = tr.get("sharesOutstanding")
+    shares_cr = shares / 1e7 if shares else (quote["marketCapCr"] / price if quote.get("marketCapCr") and price else None)
+    fcf = hi.get("freeCashflow")
+    if not price or not shares_cr:
+        raise ValueError(f"No price or share count for {sym}, so no DCF can be built")
+    if fcf is None or fcf <= 0:
+        raise ValueError(f"{sym} has no positive free cash flow on record, so a cash-flow valuation does not apply")
 
-    # Algorithmic fallback using hash of symbol for deterministic realism
-    sym_hash = sum(ord(c) for c in sym)
-    price = 250.0 + (sym_hash % 1500)
-    shares = 10.0 + (sym_hash % 80)
-    mcap = price * shares
-    debt_ratio = (sym_hash % 35) / 100.0
-    debt = mcap * debt_ratio
-    cash = mcap * 0.08
-    fcf = mcap * 0.055
-    beta = 0.80 + ((sym_hash % 50) / 100.0)
+    # Yahoo's beta for Indian listings is measured against a US index (Reliance 0.18), so
+    # the beta here is the company's own, regressed on the Nifty 50 over three years
+    from ..routers import quant
 
+    nifty = next((r for r in quant.get_sensitivity(sym, "NSE")["data"].get("rows") or [] if r.get("benchmarkId") == "nifty-50"), None)
+    beta = (nifty or {}).get("beta")
+    if beta is None:
+        raise ValueError(f"No three-year beta against the Nifty 50 could be computed for {sym}")
+
+    curve = fixed_income.get_sovereign_yield_curve()
+    rf = (curve.get("benchmark") or {}).get("yieldPct")
+    if rf is None:
+        raise ValueError("The RBI benchmark yield is unavailable, so no risk-free rate can be set")
+
+    growth = None
+    try:
+        annual = [r for r in company.get_financials(sym, "NSE")["data"].get("annual") or [] if r.get("revenue")]
+        if len(annual) >= 4 and annual[-4]["revenue"] > 0:
+            growth = round((annual[-1]["revenue"] / annual[-4]["revenue"]) ** (1 / 3) - 1, 4)
+    except Exception:
+        growth = None
+    if growth is None:
+        raise ValueError(f"{sym} has fewer than four years of reported revenue, so no growth default can be set; enter one")
+
+    debt, cash = hi.get("debt"), hi.get("cash")
+    equity_value = price * shares_cr
     return {
         "symbol": sym,
-        "name": f"{sym} India Limited",
-        "current_price": round(price, 2),
-        "shares_outstanding_cr": round(shares, 2),
-        "cash_and_equivalents_cr": round(cash, 2),
-        "total_debt_cr": round(debt, 2),
-        "base_fcff_cr": round(fcf, 2),
-        "beta": round(beta, 2),
-        "debt_to_equity": round(debt_ratio, 2),
-        "stage1_growth_rate": 0.12,
+        "name": (stats.get("about") or {}).get("name") or quote.get("name") or sym,
+        "current_price": price,
+        "shares_outstanding_cr": round(shares_cr, 4),
+        "cash_and_equivalents_cr": cash or 0.0,
+        "total_debt_cr": debt or 0.0,
+        "base_fcff_cr": fcf,
+        "beta": beta,
+        "debt_to_equity": round((debt or 0.0) / equity_value, 4) if equity_value else 0.0,
+        "risk_free_rate": round(rf / 100, 6),
+        "risk_free_paper": curve["benchmark"]["paper"],
+        "stage1_growth_rate": growth,
         "terminal_growth_rate": DEFAULT_TERMINAL_GROWTH_RATE,
         "pretax_cost_of_debt": DEFAULT_PRETAX_COST_OF_DEBT,
-        "provenance": TAG_MODELLED,
+        "equity_risk_premium": DEFAULT_EQUITY_RISK_PREMIUM,
+        "sources": {
+            "current_price": f"{quote.get('exchange')} quote",
+            "shares_outstanding_cr": "Yahoo Finance share count",
+            "cash_and_equivalents_cr": "Yahoo Finance statistics" if cash is not None else "not reported; taken as zero",
+            "total_debt_cr": "Yahoo Finance statistics" if debt is not None else "not reported; taken as zero",
+            "base_fcff_cr": "Yahoo Finance free cash flow, trailing twelve months",
+            "beta": f"regression on the Nifty 50 over {(nifty or {}).get('observationWindowDays')} trading days (R² {(nifty or {}).get('rSquared')})",
+            "risk_free_rate": f"RBI, {curve['benchmark']['paper']} as on {curve['asOf']}",
+            "stage1_growth_rate": "the company's revenue growth over its last three reported years (editable)",
+            "terminal_growth_rate": "assumption (editable)",
+            "pretax_cost_of_debt": "assumption (editable)",
+            "equity_risk_premium": "assumption (editable)",
+        },
     }

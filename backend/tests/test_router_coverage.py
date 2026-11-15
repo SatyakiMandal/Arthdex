@@ -138,17 +138,6 @@ class RouterCoverageTests(unittest.TestCase):
         res_notes = self.client.get("/api/company/RELIANCE/notes")
         self.assertEqual(res_notes.status_code, 200)
 
-    def test_valuation_lab_endpoints(self) -> None:
-        """M6 Valuation Lab DCF, Reverse DCF, and Sensitivity endpoints return 200."""
-        for path in [
-            "/api/valuation/RELIANCE/dcf",
-            "/api/valuation/RELIANCE/reverse-dcf",
-            "/api/valuation/RELIANCE/sensitivity",
-        ]:
-            res = self.client.get(path)
-            self.assertEqual(res.status_code, 200, f"Failed for {path}")
-            self.assertIn("data", res.json())
-
     def test_derivatives_and_screener_endpoints(self) -> None:
         """Derivatives and Screener endpoints return 200."""
         res = self.client.get("/api/v1/derivatives/participant-oi")

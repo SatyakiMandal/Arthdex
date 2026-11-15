@@ -64,8 +64,9 @@ except Exception:
 
 class TestValuationLabMath(unittest.TestCase):
     def test_indian_benchmark_constants(self):
-        """Verifies default Indian financial benchmarks according to SEBI and market norms."""
-        self.assertAlmostEqual(DEFAULT_RISK_FREE_RATE, 0.0718, places=4)
+        """The editable assumptions and the statutory tax rate. The risk-free rate is not a
+        constant: it is read from the RBI benchmark yield, so no default stands in for it."""
+        self.assertEqual(DEFAULT_RISK_FREE_RATE, 0.0)
         self.assertAlmostEqual(DEFAULT_EQUITY_RISK_PREMIUM, 0.0600, places=4)
         self.assertAlmostEqual(DEFAULT_CORPORATE_TAX_RATE, 0.2517, places=4)
         self.assertAlmostEqual(DEFAULT_PRETAX_COST_OF_DEBT, 0.0850, places=4)
@@ -265,62 +266,61 @@ class TestValuationLabMath(unittest.TestCase):
         self.assertGreater(val_high_g, val_low_g)
 
 
+# Real-shaped inputs, as get_company_dcf_defaults builds them from the quote, Yahoo
+# statistics, the Nifty 50 regression and the RBI benchmark; patched in so the endpoint
+# tests run offline.
+INPUTS = {
+    "symbol": "TESTCO", "name": "Test Company Limited", "current_price": 500.0, "shares_outstanding_cr": 10.0,
+    "cash_and_equivalents_cr": 100.0, "total_debt_cr": 50.0, "base_fcff_cr": 400.0, "beta": 1.0,
+    "debt_to_equity": 0.01, "risk_free_rate": 0.0724, "risk_free_paper": "6.94% GS 2036", "stage1_growth_rate": 0.10,
+    "terminal_growth_rate": 0.05, "pretax_cost_of_debt": 0.085, "equity_risk_premium": 0.06, "sources": {},
+}
+
+
 @unittest.skipUnless(HAS_TESTCLIENT, "Starlette TestClient dependencies not available")
 class TestValuationLabEndpoints(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        if not HAS_TESTCLIENT:
-            return
         cls.client = TestClient(app)
 
-    def test_get_dcf_endpoint(self):
-        res = self.client.get("/api/valuation/RELIANCE/dcf")
-        self.assertEqual(res.status_code, 200)
-        body = res.json()
-        self.assertIn("data", body)
+    def setUp(self):
+        patcher = patch("app.services.valuation_lab.get_company_dcf_defaults", return_value=dict(INPUTS))
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        from app.cache import CACHE
+
+        CACHE.clear()
+
+    def test_get_dcf_endpoint_uses_the_supplied_rates(self):
+        body = self.client.get("/api/valuation/TESTCO/dcf").json()
         data = body["data"]
-        self.assertIn("dcf", data)
-        self.assertEqual(data["dcf"]["symbol"], "RELIANCE")
+        self.assertEqual(data["dcf"]["symbol"], "TESTCO")
+        self.assertAlmostEqual(data["wacc_summary"]["risk_free_rate"], 0.0724)
         self.assertGreater(data["dcf"]["fair_value_per_share"], 0)
-        self.assertEqual(body["meta"]["delayedMinutes"], 0)
 
     def test_post_dcf_calculate_endpoint(self):
         payload = {
-            "symbol": "CUSTOM",
-            "current_price": 500.0,
-            "shares_outstanding_cr": 10.0,
-            "cash_and_equivalents_cr": 100.0,
-            "total_debt_cr": 50.0,
-            "base_fcff_cr": 60.0,
-            "stage1_growth_rate": 0.15,
-            "stage1_years": 5,
-            "terminal_growth_rate": 0.05,
-            "wacc": 0.12,
-            "model_type": "2-stage",
+            "symbol": "CUSTOM", "current_price": 500.0, "shares_outstanding_cr": 10.0, "cash_and_equivalents_cr": 100.0,
+            "total_debt_cr": 50.0, "base_fcff_cr": 60.0, "stage1_growth_rate": 0.15, "stage1_years": 5,
+            "terminal_growth_rate": 0.05, "wacc": 0.12, "model_type": "2-stage",
         }
         res = self.client.post("/api/valuation/dcf/calculate", json=payload)
         self.assertEqual(res.status_code, 200)
-        body = res.json()
-        data = body["data"]
-        self.assertEqual(data["symbol"], "CUSTOM")
-        self.assertGreater(data["fair_value_per_share"], 0)
+        self.assertGreater(res.json()["data"]["fair_value_per_share"], 0)
 
     def test_get_reverse_dcf_endpoint(self):
-        res = self.client.get("/api/valuation/INFY/reverse-dcf")
-        self.assertEqual(res.status_code, 200)
-        body = res.json()
-        data = body["data"]
-        self.assertEqual(data["symbol"], "INFY")
+        data = self.client.get("/api/valuation/TESTCO/reverse-dcf").json()["data"]
         self.assertIn("implied_5y_fcf_cagr_pct", data)
-        self.assertIn("valuation_classification", data)
 
     def test_get_sensitivity_endpoint(self):
-        res = self.client.get("/api/valuation/TCS/sensitivity")
-        self.assertEqual(res.status_code, 200)
-        body = res.json()
-        data = body["data"]
-        self.assertEqual(data["symbol"], "TCS")
+        data = self.client.get("/api/valuation/TESTCO/sensitivity").json()["data"]
         self.assertEqual(len(data["rows"]), 5)
+
+    def test_missing_inputs_are_an_error_not_a_default(self):
+        with patch("app.services.valuation_lab.get_company_dcf_defaults", side_effect=ValueError("TESTCO has no positive free cash flow on record")):
+            res = self.client.get("/api/valuation/TESTCO/dcf")
+        self.assertEqual(res.status_code, 400)
+        self.assertIn("free cash flow", res.json()["detail"])
 
 
 if __name__ == "__main__":

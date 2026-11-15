@@ -10,8 +10,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { symbol } = await params;
   const sym = (symbol || "RELIANCE").toUpperCase();
   return {
-    title: `${sym} Institutional Tear-Sheet & Factsheet (TEAR) · Arthdex`,
-    description: `Audited 2-page institutional research factsheet, 10Y CAGR ledger, shareholding pattern and consensus multiples for ${sym}.`,
+    title: `${sym} one-page summary · Arthdex`,
+    description: `Price, valuation, results, peers, shareholding and analyst estimates for ${sym}, from Arthdex's company data.`,
   };
 }
 

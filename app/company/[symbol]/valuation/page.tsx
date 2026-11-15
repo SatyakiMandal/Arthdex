@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { DcfWorkbench } from "@/components/valuation/dcf-workbench";
+import { DataUnavailable, SourceLine } from "@/components/ui/data-provenance";
+import { getCompanyDcf } from "@/lib/api/endpoints";
 
 interface PageProps {
   params: Promise<{ symbol: string }>;
@@ -7,35 +9,29 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { symbol } = await params;
-  const sym = (symbol || "RELIANCE").toUpperCase();
+  const sym = symbol.toUpperCase();
   return {
-    title: `${sym} Valuation Lab & Interactive DCF (VAL) · Arthdex`,
-    description: `2-stage FCFF model, Reverse DCF implied growth, CAPM WACC calculator and sensitivity matrix for ${sym}.`,
+    title: `${sym} discounted cash flow · Arthdex`,
+    description: `A two-stage cash-flow model for ${sym} on its own reported figures, with every assumption shown and editable.`,
   };
 }
 
 export default async function ValuationPage({ params }: PageProps) {
   const { symbol } = await params;
-  const sym = (symbol || "RELIANCE").toUpperCase();
+  const sym = symbol.toUpperCase();
+  const res = await getCompanyDcf(sym);
 
   return (
-    <div className="mx-auto w-full max-w-[1920px] p-2 sm:p-4 space-y-4">
-      {/* Title Header */}
-      <div className="flex flex-wrap items-baseline justify-between border-b border-border pb-2">
-        <div className="flex items-baseline gap-2">
-          <h1 className="font-mono text-base font-bold uppercase tracking-wider text-foreground">
-            {sym} · VALUATION LAB &amp; INTERACTIVE DCF (VAL, DCF)
-          </h1>
-          <span className="font-mono text-3xs text-muted-foreground">M6 · INTRINSIC VALUE &amp; REVERSE DCF</span>
-        </div>
-        <div className="flex items-center gap-2 font-mono text-3xs text-muted-foreground">
-          <span className="text-accent font-bold">ALT+K: {sym} VAL &lt;GO&gt;</span>
-          <span>•</span>
-          <span>CAPM WACC • 5Y FCFF • REVERSE SOLVER</span>
-        </div>
-      </div>
-
-      <DcfWorkbench symbol={sym} />
+    <div className="mx-auto w-full max-w-[1920px] space-y-4 px-2 py-4 sm:px-3 lg:px-4">
+      <h1 className="text-xl font-semibold">Discounted cash flow{res.ok ? `: ${res.data.defaults.name}` : ""}</h1>
+      {res.ok ? (
+        <>
+          <DcfWorkbench inputs={res.data.defaults} />
+          <SourceLine meta={res.meta} />
+        </>
+      ) : (
+        <DataUnavailable title="No cash-flow model for this company" message={res.message} />
+      )}
     </div>
   );
 }

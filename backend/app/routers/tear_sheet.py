@@ -33,9 +33,7 @@ class CreateResearchNoteRequest(BaseModel):
 @router.get("/api/v1/company/{symbol}/tear-sheet")
 def get_institutional_tear_sheet(symbol: str):
     """
-    Returns Goldman Sachs / Jefferies style 2-page institutional factsheet:
-    header, trading stats, 10-year financials summary, peer multiples,
-    shareholding & pledge trend, and consensus forecasts.
+    A one-page summary of a company from Arthdex's own real data; see services/tear_sheet.py.
     """
     sym = symbol.upper()
     cache_key = f"company:tearsheet:{sym}"
@@ -44,16 +42,16 @@ def get_institutional_tear_sheet(symbol: str):
         return tear_sheet.get_company_tear_sheet(sym)
 
     try:
-        data, age = CACHE.get_or_fetch(cache_key, 60, compute)
+        data, age = CACHE.get_or_fetch(cache_key, 300, compute)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Tear-Sheet error: {exc}") from exc
 
     return envelope(
         data,
         age,
-        source="NSE Filings, Screener Financials & Institutional Consensus",
-        delayed_minutes=0,
-        note="Institutional tear-sheet conforms to SEBI research analyst reporting disclosures.",
+        source="Arthdex's company data: exchange quote, Yahoo Finance statistics and estimates, vetted results, screener.in peers and shareholding",
+        delayed_minutes=15,
+        note="Sections whose source did not answer are listed under 'missing' and left empty.",
     )
 
 

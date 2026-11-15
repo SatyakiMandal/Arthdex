@@ -86,6 +86,7 @@ import type {
   ApiSectorKpiOverview,
   ApiDcfInputs,
   ApiDcfValuationResult,
+  ApiDcfResponse,
   ApiReverseDcfResult,
   ApiSmeOverview,
   ApiSmeIpoItem,
@@ -470,7 +471,7 @@ export const getSectorKpiDetails = <T = unknown>(sectorCode: string) =>
 
 // -- Valuation Lab (VAL, DCF) ------------------------------------------------
 export const getCompanyDcf = (symbol: string = "RELIANCE") =>
-  apiGet<ApiDcfValuationResult>(`/api/v1/valuation/${encodeURIComponent(symbol)}/dcf`, 3600);
+  apiGet<ApiDcfResponse>(`/api/v1/valuation/${encodeURIComponent(symbol)}/dcf`, 3600);
 
 export const postCalculateDcf = (payload: ApiDcfInputs) =>
   apiPost<ApiDcfValuationResult>("/api/v1/valuation/dcf/calculate", payload);

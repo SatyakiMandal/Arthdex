@@ -2360,6 +2360,30 @@ export interface ApiDcfInputs {
   cashAndInvestmentsCr: number;
 }
 
+/** DCF inputs from real data, each with its source; assumptions are marked editable */
+export interface ApiDcfDefaults {
+  symbol: string;
+  name: string;
+  current_price: number;
+  shares_outstanding_cr: number;
+  cash_and_equivalents_cr: number;
+  total_debt_cr: number;
+  base_fcff_cr: number;
+  beta: number;
+  debt_to_equity: number;
+  risk_free_rate: number;
+  risk_free_paper: string;
+  stage1_growth_rate: number;
+  terminal_growth_rate: number;
+  pretax_cost_of_debt: number;
+  equity_risk_premium: number;
+  sources: Record<string, string>;
+}
+
+export interface ApiDcfResponse {
+  defaults: ApiDcfDefaults;
+}
+
 export interface ApiDcfValuationResult {
   inputs: ApiDcfInputs;
   calculatedCostOfEquityPct: number;
@@ -2458,119 +2482,59 @@ export interface ApiSmeOverview {
 // Phase 15: Institutional Tear-Sheet & Notes (M25)
 // ==========================================
 
-export interface ApiTearSheetHeader {
-  symbol: string;
-  name: string;
-  isin: string;
-  cin?: string;
-  exchange: string;
-  sector: string;
-  sub_industry: string;
-  website: string;
-  headquarters: string;
-  established_year: number;
-  key_executives: Array<{ designation: string; name: string }>;
-  business_summary: string;
-}
-
-export interface ApiTearSheetTradingStats {
-  current_price: number;
-  change: number;
-  change_pct: number;
-  day_high: number;
-  day_low: number;
-  week_52_high: number;
-  week_52_low: number;
-  market_cap_cr: number;
-  enterprise_value_cr: number;
-  shares_outstanding_cr: number;
-  free_float_pct: number;
-  adtv_30d_cr: number;
-  beta_3y: number;
-  returns: Record<string, number>;
-}
-
-export interface ApiTearSheetFinancialYear {
-  fiscal_year: string;
-  revenue_cr: number;
-  revenue_growth_pct?: number | null;
-  ebitda_cr: number;
-  ebitda_margin_pct: number;
-  pat_cr: number;
-  pat_margin_pct: number;
-  eps: number;
-  roce_pct: number;
-  roe_pct: number;
-  debt_to_equity: number;
-  interest_coverage: number;
-  fcf_cr: number;
-}
-
-export interface ApiTearSheetPeer {
-  symbol: string;
-  name: string;
-  market_cap_cr: number;
-  pe_ttm: number;
-  pe_fwd: number;
-  ev_ebitda: number;
-  price_to_book: number;
-  dividend_yield_pct: number;
-  roce_pct: number;
-  sales_cagr_3y_pct: number;
-}
-
-export interface ApiTearSheetShareholdingQuarter {
-  quarter: string;
-  promoter_holding_pct: number;
-  fii_holding_pct: number;
-  dii_holding_pct: number;
-  public_holding_pct: number;
-  other_holding_pct: number;
-  promoter_pledged_pct: number;
-}
-
-export interface ApiTearSheetConsensus {
-  total_coverage: number;
-  ratings_breakdown: {
-    buy: number;
-    outperform?: number;
-    hold: number;
-    underperform?: number;
-    sell: number;
-  };
-  consensus_rating: string;
-  target_price: {
-    median: number;
-    high: number;
-    low: number;
-    implied_upside_pct: number;
-  };
-  forecasts?: Record<string, { revenue_cr: number; ebitda_cr: number; pat_cr: number; eps: number; provenance: string }>;
-}
-
 export interface ApiTearSheetData {
-  header: ApiTearSheetHeader;
-  trading_stats: ApiTearSheetTradingStats;
-  financials_10y: ApiTearSheetFinancialYear[];
-  peers: ApiTearSheetPeer[];
-  shareholding_trend: ApiTearSheetShareholdingQuarter[];
-  promoter_pledge_status: {
-    pledge_pct_of_promoter: number;
-    risk_tier: string;
-    sebi_disclosure: string;
+  symbol: string;
+  asOf: string;
+  header: {
+    name: string | null;
+    isin: string | null;
+    exchanges: ("NSE" | "BSE")[] | null;
+    nseSymbol: string | null;
+    bseCode: string | null;
+    sector: string | null;
+    industry: string | null;
+    website: string | null;
+    employees: number | null;
+    summary: string | null;
+    officers: { name: string | null; title: string | null }[];
   };
-  analyst_consensus: ApiTearSheetConsensus;
-  provenance: string;
-  latest_research_notes?: Array<{
-    id: string;
-    title: string;
-    author: string;
-    firm: string;
-    recommendation: string;
-    target_price: number;
-    horizon: string;
-    created_at: string;
-  }>;
+  price: {
+    cmp: number | null;
+    change: number | null;
+    changePct: number | null;
+    exchange: string | null;
+    dayHigh: number | null;
+    dayLow: number | null;
+    high52w: number | null;
+    low52w: number | null;
+    marketCapCr: number | null;
+    enterpriseValueCr: number | null;
+    sharesOutstanding: number | null;
+    floatShares: number | null;
+    beta: number | null;
+    asOf: string | null;
+  } | null;
+  /** Price change over each window; null where the history does not reach back that far */
+  returns: Partial<Record<"1M" | "3M" | "6M" | "1Y" | "3Y" | "5Y", number | null>> | null;
+  valuation: { trailingPE: number | null; forwardPE: number | null; priceToBook: number | null; evToEbitda: number | null; dividendYieldPct: number | null } | null;
+  annual: { period: string; periodEnd: string; revenue: number | null; operatingProfit: number | null; opmPct: number | null; netProfit: number | null; eps: number | null }[];
+  annualSource: string | null;
+  ratios: { roePct: number | null; rocePct: number | null; debtToEquity: number | null; currentRatio: number | null } | null;
+  peers: {
+    industry: string | null;
+    rows: ({ symbol: string; name: string; price: number | null; pe: number | null; marketCapCr: number | null; dividendYieldPct: number | null; rocePct: number | null; salesGrowthQtrPct: number | null } | null)[];
+  } | null;
+  shareholding: { quarter: string; promoters: number | null; fiis: number | null; diis: number | null; government: number | null; public: number | null }[];
+  pledgePct: number | null;
+  analysts: {
+    targets: { mean: number | null; median: number | null; high: number | null; low: number | null; analysts: number | null } | null;
+    latest: { period: string; strongBuy: number; buy: number; hold: number; sell: number; strongSell: number } | null;
+    nextEarnings: { date: string | null; epsEstimate: number | null } | null;
+  } | null;
+  notes: { id: string; title: string; author: string; firm: string; recommendation: string; target_price: number; created_at: string }[];
+  /** Sections whose source did not answer, with the reason */
+  missing: Record<string, string>;
+  sources: string[];
 }
 
 export interface ApiResearchNote {
