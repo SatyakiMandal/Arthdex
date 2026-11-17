@@ -82,12 +82,17 @@ page. Subsidiaries, suppliers and customers are declared as not available.
 
 ## Listed-company coverage
 
-The site on this branch knows NSE's main board (2,635 companies) and NSE Emerge (583).
-The branch `feature/bse-listings` (another session's work, not yet merged or pushed) joins
-NSE and BSE by ISIN: 7,059 companies in all, 2,507 on both exchanges, 711 on NSE only and
-3,841 on BSE only (BSE: 5,147 active and 1,201 suspended scrips). It was run and counted on
-2026-11-16. The two branches change some of the same files and will need merging.
-The ownership view covers NSE-listed companies; BSE-only companies need BSE's filings.
+Merged from `feature/bse-listings` on 2026-11-17 (commits ba5aec3 and 1816a35). The site now
+knows every company on NSE and BSE, joined by ISIN: 7,061 companies, 2,505 on both
+exchanges, 711 on NSE only and 3,845 on BSE only (NSE: 2,633 main board and 583 SME; BSE:
+5,759 main board, 591 SME, 1,206 of them suspended). A company on NSE keeps its symbol as its
+address; a BSE-only company is addressed by its six-digit scrip code. Dual-listed companies
+have a switch for NSE prices, BSE prices or both side by side.
+
+That branch also carried its own rewrite of the tear sheet, DCF and several desks. Where it
+overlapped with this branch, this branch's version was kept, because it connects more desks
+to real sources. The ownership view covers NSE-listed companies; a BSE-only company shows
+"no shareholding filing" until BSE's filings are connected.
 
 ## Switched off until a source is connected
 

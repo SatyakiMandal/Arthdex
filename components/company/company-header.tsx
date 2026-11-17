@@ -2,6 +2,8 @@ import type { ResponseMeta } from "@/lib/api/client";
 import type { ApiProfile, ApiQuote, ApiValuation } from "@/lib/api/types";
 import { WatchButton } from "@/components/watchlist/watch-button";
 import { DataUnavailable, FreshnessBadge } from "@/components/ui/data-provenance";
+import { ExchangeSwitch } from "@/components/company/exchange-switch";
+import type { ExchangeView } from "@/lib/exchange-view";
 import { cn, deltaColor, formatDelta, formatINR, formatPct } from "@/lib/utils";
 
 /** A value's position inside [low, high], as a clamped percentage. */
@@ -98,6 +100,7 @@ export function CompanyHeader({
   error,
   profile,
   valuation,
+  view,
 }: {
   symbol: string;
   quote: ApiQuote | null;
@@ -105,6 +108,7 @@ export function CompanyHeader({
   error: string | null;
   profile: ApiProfile | null;
   valuation: ApiValuation | null;
+  view: ExchangeView;
 }) {
   if (!quote) {
     return (
@@ -120,6 +124,13 @@ export function CompanyHeader({
   }
 
   const name = profile?.name ?? quote.symbol;
+  const listing = quote.listing;
+  const dual = listing?.exchanges.length === 2;
+  const suspended = listing?.bse?.status === "suspended" && quote.exchange === "BSE";
+  const tickers = [
+    listing?.nse ? `NSE ${listing.nse.symbol}${listing.nse.board === "sme" ? " (SME)" : ""}` : null,
+    listing?.bse ? `BSE ${listing.bse.code}${listing.bse.board === "sme" ? " (SME)" : ""}` : null,
+  ].filter(Boolean);
   const pct = quote.change.percent;
   const dayTone = pct > 0 ? "up" : pct < 0 ? "down" : "flat";
 
@@ -157,10 +168,25 @@ export function CompanyHeader({
           </div>
 
           <div className="flex items-center gap-3">
+            {tickers.length ? <span className="hidden font-mono text-3xs text-muted-foreground md:inline">{tickers.join(" · ")}</span> : null}
+            {dual ? (
+              <ExchangeSwitch view={view} />
+            ) : listing ? (
+              <span className="border border-border/70 px-2 py-0.5 font-mono text-3xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {listing.exchanges[0]} only
+              </span>
+            ) : null}
             {meta ? <FreshnessBadge meta={meta} /> : null}
             <WatchButton kind="listed" id={quote.symbol} name={name} />
           </div>
         </div>
+
+        {suspended ? (
+          <p role="note" className="mt-2 border border-flat/40 bg-flat/10 px-2 py-1 text-xs">
+            Trading in this company is suspended on BSE. The price shown is the last traded price
+            {quote.exchangeTime ? ` (${quote.exchangeTime})` : ""}, not a live one.
+          </p>
+        ) : null}
 
         {/* Central Metric Strip */}
         <div className="mt-2.5 grid gap-3 lg:grid-cols-[auto_1fr_auto] lg:items-center">
@@ -176,6 +202,9 @@ export function CompanyHeader({
               <span>{formatDelta(quote.change.absolute)}</span>
               <span>({formatPct(pct)})</span>
             </div>
+            <span className="font-mono text-3xs font-semibold uppercase tracking-wider text-muted-foreground" title="Exchange these prices are from">
+              {quote.sources?.used === "yahoo" ? `${quote.exchange} via Yahoo` : quote.exchange}
+            </span>
             <span className="text-3xs font-mono text-muted-foreground hidden sm:inline">
               {readQuote(name, quote, valuation)}
             </span>

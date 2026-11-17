@@ -60,6 +60,32 @@ def fetch_equity_universe() -> list[dict[str, Any]]:
     return rows
 
 
+SME_MASTER_URL = "https://nsearchives.nseindia.com/emerge/corporates/content/SME_EQUITY_L.csv"
+
+
+def fetch_sme_universe() -> list[dict[str, Any]]:
+    """Every company on NSE Emerge, the SME board, which the main master file leaves out."""
+    response = _get_session().get(SME_MASTER_URL, timeout=30)
+    response.raise_for_status()
+    rows: list[dict[str, Any]] = []
+    for raw in csv.DictReader(io.StringIO(response.text)):
+        record = {_clean_key(k).replace("_", " "): (v or "").strip() for k, v in raw.items() if k}
+        symbol = record.get("SYMBOL", "")
+        if not symbol:
+            continue
+        rows.append(
+            {
+                "symbol": symbol.upper(),
+                "name": record.get("NAME OF COMPANY", symbol),
+                "series": record.get("SERIES", ""),
+                "listingDate": record.get("DATE OF LISTING") or None,
+                "isin": record.get("ISIN NUMBER") or None,
+                "faceValue": record.get("FACE VALUE") or None,
+            }
+        )
+    return rows
+
+
 def searchable_symbols(universe: list[dict[str, Any]]) -> set[str]:
     """Symbols safe to match inside free text, minus the ambiguous ones."""
     return {r["symbol"] for r in universe if len(r["symbol"]) >= 3} - AMBIGUOUS_SYMBOLS

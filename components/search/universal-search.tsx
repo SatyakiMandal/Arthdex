@@ -15,6 +15,14 @@ interface SearchHit {
   isin: string | null;
   kind: "listed" | "unlisted" | "page";
   href: string;
+  exchanges?: ("NSE" | "BSE")[];
+  board?: "main" | "sme";
+}
+
+/** Where a listed company trades: "NSE · BSE", "BSE only", with SME marked. */
+function listedTag(hit: SearchHit): string {
+  const where = hit.exchanges?.length === 2 ? "NSE · BSE" : hit.exchanges?.length === 1 ? `${hit.exchanges[0]} only` : hit.series || "NSE";
+  return hit.board === "sme" ? `${where} · SME` : where;
 }
 
 /** Every tool, findable by name or by the words people use for it, so search doubles as navigation. */
@@ -333,7 +341,7 @@ export function UniversalSearch({ className, placeholder }: { className?: string
                           hit.kind === "unlisted" ? "border-flat/40 bg-flat/10 text-flat" : "border-border text-muted-foreground",
                         )}
                       >
-                        {hit.kind === "page" ? (hit.series === "JUMP" ? "Jump" : "Go to") : hit.kind === "unlisted" ? "Unlisted" : hit.series || "NSE"}
+                        {hit.kind === "page" ? (hit.series === "JUMP" ? "Jump" : "Go to") : hit.kind === "unlisted" ? "Unlisted" : listedTag(hit)}
                       </span>
                     </button>
                   </li>

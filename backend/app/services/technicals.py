@@ -10,6 +10,7 @@ import pandas as pd
 import yfinance as yf
 
 from . import indicators as ind
+from ..providers.yahoo import to_yahoo_symbol
 
 warnings.filterwarnings("ignore")
 
@@ -47,7 +48,7 @@ def clean_frame(frame: pd.DataFrame) -> pd.DataFrame:
 
 def fetch_bars(symbol: str, interval: str) -> pd.DataFrame:
     period, yf_interval, _n, _intra = INTERVALS[interval]
-    frame = clean_frame(yf.Ticker(f"{symbol}.NS").history(period=period, interval=yf_interval, auto_adjust=False))
+    frame = clean_frame(yf.Ticker(to_yahoo_symbol(symbol)).history(period=period, interval=yf_interval, auto_adjust=False))
     if yf_interval == "1d" and len(frame):
         frame = _fill_recent_sessions(symbol, frame)
     return frame

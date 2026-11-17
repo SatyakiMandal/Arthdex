@@ -1,10 +1,11 @@
 """
-Two sources for a company quote: the exchange (NSE) first, Yahoo as the backup.
+Two sources for a company quote: the exchange first, Yahoo as the backup.
 
-NSE is the exchange of record, so its price, range, volume and market cap are
-used when it answers. Yahoo is fetched as well, every time, for two reasons: it
-carries the page when NSE refuses the request (NSE blocks many cloud addresses),
-and the two prices are compared so a broken or stale source shows up at once.
+The exchange the quote is asked for (NSE or BSE) is the exchange of record, so its
+price, range, volume and market cap are used when it answers. Yahoo's quote for the
+same exchange is fetched as well, every time, for two reasons: it carries the page
+when the exchange refuses the request (NSE blocks many cloud addresses), and the two
+prices are compared so a broken or stale source shows up at once.
 """
 
 from __future__ import annotations
@@ -16,7 +17,12 @@ from typing import Any
 PRICE_TOLERANCE = 0.005
 
 
-def choose(fetch_nse: Callable[[], dict[str, Any] | None], fetch_yahoo: Callable[[], dict[str, Any] | None]) -> dict[str, Any] | None:
+def choose(
+    fetch_nse: Callable[[], dict[str, Any] | None],
+    fetch_yahoo: Callable[[], dict[str, Any] | None],
+    exchange: str = "NSE",
+) -> dict[str, Any] | None:
+    """`fetch_nse` is the exchange's own quote, whichever exchange that is."""
     def attempt(fn: Callable[[], dict[str, Any] | None]) -> tuple[dict[str, Any] | None, str | None]:
         try:
             return fn(), None
@@ -29,9 +35,12 @@ def choose(fetch_nse: Callable[[], dict[str, Any] | None], fetch_yahoo: Callable
     if quote is None:
         return None
 
+    ex = exchange.lower()
     report: dict[str, Any] = {
-        "used": "nse" if nse else "yahoo",
-        "nsePrice": nse.get("cmp") if nse else None,
+        "used": ex if nse else "yahoo",
+        "exchange": exchange.upper(),
+        "exchangePrice": nse.get("cmp") if nse else None,
+        "nsePrice": nse.get("cmp") if nse and ex == "nse" else None,
         "yahooPrice": yahoo.get("cmp") if yahoo else None,
         "nseError": nse_error,
         "yahooError": yahoo_error,
@@ -54,23 +63,22 @@ def choose(fetch_nse: Callable[[], dict[str, Any] | None], fetch_yahoo: Callable
 
 
 def fetch(symbol: str, exchange: str = "NSE") -> dict[str, Any] | None:
-    """Exchange first, Yahoo as backup and cross-check. BSE listings have only the Yahoo route."""
-    from ..providers import nse, yahoo
+    """The exchange first, Yahoo as backup and cross-check, with where else the company trades."""
+    from .. import listings
+    from ..providers import bse, nse, yahoo
 
-    if exchange.upper() != "NSE":
-        q = yahoo.fetch_quote(symbol, exchange)
-        if q is None:
+    ex = listings.exchange_for(symbol, exchange)
+    if ex == "BSE":
+        code = listings.bse_code(symbol)
+        if code is None:
             return None
-        return {
-            **q,
-            "sources": {
-                "used": "yahoo",
-                "nsePrice": None,
-                "yahooPrice": q.get("cmp"),
-                "nseError": None,
-                "yahooError": None,
-                "agree": None,
-                "gapPct": None,
-            },
-        }
-    return choose(lambda: nse.fetch_quote(symbol), lambda: yahoo.fetch_quote(symbol, exchange))
+        quote = choose(lambda: bse.fetch_quote(code), lambda: yahoo.fetch_quote(code, "BSE"), exchange="BSE")
+    else:
+        quote = choose(lambda: nse.fetch_quote(symbol), lambda: yahoo.fetch_quote(symbol, "NSE"), exchange="NSE")
+    if quote is None:
+        return None
+    listing = listings.describe(symbol)
+    if listing:
+        # The route id, not the exchange ticker, is what every other endpoint is called with
+        quote = {**quote, "symbol": listing["id"], "exchange": ex, "listing": listing}
+    return quote

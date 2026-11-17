@@ -95,10 +95,12 @@ export function PriceChart({
   symbol,
   initialCandles,
   initialPeriod = "1Y",
+  exchange = "NSE",
 }: {
   symbol: string;
   initialCandles: Candle[];
   initialPeriod?: Period;
+  exchange?: "NSE" | "BSE";
 }) {
   const [candles, setCandles] = useState<Candle[]>(initialCandles);
   const [period, setPeriod] = useState<Period>(initialPeriod);
@@ -128,7 +130,7 @@ export function PriceChart({
     (async () => {
       try {
         const response = await fetch(
-          `/api/candles?symbol=${encodeURIComponent(symbol)}&period=${period}`,
+          `/api/candles?symbol=${encodeURIComponent(symbol)}&period=${period}&exchange=${exchange}`,
           { signal: controller.signal },
         );
         const body = await response.json();

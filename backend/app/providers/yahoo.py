@@ -33,11 +33,22 @@ INTRADAY_PERIODS = {"1D", "5D"}
 
 
 def to_yahoo_symbol(symbol: str, exchange: str = "NSE") -> str:
-    """NSE tickers carry a .NS suffix on Yahoo; BSE uses .BO."""
+    """
+    NSE tickers carry a .NS suffix on Yahoo; BSE uses .BO on BSE's scrip ID (RELIANCE.BO,
+    not 500325.BO). A BSE code, or a company with no NSE listing, always maps to BSE.
+    """
+    from .. import listings
+
     s = symbol.upper().strip()
     if s.startswith("^") or "." in s:
         return s
-    return f"{s}.BO" if exchange.upper() == "BSE" else f"{s}.NS"
+    if exchange.upper() != "BSE" and not s.isdigit():
+        return f"{s}.NS"  # the common case needs no listing lookup
+    if listings.exchange_for(s, exchange) == "BSE":
+        entry = listings.resolve(s)
+        scrip = (entry or {}).get("bse") and entry["bse"].get("scripId")
+        return f"{scrip or s}.BO"
+    return f"{s}.NS"
 
 
 # Rows of a statement frame that are not amounts of money: counts, ratios and rates.

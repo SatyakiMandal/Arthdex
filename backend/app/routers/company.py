@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, HTTPException, Query
 
+from .. import listings
 from ..cache import CACHE
 from ..config import SETTINGS
-from ..providers import fundamentals, nse, nse_xbrl, screener, yahoo
+from ..providers import bse, fundamentals, nse, nse_xbrl, screener, yahoo
 from ..schemas import envelope
 from ..services import (
     financial_sources,
@@ -27,6 +28,7 @@ VALID_PERIODS = set(yahoo.PERIOD_MAP.keys())
 
 @router.get("/{symbol}/quote")
 def get_quote(symbol: str, exchange: str = Query("NSE", pattern="^(NSE|BSE)$")):
+    exchange = listings.exchange_for(symbol, exchange)
     key = f"company:quote:{exchange}:{symbol.upper()}"
     try:
         data, age = CACHE.get_or_fetch(key, SETTINGS.quote_ttl, lambda: _quote(symbol, exchange))
@@ -37,7 +39,7 @@ def get_quote(symbol: str, exchange: str = Query("NSE", pattern="^(NSE|BSE)$")):
         raise HTTPException(status_code=404, detail=f"No quote found for {symbol.upper()}")
     used = (data.get("sources") or {}).get("used")
     return envelope(
-        data, age, source="NSE (Yahoo Finance cross-check)" if used == "nse" else "Yahoo Finance (NSE unavailable)",
+        data, age, source=f"{exchange} (Yahoo Finance cross-check)" if used in ("nse", "bse") else f"Yahoo Finance ({exchange} unavailable)",
         delayed_minutes=SETTINGS.quote_delay_minutes,
     )
 
@@ -87,6 +89,7 @@ def get_candles(
     exchange: str = Query("NSE", pattern="^(NSE|BSE)$"),
 ):
     period = period.upper()
+    exchange = listings.exchange_for(symbol, exchange)
     if period not in VALID_PERIODS:
         raise HTTPException(
             status_code=400,
@@ -106,6 +109,19 @@ def get_candles(
             if symbol.startswith("^"):
                 daily_index = not intraday and yahoo.PERIOD_MAP[period][1] == "1d"
                 return {"candles": _fill_index_session(symbol, candles) if daily_index else candles, "source": "yahoo", "vetting": None}
+            if exchange.upper() == "BSE" and not intraday:
+                # Yahoo's BSE series are often thin (one day for RELIANCE.BO); BSE's own year of
+                # daily closes wins whenever Yahoo has fewer sessions over the same window
+                code = listings.bse_code(symbol)
+                days = NSE_HISTORY_DAYS.get(period)
+                if code and days and days <= 366:
+                    try:
+                        start = (date.today() - timedelta(days=days)).isoformat()
+                        own = [c for c in bse.fetch_daily_history(code) if c["date"] >= start]
+                    except Exception:
+                        own = []
+                    if len(own) > len([c for c in candles if str(c.get("date") or c.get("time") or "")[:10] >= start]) * 1.1:
+                        return {"candles": own, "source": "bse", "vetting": None}
             if intraday or exchange.upper() != "NSE":
                 return {"candles": candles, "source": "yahoo", "vetting": None}
             daily = yahoo.PERIOD_MAP[period][1] == "1d"
@@ -118,6 +134,12 @@ def get_candles(
             nse_candles = nse.fetch_daily_history(symbol, days)
             if nse_candles:
                 return {"candles": nse_candles, "source": "nse"}
+        code = listings.bse_code(symbol) if exchange.upper() == "BSE" else None
+        if days and code and days <= 366:
+            # BSE's own chart feed covers the last year, closes only
+            bse_candles = [c for c in bse.fetch_daily_history(code) if c["date"] >= (date.today() - timedelta(days=days)).isoformat()]
+            if bse_candles:
+                return {"candles": bse_candles, "source": "bse"}
         raise ValueError(f"No price history for {symbol.upper()} over {period}")
 
     try:
@@ -130,13 +152,17 @@ def get_candles(
             status_code=404, detail=f"No price history for {symbol.upper()} over {period}"
         )
 
-    from_nse = data["source"] == "nse"
+    from_exchange = data["source"] in ("nse", "bse")
     return envelope(
-        {"symbol": symbol.upper(), "period": period, "candles": data["candles"], "vetting": data.get("vetting")},
+        {"symbol": symbol.upper(), "period": period, "exchange": exchange, "candles": data["candles"], "vetting": data.get("vetting")},
         age,
-        source="NSE daily history (Yahoo unavailable)" if from_nse else "Yahoo Finance",
+        source=f"{data['source'].upper()}'s own daily history" if from_exchange else f"Yahoo Finance ({exchange})",
         delayed_minutes=SETTINGS.quote_delay_minutes,
-        note="Exchange prices as traded, not adjusted for splits or bonus issues." if from_nse else None,
+        note=(
+            "BSE daily closes as traded; the feed has no open, high or low."
+            if data["source"] == "bse"
+            else "Exchange prices as traded, not adjusted for splits or bonus issues." if from_exchange else None
+        ),
     )
 
 
@@ -593,3 +619,99 @@ def compare_companies(symbols: str = Query(..., description="Comma-separated NSE
     except Exception as exc:
         raise HTTPException(status_code=503, detail=f"Comparison unavailable: {exc}") from exc
     return envelope(data, 120, source="Arthdex vetted fundamentals & forensics", delayed_minutes=0)
+
+
+@router.get("/{symbol}/exchanges")
+def get_exchange_comparison(symbol: str):
+    """
+    NSE and BSE side by side for a company listed on both: each exchange's own quote,
+    the price gap between them, each one's share of the day's volume, and a year of
+    daily closes from each exchange's own records with the gap on every shared day.
+    """
+    entry = listings.resolve(symbol)
+    if entry is None:
+        raise HTTPException(status_code=404, detail=f"{symbol.upper()} is not a listed company")
+    if len(entry["exchanges"]) < 2:
+        raise HTTPException(status_code=404, detail=f"{entry['name']} is listed only on {entry['exchanges'][0]}")
+    sym, code = entry["nse"]["symbol"], entry["bse"]["code"]
+
+    def build() -> dict:
+        def quote(ex: str):
+            try:
+                q, _ = CACHE.get_or_fetch(f"company:quote:{ex}:{entry['id']}", SETTINGS.quote_ttl, lambda: _quote(entry["id"], ex))
+                return q
+            except Exception:
+                return None
+
+        nq, bq = quote("NSE"), quote("BSE")
+        try:
+            n_hist = nse.fetch_daily_history(sym, 366)
+        except Exception:
+            n_hist = []
+        try:
+            b_hist = bse.fetch_daily_history(code)
+        except Exception:
+            b_hist = []
+
+        def side(q, ex: str) -> dict | None:
+            if not q or (q.get("sources") or {}).get("used") != ex.lower():
+                return None  # only the exchange's own quote is compared, never Yahoo's stand-in
+            keys = ("cmp", "change", "open", "previousClose", "dayHigh", "dayLow", "high52w", "low52w", "volume", "turnoverCr", "vwap", "exchangeTime", "asOf")
+            return {k: q.get(k) for k in keys}
+
+        n, b = side(nq, "NSE"), side(bq, "BSE")
+        gap = None
+        if n and b and n["cmp"] and b["cmp"]:
+            diff = n["cmp"] - b["cmp"]
+            gap = {"absolute": round(diff, 2), "percent": round(diff / ((n["cmp"] + b["cmp"]) / 2) * 100, 3)}
+        volume_share = None
+        if n and b and (n["volume"] or 0) + (b["volume"] or 0) > 0:
+            volume_share = {"nse": round(n["volume"] / (n["volume"] + b["volume"]) * 100, 1), "bse": round(b["volume"] / (n["volume"] + b["volume"]) * 100, 1)}
+
+        b_by_day = {c["date"]: c for c in b_hist}
+        history = []
+        for c in n_hist:
+            other = b_by_day.get(c["date"])
+            if other and c["close"] and other["close"]:
+                history.append({
+                    "date": c["date"], "nse": c["close"], "bse": other["close"],
+                    "gapPct": round((c["close"] - other["close"]) / ((c["close"] + other["close"]) / 2) * 100, 3),
+                    "nseVolume": c["volume"], "bseVolume": other["volume"],
+                })
+        gaps = [abs(h["gapPct"]) for h in history]
+        return {
+            "id": entry["id"], "name": entry["name"], "isin": entry["isin"],
+            "nseSymbol": sym, "bseCode": code, "bseScripId": entry["bse"].get("scripId"),
+            "nse": n, "bse": b, "gap": gap, "volumeShare": volume_share,
+            "history": history,
+            "historySummary": {
+                "days": len(history),
+                "meanAbsGapPct": round(sum(gaps) / len(gaps), 3) if gaps else None,
+                "maxAbsGapPct": round(max(gaps), 3) if gaps else None,
+                "daysNseHigher": sum(1 for h in history if h["gapPct"] > 0),
+                "daysBseHigher": sum(1 for h in history if h["gapPct"] < 0),
+                "nseVolumeSharePct": round(sum(h["nseVolume"] for h in history) / max(1, sum(h["nseVolume"] + h["bseVolume"] for h in history)) * 100, 1) if history else None,
+            },
+        }
+
+    try:
+        data, age = CACHE.get_or_fetch(f"company:exchanges:{entry['id']}", 300, build)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Exchange comparison unavailable: {exc}") from exc
+    return envelope(
+        data, age, source="NSE and BSE quotes and daily histories, each from its own exchange",
+        delayed_minutes=SETTINGS.quote_delay_minutes,
+        note="Gaps are measured against the average of the two prices. Daily closes are as traded on each exchange.",
+    )
+
+
+@router.get("/{symbol}/listing")
+def get_listing(symbol: str):
+    """Where a company trades: exchanges, tickers, boards and BSE status, from the exchanges' own lists."""
+    try:
+        data = listings.describe(symbol)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Listings unavailable: {exc}") from exc
+    if data is None:
+        raise HTTPException(status_code=404, detail=f"{symbol.upper()} is not a listed company")
+    return envelope({**data, "name": listings.resolve(symbol)["name"]}, CACHE.age("listings:all") or 0.0, source="NSE and BSE listing files, joined by ISIN")

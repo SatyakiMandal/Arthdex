@@ -4,8 +4,11 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { CompanyHeader } from "@/components/company/company-header";
 import { CompanyTabs } from "@/components/company/company-tabs";
 import { CustomAlertEngine, type MetricOption } from "@/components/alerts/custom-alert-engine";
-import { getProfile, getQuote, getValuation } from "@/lib/api/endpoints";
+import { cookies } from "next/headers";
+import { ExchangeComparison } from "@/components/company/exchange-comparison";
+import { getExchangeComparison, getProfile, getQuote, getValuation } from "@/lib/api/endpoints";
 import { isValidSymbol } from "@/lib/api/request-guards";
+import { EXCHANGE_VIEW_COOKIE, parseExchangeView, priceExchange } from "@/lib/exchange-view";
 
 /**
  * Shared company shell.
@@ -26,12 +29,15 @@ export default async function CompanyLayout({
   // Reject anything that is not ticker-shaped before it reaches a backend URL or the page markup
   if (!isValidSymbol(decodeURIComponent(symbol))) notFound();
   const upper = decodeURIComponent(symbol).toUpperCase();
+  const view = parseExchangeView((await cookies()).get(EXCHANGE_VIEW_COOKIE)?.value);
 
   const [quote, profile, valuation] = await Promise.all([
-    getQuote(upper),
+    getQuote(upper, priceExchange(view)),
     getProfile(upper),
     getValuation(upper),
   ]);
+  const dual = quote.ok && quote.data.listing?.exchanges.length === 2;
+  const comparison = view === "BOTH" && dual ? await getExchangeComparison(upper) : null;
 
   // A 404 from the quote endpoint means the ticker is not covered upstream
   if (!quote.ok && quote.status === 404) notFound();
@@ -54,7 +60,9 @@ export default async function CompanyLayout({
         error={quote.ok ? null : quote.message}
         profile={profile?.data ?? null}
         valuation={valuation?.data ?? null}
+        view={view}
       />
+      {comparison ? <ExchangeComparison data={comparison.data} /> : null}
       <CompanyTabs
         symbol={upper}
         price={quote.ok ? { cmp: quote.data.cmp, percent: quote.data.change.percent } : null}

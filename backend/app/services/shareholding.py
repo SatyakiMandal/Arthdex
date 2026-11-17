@@ -24,6 +24,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from ..providers.nse import nse_get
+from ..providers.yahoo import to_yahoo_symbol
 
 log = logging.getLogger("arthdex.shareholding")
 
@@ -210,7 +211,7 @@ def _nse_insiders(symbol: str) -> list[dict[str, Any]]:
 def _yahoo(symbol: str) -> dict[str, Any] | None:
     import yfinance as yf
 
-    mh = yf.Ticker(f"{symbol}.NS").major_holders
+    mh = yf.Ticker(to_yahoo_symbol(symbol)).major_holders
     if mh is None or mh.empty:
         return None
     v = {str(k): float(x) for k, x in zip(mh.index, mh.iloc[:, 0]) if x == x}
