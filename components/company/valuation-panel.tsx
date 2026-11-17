@@ -11,6 +11,10 @@ import { cn } from "@/lib/utils";
 export function ValuationPanel({ valuation }: { valuation: ApiValuation }) {
   const rows = [
     { label: "Price to earnings", value: valuation.peRatio, digits: 2, suffix: "x" },
+    // shown only when the filings report one-off items large enough to move the multiple
+    ...(typeof valuation.peBeforeOneOffs === "number"
+      ? [{ label: "Price to earnings, before one-off items", value: valuation.peBeforeOneOffs, digits: 2, suffix: "x" }]
+      : []),
     { label: "Price to book", value: valuation.pbRatio, digits: 2, suffix: "x" },
     { label: "EV to EBITDA", value: valuation.evToEbitda, digits: 2, suffix: "x" },
     { label: "EV to sales", value: valuation.evToSales, digits: 2, suffix: "x" },
@@ -34,6 +38,15 @@ export function ValuationPanel({ valuation }: { valuation: ApiValuation }) {
           </div>
         ))}
       </dl>
+      {valuation.oneOffs && (valuation.oneOffs.exceptionalBeforeTaxCr !== 0 || valuation.oneOffs.discontinuedAfterTaxCr !== 0) ? (
+        <p className="mt-3 max-w-[70ch] text-xs text-muted-foreground">
+          {valuation.oneOffs.note}{" "}
+          {typeof valuation.peBeforeOneOffs === "number"
+            ? "The first P/E uses reported earnings; the second leaves these items out, which is the basis some data providers quote."
+            : ""}{" "}
+          Source: {valuation.oneOffs.source}.
+        </p>
+      ) : null}
       {missing > 0 ? (
         <p className="mt-3 text-xs text-muted-foreground">
           A dash is a figure the data source does not report for this company, not a zero.

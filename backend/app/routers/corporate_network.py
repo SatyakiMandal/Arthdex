@@ -8,7 +8,7 @@ import urllib.parse
 from fastapi import APIRouter, HTTPException, Query
 
 from ..cache import CACHE
-from ..providers import nse
+from ..providers import nse, nse_xbrl
 from ..schemas import envelope
 from ..services import ownership_live
 
@@ -37,12 +37,9 @@ def get_ownership(symbol: str = Query(..., min_length=1, max_length=20, descript
 
     def fetch():
         filings = nse.nse_get(f"/api/corporate-share-holdings-master?index=equities&symbol={urllib.parse.quote(sym, safe='')}") or []
-        session = nse._get_session()
-
         def get_text(url: str) -> str:
-            response = session.get(url, timeout=60)
-            response.raise_for_status()
-            return response.text
+            # same guard as the results filings: NSE's own hosts only, size-capped, no entities
+            return nse_xbrl._fetch_xml(url).decode("utf-8", "replace")
 
         return ownership_live.build(sym, filings, get_text, _universe())
 

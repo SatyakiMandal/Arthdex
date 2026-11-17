@@ -138,14 +138,15 @@ def checks(d: dict[str, Any]) -> list[tuple[str, Callable[[], tuple[str, str]]]]
 
     def pe_arith():
         eps = v.get("eps")
-        return compare("P/E vs price / EPS", v.get("peRatio"), cmp / eps if cmp and eps and eps > 0 else None, 0.006, absolute=True)
+        # relative: the two figures are read moments apart while the price is moving, and both are rounded
+        return compare("P/E vs price / EPS", v.get("peRatio"), cmp / eps if cmp and eps and eps > 0 else None, 0.002)
 
     def pe_tabs():
         return compare("P/E, masthead vs statistics tab", v.get("peRatio"), sv.get("trailingPE"), 0.01)
 
     def pb_arith():
         bv = v.get("bookValue")
-        return compare("P/B vs price / book value", v.get("pbRatio"), cmp / bv if cmp and bv and bv > 0 else None, 0.006, absolute=True)
+        return compare("P/B vs price / book value", v.get("pbRatio"), cmp / bv if cmp and bv and bv > 0 else None, 0.004)
 
     def eps_same():
         return compare("EPS, valuation vs statistics", v.get("eps"), sh_h.get("eps"), 0.001)
@@ -273,10 +274,10 @@ def checks(d: dict[str, Any]) -> list[tuple[str, Callable[[], tuple[str, str]]]]
         fx = d.get("forensics") or {}
         if not fx:
             return "skip", "forensics: not available"
-        if fx.get("withheld"):
-            return "fail", f"forensics withheld: {fx['withheld']}"
         if fx.get("lender"):
             return "skip", "forensics: lender, scores not computed"
+        if fx.get("withheld"):
+            return "fail", f"forensics withheld: {fx['withheld']}"
         checks = (fx.get("vetting") or {}).get("checks") or []
         return "pass", f"forensics inputs: {sum(c['agree'] for c in checks)} of {len(checks)} headline lines agree with vetted figures"
 

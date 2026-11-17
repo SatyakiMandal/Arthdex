@@ -255,17 +255,20 @@ def build(
     checks = vet_inputs(l, vetted_financials)
     failed = [c for c in checks if not c["agree"]]
     out: dict[str, Any] = {"years": l.dates[:3], "vetting": {"checks": checks, "vetted": bool(checks) and not failed}}
+    # A lender is decided first: its scores are not computed at all, and its revenue line is
+    # defined differently by each source (interest earned against net interest income), so a
+    # mismatch there says nothing about the inputs.
+    if lender:
+        out["lender"] = True
+        out["cashConversion"] = None
+        out["note"] = "Piotroski, Altman and Beneish scores assume an operating company; for a lender, working capital, gross margin and receivables mean something else, so they are not computed."
+        return out
     if failed:
         f = failed[0]
         out["withheld"] = (
             f"Yahoo's {f['field']} for the year to {f['year']} ({f['yahoo']:,.0f}) is {f['gapPct']}% off the vetted figure "
             f"({f['vetted']:,.0f}), so scores built on its line items are not shown."
         )
-        return out
-    if lender:
-        out["lender"] = True
-        out["cashConversion"] = None
-        out["note"] = "Piotroski, Altman and Beneish scores assume an operating company; for a lender, working capital, gross margin and receivables mean something else, so they are not computed."
         return out
     out.update(
         piotroski=piotroski(l),

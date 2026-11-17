@@ -94,6 +94,38 @@ overlapped with this branch, this branch's version was kept, because it connects
 to real sources. The ownership view covers NSE-listed companies; a BSE-only company shows
 "no shareholding filing" until BSE's filings are connected.
 
+## Figure reconciliation fixes, 2026-11-17
+
+The watchdog opened two incidents for HDFC Bank (annual results and balance sheet, Yahoo
+against screener.in, "no filing to settle them"). Investigating them found one root cause
+and four further defects.
+
+- F-107 (root cause). NSE moved its filing archive to `nsearchives.nseindia.in`. The XBRL
+  downloader's allow-list had only the `.com` hosts, so every filing download was refused
+  and the error swallowed. Disagreements between the two sources could not be settled
+  against a filing for any company. The new host is allowed and failures are logged.
+- F-108. With filings readable again, HDFC Bank's served figures were wrong: Yahoo's net
+  worth was Rs 8.17 lakh crore against a filed Rs 5.82 lakh crore, and its FY24 EPS (88.66)
+  was never adjusted for the 2025 bonus issue. When filings contradict the chosen source on
+  two or more figures and never support it, the whole series now moves to the source the
+  filings confirm, instead of patching single cells.
+- F-109. When both sources were inside the tolerance for a figure, the first one checked
+  was called correct. The closer one now is.
+- F-110. P/E gaps against screener.in for Sun Pharma and Hindustan Unilever were one-off
+  items: Rs 1,962 crore of exceptional charges, and Rs 4,477 crore of profit from a
+  discontinued business. The filing parser now reads exceptional items and
+  discontinued-operations profit; the valuation shows a second P/E "before one-off items"
+  when they are material, with a note quoting the filed amounts. Sun Pharma's comes to
+  36.61 against screener.in's 36.56.
+- F-111. The P/E and P/B arithmetic checks used an absolute tolerance tighter than rounding
+  plus a moving price allow. They are now relative.
+- F-112. A bank's forensic scores were reported as "withheld" when they are not computed for
+  lenders at all. The lender case is decided first.
+- The ownership filing download now goes through the same guarded downloader (NSE hosts
+  only, size cap, no entity declarations).
+
+Reconciliation across twelve large companies: 392 checks, 0 failing.
+
 ## Switched off until a source is connected
 
 These routes return 404 with the source they need.

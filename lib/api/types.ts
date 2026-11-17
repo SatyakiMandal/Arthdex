@@ -313,6 +313,21 @@ export interface ApiValuation {
   dividendYieldPct: number | null;
   /** Dividends paid over the last year, by ex-date, including specials. */
   dividendsTtm?: number | null;
+  /** The window the EPS covers, e.g. "last four reported quarters". */
+  epsBasis?: string | null;
+  /** P/E on earnings without exceptional items and discontinued operations; present only when those are material. */
+  peBeforeOneOffs?: number | null;
+  /** One-off items in the trailing four quarters, from the company's quarterly filings. */
+  oneOffs?: {
+    complete: boolean;
+    material: boolean;
+    exceptionalBeforeTaxCr: number;
+    discontinuedAfterTaxCr: number;
+    afterTaxEffectCr: number | null;
+    epsBeforeOneOffs: number | null;
+    note: string;
+    source: string;
+  } | null;
 }
 
 // -- quant ------------------------------------------------------------------

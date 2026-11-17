@@ -54,6 +54,9 @@ DEFINITION_LIMITS = {
 FLOORS = {"revenue": 100, "netProfit": 50, "netWorth": 100, "totalAssets": 100, "borrowings": 100, "eps": 0}
 # A consistent relationship needs at least this many shared periods to be recognised
 MIN_PAIRS_FOR_BASIS = 3
+# Filings must contradict the chosen source this many times, and never support it,
+# before the whole series is taken from the other source instead
+SWITCH_AFTER = 2
 
 # Newest period older than this is not the latest filing. Quarters must be out within
 # 45 to 60 days; annual reports and year-end balance sheets within about two months.
@@ -185,7 +188,10 @@ def settle(kind: str, rows: list[dict[str, Any]], used: str, found: list[dict[st
         # An exact match beats a split-adjusted one; a source matching only after a split
         # adjustment is still the right one (HDFCBANK FY23 EPS: filed 82.64 before its 1:1
         # bonus, screener.in 41.22, Yahoo 44.51)
-        if y == "match" or (y == "restated" and s_ not in ("match", "restated")):
+        if y == "match" and s_ == "match":
+            # Both are inside the tolerance (it is wide for borrowings): the closer one is right
+            verdict = "yahoo" if abs(d["yahoo"] - filed) <= abs(d["screener"] - filed) else "screener"
+        elif y == "match" or (y == "restated" and s_ not in ("match", "restated")):
             verdict = "yahoo"
         elif s_ == "match" or (s_ == "restated" and y != "restated"):
             verdict = "screener"
@@ -248,6 +254,31 @@ def choose(
     rows = [dict(r) for r in (screener if used == "screener" else yahoo)]
     if found and filing_for is not None:
         report["unresolved"] = settle(kind, rows, used, found, filing_for)
+        other = "screener" if used == "yahoo" else "yahoo"
+        other_rows = screener if other == "screener" else yahoo
+        verdicts = [(d.get("settled") or {}).get("correct") for d in found]
+        against, in_favour = verdicts.count(other), verdicts.count(used)
+        if used in ("yahoo", "screener") and other_rows and against >= SWITCH_AFTER and in_favour == 0:
+            # The filings contradict the chosen source on several figures and confirm the
+            # other one on each. Patching those cells would leave the rest of the series
+            # (and every ratio derived from it) on the source that just failed, so the whole
+            # series moves to the source the filings back.
+            fields = sorted({d["field"] for d in found if (d.get("settled") or {}).get("correct") == other})
+            names = {"yahoo": "Yahoo", "screener": "screener.in"}
+            report["used"] = other
+            report["reason"] = (
+                f"{names[used]} disagreed with the company's exchange filings on {against} figures "
+                f"({', '.join(fields)}); {names[other]} matched them"
+            )
+            report["switchedFrom"] = used
+            rows = [dict(r) for r in other_rows]
+            still_open = settle(kind, rows, other, found, filing_for)
+            # A disagreement with no filing of its own is no longer an open question: the
+            # source on the other side of it is the one the filings have just discredited.
+            for d in still_open:
+                if d.get("settled") is None:
+                    d["settled"] = {"by": "the other periods' filings", "filed": None, "correct": other, "restated": False, "url": None}
+            report["unresolved"] = [d for d in still_open if (d.get("settled") or {}).get("correct") != other]
     else:
         report["unresolved"] = list(found)
     return rows, report

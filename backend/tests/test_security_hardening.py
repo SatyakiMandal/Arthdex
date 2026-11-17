@@ -129,6 +129,20 @@ class SecurityHardeningTests(unittest.TestCase):
         res = self.client.post("/api/v1/risk-lab/backtest", json={"symbol": "TCS", "fast_period": 0})
         self.assertEqual(res.status_code, 422)
 
+    def test_filings_download_only_from_the_exchanges_own_hosts(self) -> None:
+        from app.providers import nse_xbrl
+
+        # the archive's current host must be allowed, or no figure can be checked against a filing
+        self.assertIn("nsearchives.nseindia.in", nse_xbrl.ALLOWED_XML_HOSTS)
+        for url in (
+            "https://evil.example/corporate/xbrl/x.xml",
+            "https://nsearchives.nseindia.in.evil.example/x.xml",
+            "file:///etc/passwd",
+            "http://169.254.169.254/latest/meta-data/",
+        ):
+            with self.assertRaises(ValueError):
+                nse_xbrl._fetch_xml(url)
+
     # -- error bodies and the report sandbox --------------------------------------
 
     def test_server_errors_do_not_echo_exception_text(self) -> None:

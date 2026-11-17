@@ -129,6 +129,58 @@ class SettleTests(unittest.TestCase):
         self.assertEqual(fy25["corrected"]["netWorth"]["from"], 767689.0)
         self.assertEqual(yahoo[0]["netWorth"], 767689.0)  # the source rows are not mutated
 
+    def test_several_contradicted_figures_move_the_whole_series(self):
+        # HDFCBANK: Yahoo's net worth is about half as high again as the filed figure in every year
+        years = ["2024-03-31", "2025-03-31", "2026-03-31"]
+        yahoo = [bs(years[0], 694732.7), bs(years[1], 767689.1), bs(years[2], 816739.6)]
+        scr = [bs(years[0], 456396.0), bs(years[1], 521789.0), bs(years[2], 586059.0)]
+        filed = {years[0]: 453742.5, years[1]: 517984.2, years[2]: 581514.4}
+        rows, rep = financial_sources.choose("balanceSheet", yahoo, scr, TODAY, filing_for=lambda end: {"balance": {"netWorth": filed[end]}})
+        self.assertEqual((rep["used"], rep["switchedFrom"]), ("screener", "yahoo"))
+        self.assertIn("exchange filings on 3 figures (netWorth)", rep["reason"])
+        self.assertEqual([r["netWorth"] for r in rows], [456396.0, 521789.0, 586059.0])  # screener.in's own rows, unpatched
+        self.assertFalse(any("corrected" in r for r in rows))
+        self.assertEqual(rep["unresolved"], [])
+
+    def test_a_single_contradicted_figure_is_patched_not_switched(self):
+        yahoo = [bs("2025-03-31", 767689.0), bs("2026-03-31", 586000.0)]
+        scr = [bs("2025-03-31", 521789.0), bs("2026-03-31", 586059.0)]
+        filing = lambda end: {"balance": {"netWorth": 517984.2}} if end == "2025-03-31" else None  # noqa: E731
+        _, rep = financial_sources.choose("balanceSheet", yahoo, scr, TODAY, filing_for=filing)
+        self.assertEqual(rep["used"], "yahoo")
+        self.assertNotIn("switchedFrom", rep)
+
+    def test_no_switch_when_the_filings_also_back_the_chosen_source(self):
+        years = ["2024-03-31", "2025-03-31", "2026-03-31"]
+        yahoo = [bs(years[0], 700000.0), bs(years[1], 760000.0), bs(years[2], 500000.0)]
+        scr = [bs(years[0], 456000.0), bs(years[1], 521000.0), bs(years[2], 800000.0)]
+        filed = {years[0]: 455000.0, years[1]: 520000.0, years[2]: 501000.0}  # the last year backs Yahoo
+        _, rep = financial_sources.choose("balanceSheet", yahoo, scr, TODAY, filing_for=lambda end: {"balance": {"netWorth": filed[end]}})
+        self.assertEqual(rep["used"], "yahoo")
+
+    def test_after_a_switch_an_unfiled_disagreement_is_charged_to_the_failed_source(self):
+        years = ["2023-03-31", "2024-03-31", "2025-03-31", "2026-03-31"]
+        yahoo = [bs(y, w) for y, w in zip(years, (300000.0, 694732.7, 767689.1, 816739.6))]
+        scr = [bs(y, w) for y, w in zip(years, (200000.0, 456396.0, 521789.0, 586059.0))]
+        filed = {years[1]: 453742.5, years[2]: 517984.2, years[3]: 581514.4}  # nothing on file for FY23
+        filing = lambda end: {"balance": {"netWorth": filed[end]}} if end in filed else None  # noqa: E731
+        _, rep = financial_sources.choose("balanceSheet", yahoo, scr, TODAY, filing_for=filing)
+        self.assertEqual(rep["used"], "screener")
+        self.assertEqual(rep["unresolved"], [])
+        fy23 = next(d for d in rep["disagreements"] if d["period"] == years[0])
+        self.assertEqual(fy23["settled"]["correct"], "screener")
+
+    def test_when_both_are_within_tolerance_the_closer_one_is_right(self):
+        # borrowings may differ by 15%: Yahoo 7,32,611 and screener.in 6,34,606 against a filed 6,34,605.57
+        row = lambda end, b: {"periodEnd": end, "netWorth": 500000.0, "totalAssets": 4000000.0, "borrowings": b}  # noqa: E731
+        years = ["2023-03-31", "2024-03-31", "2025-03-31", "2026-03-31"]
+        yahoo = [row(y, 600000.0) for y in years[:2]] + [row(years[2], 732610.6), row(years[3], 600000.0)]
+        scr = [row(y, 600000.0) for y in years[:2]] + [row(years[2], 634606.0), row(years[3], 600000.0)]
+        filing = lambda end: {"balance": {"borrowings": 634605.57}} if end == years[2] else None  # noqa: E731
+        _, rep = financial_sources.choose("balanceSheet", yahoo, scr, TODAY, filing_for=filing)
+        verdict = next(d for d in rep["disagreements"] if d["field"] == "borrowings")["settled"]
+        self.assertEqual(verdict["correct"], "screener")
+
     def test_split_restatement_is_not_an_error(self):
         self.assertEqual(financial_sources._matches("eps", 0.03, 12.31, 24.62), "restated")
 

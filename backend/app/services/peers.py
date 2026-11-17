@@ -72,7 +72,14 @@ def peers(symbol: str, quote: dict[str, Any] | None, valuation: dict[str, Any] |
         for field, ours in (("price", (quote or {}).get("cmp")), ("marketCapCr", (quote or {}).get("marketCapCr")), ("pe", (valuation or {}).get("peRatio"))):
             gap = _gap(self_row.get(field), ours)
             if gap is not None:
-                checks.append({"field": field, "screener": self_row.get(field), "arthdex": ours, "gapPct": round(gap * 100, 2), "agree": gap <= TOLERANCE[field]})
+                check = {"field": field, "screener": self_row.get(field), "arthdex": ours, "gapPct": round(gap * 100, 2), "agree": gap <= TOLERANCE[field]}
+                adjusted = (valuation or {}).get("peBeforeOneOffs") if field == "pe" else None
+                adjusted_gap = _gap(self_row.get(field), adjusted) if adjusted else None
+                if not check["agree"] and adjusted_gap is not None and adjusted_gap <= TOLERANCE[field]:
+                    # screener.in's P/E leaves out exceptional items and discontinued operations;
+                    # it agrees with Arthdex's earnings on that basis, which the filings support
+                    check.update(agree=True, basis="before one-off items", arthdexBeforeOneOffs=adjusted, gapPct=round(adjusted_gap * 100, 2))
+                checks.append(check)
     vetted = bool(checks) and all(c["agree"] for c in checks)
 
     medians = {}

@@ -127,22 +127,17 @@ class RouteTests(unittest.TestCase):
         CACHE.expire("network:ownership:v1:TESTCO")
         self.addCleanup(CACHE.expire, "network:ownership:v1:TESTCO")
 
-        class Response:
-            text = FILING
-
-            def raise_for_status(self):
-                return None
-
-        class Session:
-            def get(self, url, timeout=0):
-                return Response()
-
-        with patch("app.routers.corporate_network.nse.nse_get", return_value=MASTER), \
-             patch("app.routers.corporate_network.nse._get_session", return_value=Session()), \
-             patch("app.routers.corporate_network._universe", return_value=UNIVERSE):
+        with patch("app.routers.corporate_network.nse.nse_get", return_value=MASTER),              patch("app.routers.corporate_network.nse_xbrl._fetch_xml", return_value=FILING.encode("utf-8")),              patch("app.routers.corporate_network._universe", return_value=UNIVERSE):
             res = self.client.get("/api/v1/network/ownership?symbol=testco")
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json()["data"]["promoters"][0]["symbol"], "PARENT")
+
+    def test_filing_link_to_an_unknown_host_is_not_followed(self):
+        CACHE.expire("network:ownership:v1:TESTCO")
+        self.addCleanup(CACHE.expire, "network:ownership:v1:TESTCO")
+        with patch("app.routers.corporate_network.nse.nse_get", return_value=MASTER):  # example.test is not an NSE host
+            res = self.client.get("/api/v1/network/ownership?symbol=testco")
+        self.assertEqual(res.status_code, 404)
 
     def test_company_without_a_filing_is_a_404(self):
         with patch("app.routers.corporate_network.nse.nse_get", return_value=[]):

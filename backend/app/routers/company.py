@@ -350,7 +350,32 @@ def _live_valuation(symbol: str, exchange: str, cached: dict) -> dict:
             data["pbRatio"] = round(price / book, 2)
         if paid is not None:
             data["dividendYieldPct"] = round(paid / price * 100, 2)
+    one_off = _one_offs(symbol, exchange, ratios)
+    if one_off:
+        data["oneOffs"] = one_off
+        adjusted = one_off.get("epsBeforeOneOffs")
+        if price and adjusted and adjusted > 0:
+            data["peBeforeOneOffs"] = round(price / adjusted, 2)
     return data
+
+
+def _one_offs(symbol: str, exchange: str, ratios: dict) -> dict | None:
+    """Exceptional and discontinued items in the trailing four quarters, from the filings (cached)."""
+    if ratios.get("period") != "TTM" or not ratios.get("eps") or not ratios.get("netProfitCr"):
+        return None  # a full-year basis has its own filing; only the quarter sum is adjusted here
+    sym = symbol.upper()
+
+    def build():
+        from ..services import one_offs
+
+        quarters = get_financials(sym, exchange)["data"].get("quarterly") or []
+        ends = [q["periodEnd"][:10] for q in quarters if q.get("periodEnd")]
+        return one_offs.for_symbol(sym, ends, ratios.get("netProfitCr"), ratios.get("eps"), nse_xbrl.figures_for)
+
+    try:
+        return CACHE.get_or_fetch(f"company:oneoffs:{sym}:{ratios.get('eps')}", 12 * 3600, build)[0]
+    except Exception:
+        return None
 
 
 @router.get("/{symbol}/technicals")

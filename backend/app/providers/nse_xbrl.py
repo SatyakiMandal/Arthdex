@@ -20,6 +20,8 @@ Values are in rupees and are returned in crore.
 
 from __future__ import annotations
 
+import logging
+
 import urllib.parse
 import xml.etree.ElementTree as ET
 from datetime import date, datetime
@@ -29,12 +31,22 @@ from urllib.parse import urlparse
 from ..cache import CACHE
 from .nse import _get_session, nse_get
 
+LOG = logging.getLogger("arthdex.xbrl")
+
 CRORE = 1e7
 # A filing never changes once published; revisions are new filings with new URLs
 FILING_TTL = 30 * 24 * 3600
 LIST_TTL = 12 * 3600
 MAX_XML_BYTES = 15 * 1024 * 1024
-ALLOWED_XML_HOSTS = ("nsearchives.nseindia.com", "www.nseindia.com")
+# NSE links its filings from its own API. The archive moved from nseindia.com to nseindia.in
+# during 2026; with only the old host allowed, every download was refused and no
+# disagreement between sources could be settled against a filing.
+ALLOWED_XML_HOSTS = (
+    "nsearchives.nseindia.com",
+    "www.nseindia.com",
+    "nsearchives.nseindia.in",
+    "www.nseindia.in",
+)
 
 # Facts read, in priority order where the taxonomies differ (banks file their own lines)
 REVENUE = ("RevenueFromOperations", "TotalIncomeFromOperations", "InterestEarned")
@@ -50,6 +62,10 @@ EPS = (
     "BasicEarningsPerShareAfterExtraordinaryItems",
     "BasicEarningsLossPerShareFromContinuingOperations",
 )
+EXCEPTIONAL = ("ExceptionalItemsBeforeTax", "ExceptionalItems")
+DISCONTINUED = ("ProfitLossFromDiscontinuedOperationsAfterTax",)
+PROFIT_BEFORE_TAX = ("ProfitBeforeTax", "ProfitLossBeforeTax", "ProfitLossFromOrdinaryActivitiesBeforeTax")
+TAX_EXPENSE = ("TaxExpense", "TaxExpenses")
 EQUITY_OWNERS = ("EquityAttributableToOwnersOfParent",)
 EQUITY_TOTAL = ("Equity", "TotalEquity")
 ASSETS = ("Assets", "TotalAssets", "CapitalAndLiabilities")
@@ -210,7 +226,14 @@ def parse(xml: bytes | str) -> dict[str, Any]:
         if owners is None and total is not None:
             owners = round(total - (minority or 0), 2)
         row = {"revenue": value(REVENUE, cids), "netProfitOwners": owners, "netProfit": total, "eps": value(EPS, cids, scale=1)}
-        return row if any(v is not None for v in row.values()) else None
+        if not any(v is not None for v in row.values()):
+            return None
+        # One-off lines, kept separate so the caller can state earnings with and without them
+        row["exceptionalBeforeTax"] = value(EXCEPTIONAL, cids)
+        row["discontinuedAfterTax"] = value(DISCONTINUED, cids)
+        row["profitBeforeTax"] = value(PROFIT_BEFORE_TAX, cids)
+        row["taxExpense"] = value(TAX_EXPENSE, cids)
+        return row
 
     balance = None
     inst = ids(None, None)
@@ -259,5 +282,8 @@ def figures_for(symbol: str, period_end: str, consolidated: bool = True) -> dict
     try:
         parsed, _ = CACHE.get_or_fetch(f"xbrl:filing:{url}", FILING_TTL, fetch)
         return parsed or None
-    except Exception:
+    except Exception as exc:
+        # Not fatal for the caller, but never silent: a refused host or a changed layout
+        # here means no figure can be checked against its filing.
+        LOG.warning("XBRL filing unavailable for %s %s: %s", symbol, period_end, exc)
         return None
