@@ -4,14 +4,51 @@
     {
       "name": "arthdex-dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 3000
     },
     {
       "name": "arthdex-prod",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["next", "start", "-p", "3100"],
+      "runtimeArgs": [
+        "next",
+        "start",
+        "-p",
+        "3100"
+      ],
       "port": 3100
+    },
+    {
+      "name": "bse-branch-api",
+      "runtimeExecutable": "D:/Projects/GoaShipyardLtd/Arthdex/backend/.venv/Scripts/python.exe",
+      "runtimeArgs": [
+        "-m",
+        "uvicorn",
+        "app.main:app",
+        "--port",
+        "8010",
+        "--app-dir",
+        "D:/Projects/GoaShipyardLtd/Arthdex-bse/backend"
+      ],
+      "port": 8010
+    },
+    {
+      "name": "bse-branch-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "D:/Projects/GoaShipyardLtd/Arthdex-bse",
+        "run",
+        "dev:web",
+        "--",
+        "-p",
+        "3010",
+        "--webpack"
+      ],
+      "port": 3010
     }
   ]
 }
